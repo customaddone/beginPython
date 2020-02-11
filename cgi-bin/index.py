@@ -4,9 +4,9 @@
 
 D = { 'a': 1, 'b': 2, 'c': 3}
 
-Ks = D.keys()
-print Ks
-Ks.sort() #sortは破壊的メソッド　戻り値はなし
-print Ks
+# さっきのがこれで一発でできる
+for key in sorted(D): print key, '=>', D[key]
 
-for key in Ks: print key, '=>', D[key]
+# 文字列もソートできる
+string = 'spam'
+for case in sorted(string): print case.upper()
