@@ -1,3 +1,3 @@
 #!/usr/bin/python
-print (2 ** 8)
-print ('the bright side' + ' of life.')
+import myfile
+print (myfile.title)
