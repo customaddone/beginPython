@@ -4,13 +4,11 @@
 
 # 0はfalseになる
 
-def intersect(sec1, sec2):
-    res = []
-    for x in sec1:
-        if x in sec2:
-            res.append(x)
-    return res
+#map関数はシーケンスの要素一つ一つに関数を実行する
+#map(function, sequence_object)
+a, b = map(len,input().split())
+print(a, b)
 
-sec1 = 'apple'
-sec2 = 'melon'
-print(intersect(sec1, sec2))
+original_list = list(range(10))
+mapped_list = map(lambda x: x ** 2, original_list)
+print(list(mapped_list))
