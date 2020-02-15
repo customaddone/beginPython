@@ -2,11 +2,8 @@
 # coding: UTF-8
 # math関数で色々な数式を扱える
 
-S = "spamy"
-S = S[:3] + 'xx' + S[3:]
-print(S)
+S = "xxxxSPAMxxxxSPAMxxx"
+where = S.find('SPAM')
 
-# replaceは使用頻度多いよ
-S = "spamy"
-S = S.replace('m', 'xx')
+S = S[:where] + 'EGGS' + S[where + 4:]
 print(S)
