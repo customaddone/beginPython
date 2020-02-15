@@ -2,16 +2,8 @@
 # coding: UTF-8
 # math関数で色々な数式を扱える
 
-while True:
-    reply = input('Enter text:')
-    if reply == 'stop':
-        break
-    elif not reply.isdigit():
-        print('Bad'* 8)
-    else:
-        num = int(reply)
-        if num < 20:
-            print('row')
-        else:
-            print(num ** 2)
-print('Bye')
+# 0はfalseになる
+x = 10
+for i in range(10):
+    if (10 - i) % 2 == 0: continue
+    print(10 - i)
