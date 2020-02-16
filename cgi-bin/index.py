@@ -1,15 +1,13 @@
 #!/usr/bin/python
 # coding: UTF-8
+from functools import reduce
 
-# https://atcoder.jp/contests/abc020/tasks/abc020_a
-# 第1問： あなたが今参加しているこのコンテストの略称は何でしょう？ アルファベット大文字
-# 3字で答えてください。
-# 第2問： あなたが今参加しているこのコンテストなどを運営しているAtCoder株式会社の代表取締役社長は誰でしょう？ アルファベット小文字
-# 8文字のハンドルネームで答えてください。
-# 標準入力から整数
-# 1または2が与えられます。
-# 1が入力された場合は第1問の答えを、
-# 2の場合は第2問の答えを出力してください。
-#なお、クイズの答えに関してはこの問題ページ内に記載があります。
+# https://atcoder.jp/contests/tenka1-2019-beginner/tasks/tenka1_2019_b
+# 英小文字からなる長さNの文字列Sと整数Kが与えられます。
+# SのK番目の文字と異なる文字全てを * で置き換えてできる文字列を出力してください。
 
-print('ABC' if int(input()) == 1 else 'chokudai')
+input()
+S = input()
+k = int(input())
+# endのおかげで横並びになる
+for s in S:print(s if s == S[k - 1] else "*", end="")
