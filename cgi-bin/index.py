@@ -4,11 +4,11 @@
 
 # 0はfalseになる
 
-#map関数はシーケンスの要素一つ一つに関数を実行する
-#map(function, sequence_object)
-a, b = map(len,input().split())
-print(a, b)
+# lambda式（無名関数)
+def func(x, y, z):
+    return x + y + z
 
-original_list = list(range(10))
-mapped_list = map(lambda x: x ** 2, original_list)
-print(list(mapped_list))
+print(func(2, 3, 4))
+
+f = lambda x, y, z: x + y + z
+print(f(2, 3, 4))
