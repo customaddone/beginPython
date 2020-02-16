@@ -4,4 +4,5 @@
 
 # 0はfalseになる
 list = [int(i) for i in input().split()]
+
 print(list)
