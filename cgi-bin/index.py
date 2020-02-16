@@ -3,12 +3,16 @@
 # math関数で色々な数式を扱える
 
 # 0はfalseになる
+from functools import reduce
 
-# lambda式（無名関数)
-def func(x, y, z):
-    return x + y + z
+counters = [1, 2, 3]
+print(list(map((lambda x: x + 10), counters)))
 
-print(func(2, 3, 4))
+# filter 特定の条件に合うものだけを抽出する
+print(list(filter((lambda x: x > 2), counters)))
 
-f = lambda x, y, z: x + y + z
-print(f(2, 3, 4))
+# reduce 順繰りに実行していくもの
+# rangeは0からスタート
+# range(1, 5)は[1, 2, 3, 4]
+ren = reduce((lambda x, y: x * y), range(1, 5))
+print(ren)
