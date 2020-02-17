@@ -1,13 +1,9 @@
 #!/usr/bin/python
 # coding: UTF-8
 # これ使ってswitchみたいな条件分岐
-import math
+# https://atcoder.jp/contests/abc069/tasks/abc069_b
+s = input()
+print(s[0] + str(len(s[1:-1])) + s[-1])
 
-x = int(input())
-def prime(num):
-    for i in range(2, math.floor(math.sqrt(num)) + 1):
-        if num % i == 0:
-            return False
-    return True
-
-print(prime(x))
+a, *b, c = input()
+print(a + str(len(b)) + c)
