@@ -1,10 +1,11 @@
 #!/usr/bin/python
 # coding: UTF-8
 # これ使ってswitchみたいな条件分岐
-x = 10
-while x:
-    # continueの前にxの増減を書かないと無限ループ
-    x -= 1
-    if x % 2 == 0:
-        continue
-    print(x)
+import math
+
+x = int(input())
+for i in range(2, math.floor(math.sqrt(x)) + 1):
+    if x % i == 0:
+        print(x, 'has factor', i)
+        break
+    print(x, 'is prime')
