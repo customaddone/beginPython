@@ -3,12 +3,16 @@
 # これ使ってswitchみたいな条件分岐
 
 n = int(input())
-town = []
-people = []
-for i in range(n):
-    t, p = input().split()
-    town.append(t)
-    people.append(int(p))
-# indexでpeopleの中での最大の数値のインデックスが取れる
-if max(people)>sum(people)/2:print(town[people.index(max(people))])
-else: print("atcoder")
+#パターン１
+#list = [[list(map(int, input().split()))] for i in range(n)]
+
+
+#パターン２
+list = [[int(j) for j in input().split()] for i in range(n)]
+
+#パターン３
+#list = []
+#for i in range(n):
+#    list.append([int(i) for i in input().split()])
+
+print(list)
