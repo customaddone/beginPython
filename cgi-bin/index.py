@@ -2,7 +2,8 @@
 # coding: UTF-8
 # これ使ってswitchみたいな条件分岐
 
-n = [int(input()) for _ in range(int(input()))]
-# sumで配列内の数字を全て足す
-# intで整数にしよう
-print(sum(n) - int(max(n)/2))
+# 「以上」の書き方を覚えよう
+a, b = map(int, input().split())
+n = [int(input()) for i in range(int(input()))]
+for i in n:
+    print(a - i if i < a else 0 if a <= i <= b else -1)
