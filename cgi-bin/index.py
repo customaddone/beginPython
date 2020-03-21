@@ -2,5 +2,9 @@
 # coding: UTF-8
 # abs 絶対値
 
-a, b, c, d, e, k = [int(input()) for i in range(6)]
-print("Yay!" if abs(a-e)<=k else ":(")
+n, q = map(int, input().split())
+a = [0] * n
+for i in range(q):
+    l, r, t = map(int, input().split())
+    for i in range(l, r+1):a[i-1]=t
+print(*a, sep="\n")
