@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # coding: UTF-8
-# これ使ってswitchみたいな条件分岐
+# elseブロックの中にcontinueが置かれると、continue以降の外側の処理が全てスキップされます
+# 内側ループでbreakに該当した場合はcontinue効かない(breakされる)
 N, Y = map(int, input().split())
 answer = -1, -1, -1
 
