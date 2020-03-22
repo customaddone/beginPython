@@ -1,16 +1,17 @@
-# 3進数に変換
+# 全員をスタート地点から都市１に移動させるのにn // time[0] + 1分かかる
+# 全員をスタート地点から都市２に移動させるのに上記 + (n % time[i]) // time[1]分かかる
+# ...
 n = int(input())
-result = ''
+time = [int(input()) for _ in range(5)]
+result = 0
+for i in range(5):
+    result += (n // time[i])
+    result += 1
+    n = n % time[i]
+print(result)
 
-def tenary(n):
-    if n == 0:
-        return '3'
-    elif n == 1:
-        return '5'
-    else:
-        return '7'
-while n >= 3:
-    # １桁目、２桁目...
-    result = str(n % 3) + result
-    n = n // 3
-result = str(n) +result
+# 模範解答 最初っからminで
+import math
+n=int(input())
+l=[int(input()) for i in range(5)]
+print(math.ceil(n/min(l))+4)
