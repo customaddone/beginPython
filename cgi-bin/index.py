@@ -1,7 +1,15 @@
-N=int(input())
-S=input()
-# ord 文字 →　アスキーコード
-# chr アスキーコード → 文字
-# 大文字のAは６５番、小文字のaは９７番
-# Z → Aへとループさせるために%26する
-print("".join(chr(65+(ord(s)-65+N)%26) for s in S))
+n = int(input())
+an = 0
+a3, a2, a1 = 0, 0, 1
+
+for _ in range(n - 3):
+    an = a3 + a2 + a1
+    a3, a2, a1 = a2, a1, an
+print(an % 10007)
+
+# 模範解答 for文の中で10007の余りを求めとく
+n=int(input())
+a,b,c=0,0,1
+for i in range(n-1):
+    a,b,c=b,c,(a+b+c)%10007
+print(a)
