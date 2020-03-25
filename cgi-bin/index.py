@@ -1,3 +1,4 @@
+# breakで抜けなかったときのみelseが実行される
 n, m, a, b = map(int, input().split())
 ans = 'complete'
 for i in range(m):
