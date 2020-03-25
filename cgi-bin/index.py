@@ -1,7 +1,2 @@
-n, m, c = map(int, input().split())
-b = list(map(int, input().split()))
-counter = 0
-for i in range(n):
-    a = list(map(int, input().split()))
-    counter += ((sum([x * y for x, y in zip(a, b)]) + c) > 0)
-print(counter)
+# "r" in input() についてTrueかfalseか評価される　✖︎　１２
+print(sum("r" in input() for i in range(12)))
