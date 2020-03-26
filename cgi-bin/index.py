@@ -1,12 +1,6 @@
-a = int(input())
-b = int(input())
-c = int(input())
-x = int(input())
-counter = 0
-for l in range(a + 1):
-    for m in range(b + 1):
-        if 500 * l + 100 * m > x:
-            break
-        if 500 * l + 100 * m + 50 * c >= x:
-            counter += 1
-print(counter)
+n, a, b = map(int, input().split())
+ans = 0
+for n in range(1, n + 1):
+    if a <= sum([int(i) for i in list(str(n))]) <= b:
+        ans += n
+print(ans)
