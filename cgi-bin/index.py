@@ -1,12 +1,10 @@
-# breakで抜けなかったときのみelseが実行される
-n, m, a, b = map(int, input().split())
-ans = 'complete'
-for i in range(m):
-    if n <= a:
-        n += b
-    n -= int(input())
-    if n < 0:
-        print(i + 1)
+input()
+list = list(map(int, input().split()))
+counter = 0
+while 1:
+    if all([i % 2 == 0 for i in list]):
+        list = [int(i / 2) for i in list]
+        counter += 1
+    else:
         break
-else:
-    print("complete")
+print(counter)
