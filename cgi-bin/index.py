@@ -1,7 +1,8 @@
-# sの前半分と後ろ半分を比べる
-s = list(input())
-while len(s)!=0:
-    s.pop()
-    if len(s)%2==0 and s[:len(s)//2]==s[len(s)//2:]:
-        print(len(s))
-        break
+# if文の条件ををwhileの後ろにつける
+input()
+a = list(map(int, input().split()))
+counter = 0
+while all([(i % 2 == 0) for i in a]):
+    a = [int(i / 2) for i in a]
+    counter += 1
+print(counter)
