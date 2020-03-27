@@ -1,6 +1,7 @@
-# ループしていても計n回までは続ける
-n = int(input())
-a = [int(input()) for i in range(n)]
-c, s = 1, a[0]
-while s!=2 and c < n:c,s=c+1,a[s-1]
-print(c if c < n else -1)
+# sの前半分と後ろ半分を比べる
+s = list(input())
+while len(s)!=0:
+    s.pop()
+    if len(s)%2==0 and s[:len(s)//2]==s[len(s)//2:]:
+        print(len(s))
+        break
