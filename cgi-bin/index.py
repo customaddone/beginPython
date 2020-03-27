@@ -1,9 +1,10 @@
-s = int(input())
+# nを$digit進数に変換
+n = int(input())
 list = []
-while not(s in list):
-    list.append(s)
-    if s % 2 == 0:
-        s /= 2
-    else:
-        s = 3 * s + 1
-print(len(list) + 1)
+digit = 7
+i = 0
+while n != 0:
+    list.insert(0, str(n % digit))
+    n //= digit
+    i += 1
+print(''.join(list))
