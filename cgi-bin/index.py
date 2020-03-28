@@ -1,10 +1,10 @@
-# nを$digit進数に変換
 n = int(input())
-list = []
-digit = 7
-i = 0
-while n != 0:
-    list.insert(0, str(n % digit))
-    n //= digit
-    i += 1
-print(''.join(list))
+sum = 0
+for _ in range(n):
+    x, u = input().split()
+    if u == 'JPY':
+        sum += int(x)
+    else:
+        # *はfloatの内側
+        sum += float(x) * 38000
+print(sum)
