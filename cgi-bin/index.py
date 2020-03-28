@@ -1,10 +1,3 @@
-n = int(input())
-sum = 0
-for _ in range(n):
-    x, u = input().split()
-    if u == 'JPY':
-        sum += int(x)
-    else:
-        # *はfloatの内側
-        sum += float(x) * 38000
-print(sum)
+# 辞書順でどちらが早いかは<でできる
+a, b = input().split()
+print(a*int(b) if a<b else b*int(a))
