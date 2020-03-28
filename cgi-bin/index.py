@@ -1,11 +1,7 @@
-# Xについて、2~Xの範囲で割り切れる数があるか調べる
-# なければelseに飛んでprint break
-X = int(input())
-while True:
-    for x in range(2,X):
-        if X%x==0:
-            break
-    else:
-        print(X)
-        break
-    X += 1
+# {}でディクショナリ型に
+# S[s]が存在する限り
+S = {c:list(input()) for c in "abc"}
+s = "a"
+while S[s]:
+    s = S[s].pop(0)
+print(s.upper())
