@@ -1,12 +1,12 @@
-def dfs(i, f):
+a = [1,2,3,4,5]
+def dfs(i, value):
     if i == n - 1:
-        return sum(list(map(int, f.split("+"))))
+        print(value)
+        if value % 2 == 0:
+            return value
+        else:
+            return 0
+    return dfs(i + 1, value * a[i + 1]) + dfs(i + 1, value)
 
-    # 末端まで行くと数字をリターンする
-    # 2つ合わせたもの、４つ合わせたもの...が帰ってくる
-    return dfs(i + 1, f + s[i + 1]) + dfs(i + 1, f + "+" + s[i + 1])
-
-s = input()
-n = len(s)
-
-print(dfs(0, s[0]))
+n = int(input())
+print(dfs(0, a[0]))
