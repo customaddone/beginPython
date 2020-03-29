@@ -1,10 +1,13 @@
-# O(n3)程度であれば十分間に合う
+l = int(input())
 n = int(input())
-a = list(map(int, input().split()))
-ans = 0
-for l in range(n):
-    for m in range(l + 1, n):
-        for q in range(m + 1, n):
-            if a[l] + a[m] > a[q]:
-                ans = max(ans, a[l] + a[m] + a[q])
-print(ans)
+x = list(map(int, input().split()))
+mintime = 0
+maxtime = 0
+for i in range(n):
+    individual = min(x[i], l - x[i])
+    mintime = max(mintime, individual)
+for i in range(n):
+    individual = max(x[i], l - x[i])
+    maxtime = max(maxtime, individual)
+print(mintime)
+print(maxtime)
