@@ -1,12 +1,14 @@
-a = [1,2,3,4,5]
-def dfs(i, value):
-    if i == n - 1:
-        print(value)
-        if value % 2 == 0:
-            return value
-        else:
-            return 0
-    return dfs(i + 1, value * a[i + 1]) + dfs(i + 1, value)
+ans = 0
+
+def dfs(1, a, b):
+    if i == n:
+        ans = min(ans, max(a, b))
+    else:
+        dfs(i + 1, a + t[i], b)
+        dfs(i + 1, a, b + t[i])
 
 n = int(input())
-print(dfs(0, a[0]))
+t = [int(input()) for i in range(n)]
+
+dfs(0, 0, 0)
+print(ans)
