@@ -1,12 +1,18 @@
-coin = [1, 5, 10, 50, 100, 500]
+from operator import itemgetter
 
-chave = list(map(int, input().split()))
-a = int(input())
+n = int(input())
+s = list(map(int, input().split()))
+t = list(map(int, input().split()))
+
+# key=itemgetter(1)で２番目の要素でソート
+st = sorted([(s[i], t[i]) for i in range(n)], key=itemgetter(1))
+
 ans = 0
+last = 0
 
+for i in range(n):
+    if last < s[i][0]:
+        ans += 1
+        last = st[i][1]
 
-for i in range(6):
-    pay = min(a // coin[5 - i], chave[5 - i])
-    a = a - coin[5 - i] * pay
-    ans += pay
 print(ans)
