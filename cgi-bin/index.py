@@ -1,18 +1,15 @@
-from operator import itemgetter
+ans = []
+a = [(2, 3),(1, 2),(3, 4),(2, 2)]
+n = 4
+w = 5
 
-n = int(input())
-s = list(map(int, input().split()))
-t = list(map(int, input().split()))
+def dfs(i, weight, sum):
+    if i == n:
+        if weight <= w:
+            ans.append(sum)
+        return sum
 
-# key=itemgetter(1)で２番目の要素でソート
-st = sorted([(s[i], t[i]) for i in range(n)], key=itemgetter(1))
-
-ans = 0
-last = 0
-
-for i in range(n):
-    if last < s[i][0]:
-        ans += 1
-        last = st[i][1]
-
-print(ans)
+    return dfs(i + 1, weight, sum) + dfs(i + 1, weight + a[i][0], sum + a[i][1])
+# dfsは初っ端で呼ばれてしまうらしい（ansの宣言より前)
+dfs(0, 0, 0)
+print(max(ans))
