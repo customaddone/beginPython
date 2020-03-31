@@ -1,14 +1,12 @@
+coin = [1, 5, 10, 50, 100, 500]
+
+chave = list(map(int, input().split()))
+a = int(input())
 ans = 0
 
-def dfs(1, a, b):
-    if i == n:
-        ans = min(ans, max(a, b))
-    else:
-        dfs(i + 1, a + t[i], b)
-        dfs(i + 1, a, b + t[i])
 
-n = int(input())
-t = [int(input()) for i in range(n)]
-
-dfs(0, 0, 0)
+for i in range(6):
+    pay = min(a // coin[5 - i], chave[5 - i])
+    a = a - coin[5 - i] * pay
+    ans += pay
 print(ans)
