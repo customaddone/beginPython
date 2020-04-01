@@ -1,15 +1,20 @@
-ans = []
-a = [(2, 3),(1, 2),(3, 4),(2, 2)]
-n = 4
-w = 5
-
-def dfs(i, weight, sum):
+def rec(i, j):
     if i == n:
-        if weight <= w:
-            ans.append(sum)
-        return sum
+        res = 0
+        print([i, j, res])
+    # オーバーフロー この先０になります
+    elif j < w[i]:
+        res = rec(i + 1, j)
+    # v[i]の分だけ増えます
+    else:
+        res = max(rec(i + 1, j), rec(i + 1, j - w[i]) + v[i])
 
-    return dfs(i + 1, weight, sum) + dfs(i + 1, weight + a[i][0], sum + a[i][1])
-# dfsは初っ端で呼ばれてしまうらしい（ansの宣言より前)
-dfs(0, 0, 0)
-print(max(ans))
+    return res
+
+n = int(input())
+w = list(map(int, input().split()))
+v = list(map(int, input().split()))
+
+W = int(input())
+
+print(rec(0, W))
