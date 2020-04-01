@@ -1,26 +1,15 @@
-def rec(i, j):
-    if dp[i][j]:
-        return dp[i][j]
-    if i == n:
-        res = 0
-    elif j < w[i]:
-        res = rec(i + 1, j)
-    else:
-        res = max(rec(i + 1, j), rec(i + 1, j - w[i]) + v[i])
+n, m = map(int, input().split())
+s = input()
+t = input()
 
-    dp[i][j] = res
-    return res
+dp = [[0] * (m + 1) for i in range(n + 1)]
 
-n = int(input())
-w = []
-v = []
 for i in range(n):
-    w_, v_ = map(int, input().split())
-    w.append(w_)
-    v.append(v_)
-W = int(input())
-
-# 一つ多く枠をとる
-dp = [[0] * (W + 1) for i in range(n + 1)]  # メモ化テーブル
-
-print(rec_memo(0, W))
+    for j in range(m):
+        if s[i] == t[j]:
+            dp[i + 1][j + 1] = dp[i][j] + 1
+        else:
+            dp[i + 1][j + 1] = max(dp[i][j + 1], dp[i + 1][j])
+# dp[i][j]はこれまでの最大値
+# dpでメモしておくことで再利用できる
+print(dp[n][m])
