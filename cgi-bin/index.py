@@ -1,15 +1,8 @@
-n, m = map(int, input().split())
-s = input()
-t = input()
+tree = [[1, 2], [3, 4], [5, 6],[7, 8]]
 
-dp = [[0] * (m + 1) for i in range(n + 1)]
-
-for i in range(n):
-    for j in range(m):
-        if s[i] == t[j]:
-            dp[i + 1][j + 1] = dp[i][j] + 1
-        else:
-            dp[i + 1][j + 1] = max(dp[i][j + 1], dp[i + 1][j])
-# dp[i][j]はこれまでの最大値
-# dpでメモしておくことで再利用できる
-print(dp[n][m])
+data = [0]
+while len(data) > 0:
+    pos = data.pop(0)
+    print(pos, end="")
+    for i in tree[pos]:
+        data.append(i)
