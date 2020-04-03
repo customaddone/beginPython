@@ -1,18 +1,14 @@
-import math
+# fibonacci(40)あたりから動きが怪しくなるので、メモ作っておくと便利
+# 再帰は上限ある
+# この方法だとfibonatti(1500)ぐらいいける
+data = [0] * 100000
+def fibonacci(n):
+    if (n == 1) or (n == 2):
+        return 1
+    if data[n] != 0:
+        return data[n]
+    else:
+        data[n] = fibonacci(n - 2) + fibonacci(n - 1)
+        return data[n]
 
-def get_prime(n):
-    if n <= 1:
-        return []
-
-    prime = [2]
-    limit = int(math.sqrt(n))
-    data = [i + 1 for i in range(2, n, 2)]
-
-    while limit > data[0]:
-        prime.append(data[0])
-        # dataの先頭+data[0]の倍数がどんどん消えていく 
-        data = [j for j in data if j % data[0] != 0]
-
-    return prime + data
-
-print(get_prime(200))
+print(fibonacci(1500))
