@@ -1,22 +1,18 @@
-pos = [[1, 1, 0]]
+import math
 
-def search(x, y, depth):
-    if maze[x][y] == 1:
-        print(depth)
-        exit()
+def get_prime(n):
+    if n <= 1:
+        return []
 
-    maze[x][y] = 2
+    prime = [2]
+    limit = int(math.sqrt(n))
+    data = [i + 1 for i in range(2, n, 2)]
 
-    if maze[x - 1][y] < 2:
-        search(x - 1, y, depth + 1)
-    if maze[x + 1][y] < 2:
-        search(x - 1, y, depth + 1)
-    if maze[x][y - 1] < 2:
-        search(x, y - 1, depth + 1)
-    if maze[x][y + 1] < 2:
-        search(x, y + 1, depth + 1)
+    while limit > data[0]:
+        prime.append(data[0])
+        # dataの先頭+data[0]の倍数がどんどん消えていく 
+        data = [j for j in data if j % data[0] != 0]
 
-    # 詰まったら元にもどす
-    maze[x][y] = 0
+    return prime + data
 
-search(1, 1, 0)
+print(get_prime(200))
