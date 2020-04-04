@@ -1,23 +1,36 @@
-def bellman_ford(edges, num_v):
-    dist = [float('inf') for i in range(num_v)]
+def dijkstra(edges, num_v):
+    # 各頂点をinfに
+    dist = [float('inf')] * num_v
+    # 始点を解放
     dist[0] = 0
+    # 各頂点に番号を振る
+    q = [i for i in range(num_v)]
 
-    changed = True
-    while changed:
-        changed = False
-        # roop1
-        # edge1 [0, 1, 4]
-        # edge2 [0, 2, 3]
-        # ...
-        # edge9 [5, 6, 4]
+    while len(q) > 0:
+        # qの先頭
+        r = q[0]
+        # 最もコストが小さい頂点を探す
+        for i in q:
+            if dist[i] < dist[r]:
+                r = i
 
-        # 変更があったので最初からfor edge in edges:する
-        for edge in edges:
-            # dist[edge[1]]:終点 dist[edge[0]]:始点 edge[2]:コスト
-            if dist[edge[1]] > dist[edge[0]] + edge[2]:
-                dist[edge[1]] = dist[edge[0]] + edge[2]
-                changed = True
+        # 最もコストが小さい頂点を取り出す
+        # 一番コストが小さい頂点から頂点xに飛べるか
+        u = q.pop(q.index(r))
+        # edges[u]1: [1, 4]
+        # edges[u]2: [2, 3]
+        for i in edges[u]:
+            if dist[i[0]] > dist[u] + i[1]:
+                dist[i[0]] = dist[u] + i[1]
+
     return dist
 
-edges = [[0,1,4],[0,2,3],[1,2,1],[1,3,1],[1,4,5],[2,5,2],[4,6,2],[5,4,1],[5,6,4]]
-print(bellman_ford(edges,7))
+edges=[[[1,4],[2,3]],
+[[2,1],[3,1],[4,5]],
+[[5,2]],
+[[4,3]],
+[[6,2]],
+[[4,1],[6,4]],
+[]]
+
+print(dijkstra(edges,7))
