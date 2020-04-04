@@ -1,14 +1,25 @@
-n, q = map(int, input().split())
-s = input()
-ls = [0]
-# 判定のたびにいちいち配列にアクセスしていては時間がかかる
-for i in range(n - 1):
-    # 累積値をappendしていく
-    if s[i] == "A" and s[i + 1] == "C":
-        ls.append(ls[i] + 1)
-    else:
-        ls.append(ls[i])
+import time
+from decimal import Decimal
+list = [i for i in range(20000)]
+lista = [0]
+maxnum = 0
 
-for i in range(q):
-    l,r = map(int, input().split())
-    print(ls[r - 1] - ls[l - 1])
+t1 = time.time()
+for i in range(400, 1000):
+    num = sum(list[i:i + 4000])
+    maxnum = max(maxnum, num)
+print(maxnum)
+t2 = time.time()
+print(Decimal(t2 - t1))
+
+t3 = time.time()
+# これに時間かかるけど
+for i in range(20000):
+    lista.append(lista[i] + list[i])
+# これがむちゃくちゃ速い
+for i in range(400, 1000):
+    num = lista[i + 4000] - lista[i]
+    maxnum = max(maxnum, num)
+print(maxnum)
+t4 = time.time()
+print(Decimal(t4 - t3))
