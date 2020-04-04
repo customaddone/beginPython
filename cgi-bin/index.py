@@ -1,10 +1,14 @@
-# これだとTLE
 n, q = map(int, input().split())
 s = input()
+ls = [0]
+# 判定のたびにいちいち配列にアクセスしていては時間がかかる
+for i in range(n - 1):
+    # 累積値をappendしていく
+    if s[i] == "A" and s[i + 1] == "C":
+        ls.append(ls[i] + 1)
+    else:
+        ls.append(ls[i])
+
 for i in range(q):
     l,r = map(int, input().split())
-    ans = 0
-    for j in range(l - 1, r - 1):
-        if s[j] == "A" and s[j + 1] == "C":
-            ans += 1
-    print(ans)
+    print(ls[r - 1] - ls[l - 1])
