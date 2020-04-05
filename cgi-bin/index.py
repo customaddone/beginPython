@@ -1,13 +1,16 @@
-def dfs(i, f, sum):
-    if i == 3:
-        if sum == 7:
-            print(f + "=7")
-            exit()
+import sys
+# 再帰制限を外す
+sys.setrecursionlimit(1000000)
+lista = [0] * 10000
 
-    else:
-        dfs(i + 1, f + "-" + s[i + 1], sum - int(s[i + 1]))
-        dfs(i + 1, f + "+" + s[i + 1], sum + int(s[i + 1]))
-
-s = input()
-
-dfs(0, s[s], int(s[0]))
+def fib(n):
+    if lista[n] != 0:
+        return lista[n]
+    if n == 1:
+        return 0
+    elif n == 2:
+        return 1
+    lista[n] = fib(n - 1) + fib(n - 2)
+    return lista[n]
+n = int(input())
+print(fib(n))
