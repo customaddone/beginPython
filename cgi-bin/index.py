@@ -1,34 +1,16 @@
-from collections import deque
-maze = [
-    [9,9,9,9,9,9,9,9,9,9,9,9],
-    [9,0,0,0,9,0,0,0,0,0,0,9],
-    [9,0,9,0,0,0,9,9,0,9,9,9],
-    [9,0,9,9,0,9,0,0,0,9,0,9],
-    [9,0,0,0,9,0,0,9,9,0,9,9],
-    [9,9,9,0,0,9,0,9,0,0,0,9],
-    [9,0,0,0,9,0,9,0,0,9,1,9],
-    [9,0,9,0,0,0,0,9,0,0,9,9],
-    [9,0,0,9,0,9,0,0,9,0,0,9],
-    [9,0,9,0,9,0,9,0,0,9,0,9],
-    [9,0,0,0,0,0,0,9,0,0,0,9],
-    [9,9,9,9,9,9,9,9,9,9,9,9]
-]
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+import bisect
 
-def dfs(x, y, depth):
-    if maze[x][y] == 1:
-        print(depth)
-        exit()
-    maze[x][y] = 2
-
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-
-        if maze[nx][ny] < 2:
-            dfs(nx, ny, depth + 1)
-    # これやらないとforループで暴走
-    maze[x][y] = 0
-
-dfs(1, 1, 0)
+n = int(input())
+m = int(input())
+lista = []
+k = [i for i in range(1,1000)]
+for i in k:
+    for j in k:
+        lista.append(i + j)
+for i in lista:
+    # リストを伸ばしてbisect
+    if bisect.bisect_left(lista, m - i):
+        print(True)
+        break
+else:
+    print(False)
