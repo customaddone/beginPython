@@ -1,9 +1,10 @@
-import itertools
+memo = {1: 1, 2: 1}
+def fibonacci(n):
+    if (n == 1) or (n == 2):
+        return 1
+    # 9: 34 みたいにメモられる
+    memo[n] = fibonacci(n - 1) + fibonacci(n - 2)
+    return memo[n]
 
-# 4C3 * 3!
-for i in itertools.permutations([0, 1, 2, 3], 3):
-    print(i)
-
-# 4C3
-for i in itertools.combinations([0, 1, 2, 3], 3):
-    print(i)
+fibonacci(10)
+print(memo)
