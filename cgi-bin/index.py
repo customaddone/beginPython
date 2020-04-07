@@ -16,10 +16,11 @@ maze = [
 dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
 
-pos = [[1, 1, 0]]
+# これ
+pos = deque([[1, 1, 0]])
 
 while len(pos) > 0:
-    x, y, depth =  pos.pop(0)
+    x, y, depth =  pos.popleft()
 
     if maze[x][y] == 1:
         print(depth)
