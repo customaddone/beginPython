@@ -16,16 +16,10 @@ maze = [
 dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
 
-# これ
-pos = deque([[1, 1, 0]])
-
-while len(pos) > 0:
-    x, y, depth =  pos.popleft()
-
+def dfs(x, y, depth):
     if maze[x][y] == 1:
         print(depth)
-        break
-
+        exit()
     maze[x][y] = 2
 
     for i in range(4):
@@ -33,4 +27,8 @@ while len(pos) > 0:
         ny = y + dy[i]
 
         if maze[nx][ny] < 2:
-            pos.append([nx, ny, depth + 1])
+            dfs(nx, ny, depth + 1)
+    # これやらないとforループで暴走
+    maze[x][y] = 0
+
+dfs(1, 1, 0)
