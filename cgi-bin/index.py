@@ -1,6 +1,7 @@
 n = int(input())
 a = list(map(int, input().split()))
 counter = 0
+# 問題文、怪文書すぎて好き
 for i in a:
     while True:
         if i % 2 == 0:
