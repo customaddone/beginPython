@@ -1,16 +1,16 @@
-import bisect
-
 n = int(input())
-m = int(input())
-lista = []
-k = [i for i in range(1,1000)]
-for i in k:
-    for j in k:
-        lista.append(i + j)
-for i in lista:
-    # リストを伸ばしてbisect
-    if bisect.bisect_left(lista, m - i):
-        print(True)
-        break
-else:
-    print(False)
+a = list(map(int, input().split()))
+counter = 0
+for i in a:
+    while True:
+        if i % 2 == 0:
+            i -= 1
+            counter += 1
+            continue
+        elif i % 3 == 2:
+            i -= 1
+            counter += 1
+            continue
+        else:
+            break
+print(counter)
