@@ -1,6 +1,9 @@
-a, b, k = map(int, input().split())
-lista = []
-for i in range(1,min(a, b) + 1):
-    if a % i == 0 and b % i == 0:
-        lista.append(i)
-print(lista[-k])
+import itertools
+l = ["a", "b", "c", "d"]
+
+# 順番関係ありの組み合わせ
+for v in itertools.permutations(l, 2):
+    print(v)
+# 関係なしの組み合わせ
+for v in itertools.combinations(l, 2):
+    print(v)
