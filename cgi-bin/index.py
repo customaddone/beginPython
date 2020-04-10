@@ -8,4 +8,4 @@ for i in range(2, n + 1):
         dp[i * div] += 1
         div += 1
 # dp[1]から１個飛ばしで表示
-print(dp[1::2])
+print(dp[1::2].count(8))
