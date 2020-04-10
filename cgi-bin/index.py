@@ -1,11 +1,8 @@
-s = input()
+n = int(input())
 cnt = 0
-ans = 0
 
-for i in range(len(s)):
-    if s[i] in ["A", "C", "G", "T"]:
+list = [i for i in range(1,n + 1)]
+for i in list:
+    if len(str(i)) % 2 == 1:
         cnt += 1
-        ans = max(ans, cnt)
-    else:
-        cnt = 0
-print(ans)
+print(cnt)
