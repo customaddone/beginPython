@@ -1,8 +1,11 @@
 n = int(input())
-cnt = 0
-
-list = [i for i in range(1,n + 1)]
-for i in list:
-    if len(str(i)) % 2 == 1:
-        cnt += 1
-print(cnt)
+dp = [1]*(n + 1)
+ans = 0
+# エラストテネスの箒
+for i in range(2, n + 1):
+    div = 1
+    while i * div <= n:
+        dp[i * div] += 1
+        div += 1
+# dp[1]から１個飛ばしで表示
+print(dp[1::2])
