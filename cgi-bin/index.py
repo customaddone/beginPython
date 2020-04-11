@@ -1,5 +1,4 @@
 from copy import deepcopy
-ans = 1000000
 # dfsを完全に理解してしまったかもしれない
 def dfs(now, ignore, sumtime):
     # ansは数値書き換え用なのでglobal宣言
@@ -15,11 +14,12 @@ def dfs(now, ignore, sumtime):
 
 n = 4
 ans = 1000000
+# 通行止めをした
 dist = [
         [[1, 8], [2, 7], [3, 3]],
-        [[0, 8], [2, 9], [3, 1]],
+        [[0, 8], [2, 9]],
         [[0, 7], [1, 9], [3, 4]],
-        [[0, 3], [1, 1], [2, 4]]
+        [[0, 3], [2, 4]]
        ]
 
 for i in range(n):
