@@ -1,27 +1,25 @@
-from copy import deepcopy
-# dfsを完全に理解してしまったかもしれない
-def dfs(now, ignore, sumtime):
-    # ansは数値書き換え用なのでglobal宣言
-    global ans
-    if len(ignore) == n:
-        ans = min(ans, sumtime)
-    for i in dist[now]:
-        if i[0] in ignore:
-            continue
-        nignore = deepcopy(ignore)
-        nignore.append(i[0])
-        dfs(i[0], nignore, sumtime + i[1])
+def rec_memo(i, j):
+    if dp[i][j]:
+        return dp[i][j]
+    if i == n:
+        res = 0
+    elif j < w[i]:
+        res = rec_memo(i + 1, j)
+    else:
+        # 次の商品を取った場合の最大値と取らない場合の最大値を比べる
+        res = max(rec_memo(i + 1, j), rec_memo(i + 1, j - w[i]) + v[i])
+        print([i, j, res])
+
+    dp[i][j] = res
+    return res
 
 n = 4
-ans = 1000000
-# 通行止めをした
-dist = [
-        [[1, 8], [2, 7], [3, 3]],
-        [[0, 8], [2, 9]],
-        [[0, 7], [1, 9], [3, 4]],
-        [[0, 3], [2, 4]]
-       ]
+w = [2, 1, 3, 2]
+v = [3, 2, 4, 2]
 
-for i in range(n):
-    dfs(i, [i], 0)
-print(ans)
+W = 5
+dp = [[0] * (W + 1) for i in range(n + 1)]  # メモ化テーブル
+# i = 3 5余した状態での最大値は2（最後の商品をとった場合）
+# i = 3 2余した状態での最大値は2
+# i = 2 5余した状態での最大値は6
+print(rec_memo(0, W))
