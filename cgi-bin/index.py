@@ -1,25 +1,16 @@
-maze = [
-         [0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0]
-        ]
+n = int(input())
 
-dx = [1, 2, 2, 1, -1, -2, -2, -1]
-dy = [-2, -1, 1, 2, 2, 1, -1, -2]
-counter = 0
-def dfs(x, y, depth):
-    global counter
-    if depth == 25:
-        counter += 1
-    maze[x][y] = depth
-    for i in range(8):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if 0 <= nx <= 4 and 0 <= ny <= 4 and maze[nx][ny] == 0:
-            dfs(nx, ny, depth + 1)
-    maze[x][y] = 0
-dfs(0, 0, 1)
-# 計算量やばそう
-print(counter)
+ans = 0
+
+def dfs(s):
+    global ans
+    if s:
+        if int(s) > n:
+            return
+        elif "3" in s and "5" in s and "7" in s:
+            ans += 1
+    dfs(s + "3")
+    dfs(s + "5")
+    dfs(s + "7")
+dfs("")
+print(ans)
