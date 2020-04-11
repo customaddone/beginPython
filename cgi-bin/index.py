@@ -1,14 +1,17 @@
-# 全通り調べる
-import itertools
-n = int(input())
-lista = []
-ans = 10000000
-for i in range(n):
-    dist = list(map(int, input().split()))
-    lista.append(dist)
-for i in itertools.permutations(range(n)):
-    time = 0
-    for j in range(n - 1):
-        time += lista[i[j]][i[j + 1]]
-    ans = min(ans, time)
-print(ans)
+from copy import deepcopy
+
+def dfs(now, ignore, sumtime):
+    if len(ignore) == n:
+        print(sumtime)
+    for i in dist[now]:
+        if i[0] in ignore:
+            continue
+        nignore = deepcopy(ignore)
+        nignore.append(i[0])
+        dfs(i[0], nignore, sumtime + i[1])
+
+n = 3
+ans = 1000000
+dist = [[[1, 5], [2, 2]], [[0, 5], [2, 4]], [[0, 2], [1, 4]]]
+
+dfs(0, [0], 0)
