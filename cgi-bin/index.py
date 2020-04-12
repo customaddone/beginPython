@@ -1,27 +1,22 @@
+import sys
 from copy import deepcopy
-import collections
-# dfsを完全に理解してしまったかもしれない
-pos = collections.deque([[0, [0]]])
-n = 8
-dist = [
-        [1, 2, 4],
-        [0, 3, 8],
-        [0, 5],
-        [1, 7, 8],
-        [0, 8],
-        [6, 8],
-        [5, 7],
-        [3, 6],
-        [1, 3, 4, 5]
-       ]
-       
-while len(pos) > 0:
-    now, ignore = pos.popleft()
-    if len(ignore) == n:
-        print(ignore)
-    for i in dist[now]:
+sys.setrecursionlimit(10 ** 9)
+
+n = int(input())
+lista = [[] for i in range(n + 1)]
+ans = float('inf')
+for i in range(n):
+    a = int(input())
+    lista[i + 1].append(a)
+def dfs(now, ignore):
+    global ans
+    if now == 2:
+        ans = min(ans, len(ignore) - 1)
+    for i in lista[now]:
         if i in ignore:
             continue
         nignore = deepcopy(ignore)
         nignore.append(i)
-        pos.append([i, nignore])
+        dfs(i, nignore)
+dfs(1, [1])
+print(-1 if ans == float('inf') else ans)
