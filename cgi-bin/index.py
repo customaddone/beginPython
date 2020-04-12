@@ -1,25 +1,29 @@
-import collections
-from copy import deepcopy
-dist = [
-        [1, 2, 4],
-        [0, 3, 4, 8],
-        [0, 5],
-        [1, 7, 8],
-        [0, 1, 8],
-        [2, 6, 8],
-        [5, 7],
-        [3, 6],
-        [1, 3, 4, 5]
-        ]
-pos = collections.deque([[0, [0]]])
+from collections import deque
+maze = [
+    [9,9,9,9,9,9,9,9,9,9],
+    [9,0,9,0,0,0,0,9,1,9],
+    [9,0,9,0,9,0,0,0,0,9],
+    [9,0,0,0,9,0,9,9,0,9],
+    [9,9,0,9,9,0,0,0,9,9],
+    [9,0,0,0,9,9,9,0,9,9],
+    [9,0,9,0,0,0,0,0,9,9],
+    [9,0,0,0,9,0,9,0,0,9],
+    [9,0,0,0,0,0,0,0,0,9],
+    [9,9,9,9,9,9,9,9,9,9]
+]
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
+
+# これ
+pos = deque([[8, 8, 0]])
 
 while len(pos) > 0:
-    now, ignore = pos.popleft()
-    if now == 6:
-        print(ignore)
-    for i in dist[now]:
-        if i in ignore:
-            continue
-        nignore = deepcopy(ignore)
-        nignore.append(i)
-        pos.append([i, nignore])
+    x, y, depth = pos.popleft()
+    if maze[x][y] == 1:
+        print(depth)
+    maze[x][y] = 2
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if maze[nx][ny] < 2:
+            pos.append([nx, ny, depth + 1])
