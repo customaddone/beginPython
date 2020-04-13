@@ -1,12 +1,10 @@
-a,b,x = map(int,input().split())
-mi = 0
-ma = 10**9+1
-# 上限と下限を徐々に狭めていく
-# 上限-下限＝１になったら下限が答え
-while ma-mi>1:
-  me = int((mi+ma)/2)
-  if a*me+b*len(str(me))<=x:
-    mi = me
-  else:
-    ma = me
-print(mi)
+a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+# n = 20の時点で既に動きが怪しい
+def rec(i, maxsum):
+    if i == n:
+        return maxsum
+    newsum = max(rec(i + 1, maxsum), rec(i + 1, maxsum + a[i]))
+    return newsum
+n = 20
+print(rec(0, 0))
