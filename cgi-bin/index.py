@@ -1,17 +1,22 @@
-n = 6
-a =  [3,7,8,12,13,18]
-A = 27
-def rec_memo(i, sum):
-    if sum < A and dp[i][sum]:
-        return dp[i][sum]
-    if i == n:
-        return sum == A
-    if sum > A:
-        return False
-    else:
-        res = (rec_memo(i + 1, sum) or rec_memo(i + 1, sum + a[i]))
-        if sum < A:
-            dp[i][sum] = res
-        return res
-dp = [[0] * (A + 1) for i in range(n + 1)]
-print(rec_memo(0, 0))
+def part_sum(a,A):
+    p=10**9+7
+    #初期化
+    N=len(a)
+    dp=[[0 for i in range(A+1)] for j in range(N+1)]
+    # i番目までの整数からいくつか選んで総和をjにすることができるか
+    # 0番目までの整数からいくつか選んで総和を0にすることができるか
+    dp[0][0]=1
+
+    #DP
+    for i in range(N):
+        for j in range(A+1):
+            # dp[i][j−a[i]]がTrueなら、dp[i+1][j]もTrue（足せばいいので）
+            if a[i]<=j: #i+1番目の数字a[i]を足せるかも
+                dp[i+1][j]=dp[i][j-a[i]]+ dp[i][j]% p
+            else: #入る可能性はない
+                dp[i+1][j]=dp[i][j]%p
+    return dp[N][A]
+
+a = [1, 3, 5, 7, 9]
+A = 10
+print(part_sum(a, A))
