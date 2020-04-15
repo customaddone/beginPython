@@ -1,18 +1,28 @@
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
+def dij(edges, num_v):
+    dist = [float('inf') for i in range(num_v)]
+    dist[0] = 0
+    q = [i for i in range(num_v)]
 
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
+    while len(q) > 0:
+        r = q[0]
+        for i in q:
+            # 最小コストを目指すため一番小さいdistを持ってくる
+            if dist[i] < dist[r]:
+                r = i
+        u = q.pop(q.index(r))
+        for i in edges[u]:
+            if dist[i[0]] > dist[u] + i[1]:
+                dist[i[0]] = dist[u] + i[1]
+    return dist
 
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                # dp[i + 1][j + 1]はdp[i + 1][j]、dp[i][j + 1] と比べて削除、挿入の手間が１つ増える
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
+
+edges=[
+       [[1,4],[2,3]],
+       [[2,1],[3,1],[4,5]],
+       [[5,2]],
+       [[4,3]],
+       [[6,2]],
+       [[4,1],[6,4]],
+       []
+      ]
+print(dij(edges, 7))
