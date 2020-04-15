@@ -1,28 +1,35 @@
-def dij(edges, num_v):
-    dist = [float('inf') for i in range(num_v)]
-    dist[0] = 0
-    q = [i for i in range(num_v)]
+from collections import deque
+r, c = map(int, input().split())
+sy, sx = map(int, input().split())
+gx, gy = map(int, input().split())
+sy -= 1
+sx -= 1
+gx -= 1
+gy -= 1
 
-    while len(q) > 0:
-        r = q[0]
-        for i in q:
-            # 最小コストを目指すため一番小さいdistを持ってくる
-            if dist[i] < dist[r]:
-                r = i
-        u = q.pop(q.index(r))
-        for i in edges[u]:
-            if dist[i[0]] > dist[u] + i[1]:
-                dist[i[0]] = dist[u] + i[1]
-    return dist
+maze = []
+ans = float('inf')
 
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
-edges=[
-       [[1,4],[2,3]],
-       [[2,1],[3,1],[4,5]],
-       [[5,2]],
-       [[4,3]],
-       [[6,2]],
-       [[4,1],[6,4]],
-       []
-      ]
-print(dij(edges, 7))
+pos = deque([[sx, sy, 0]])
+dp = [[-1] * (c + 1) for i in range(r + 1)]
+dp[sx][sy] = 0
+
+for i in range(r):
+    c = input()
+    maze.append(list(c))
+
+while len(pos) > 0:
+    x, y, depth = pos.popleft()
+    if x == gx and y == gy:
+        break
+    maze[x][y] = '#'
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if maze[nx][ny] == "." and dp[nx][ny] == -1:
+            pos.append([nx, ny, depth + 1])
+            dp[nx][ny] = dp[x][y] + 1
+print(dp[gx][gy])
