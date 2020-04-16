@@ -1,35 +1,21 @@
-from collections import deque
-r, c = map(int, input().split())
-sy, sx = map(int, input().split())
-gx, gy = map(int, input().split())
-sy -= 1
-sx -= 1
-gx -= 1
-gy -= 1
+n = 14
+w = [8, 7, 1, 4, 3, 5, 4, 1, 6, 8, 10, 4, 6, 5]
+# 未開発の部分は-1
+dp = [[-1] * (n + 1) for i in range(n + 1)]
 
-maze = []
-ans = float('inf')
+def rec(l, r):
+    if dp[l][r] != -1:
+        return dp[l][r]
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+    if abs(l - r) <= 1:
+        return 0
 
-pos = deque([[sx, sy, 0]])
-dp = [[-1] * (c + 1) for i in range(r + 1)]
-dp[sx][sy] = 0
+    res = 0
 
-for i in range(r):
-    c = input()
-    maze.append(list(c))
-
-while len(pos) > 0:
-    x, y, depth = pos.popleft()
-    if x == gx and y == gy:
-        break
-    maze[x][y] = '#'
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if maze[nx][ny] == "." and dp[nx][ny] == -1:
-            pos.append([nx, ny, depth + 1])
-            dp[nx][ny] = dp[x][y] + 1
-print(dp[gx][gy])
+    if abs(w[l] - w[r - 1]) <= 1 and rec(l + 1,r - 1) == r - l - 2:
+        res = r - l
+    for i in range(l + 1, r):
+        res = max(res, rec(l, i) + rec(i, r))
+    dp[l][r] = res
+    return res
+print(rec(0, n))
