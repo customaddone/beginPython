@@ -1,19 +1,9 @@
-V, E = map(int, input().split())
-edges = []
-for i in range(E):
-    # sからtまでコストwで
-    s, t, w = map(int, input().split())
-    edges.append((w, s - 1, t - 1))
-# コスト順に並べる
-edges.sort()
+n, k = map(int, input().split())
+lista = []
+listb = [0]
 
-def kruskal(n, edges):
-    U = UnionFind(n)
-    res = 0
-    for e in edges:
-        w, s, t = e
-        if not U.same(s, t):
-            res += w
-            U.unite(s, t)
-    return res
-print(kruskal(V, edges))
+lista = list(map(int, input().split()))
+for i in range(n):
+    listb.append(lista[i] + listb[i])
+print(lista)
+print(listb)
