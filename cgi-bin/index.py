@@ -1,24 +1,19 @@
-def dij(edges, num_v):
-    dist = [float('inf') for i in range(num_v)]
-    dist[0] = 0
-    q = [i for i in range(num_v)]
+V, E = map(int, input().split())
+edges = []
+for i in range(E):
+    # sからtまでコストwで
+    s, t, w = map(int, input().split())
+    edges.append((w, s - 1, t - 1))
+# コスト順に並べる
+edges.sort()
 
-    while len(q) > 0:
-        r = q[0]
-        for i in q:
-            if dist[i] < dist[r]:
-                r = i
-        u = q.pop(q.index(r))
-        for i in edges[u]:
-            if dist[i[0]] > dist[u] + i[1]:
-                dist[i[0]] = dist[u] + i[1]
-    return dist
-
-edges = [
-         [[1, 4], [2, 3], [3, 9]],
-         [[0, 4], [2, 9]],
-         [[0, 3], [1, 9], [3, 2], [4, 5]],
-         [[0, 9], [2, 2], [4, 1]],
-         [[2, 5], [3, 1]]
-         ]
-print(dij(edges, 5))
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.unite(s, t)
+    return res
+print(kruskal(V, edges))
