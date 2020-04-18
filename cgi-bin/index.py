@@ -1,32 +1,26 @@
-from collections import deque
-maze = [
-    [9,9,9,9,9,9,9,9,9,9],
-    [9,0,9,0,0,0,0,9,1,9],
-    [9,0,9,0,9,0,0,0,0,9],
-    [9,0,0,0,9,0,9,9,0,9],
-    [9,9,0,9,9,0,0,0,9,9],
-    [9,0,0,0,9,9,9,0,9,9],
-    [9,0,9,0,0,0,0,0,9,9],
-    [9,0,0,0,9,0,9,0,0,9],
-    [9,0,0,0,0,0,0,0,0,9],
-    [9,9,9,9,9,9,9,9,9,9]
-]
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-ans = 100000
+from copy import deepcopy
 
-dp = [[-1] * 10 for i in range(10)]
-dp[1][1] = 0
+def dfs(now, ignore, sumtime):
+    global ans
+    if len(ignore) == n:
+        ans = min(ans, sumtime)
+    for i in dist[now]:
+        if i[0] in ignore:
+            continue
+        nignore = deepcopy(ignore)
+        nignore.append(i[0])
+        dfs(i[0], nignore, sumtime + i[1])
 
-pos = deque([[1, 1, 0]])
-while len(pos) > 0:
-    x, y, depth = pos.popleft()
-    if maze[x][y] == 1:
-        print(dp[x][y])
-        break
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if maze[nx][ny] < 2 and dp[nx][ny] == -1:
-            dp[nx][ny] = dp[x][y] + 1
-            pos.append([nx, ny, depth + 1])
+n = 4
+ans = 1000000
+# 通行止めをした
+dist = [
+        [[1, 8], [2, 7], [3, 3]],
+        [[0, 8], [2, 9]],
+        [[0, 7], [1, 9], [3, 4]],
+        [[0, 3], [2, 4]]
+       ]
+
+for i in range(n):
+    dfs(i, [i], 0)
+print(ans)
