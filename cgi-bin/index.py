@@ -1,39 +1,51 @@
-class UnionFind():
-    def __init__(self, n):
-        # print(uf)
-        # 0: [0, 2]
-        # 1: [1]...
-        self.n = n
-        # print(uf.parents)
-        # [-1, -1, -1, -1, -1, -1]
-        self.parents = [-1] * n
+from heapq import *
+# 優先度付きキュー
+# 最大値、最小値をO(logn)で取り出せる
+def find(A,x) -> int:
+    p = A[x]
+    if p == x:
+        return x
+    a = find(A,p)
+    A[x] = a
+    return a
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+def union(A, x, y):
+    if find(A,x) > find(A,y):
+        bx, by = find(A,y), find(A,x)
+    else:
+        bx, by = find(A,x), find(A,y)
+    A[y] = bx
+    A[by] = bx
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
+N = int( input())
+X = [(0,0)]*N
+Y = [(0,0)]*N
+E = [(0,0)]*N
+for i in range(N):
+    x, y = map( int, input().split())
+    X[i] = (x,i)
+    Y[i] = (y,i)
+    E[i] = (x,y)
+X.sort()
+Y.sort()
+H = []
+# 優先度付きキューに変換
+heapify(H)
 
-        if x == y:
-            return
-
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
-
-        # 親に格納された要素の個数をプラス
-        self.parents[x] += self.parents[y]
-        # 移動先
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-    # 経路格納
-    def __str__(self):
-        return '\n'.join('{}: {}'.format(r, self.members(r)) for r in self.roots())
-        
+for i in range(N-1):
+    x1, j1 = X[i]
+    x2, j2 = X[i+1]
+    y1, k1 = Y[i]
+    y2, k2 = Y[i+1]
+    print([x2-x1, j1, j2])
+    heappush(H,(x2-x1, j1, j2))
+    heappush(H,(y2-y1, k1, k2))
+print(H)
+ans = 0
+V = [ i for i in range(N)]
+while H:
+    w,s,t = heappop(H)
+    if find(V,s) != find(V,t):
+        union(V,s,t)
+        ans += w
+print(ans)
