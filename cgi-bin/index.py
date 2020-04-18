@@ -1,24 +1,58 @@
-def dij(edges, num_v):
-    dist = [float('inf') for i in range(num_v)]
-    dist[0] = 0
-    q = [i for i in range(num_v)]
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-    while len(q) > 0:
-        r = q[0]
-        for i in q:
-            if dist[i] < dist[r]:
-                r = i
-        u = q.pop(q.index(r))
-        for i in edges[u]:
-            if dist[i[0]] > dist[u] + i[1]:
-                dist[i[0]] = dist[u] + i[1]
-    return dist
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-edges = [
-         [[1, 4], [2, 3], [3, 9]],
-         [[0, 4], [2, 9]],
-         [[0, 3], [1, 9], [3, 2], [4, 5]],
-         [[0, 9], [2, 2], [4, 1]],
-         [[2, 5], [3, 1]]
-         ]
-print(dij(edges, 5))
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+
+        if x == y:
+            return
+
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+V, E = map(int, input().split())
+edges = []
+for i in range(E):
+    s, t, w = map(int, input().split())
+    edges.append((w, s, t))
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(V, edges))
+
+'''
+6 9
+0 1 1
+0 2 3
+1 2 1
+1 3 7
+2 4 1
+1 4 3
+3 4 1
+3 5 1
+4 5 6
+'''
