@@ -1,20 +1,17 @@
-n = 5
-a = [7, 5, 1, 3, 8]
-A = 12
-K = 3
+s = 'pirikapirirara'
+t = 'poporinapeperuto'
 
-def dfs(a, A):
-    p = 10 ** 9 + 7
-    N = len(a)
-    # 一旦float('inf')に
-    dp = [[float('inf')] * (A + 1) for i in range(N + 1)]
+def dfs(s, ts):
+    lens = len(s)
+    lent = len(t)
+    dp = [[0] * (lent + 1) for i in range(lens + 1)]
     dp[0][0] = 0
 
-    for i in range(N):
-        for j in range(A + 1):
-            if a[i] <= j:
-                dp[i + 1][j] = min(dp[i][j - a[i]] + 1, dp[i][j])
+    for i in range(lens):
+        for j in range(lent):
+            if s[i] == t[j]:
+                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
             else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][A] <= K
-print(dfs(a, A))
+                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
+    return dp[lens][lent]
+print(dfs(s, t))
