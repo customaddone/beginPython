@@ -1,6 +1,7 @@
 n = 5
 a = [7, 5, 1, 3, 8]
 A = 12
+K = 3
 
 def dfs(a, A):
     p = 10 ** 9 + 7
@@ -15,5 +16,5 @@ def dfs(a, A):
                 dp[i + 1][j] = min(dp[i][j - a[i]] + 1, dp[i][j])
             else:
                 dp[i + 1][j] = dp[i][j]
-    return dp[N][A]
+    return dp[N][A] <= K
 print(dfs(a, A))
