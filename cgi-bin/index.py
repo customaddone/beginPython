@@ -1,14 +1,11 @@
-n, k = map(int, input().split())
-a = list(map(int, input().split()))
+def dfs(i, f):
+    if i == n - 1:
+        return sum(list(map(int, f.split("+"))))
 
-for bit in range(1 << n):
-    sum = 0
+    return dfs(i + 1, f + s[i + 1]) + dfs(i + 1, f + "+" + s[i + 1])
 
-    for i in range(n):
-        if bit & (1 << i):
-            sum += a[i]
-    if sum == k:
-        print('Yes')
-        exit()
 
-print('No')
+s = input()
+n = len(s)
+
+print(dfs(0, s[0]))
