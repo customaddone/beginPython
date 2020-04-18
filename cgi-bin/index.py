@@ -1,45 +1,18 @@
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
+n, k = map(int, input().split())
+a = list(map(int, input().split()))
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+for bit in range(1 << n):
+    sum = 0
+    for i in range(n):
+        # bit と 0b1000..の論理積
+        # 合っていればTrue
+        if bit & (1 << i):
+            sum += a[i]
+    if sum == k:
+        print("Yes")
+        exit()
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
-
-        if x == y:
-            return
-
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
-
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-V, E = map(int, input().split())
-edges = []
-for i in range(E):
-    s, t, w = map(int, input().split())
-    edges.append((w, s, t))
-edges.sort()
-
-def kruskal(n, edges):
-    U = UnionFind(n)
-    res = 0
-    for e in edges:
-        w, s, t = e
-        if not U.same(s, t):
-            res += w
-            U.union(s, t)
-    return res
-print(kruskal(V, edges))
+if dfs(0, 0):
+    print("Yes")
+else:
+    print("No")
