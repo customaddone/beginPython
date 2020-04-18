@@ -1,17 +1,12 @@
-import bisect
-
-n = int(input())
-m = int(input())
-lista = []
-k = [i for i in range(1,1000)]
-for i in k:
-    for j in k:
-        lista.append(i + j)
-for i in lista:
-    # リストを伸ばしてbisect
-    # m - (i + j) を満たすものが(i + j)の集合の中にあるか
-    if bisect.bisect_left(lista, m - i):
-        print(True)
-        break
-else:
-    print(False)
+def binary_search_loop(data,target):
+    imin = 0
+    imax = len(data) - 1
+    while imin <= imax:
+        imid = imin + (imax + imin) // 2
+        if target == data[imid]:
+            return True
+        elif target < data[imid]:
+            imax = imid - 1
+        else:
+            imin = imid + 1
+    return False
