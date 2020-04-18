@@ -1,23 +1,18 @@
-n,w = map(int,input().split())
+def warshall_floyd(d):
+    for k in range(n):
+        for i in range(n):
+            for j in range(n):
+                d[i][j] = min(d[i][j], d[i][k] + d[k][j])
+    return d
 
-#d[i][j]:i→jへの距離
+n,w = map(int,input().split()) #n:頂点数　w:辺の数
+
 d = [[float("inf")]*n for i in range(n)]
+#d[u][v] : 辺uvのコスト(存在しないときはinf)
 for i in range(w):
-   x,y,z = map(int,input().split())
-   d[x][y] = z
-
-dp = [[-1] * n for i in range(1 << n)]
-
-def rec(s, v, dp):
-    if dp[s][v] >= 0:
-        return dp[s][v]
-    if s == (1 << n) - 1 and v == 0:
-        dp[s][v] = 0
-        return 0
-    res = float('inf')
-    for u in range(n):
-        if (s >> u & 1) == 0:
-            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
-    dp[s][v] = res
-    return res
-print(rec(0,0,dp))
+    x,y,z = map(int,input().split())
+    d[x][y] = z
+    d[y][x] = z
+for i in range(n):
+    d[i][i] = 0 #自身のところに行くコストは０
+print(warshall_floyd(d))
