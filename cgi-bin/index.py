@@ -1,18 +1,19 @@
-def warshall_floyd(d):
-    for k in range(n):
-        for i in range(n):
-            for j in range(n):
-                d[i][j] = min(d[i][j], d[i][k] + d[k][j])
-    return d
+def bellman(edges, num_v):
+    dist = [float('inf') for i in range(num_v)]
+    dist[0] = 0
 
-n,w = map(int,input().split()) #n:頂点数　w:辺の数
+    changed = True
+    while changed:
+        changed = False
+        for edge in edges:
+            if dist[edge[1]] > dist[edge[0]] + edge[2]:
+                dist[edge[1]] = dist[edge[0]] + edge[2]
+                changed = True
 
-d = [[float("inf")]*n for i in range(n)]
-#d[u][v] : 辺uvのコスト(存在しないときはinf)
-for i in range(w):
-    x,y,z = map(int,input().split())
-    d[x][y] = z
-    d[y][x] = z
-for i in range(n):
-    d[i][i] = 0 #自身のところに行くコストは０
-print(warshall_floyd(d))
+    return dist
+
+edges = [[0, 1, 4], [0, 2, 3], [1, 2, 1],
+         [1, 3, 1], [1, 4, 5], [2, 5, 2],
+         [4, 6, 2], [5, 4, 1], [5, 6, 4]]
+
+print(bellman(edges, 7))
