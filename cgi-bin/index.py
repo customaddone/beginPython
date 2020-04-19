@@ -1,9 +1,8 @@
+import collections
 n = int(input())
-list = []
-digit = 7
-i = 0
-while n != 0:
-    list.insert(0, str(n % digit))
-    n //= digit
-    i += 1
-print(''.join(list))
+s = [input() for _ in range(n)]
+c = collections.Counter(s)
+# c.most_common() [('taro', 2), ('jiro', 1), ('saburo', 1)]
+# c.most_common()[0] ('taro', 2)
+# c.most_common()[0][0] taro
+print(c.most_common()[0][0])
