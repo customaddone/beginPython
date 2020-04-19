@@ -1,58 +1,28 @@
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
+import math
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+prime = [2]
+max = 10 ** 5
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
+# エラストテネスの篩
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
 
-        if x == y:
-            return
+# a[i]はlike 2017
+lista = [0] * max
+for i in prime:
+    if (i + 1) / 2 in prime:
+        lista[i - 1] = 1
 
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
+# 累積和
+listb = [0]
+for i in range(max):
+    listb.append(lista[i] + listb[i])
 
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-V, E = map(int, input().split())
-edges = []
-for i in range(E):
-    s, t, w = map(int, input().split())
-    edges.append((w, s, t))
-edges.sort()
-
-def kruskal(n, edges):
-    U = UnionFind(n)
-    res = 0
-    for e in edges:
-        w, s, t = e
-        if not U.same(s, t):
-            res += w
-            U.union(s, t)
-    return res
-print(kruskal(V, edges))
-
-'''
-6 9
-0 1 1
-0 2 3
-1 2 1
-1 3 7
-2 4 1
-1 4 3
-3 4 1
-3 5 1
-4 5 6
-'''
+q = int(input())
+for i in range(q):
+    l, r = map(int, input().split())
+    print(listb[r] - listb[l - 1])
