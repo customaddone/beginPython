@@ -1,9 +1,8 @@
-n, k = map(int, input().split())
-# modは書いとけ！
-mod = 10 ** 9 + 7
-sum = 0
-# 1~Nまでの合計の求め方
-# (N + 1)N / 2
-for i in range(k, n + 2):
-    sum += n * i - (i ** 2) + i + 1
-print(sum % (10 ** 9 + 7))
+import collections
+
+N = int(input())
+A = list(map(int, input().split()))
+# collections.Counter(A)で速くなる！！
+cnt = collections.Counter(A)
+for i in range(1, N+1):
+    print(cnt[i])
