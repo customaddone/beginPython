@@ -1,4 +1,6 @@
 n, k = map(int, input().split())
+# modは書いとけ！
+mod = 10 ** 9 + 7
 sum = 0
 # 1~Nまでの合計の求め方
 # (N + 1)N / 2
