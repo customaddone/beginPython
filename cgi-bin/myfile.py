@@ -1,8 +1,7 @@
 from operator import mul
 from functools import reduce
-
-n = int(input())
-a = list(map(int, input().split()))
+n, a, b = map(int, input().split())
+mod = 10 ** 9 + 7
 
 def cmb(n, r):
     r = min(n - r, r)
@@ -11,13 +10,4 @@ def cmb(n, r):
     under = reduce(mul, range(1, r + 1))
     return over // under
 
-for i in range(n):
-    lista = [0] * (n + 1)
-    sum = 0
-    for j in range(n):
-        if i != j:
-            lista[a[j]] += 1
-    for i in lista:
-        if i >= 2:
-            sum += cmb(i, 2)
-    print(sum)
+print(2 ** n - cmb(n, a) - cmb(n, b) - 1)

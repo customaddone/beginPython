@@ -1,28 +1,11 @@
-from collections import deque
+n,a,b=map(int,input().split())
+m=10**9+7
 
-s = deque(input())
-q = int(input())
-counter = 1
-lista = [list(input().split()) for i in range(q)]
-
-def rever(i):
-    if i == '1':
-        return 1
-    else:
-        return -1
-for i in lista:
-    if i[0] == '1':
-        counter = -1 * counter
-    else:
-        if counter * rever(i[1]) > 0:
-            # 先頭に追加
-            s.appendleft(i[2])
-        else:
-            # 末尾に追加
-            s.append(i[2])
-# listにしてjoin
-s = "".join(list(s))
-if counter > 0:
-    print(s)
-else:
-    print(s[::-1])
+# 強化版cmb
+def cmb(x,y):
+    r=1
+    for i in range(1,y+1):
+        r=(r*(x-i+1)*pow(i,m-2,m))%m
+    return r
+# powでmod累乗を楽にできる
+print((pow(2,n,m)-1-cmb(n,a)-cmb(n,b))%m)
