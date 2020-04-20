@@ -1,23 +1,25 @@
-from operator import mul
-from functools import reduce
+from collections import deque
 
-n = int(input())
-a = list(map(int, input().split()))
+s = deque(input())
+q = int(input())
+counter = 1
+lista = [list(input().split()) for i in range(q)]
 
-def cmb(n, r):
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
-
-
-lista = [0] * (n + 1)
-sum = 0
-for j in range(n):
-    lista[a[j]] += 1
+def rever(i):
+    if i == '1':
+        return 1
+    else:
+        return -1
 for i in lista:
-    if i >= 2:
-        sum += cmb(i, 2)
-for i in a:
-    print(sum - lista[i] + 1)
+    if i[0] == '1':
+        counter = -1 * counter
+    else:
+        if counter * rever(i[1]) > 0:
+            s.appendleft(i[2])
+        else:
+            s.append(i[2])
+s = "".join(list(s))
+if counter > 0:
+    print(s)
+else:
+    print(s[::-1])
