@@ -1,13 +1,35 @@
-from operator import mul
-from functools import reduce
-n, a, b = map(int, input().split())
-mod = 10 ** 9 + 7
+from collections import deque
 
-def cmb(n, r):
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+h, w = map(int, input().split())
+maze = []
+for i in range(h):
+    s = input()
+    maze.append(list(s))
+ans = 0
 
-print(2 ** n - cmb(n, a) - cmb(n, b) - 1)
+def mazemax(px, py):
+    dp = [[-1] * w for i in range(h)]
+    dp[0][0] = 0
+    dx = [1, 0, -1, 0]
+    dy = [0, 1, 0, -1]
+    pos = deque([[px, py]])
+
+    while len(pos) > 0:
+        x, y = pos.popleft()
+        maze[x][y] = "#"
+        for i in range(4):
+            nx = x + dx[i]
+            ny = y + dy[i]
+            if 0 <= nx < w and 0 <= ny < h and maze[nx][ny] == "." and dp[nx][ny] == -1:
+                dp[nx][ny] = dp[x][y] + 1
+                pos.append([nx, ny])
+    for i in range(w):
+        for j in range(h):
+            ans = max(ans, dp[i][j])
+
+
+for i in range(w):
+    for j in range(h):
+        if maze[i][j] == ".":
+            mazemax(i, j)
+print(ans)
