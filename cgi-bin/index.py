@@ -1,11 +1,19 @@
-# https://atcoder.jp/contests/abc152/tasks/abc152_d
+# https://atcoder.jp/contests/abc114/tasks/abc114_c?lang=ja
 n = int(input())
-cnt = 0
-# うまく個性を捨てよう
-memo = [[0] * 10 for i in range(10)]
-for i in range(1, n + 1):
-    memo[int(str(i)[0])][int(str(i)[-1])] += 1
-for i in range(10):
-    for j in range(10):
-        cnt += memo[i][j] * memo[j][i]
-print(cnt)
+
+ans = 0
+
+def dfs(s):
+    global ans
+    # 最初はdfsするのみ
+    if s:
+        # int型でn超えてるか判定
+        if int(s) > n:
+            return
+        elif "3" in s and "5" in s and "7" in s:
+            ans += 1
+    dfs(s + "3")
+    dfs(s + "5")
+    dfs(s + "7")
+dfs("")
+print(ans)
