@@ -1,11 +1,14 @@
 import math
-def make_divisors(n):
+def make_divisors(m, n):
     divisors = []
-    for i in range(1, int(math.sqrt(n)) + 1):
-        if n % 1 == 0:
-            divisors.append(i)
+    numi = min(m, n)
+    numa = max(m, n)
+    for i in range(1, int(math.sqrt(numi)) + 1):
+        if numi % i == 0:
+            if numa % i == 0:
+                divisors.append(i)
             # √nで無い数についてもう一個プラス
-            if i != n // i:
-                divisors.append(n // i)
-    return divisors
-make_divisors(10 ** 12)
+            if i != numi // i and numa % (numi // i) == 0:
+                divisors.append(numi // i)
+    return sorted(divisors)
+print(make_divisors(13, 19))
