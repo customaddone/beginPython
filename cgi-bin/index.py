@@ -1,25 +1,17 @@
-#https://atcoder.jp/contests/abc106/tasks/abc106_b
-n = int(input())
-cnt = 0
-lista = [0] * (n + 1)
-for i in range(1, n + 1, 2):
-    # 内部でカウント用cを持つ
-    c = 1
-    # 1からi（現在の数字）まで
-    for j in range(1, i, 2):
-        if i % j == 0:
-            c += 1
-    if c == 8:
-        cnt += 1
-print(cnt)
-"""
-# 奇数のみ
-for i in range(1, n + 1, 2):
-    # 3 * 1, 3 * 3, 3 * 5...
-    for j in range(i, n + 1, 2 * i):
-        lista[j] += 1
-for i in range(n + 1):
-    if lista[i] == 8:
-        cnt += 1
-print(cnt)
-"""
+#https://atcoder.jp/contests/abc122/tasks/abc122_b
+s = input()
+l = ['A', 'T', 'G', 'C']
+n = len(s)
+num = 0
+ans = 0
+# sの文字列について一文字目から見ていく
+for i in range(n):
+    if s[i] in l:
+        num += 1
+    else:
+        # ansの更新
+        # numのリセット
+        ans = max(num, ans)
+        num = 0
+# 最後の一つが'A','T','G','C'だった時用
+ans = max(num, ans)
