@@ -1,20 +1,45 @@
-# https://www.ioi-jp.org/joi/2006/2007-ho-prob_and_sol/2007-ho.pdf#page=5
+# https://atcoder.jp/contests/s8pc-6/tasks/s8pc_6_b
+n = int(input())
+AB = []
+# setは超早いので使おう
+# 中央の点が一番速いらしい
+S = set()
+for _ in range(n):
+    a, b = map(int, input().split())
+    AB.append((a, b))
+    S.add(a)
+    S.add(b)
+def cost(u,v,a,b):
+    tmp1=abs(u-a)+abs(a-b)+abs(v-b)
+    tmp2=abs(u-b)+abs(a-b)+abs(v-a)
+    return min(tmp1,tmp2)
+
+ans=float('inf')
+for u in S:
+    for v in S:
+        tmp=0
+        for a,b in AB:
+            tmp+=cost(u,v,a,b)
+        ans=min(ans,tmp)
+print(ans)
+print(S)
+"""
 n = int(input())
 lista = []
-ans = 0
-for i in range(n):
-    x, y = map(int, input().split())
-    lista.append((x, y))
-# 早くしろ
-listb = set(lista)
+listb = []
+ans = float('inf')
 
 for i in range(n):
-    for j in range(i + 1, n):
-        # 要素抽出のため配列は残しておく
-        px1, py1 = lista[i][0] - (lista[i][1] - lista[j][1]), lista[i][1] + (lista[i][0] - lista[j][0])
-        px2, py2 = lista[j][0] - (lista[i][1] - lista[j][1]), lista[j][1] + (lista[i][0] - lista[j][0])
-        # setにするとリスト内探索がクソ早くなる
-        if (px1, py1) in listb and (px2, py2) in listb:
-            matl = (px1 - px2) ** 2 + (py1 - py2) ** 2
-            ans = max(ans, matl)
+    a, b = map(int, input().split())
+    lista.append([a, b])
+    listb.append(a)
+    listb.append(b)
+listb.sort()
+for i in range(len(listb)):
+    for j in range(i, len(listb)):
+        sum = 0
+        for k in range(n):
+            sum += abs(lista[k][0] - listb[i]) + (lista[k][1] - lista[k][0]) + abs(lista[k][1] - listb[j])
+        ans = min(ans, sum)
 print(ans)
+"""
