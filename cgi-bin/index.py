@@ -1,31 +1,59 @@
-# https://atcoder.jp/contests/joi2008yo/tasks/joi2008yo_d
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=ALDS1_5_A&lang=ja
+"""
+5
+1 5 7 10 21
+4
+2 4 17 8
+"""
 n = int(input())
-# 星座
-lista = [list(map(int, input().split())) for i in range(n)]
-m = int(input())
-# 星座候補
-listb = [list(map(int, input().split())) for i in range(m)]
-# 探索用　b配列のコピー
-# 探索時は集合から探すのがポイント
-listaltb = []
-for i in listb:
-    listaltb.append((i[0], i[1]))
-# 平行移動量の候補　一つ目の星起点
-listmove = []
-for i in range(m):
-    listmove.append([listb[i][0] - lista[0][0], listb[i][1] - lista[0][1]])
-# 星座があるか判定
-for move in listmove:
-    listjudge = []
-    for i in range(n):
-        listjudge.append([lista[i][0] + move[0], lista[i][1] + move[1]])
-    flag = True
-    for i in range(n):
-        # listjudgeの要素を集合でまとめ直さないとlistaltb(集合)内にあるかどうか判定されない
-        x = listjudge[i][0]
-        y = listjudge[i][1]
-        if not (x, y) in listaltb:
-            flag = False
-    if flag:
-        print(move[0], end=" ")
-        print(move[1])
+a = list(map(int, input().split()))
+q = int(input())
+listans = list(map(int, input().split()))
+"""
+#解法１　dp部分和
+def part_sum(a, A):
+    N = len(a)
+    dp = [[0] * (A + 1) for i in range(N + 1)]
+    dp[0][0] = 1
+    for i in range(N):
+        for j in range(A + 1):
+            if a[i] <= j:
+                dp[i + 1][j] = dp[i][j - a[i]] + dp[i][j]
+            else:
+                dp[i + 1][j] = dp[i][j]
+    return dp[N][A]
+
+for i in listans:
+    print('yes' if part_sum(a, i) else 'no')
+"""
+"""
+#解法２　再帰
+def dfs(i, sum, ans):
+    if i == len(a):
+        return sum == ans
+    if sum > ans:
+        res = dfs(i + 1, sum, ans)
+    else:
+        res = dfs(i + 1, sum, ans) + dfs(i + 1, sum + a[i], ans)
+    dp[i][sum] = res
+    return dp[i][sum]
+
+for i in listans:
+    dp = [[0] * sum(a) for _ in range(n)]
+    print('yes' if dfs(0, 0, i) else 'no')
+"""
+"""
+#解法３　bit全探索
+def bitsum(ans):
+    flag = False
+    for bit in range(1 << n):
+        sum = 0
+        for u in range(n):
+            if bit & (1 << u):
+                sum += a[u]
+        if sum == ans:
+            flag = True
+    return flag
+for i in listans:
+    print('yes' if bitsum(i) else 'no')
+"""
