@@ -1,59 +1,43 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=ALDS1_5_A&lang=ja
-"""
-5
-1 5 7 10 21
-4
-2 4 17 8
-"""
-n = int(input())
-a = list(map(int, input().split()))
-q = int(input())
-listans = list(map(int, input().split()))
-"""
-#解法１　dp部分和
-def part_sum(a, A):
-    N = len(a)
-    dp = [[0] * (A + 1) for i in range(N + 1)]
-    dp[0][0] = 1
-    for i in range(N):
-        for j in range(A + 1):
-            if a[i] <= j:
-                dp[i + 1][j] = dp[i][j - a[i]] + dp[i][j]
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][A]
+#https://atcoder.jp/contests/abc002/tasks/abc002_4
+n, m = map(int, input().split())
+lista = [list(map(int, input().split())) for i in range(m)]
+maxans = 0
 
-for i in listans:
-    print('yes' if part_sum(a, i) else 'no')
 """
+5 3
+5人の議員と3つの人間関係がある
+1 2
+2 3
+1 3
+[[1, 2], [2, 3], [1, 3]]
+議員1と2が知り合い
+議員2と3が知り合い
+議員1と3が知り合い
+1と2と3が知り合い = 111
+101と110と011がある
 """
-#解法２　再帰
-def dfs(i, sum, ans):
-    if i == len(a):
-        return sum == ans
-    if sum > ans:
-        res = dfs(i + 1, sum, ans)
-    else:
-        res = dfs(i + 1, sum, ans) + dfs(i + 1, sum + a[i], ans)
-    dp[i][sum] = res
-    return dp[i][sum]
+listalta = set([(1 << (i[0] - 1)) | (1 << (i[1] - 1)) for i in lista])
+# n, n - 1の順に
+# nCrの議員の選び方を全探索
+# もし条件が適合していればそのrが正解
+# という方法もある
 
-for i in listans:
-    dp = [[0] * sum(a) for _ in range(n)]
-    print('yes' if dfs(0, 0, i) else 'no')
-"""
-"""
-#解法３　bit全探索
-def bitsum(ans):
-    flag = False
-    for bit in range(1 << n):
-        sum = 0
-        for u in range(n):
-            if bit & (1 << u):
-                sum += a[u]
-        if sum == ans:
-            flag = True
-    return flag
-for i in listans:
-    print('yes' if bitsum(i) else 'no')
-"""
+# 全ての状態
+for bit in range(1 << n):
+    # 状態a 01001
+    flag = True
+    for i in range(n):
+        for j in range(i + 1, n):
+            # 任意の2箇所について1を立てる
+            # judge:01001と00101の共通部分 = 00001
+            judge = bit & ((1 << i) | (1 << j))
+            # judgeに1が２つ立っているか
+            if judge == ((1 << i) | (1 << j)):
+                # 立っていればそれがlistaltaにあるか
+                if not judge in listalta:
+                    # 1つでもなければFalse
+                    flag = False
+    if flag:
+        ans = bin(bit).count("1")
+        maxans = max(maxans, ans)
+print(maxans)
