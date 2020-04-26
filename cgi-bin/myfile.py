@@ -1,20 +1,22 @@
-n = int(input())
-lista = []
-listb = []
-ans = float('inf')
+n = 8
 
-"""
-for i in range(n):
-    a, b = map(int, input().split())
-    lista.append([a, b])
-    listb.append(a)
-    listb.append(b)
-listb.sort()
-for i in range(len(listb)):
-    for j in range(i, len(listb)):
-        sum = 0
-        for k in range(n):
-            sum += abs(lista[k][0] - listb[i]) + (lista[k][1] - lista[k][0]) + abs(lista[k][1] - listb[j])
-        ans = min(ans, sum)
-print(ans)
-"""
+def check(x, col):
+    for i, row in enumerate(reversed(col)):
+        # 0 + 1個左、1 + 1個左...
+        if (x + (i + 1) == row) or (x - (i + 1) == row):
+            return False
+    return True
+
+def search(col):
+    # 全て配置したら終了
+    if len(col) == n:
+        print(col)
+    for i in range(n):
+        # 同じ行は使わない
+        if i not in col:
+            # もし斜めチェックがOKなら
+            if check(i, col):
+                col.append(i)
+                search(col)
+                col.pop()
+search([])
