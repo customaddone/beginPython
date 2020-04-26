@@ -1,22 +1,39 @@
-# https://www.ioi-jp.org/joi/2008/2009-ho-prob_and_sol/2009-ho.pdf#page=4
-# sysで入力の際のメモリ消費が軽減される
-# MLE出るときに使って
-import sys
-from copy import deepcopy
+# https://atcoder.jp/contests/abc077/tasks/arc084_a
 from bisect import bisect_left
-input = sys.stdin.readline
-
-d = int(input())
 n = int(input())
-k = int(input())
-lista = [0] + [int(input()) for i in range(n - 1)] + [d]
-listb = [int(input()) for i in range(k)]
-lista.sort()
+listtop = sorted(list(map(int, input().split())))
+listmiddle = sorted(list(map(int, input().split())))
+listbottom = sorted(list(map(int, input().split())))
+sum = 0
 
-ans = 0
-for i in listb:
-    # lista内で挟み込める位置を探す
-    point = bisect_left(lista, i)
-    # ここマイナスにならないよう注意
-    ans += min(abs(i - lista[point - 1]), abs(lista[point] - i))
-print(ans)
+# 最初0があるので注意
+# 0~N個目に乗せられるパーツの合計（累積和）
+listmiddlesum = [0]
+for i in range(n):
+    # ride:n個目に乗せられるlisttopのパーツの数
+    ride = bisect_left(listtop, listmiddle[i])
+    listmiddlesum.append(listmiddlesum[i] + ride)
+for i in range(n):
+    ridesum = bisect_left(listmiddle, listbottom[i])
+    sum += listmiddlesum[ridesum]
+print(sum)
+
+"""
+# 別解
+# まずbを決める
+# bより小さいaのパーツは全て置け、bより大きいcのパーツは下に敷くことができるので
+# 任意のbについて（bより小さいaのパーツの数）*（bより大きいcのパーツ）
+n = int(input())
+Alist = list(map(int,input().split()))
+Blist = list(map(int,input().split()))
+Clist = list(map(int,input().split()))
+Alist.sort()
+Clist.sort()
+retnum = 0
+for i in Blist:
+    Anum = bisect_left(Alist,i)
+    # rightにする
+    Cnum =  N - bisect_right(Clist,i)
+    retnum +=(Anum * Cnum)
+print(retnum)
+"""
