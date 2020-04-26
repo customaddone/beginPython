@@ -1,25 +1,22 @@
-n = 8
+# https://www.ioi-jp.org/joi/2008/2009-ho-prob_and_sol/2009-ho.pdf#page=4
+# sysで入力の際のメモリ消費が軽減される
+# MLE出るときに使って
+import sys
+from copy import deepcopy
+from bisect import bisect_left
+input = sys.stdin.readline
 
-def check(x, col):
-    for i in range(len(col)):
-        # 0 + 1個左、1 + 1個左...
-        # range()[::-1]はインデックスも逆になる
-        # col[-1]はcolの後ろから1つ目
-        if (x + (i + 1) == col[-1 * i - 1]) or (x - (i + 1) == col[-1 * i - 1]):
-            return False
-    return True
+d = int(input())
+n = int(input())
+k = int(input())
+lista = [0] + [int(input()) for i in range(n - 1)] + [d]
+listb = [int(input()) for i in range(k)]
+lista.sort()
 
-def search(col):
-    # 全て配置したら終了
-    if len(col) == n:
-        print(col)
-    for i in range(n):
-        # 同じ行は使わない
-        if i not in col:
-            # もし斜めチェックがOKなら
-            if check(i, col):
-                col.append(i)
-                search(col)
-                # ダメなら元に戻す
-                col.pop()
-search([])
+ans = 0
+for i in listb:
+    # lista内で挟み込める位置を探す
+    point = bisect_left(lista, i)
+    # ここマイナスにならないよう注意
+    ans += min(abs(i - lista[point - 1]), abs(lista[point] - i))
+print(ans)
