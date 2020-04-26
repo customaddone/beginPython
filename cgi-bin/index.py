@@ -1,39 +1,35 @@
-# https://atcoder.jp/contests/abc077/tasks/arc084_a
-from bisect import bisect_left
+# https://atcoder.jp/contests/abc023/tasks/abc023_d
 n = int(input())
-listtop = sorted(list(map(int, input().split())))
-listmiddle = sorted(list(map(int, input().split())))
-listbottom = sorted(list(map(int, input().split())))
-sum = 0
-
-# 最初0があるので注意
-# 0~N個目に乗せられるパーツの合計（累積和）
-listmiddlesum = [0]
+listh = []
+lists = []
 for i in range(n):
-    # ride:n個目に乗せられるlisttopのパーツの数
-    ride = bisect_left(listtop, listmiddle[i])
-    listmiddlesum.append(listmiddlesum[i] + ride)
-for i in range(n):
-    ridesum = bisect_left(listmiddle, listbottom[i])
-    sum += listmiddlesum[ridesum]
-print(sum)
-
-"""
-# 別解
-# まずbを決める
-# bより小さいaのパーツは全て置け、bより大きいcのパーツは下に敷くことができるので
-# 任意のbについて（bより小さいaのパーツの数）*（bより大きいcのパーツ）
-n = int(input())
-Alist = list(map(int,input().split()))
-Blist = list(map(int,input().split()))
-Clist = list(map(int,input().split()))
-Alist.sort()
-Clist.sort()
-retnum = 0
-for i in Blist:
-    Anum = bisect_left(Alist,i)
-    # rightにする
-    Cnum =  N - bisect_right(Clist,i)
-    retnum +=(Anum * Cnum)
-print(retnum)
-"""
+    h, s = map(int, input().split())
+    listh.append(h)
+    lists.append(s)
+left = 0
+right = 10 ** 15
+# 上限と下限から二分探索
+# 全ての風船が時間内に到達できない線を探していく
+# ある条件内に収める→二分探索が使える
+for i in range(50):
+    mid = (left + right) // 2
+    # 時間はn分後まで
+    costtime = [0] * n
+    for i in range(n):
+        # midに到達するまであと何分
+        costtime[i] = (mid - listh[i]) / lists[i]
+    # 小さい順から順に並べる
+    costtime.sort()
+    flag = True
+    for i in range(n):
+        # 1個目を割るのは0秒後
+        # 2個目を割るのは1秒後
+        # 3個目を割るのは2秒後...
+        # 全てのcosttimeがi以内に間に合うように
+        if costtime[i] - i < 0:
+            flag = False
+    if flag:
+        right = mid
+    else:
+        left = mid
+print(right)
