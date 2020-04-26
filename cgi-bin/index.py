@@ -1,20 +1,11 @@
-#https://atcoder.jp/contests/abc145/tasks/abc145_c
-from itertools import permutations
-from math import factorial, hypot
-
+#https://atcoder.jp/contests/abc150/tasks/abc150_c
+import itertools
 n = int(input())
-p = [list(map(int, input().split())) for i in range(n)]
-
-ans = 0
-# 全ての巡回方法についてpermutations
-for ps in permutations(p, n):
-    # １つ目の座標を取り出す
-    x1, y1 = ps[0]
-    for i in range(n):
-        x2, y2 = ps[i]
-        # hypot:math.sqrt((x1-x2)**2 + (y1-y2)**2)
-        ans += hypot(x1-x2, y1-y2)
-        # 座標を次のやつに
-        x1, y1 = x2, y2
-ans /= factorial(n)
-print(ans)
+# itertools順列の中身はタプル
+p = tuple(list(map(int, input().split())))
+q = tuple(list(map(int, input().split())))
+# listにする
+# lista((1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 3, 1)...)の中の
+# (1, 2, 3)とかを探す
+lista = list(itertools.permutations(range(1, n + 1)))
+print(abs(lista.index(p) - lista.index(q)))
