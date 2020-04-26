@@ -1,40 +1,20 @@
-#https://atcoder.jp/contests/abc002/tasks/abc002_4
-import itertools
+#https://atcoder.jp/contests/abc145/tasks/abc145_c
+from itertools import permutations
+from math import factorial, hypot
 
-# 形成した派閥を group として持つ
-def dfs(i, group):
-    global ans
-    if i == n:
-        # group 内の全員が知り合い同士か
-        flag = True
-
-        # group 内から2人選ぶ組み合わせのループ
-        for i in itertools.combinations(group, 2):
-            # 1人でも知り合いでなければ終了
-            if friend[i[0]][i[1]] == 0:
-                flag = False
-                break
-
-        if flag:
-            ans = max(ans, len(group))
-
-    else:
-        # [0]のとき1を飛ばして次[0]に2を入れるか入れないか
-        dfs(i + 1, group)
-        # [0]のとき1を加入して[0, 1]に2を入れるか入れないか
-        dfs(i + 1, group + [i])
-
-
-n, m = map(int, input().split())
-friend = [[0] * n for i in range(n)]
-for i in range(m):
-    x, y = map(int, input().split())
-    x -= 1
-    y -= 1
-    friend[x][y] = 1
-    friend[y][x] = 1
+n = int(input())
+p = [list(map(int, input().split())) for i in range(n)]
 
 ans = 0
-
-dfs(0, [])
+# 全ての巡回方法についてpermutations
+for ps in permutations(p, n):
+    # １つ目の座標を取り出す
+    x1, y1 = ps[0]
+    for i in range(n):
+        x2, y2 = ps[i]
+        # hypot:math.sqrt((x1-x2)**2 + (y1-y2)**2)
+        ans += hypot(x1-x2, y1-y2)
+        # 座標を次のやつに
+        x1, y1 = x2, y2
+ans /= factorial(n)
 print(ans)
