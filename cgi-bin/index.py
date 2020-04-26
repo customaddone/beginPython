@@ -1,30 +1,40 @@
-# https://atcoder.jp/contests/abc128/tasks/abc128_c
-n, m = map(int, input().split())
-lista = []
-for i in range(m):
-    # s:判定に使用するスイッチ
-    k, *s, = map(int, input().split())
-    lista.append(list(s))
-# p:2で割った時の余りが等しいと点灯
-# 全てのpについて成り立たせよう
-p = list(map(int, input().split()))
+#https://atcoder.jp/contests/abc002/tasks/abc002_4
+import itertools
 
-#p[0]について成り立たせよう
-sumans = 0
-# 全ての状態
-for bit in range(1 << n):
-    # 任意の状態aの中
-    # 全ての電球について判定
-    for i in range(m):
-        sum = 0
-        # 電球aについて判定
-        for j in lista[i]:
-            if bit & (1 << (j - 1)):
-                sum += 1
-        # 1つの電球でもつかないものがあればbreak
-        # breakうまく使おう
-        if sum % 2 != p[i]:
-            break
+# 形成した派閥を group として持つ
+def dfs(i, group):
+    global ans
+    if i == n:
+        # group 内の全員が知り合い同士か
+        flag = True
+
+        # group 内から2人選ぶ組み合わせのループ
+        for i in itertools.combinations(group, 2):
+            # 1人でも知り合いでなければ終了
+            if friend[i[0]][i[1]] == 0:
+                flag = False
+                break
+
+        if flag:
+            ans = max(ans, len(group))
+
     else:
-        sumans += 1
-print(sumans)
+        # [0]のとき1を飛ばして次[0]に2を入れるか入れないか
+        dfs(i + 1, group)
+        # [0]のとき1を加入して[0, 1]に2を入れるか入れないか
+        dfs(i + 1, group + [i])
+
+
+n, m = map(int, input().split())
+friend = [[0] * n for i in range(n)]
+for i in range(m):
+    x, y = map(int, input().split())
+    x -= 1
+    y -= 1
+    friend[x][y] = 1
+    friend[y][x] = 1
+
+ans = 0
+
+dfs(0, [])
+print(ans)
