@@ -1,35 +1,19 @@
-# https://atcoder.jp/contests/abc023/tasks/abc023_d
-n = int(input())
-listh = []
-lists = []
-for i in range(n):
-    h, s = map(int, input().split())
-    listh.append(h)
-    lists.append(s)
-left = 0
-right = 10 ** 15
-# 上限と下限から二分探索
-# 全ての風船が時間内に到達できない線を探していく
-# ある条件内に収める→二分探索が使える
-for i in range(50):
-    mid = (left + right) // 2
-    # 時間はn分後まで
-    costtime = [0] * n
-    for i in range(n):
-        # midに到達するまであと何分
-        costtime[i] = (mid - listh[i]) / lists[i]
-    # 小さい順から順に並べる
-    costtime.sort()
-    flag = True
-    for i in range(n):
-        # 1個目を割るのは0秒後
-        # 2個目を割るのは1秒後
-        # 3個目を割るのは2秒後...
-        # 全てのcosttimeがi以内に間に合うように
-        if costtime[i] - i < 0:
-            flag = False
-    if flag:
-        right = mid
-    else:
-        left = mid
-print(right)
+mod = [0]
+pw = 1
+for c in input()[::-1]:
+    # 大きい数字での計算方法
+    # a と z が互いに素のとき
+    # x == y (mod z)なら
+    # ax == ay (mod z)
+    # 10000 == 1924 (mod 2019)
+    # 100000 == 19240 (mod 2019)
+    # 100000 == 1060 (mod 2019) 前のpwに10で掛けた分を2019を割る
+    mod.append((int(c) * pw + mod[-1]) % 2019)
+    pw = pw * 10 % 2019
+from collections import *
+# 8646 % 2019 = 余り570
+# 282668646 % 2019 = 余り570
+# 282668646 - 8646 = 282660000
+# 282660000 % 2019 = 140000 余り0
+# 余りが同じものの個数をn(n - 1) / 2する
+print(sum(v * (v - 1) // 2 for v in Counter(mod).values()))
