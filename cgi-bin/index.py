@@ -1,20 +1,20 @@
-# https://atcoder.jp/contests/arc054/tasks/arc054_b
-# 三分探索
-# 二分探索は零点を求めるのに使われるのに対し、三分探索は極値を求めるのに使われる．
-# 極限が１つ以下の関数のとき使ってね
-def f(x):
-    # これの最小値を求める
-    return x + p / pow(2, 2 * x / 3)
+# https://www.ioi-jp.org/joi/2007/2008-ho-prob_and_sol/2008-ho.pdf#page=6
+# 022.5 重複ありナップサック問題
+n, m = map(int, input().split())
+p = [int(input()) for i in range(n)]
 
-p = float(input())
-left, right = 0, 100
-while right > left + 10 ** -10:
-    mid1 = (right * 2 + left) / 3
-    mid2 = (right + left * 2) / 3
-    if f(mid1) >= f(mid2):
-        # 上限を下げる（最小値をとるxはもうちょい下めの数だな）
-        right = mid1
+def rec_memo(i, j):
+    if dp[i][j] >= 0:
+        return dp[i][j]
+    if i == n:
+        return 0
     else:
-        # 下限を上げる（最小値をとるxはもうちょい上めの数だな）
-        left = mid2
-print(f(right))
+        res = rec_memo(i + 1, j)
+        for r in range(n):
+            if j > p[r]:
+                res = max(res, rec_memo(i + 1, j - p[r]) + p[r])
+    dp[i][j] = res
+    return res
+
+dp = [[-1] * (m + 1) for i in range(n + 1)]
+print(rec_memo(0, m))
