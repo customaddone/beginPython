@@ -1,17 +1,18 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=DPL_1_A&lang=ja
-n, m = map(int, input().split())
-coin = list(map(int, input().split()))
-dp = [float('inf') for i in range(n + 1)]
-dp[0] = 0
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=ALDS1_10_C&lang=ja
+s = 'pirikapirirara'
+t = 'poporinapeperuto'
 
-# n <= 50000なのでfor文ループさせるのはやめてほしい
-def rec_memo(j):
-    if dp[j] <= 50000:
-        return dp[j]
-    res = float('inf')
-    for r in range(m):
-        if coin[r] <= j:
-            res = min(res, rec_memo(j - coin[r]) + 1)
-    dp[j] = res
-    return res
-print(rec_memo(n))
+def dfs(s, ts):
+    lens = len(s)
+    lent = len(t)
+    dp = [[0] * (lent + 1) for i in range(lens + 1)]
+    dp[0][0] = 0
+
+    for i in range(lens):
+        for j in range(lent):
+            if s[i] == t[j]:
+                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
+            else:
+                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
+    return dp[lens][lent]
+print(dfs(s, t))
