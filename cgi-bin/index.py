@@ -1,27 +1,36 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=ALDS1_11_C&lang=ja
+# https://atcoder.jp/contests/abc007/tasks/abc007_3
 from collections import deque
+r, c = map(int, input().split())
+sy, sx = map(int, input().split())
+gx, gy = map(int, input().split())
+sy -= 1
+sx -= 1
+gx -= 1
+gy -= 1
 
-n = int(input())
-dist = [[] for i in range(n)]
-for i in range(n):
-    d = list(map(int, input().split()))
-    if len(d) > 2:
-        # 2文字目以降をappend
-        for j in d[2:]:
-            dist[i].append(j - 1)
-ignore = [0] * n
-ignore[0] = 1
-pos = deque([[0, 0]])
-dp = [0] * n
+maze = []
+ans = float('inf')
+
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
+
+pos = deque([[sx, sy, 0]])
+dp = [[-1] * (c + 1) for i in range(r + 1)]
+dp[sx][sy] = 0
+
+for i in range(r):
+    c = input()
+    maze.append(list(c))
 
 while len(pos) > 0:
-    u, depth = pos.popleft()
-    dp[u] = depth
-    for i in dist[u]:
-        if ignore[i] == 0:
-            pos.append([i, depth + 1])
-            ignore[i] = 1
-            
-for i in range(n):
-    print(i + 1, end = " ")
-    print(dp[i])
+    x, y, depth = pos.popleft()
+    if x == gx and y == gy:
+        break
+    maze[x][y] = '#'
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if maze[nx][ny] == "." and dp[nx][ny] == -1:
+            pos.append([nx, ny, depth + 1])
+            dp[nx][ny] = dp[x][y] + 1
+print(dp[gx][gy])
