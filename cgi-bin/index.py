@@ -1,4 +1,5 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=DPL_1_B&lang=ja
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=DPL_1_C&lang=ja
+# 個数制限あり重複ありナップサック
 n, w = map(int, input().split())
 val = []
 wei = []
@@ -7,11 +8,17 @@ for i in range(n):
     val.append(v1)
     wei.append(w1)
 dp = [[0] * (w + 1) for i in range(n + 1)]
-dp[0][0] = 0
-for i in range(n):
-    for j in range(w + 1):
-        if wei[i] <= j:
-            dp[i + 1][j] = max(dp[i][j], dp[i][j - wei[i]] + val[i])
-        else:
-            dp[i + 1][j] = dp[i][j]
-print(dp[n][w])
+def rec_memo(i, j):
+    if dp[i][j]:
+        return dp[i][j]
+    if i == n:
+        res = 0
+    else:
+        res = rec_memo(i + 1, j)
+        for r in range(n):
+            # ここ「以下」になることに気をつける
+            if wei[r] <= j:
+                res = max(res, rec_memo(i + 1, j - wei[r]) + val[r])
+    dp[i][j] = max(dp[i][j], res)
+    return res
+print(rec_memo(0, w))
