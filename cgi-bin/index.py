@@ -1,28 +1,39 @@
-# https://atcoder.jp/contests/pakencamp-2019-day3/tasks/pakencamp_2019_day3_d
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=1167&lang=jp
+# 個数制限なし重複ありナップサックdp
+def tetrafunc(n, list):
+    l = len(list)
+    dp = [float('inf')] * (n + 1)
+    dp[0] = 0
+
+    for i in range(n + 1):
+        for j in range(l):
+            if i >= list[j]:
+                dp[i] = min(dp[i], dp[i - list[j]] + 1)
+    return dp[n]
+
+# n以下の正四面体数をリストアップ
+def tetraall(n):
+    listtetra = []
+    tetraint = 0
+    i = 1
+    while n > tetraint:
+        tetraint = i * (i + 1) * (i + 2) // 6
+        listtetra.append(tetraint)
+        i += 1
+    return listtetra
+
+# n以下の奇数の正四面体数をリストアップ
+def tetraodd(n):
+    listtetra = []
+    tetraint = 0
+    i = 1
+    while n > tetraint:
+        tetraint = i * (i + 1) * (i + 2) // 6
+        if tetraint % 2 != 0:
+            listtetra.append(tetraint)
+        i += 1
+    return listtetra
+
 n = int(input())
-s = [list(input()) for i in range(5)]
-
-dp = [[5, 5, 5] for i in range(n)]
-
-# dpの初期設定が重要
-for i in range(5):
-    for j in range(n):
-        # その色が出現した都度1を引く
-        if s[i][j] == "R":
-            dp[j][0] -= 1
-        elif s[i][j] == "B":
-            dp[j][1] -= 1
-        elif s[i][j] == "W":
-            dp[j][2] -= 1
-
-# print(dp)
-# [4, 4, 4],
-# [4, 4, 3],
-# [3, 4, 4]
-
-# iが列、jが色
-for i in range(1, n):
-    for j in range(3):
-        # j以外の色で前の列を塗った時の最小値
-        dp[i][j] += min(dp[i - 1][j - 1], dp[i - 1][j - 2])
-print(min(dp[-1]))
+print(tetrafunc(n, tetraall(n)), end = " ")
+print(tetrafunc(n, tetraodd(n)))
