@@ -1,26 +1,28 @@
-# https://atcoder.jp/contests/joi2015ho/tasks/joi2015ho_b
-import sys
-sys.setrecursionlimit(10 ** 9)
-n = int(input())
-a = [int(input()) for i in range(n)]
-dp = [[-1] * n for i in range(n)]
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=1611&lang=jp
+n = 14
+w = [8, 7, 1, 4, 3, 5, 4, 1, 6, 8, 10, 4, 6, 5]
+# 未開発の部分は-1
+dp = [[-1] * (n + 1) for i in range(n + 1)]
 
-def f(l, r, s):
-    if dp[l][r] >= 0:
-        pass
-    elif l == r:
-        if s:
-            dp[l][r] = 0
-        else:
-            dp[l][r] = a[l]
-    elif s:
-        if a[l] > a[r]: dp[l][r] = f((l + 1) % n, r, 0)
-        else: dp[l][r] = f(l,(r-1) % n, 0)
-    else:
-        dp[l][r] = max(f((l+1) % n, r, 1) + a[l],f(l,(r - 1) % n, 1) + a[r])
-    return dp[l][r]
+def rec(l, r):
+    # dp[l][r] 区間(l , r)で取り除くことのできるブロックの数
+    if dp[l][r] != -1:
+        return dp[l][r]
 
-ans = 0
-for i in range(n):
-    ans = max(ans,f((i + 1) % n,(i + n - 1) % n, 1) + a[i])
-print(ans)
+    if abs(l - r) <= 1:
+        return 0
+
+    res = 0
+
+    # w[0] - w[13] <= 1 and l + 1 ~ r - 1間のだるまを全て飛ばせる
+    # 下でやる区間dpのどこかで反応
+    if abs(w[l] - w[r - 1]) <= 1 and rec(l + 1,r - 1) == r - l - 2:
+        # rec(l + 1,r - 1)が上の条件を満たすとき res = r - l - 2
+        res = r - l
+    # 区間dp
+    for i in range(l + 1, r):
+        res = max(res, rec(l, i) + rec(i, r))
+    dp[l][r] = res
+    return res
+# 便宜上n = 14だけど
+print(rec(0, n))
