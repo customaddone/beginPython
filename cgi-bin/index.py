@@ -1,28 +1,29 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=1611&lang=jp
-n = 14
-w = [8, 7, 1, 4, 3, 5, 4, 1, 6, 8, 10, 4, 6, 5]
-# 未開発の部分は-1
-dp = [[-1] * (n + 1) for i in range(n + 1)]
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=DPL_2_A&lang=ja
+n,w = map(int,input().split())
 
-def rec(l, r):
-    # dp[l][r] 区間(l , r)で取り除くことのできるブロックの数
-    if dp[l][r] != -1:
-        return dp[l][r]
+#d[i][j]:i→jへの距離
+d = [[float("inf")]*n for i in range(n)]
+for i in range(w):
+   x,y,z = map(int,input().split())
+   d[x][y] = z
 
-    if abs(l - r) <= 1:
+dp = [[-1] * n for i in range(1 << n)]
+
+#訪れた集合がs、今いる点がvの時０に戻る最短経路
+def rec(s, v, dp):
+    if dp[s][v] >= 0:
+        return dp[s][v]
+     #全ての頂点を訪れた(s = 11...11 and v = 0)
+    if s == (1 << n) - 1 and v == 0:
+        dp[s][v] = 0
         return 0
-
-    res = 0
-
-    # w[0] - w[13] <= 1 and l + 1 ~ r - 1間のだるまを全て飛ばせる
-    # 下でやる区間dpのどこかで反応
-    if abs(w[l] - w[r - 1]) <= 1 and rec(l + 1,r - 1) == r - l - 2:
-        # rec(l + 1,r - 1)が上の条件を満たすとき res = r - l - 2
-        res = r - l
-    # 区間dp
-    for i in range(l + 1, r):
-        res = max(res, rec(l, i) + rec(i, r))
-    dp[l][r] = res
+    res = float('inf')
+    for u in range(n):
+        if (s >> u & 1) == 0:
+            # 道が無い場合はfloat('inf')
+            # v → u1, u2...と探していく
+            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
+    dp[s][v] = res
     return res
-# 便宜上n = 14だけど
-print(rec(0, n))
+# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
+print(rec(0,0,dp))
