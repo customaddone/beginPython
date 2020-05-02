@@ -1,29 +1,28 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=DPL_2_A&lang=ja
-n,w = map(int,input().split())
+n, m, q = map(int, input().split())
+point = []
+for i in range(q):
+    a, b, c, d = map(int, input().split())
+    point.append([a - 1, b - 1, c, d])
 
-#d[i][j]:i→jへの距離
-d = [[float("inf")]*n for i in range(n)]
-for i in range(w):
-   x,y,z = map(int,input().split())
-   d[x][y] = z
-
-dp = [[-1] * n for i in range(1 << n)]
-
-#訪れた集合がs、今いる点がvの時０に戻る最短経路
-def rec(s, v, dp):
-    if dp[s][v] >= 0:
-        return dp[s][v]
-     #全ての頂点を訪れた(s = 11...11 and v = 0)
-    if s == (1 << n) - 1 and v == 0:
-        dp[s][v] = 0
-        return 0
-    res = float('inf')
-    for u in range(n):
-        if (s >> u & 1) == 0:
-            # 道が無い場合はfloat('inf')
-            # v → u1, u2...と探していく
-            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
-    dp[s][v] = res
-    return res
-# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
-print(rec(0,0,dp))
+def dfs(pos, a, m, point):
+    # posがaの配列の長さと同じになったら
+    if pos == len(a):
+        sc = 0
+        for co in point:
+            # 得点計算
+            if a[co[1]] - a[co[0]] == co[2]:
+                sc += co[3]
+        return sc
+    ans = 0
+    if pos == 0:
+        low = 0
+    else:
+        low =  a[pos - 1]
+    # mはaの各要素の上限
+    for i in range(low, m + 1):
+        print([pos, i])
+        a[pos] = i
+        ans = max(ans, dfs(pos+1, a, m, point))
+    return ans
+# posは最初0, aも[0] * n
+print(dfs(0, [0] * n, m, point))
