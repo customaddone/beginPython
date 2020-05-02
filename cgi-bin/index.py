@@ -1,39 +1,27 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=1167&lang=jp
-# 個数制限なし重複ありナップサックdp
-def tetrafunc(n, list):
-    l = len(list)
-    dp = [float('inf')] * (n + 1)
-    dp[0] = 0
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=2199&lang=jp
+n, m = map(int, input().split())
+# コードブック
+listc = [int(input()) for i in range(m)]
+# 入力信号
+listx = [int(input()) for i in range(n)]
 
-    for i in range(n + 1):
-        for j in range(l):
-            if i >= list[j]:
-                dp[i] = min(dp[i], dp[i - list[j]] + 1)
-    return dp[n]
-
-# n以下の正四面体数をリストアップ
-def tetraall(n):
-    listtetra = []
-    tetraint = 0
-    i = 1
-    while n > tetraint:
-        tetraint = i * (i + 1) * (i + 2) // 6
-        listtetra.append(tetraint)
-        i += 1
-    return listtetra
-
-# n以下の奇数の正四面体数をリストアップ
-def tetraodd(n):
-    listtetra = []
-    tetraint = 0
-    i = 1
-    while n > tetraint:
-        tetraint = i * (i + 1) * (i + 2) // 6
-        if tetraint % 2 != 0:
-            listtetra.append(tetraint)
-        i += 1
-    return listtetra
-
-n = int(input())
-print(tetrafunc(n, tetraall(n)), end = " ")
-print(tetrafunc(n, tetraodd(n)))
+dp = [[float('inf')] * 256 for i in range(n + 1)]
+dp[0][128] = 0
+# 数字を0~255内で丸める関数
+def pulse(n):
+    if n <= 0:
+        return 0
+    elif 255 <= n:
+        return 255
+    else:
+        return n
+# 信号の数
+# ループの数を１とか２にして刻んでいって不具合を探す
+for i in range(n):
+    # 信号の数値
+    for j in range(256):
+        # コードブックの数
+        for k in range(m):
+            index = pulse(j + listc[k])
+            dp[i + 1][index] = min(dp[i + 1][index], dp[i][j] + (listx[i] - index) ** 2)
+print(min(dp[-1]))
