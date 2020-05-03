@@ -1,11 +1,7 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=GRL_1_A&lang=ja#
-v, e, r = map(int, input().split())
-edges = [[] for i in range(v)]
-for i in range(e):
-    s, t, d = map(int, input().split())
-    edges[s].append([t, d])
-    # この問題は双方向ではない
-    # edges[t].append([s, d])
+# https://atcoder.jp/contests/joi2008yo/tasks/joi2008yo_f
+n, k = map(int, input().split())
+edges = [[] for i in range(n)]
+cus = []
 
 def dij(edges, num_v, start):
     dist = [float('inf')] * num_v
@@ -22,5 +18,19 @@ def dij(edges, num_v, start):
             if dist[i[0]] > dist[u] + i[1]:
                 dist[i[0]] = dist[u] + i[1]
     return dist
-for i in dij(edges, v, r):
-    print(i)
+
+for i in range(k):
+    info = list(map(int, input().split()))
+    if info[0] == 0:
+        cus.append(dij(edges, n, info[1] - 1)[info[2] - 1])
+    elif info[0] == 1:
+        # 島は島0から始まるか島1から始まるかちゃんと見る
+        # 来た情報の先頭が0なら今のedgesでダイクストラ実行
+        edges[info[1] - 1].append([info[2] - 1, info[3]])
+        edges[info[2] - 1].append([info[1] - 1, info[3]])
+
+for i in cus:
+    if i < 1000000000:
+        print(i)
+    else:
+        print(-1)
