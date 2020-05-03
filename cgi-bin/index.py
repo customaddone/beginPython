@@ -15,8 +15,8 @@ dp = [[[inf, 1] for _ in range(N)] for _ in range(1 << N)]
 
 # 全てが1=到達済みの場合は 0地点へ帰るのはコスト0。
 dp[(1 << N) - 1][0] = [0, 1]
-print(g)
-print(dp)
+# print(g)
+# print(dp)
 
 # 訪れた集合がs
 # 今いる点がv
