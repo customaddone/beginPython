@@ -1,28 +1,47 @@
-n, m, q = map(int, input().split())
-point = []
-for i in range(q):
-    a, b, c, d = map(int, input().split())
-    point.append([a - 1, b - 1, c, d])
+import sys
+sys.setrecursionlimit(10**8)
+def ii(): return int(sys.stdin.readline())
+def mi(): return map(int, sys.stdin.readline().split())
+def li(): return list(map(int, sys.stdin.readline().split()))
+def li2(N): return [list(map(int, sys.stdin.readline().split())) for _ in range(N)]
+def dp2(ini, i, j): return [[ini]*i for _ in range(j)]
+def dp3(ini, i, j, k): return [[[ini]*i for _ in range(j)] for _ in range(k)]
+#import bisect #bisect.bisect_left(B, a)
+#from collections import defaultdict #d = defaultdict(int) d[key] += value
+#from itertools import accumulate #list(accumulate(A))
 
-def dfs(pos, a, m, point):
-    # posがaの配列の長さと同じになったら
-    if pos == len(a):
-        sc = 0
-        for co in point:
-            # 得点計算
-            if a[co[1]] - a[co[0]] == co[2]:
-                sc += co[3]
-        return sc
-    ans = 0
-    if pos == 0:
-        low = 0
-    else:
-        low =  a[pos - 1]
-    # mはaの各要素の上限
-    for i in range(low, m + 1):
-        print([pos, i])
-        a[pos] = i
-        ans = max(ans, dfs(pos+1, a, m, point))
-    return ans
-# posは最初0, aも[0] * n
-print(dfs(0, [0] * n, m, point))
+## square869120Contest #1 G
+
+N, M = mi()
+#if N==1:
+    #print(0, 1)
+    #exit()
+rel = [[] for _ in range(N)]
+
+for i in range(M):
+    s, t, c, lim = mi()
+    s, t = s-1, t-1
+    rel[s].append((t, c, lim))
+    rel[t].append((s, c, lim))
+B = 2**N
+
+dp = dp2(float('inf'), N, B)
+dp[0][0] = 0
+cnt = dp2(0, N, B)
+cnt[0][0] = 1
+for state in range(B-1):
+    for now in range(N):
+        for t, c, lim in rel[now]:
+            if dp[state][now] != float('inf'):
+                if not state & 1<<t and dp[state][now]+c <= lim:
+                    if dp[state|1<<t][t] == dp[state][now]+c:
+                        #print(state, now)
+                        cnt[state|1<<t][t] += 1
+                    elif dp[state|1<<t][t] > dp[state][now]+c:
+                        dp[state|1<<t][t] = dp[state][now]+c
+                        cnt[state|1<<t][t] += cnt[state][now]
+#print(cnt)
+if dp[B-1][0] == float('inf'):
+    print('IMPOSSIBLE')
+    exit()
+print(dp[B-1][0], cnt[B-1][0])
