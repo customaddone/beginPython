@@ -1,16 +1,26 @@
-# https://atcoder.jp/contests/abc006/tasks/abc006_4
-from bisect import bisect_left
-n = int(input())
-lista = [int(input()) for i in range(n)]
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=GRL_1_A&lang=ja#
+v, e, r = map(int, input().split())
+edges = [[] for i in range(v)]
+for i in range(e):
+    s, t, d = map(int, input().split())
+    edges[s].append([t, d])
+    # この問題は双方向ではない
+    # edges[t].append([s, d])
 
-# 最長増加部分列問題 (LIS)の問題
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-print(n - lis(lista))
+def dij(edges, num_v, start):
+    dist = [float('inf')] * num_v
+    dist[start] = 0
+    q = [i for i in range(num_v)]
+
+    while len(q) > 0:
+        r = q[0]
+        for i in q:
+            if dist[i] < dist[r]:
+                r = i
+        u = q.pop(q.index(r))
+        for i in edges[u]:
+            if dist[i[0]] > dist[u] + i[1]:
+                dist[i[0]] = dist[u] + i[1]
+    return dist
+for i in dij(edges, v, r):
+    print(i)
