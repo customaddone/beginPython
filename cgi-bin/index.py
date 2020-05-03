@@ -1,29 +1,27 @@
+from bisect import bisect_left
 n = int(input())
-s = input()
+lista = [int(input()) for i in range(n)]
 
-def alter(str):
-    if str == 'J':
-        return 0
-    elif str == 'O':
-        return 1
-    elif str == 'I':
-        return 2
-# i日目にJ(001),O(010),I(100),JO(110)...が参加する通りが何通りあるかdpしておく
-dp = [[0] * ((1 << 3)) for i in range(n + 1)]
-# 0日目はJが参加した
-s = ["J"] + list(s)
-dp[0][1 << 0] = 1
-# 施行回数
-for i in range(1, n + 1):
-    # i日目の責任者を含む組み合わせ
-    for u in range(1 << 3):
-        if u & (1 << alter(s[i])):
-            # i日目u, i - 1日目kの通りを求める
-            for k in range(1 << 3):
-                if u & k:
-                    dp[i][u] += dp[i - 1][k]
-                    # これprintする時にもやらないと意味ないよ
-                    # 忘れないで
-                    # 忘れないで
-                    dp[i][u] %= 10007
-print(sum(dp[-1]) % 10007)
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        # Lの末尾よりaが大きければ増加部分を拡張できる
+        if a > L[-1]:
+            # 前から順にLに追加していく
+            L.append(a)
+        else:
+            """
+            [3]
+            [3, 7]
+            末尾より小さい数字が来た場合は適当にすっ飛ばす
+            末尾を小さくできる場合のみ末尾を交換する
+            [3, 4]
+            [1, 4]
+            [1, 4]
+            [1, 4, 6]
+            """
+            L[bisect_left(L, a)] = a
+    # Lの配列の長さは求まる
+    # Lの中身はデタラメ
+    return len(L)
+print(lis(lista))
