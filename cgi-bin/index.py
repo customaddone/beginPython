@@ -1,15 +1,18 @@
-
+# https://atcoder.jp/contests/nikkei2019-final/tasks/nikkei2019_final_a
 n = int(input())
-k = int(input())
-
-mod = 10 ** 9 + 7
-
-def cmb(x,y):
-    r=1
-    for i in range(1, y + 1):
-        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
-    return r
-# https://mathtrain.jp/tyohukuc
-# 重複組み合わせ
-# 仕切りの考え方
-print(cmb(n + k - 1, k))
+A = list(map(int, input().split()))
+# 累積和
+listsum = [0]
+for i in range(n):
+    listsum.append(listsum[i] + A[i])
+ans = []
+for i in range(n):
+    res = 0
+    # 範囲はlistsum(n + 1) - 幅の大きさ(i + 1)
+    for j in range(n - i):
+        # listsum[j + 幅] - listsum[i]
+        opt = listsum[j + i + 1] - listsum[j]
+        res = max(res, opt)
+    ans.append(res)
+for i in ans:
+    print(i)
