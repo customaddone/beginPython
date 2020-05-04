@@ -1,26 +1,24 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=NTL_1_B&lang=ja
-# 10 ** 9 + 7は素数
-# 10 ** 9 + 7とmが互いに素なら使える
-# a と z が互いに素のとき
-# x == y (mod z)なら
-# ax == ay (mod z)
-# 10000 == 1924 (mod 2019) * 10 =
-# 100000 == 19240 (mod 2019)
-# 100000 == 1060 (mod 2019)
+# https://atcoder.jp/contests/s8pc-1/tasks/s8pc_1_e
+n, q = map(int, input().split())
+A = list(map(int, input().split()))
+C = list(map(int, input().split()))
 
-m, n = map(int, input().split())
 mod = 10 ** 9 + 7
-ans = 1
-for i in range(n):
-    ans *= m
-    ans %= mod
-print(ans)
 
-# a / b (mod m)の求め方が a * (1 / b (mod m)) % m
-# pow(b, m - 2, m)で 1 / b (mod m) が求まる
-# k = 64 l = 16のとき
-# 64 / 16 = 4 (mod 4)
-# 64 * pow(16, 5, 7) % 7 = 4
-k, l = map(int, input().split())
-mod = 7
-print(k * pow(l, mod - 2, mod) % mod)
+# 全通り使いそうなのであらかじめ列挙しとく
+# べき乗にはpow便利
+distance = [pow(A[i], A[i + 1], mod) for i in range(n - 1)]
+# 累積和
+distsum = [0]
+for i in range(n - 1):
+    distsum.append((distsum[i] + distance[i]) % mod)
+
+start = 0
+sum = 0
+for i in C:
+    walk = distsum[max(i - 1, start)] - distsum[min(i - 1, start)]
+    sum += walk
+    start = i - 1
+# 最後帰る時
+sum += distsum[max(start, 0)] - distsum[min(start, 0)]
+print(sum % mod)
