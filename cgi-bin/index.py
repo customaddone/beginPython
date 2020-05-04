@@ -1,74 +1,28 @@
-# https://www.ioi-jp.org/joi/2009/2010-ho-prob_and_sol/2010-ho.pdf#page=2
-# MLE対策
-import sys
-def input(): return sys.stdin.readline()[:-1]
+# https://atcoder.jp/contests/abc106/tasks/abc106_d
+# 区間が出る問題は累積和を疑おう
+N, M, Q = map(int, input().split())
 
-# mが縦, nが横
-M, N = map(int, input().split())
-K = int(input())
-planet = []
+# l から rまで行く鉄道の数
+lr = [[0 for i in range(N + 1)] for j in range(N + 1)]
+# l から r以前のどこかまで行く鉄道の数
+imos = [[0 for i in range(N + 1)] for j in range(N + 1)]
+
 for i in range(M):
-    j = input()
-    planet.append(list(j))
-prove = []
-for i in range(K):
-    p = list(map(int, input().split()))
-    prove.append(p)
+    l, r = map(int, input().split())
+    lr[l][r] += 1
 
-# 二次元累積和
-dpJ = [[0] * N for i in range(M)]
-dpO = [[0] * N for i in range(M)]
-dpI = [[0] * N for i in range(M)]
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        imos[i][j] = imos[i][j-1] + lr[i][j]
+res = []
+for i in range(Q):
+    ans = 0
+    p, q = map(int, input().split())
+    # imos[p][q]: pからq以前のどこかまで
+    # imos[p + 1][q]: p + 1からq以前のどこかまで...
+    for i in range(p, q + 1):
+        ans += imos[i][q]
+    res.append(ans)
 
-# dpを整理する関数
-def planet_counter(str, dp):
-    # まず横の累積和
-    for i in range(M):
-        if planet[i][0] == str:
-            dp[i][0] = 1
-        for j in range(1, N):
-            if planet[i][j] == str:
-                dp[i][j] = dp[i][j - 1] + 1
-            else:
-                dp[i][j] = dp[i][j - 1]
-    # 次に縦の累積和
-    for i in range(1, M):
-        for j in range(N):
-            dp[i][j] += dp[i - 1][j]
-# 実行
-planet_counter("J", dpJ)
-planet_counter("O", dpO)
-planet_counter("I", dpI)
-
-# 集計する関数
-def planet_square(arr, dp):
-    mother = 0
-    west = 0
-    north = 0
-    northwest = 0
-    if arr[0] - 1 > 0 and arr[1] - 1 > 0:
-        northwest = dp[arr[0] - 2][arr[1] - 2]
-    if arr[0] - 1 > 0:
-        north = dp[arr[0] - 2][arr[3] - 1]
-    if arr[1] - 1 > 0:
-        west = dp[arr[2] - 1][arr[1] - 2]
-    mother = dp[arr[2] - 1][arr[3] - 1]
-
-    """
-    12 12 2 2 2 2
-    12 12 2 2 2 2
-    1  1  3 3 3 3
-    1  1  3 3 3 3
-    1  1  3 3 3 3
-    全体 - 1の部分 - 2の部分 + ダブったところ
-    """
-    return mother - west - north + northwest
-
-ans = [[] for i in range(K)]
-# 実行
-for i in range(K):
-    ans[i].append(planet_square(prove[i], dpJ))
-    ans[i].append(planet_square(prove[i], dpO))
-    ans[i].append(planet_square(prove[i], dpI))
-for s in ans:
-    print(*s)
+for row in res:
+    print(row)
