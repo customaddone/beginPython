@@ -1,29 +1,46 @@
-# https://atcoder.jp/contests/abc079/tasks/abc079_d
-n, w = map(int, input().split())
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=GRL_1_C&lang=ja
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-dist = [[float('inf')] * 10 for i in range(10)]
-for i in range(10):
-    c = list(map(int, input().split()))
-    for j in range(10):
-        dist[i][j] = c[j]
-
-# warshall_floydを回してdistを改良
-def warshall_floyd(dist):
-    for k in range(10):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(10):
-            for j in range(10):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
-warshall_floyd(dist)
-
-board = [list(map(int, input().split())) for i in range(n)]
-
-cnt = 0
-for row in board:
-    for i in row:
-        if (i == -1) or (i == 1):
-            continue
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
         else:
-            cnt += dist[i][1]
-print(cnt)
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
+
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+
+        if x == y:
+            return
+
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+V, E = map(int, input().split())
+edges = []
+for i in range(E):
+    s, t, w = map(int, input().split())
+    edges.append((w, s, t))
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(V, edges))
