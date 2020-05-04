@@ -1,42 +1,26 @@
-# https://atcoder.jp/contests/abc084/tasks/abc084_d
-import math
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=NTL_1_B&lang=ja
+# 10 ** 9 + 7は素数
+# 10 ** 9 + 7とmが互いに素なら使える
+# a と z が互いに素のとき
+# x == y (mod z)なら
+# ax == ay (mod z)
+# 10000 == 1924 (mod 2019) * 10 =
+# 100000 == 19240 (mod 2019)
+# 100000 == 1060 (mod 2019)
 
-prime = [2]
-max = 10 ** 5
-limit = int(math.sqrt(max))
-data = [i + 1 for i in range(2, max, 2)]
+m, n = map(int, input().split())
+mod = 10 ** 9 + 7
+ans = 1
+for i in range(n):
+    ans *= m
+    ans %= mod
+print(ans)
 
-# エラストテネスの篩
-while limit > data[0]:
-    prime.append(data[0])
-    data = [j for j in data if j % data[0] != 0]
-prime = prime + data
-
-# if (i + 1) / 2 in primeのにぶたん
-def binary_search_loop(data, target):
-    imin = 0
-    imax = len(data) - 1
-    while imin <= imax:
-        imid = imin + (imax - imin) // 2
-        if target == data[imid]:
-            return True
-        elif target < data[imid]:
-            imax = imid - 1
-        else:
-            imin = imid + 1
-    return False
-
-# 累積和
-lista = [0] * max
-for i in prime:
-    if binary_search_loop(prime, (i + 1) / 2):
-        lista[i - 1] = 1
-listb = [0]
-for i in range(max):
-    listb.append(lista[i] + listb[i])
-
-# rまでの累積 - l - 1までの累積
-q = int(input())
-for i in range(q):
-    l, r = map(int, input().split())
-    print(listb[r] - listb[l - 1])
+# a / b (mod m)の求め方が a * (1 / b (mod m)) % m
+# pow(b, m - 2, m)で 1 / b (mod m) が求まる
+# k = 64 l = 16のとき
+# 64 / 16 = 4 (mod 4)
+# 64 * pow(16, 5, 7) % 7 = 4
+k, l = map(int, input().split())
+mod = 7
+print(k * pow(l, mod - 2, mod) % mod)
