@@ -1,26 +1,26 @@
-n = int(input())
-s = input()
-cnt = 0
+# N回ジャンケンする　K回前のては使えない
+N, K = map(int, input().split())
+# グーで勝てばR点 チョキS パーP
+RSP = list(map(int, input().split()))
+# dpを使う
+# 筺体が出す手
+t = input()
+# dp[i][j]: i回目にjを出した時の最大点数
+dp = [[0] * 3 for i in range(N )]
+# ジャンケンの手を変換する
+def onetwothr(str):
+    if str == "r":
+        return 0
+    elif str == "s":
+        return 1
+    else:
+        return 2
+# ジャンケンのジャッジをする
+def judge(me, enemy):
+    judgeint = [0, 1, 2]
+    if judgeint[enemy - me] == 1:
+        return RSP[me]
+    else:
+        return 0
 
-one = [0 for i in range(10)]
-two = [0 for i in range(100)]
-thr = [0 for i in range(1000)]
-
-#1 ~ 1000内でsの各文字についてループする
-#1 ~ 1000を全通り調べる
-for i in range(1000):
-    flag = 0
-    # iが1から1000までのループ、stが入力した数字の一部
-    for st in s:
-        # 一番下の桁
-        if flag == 0 and st == str(i // 100):
-            flag = 1
-        # 192 % 100 = 92 92 // 10 = 9
-        elif flag == 1 and st == str((i % 100) // 10):
-            flag = 2
-        elif flag == 2 and st == str(i % 10):
-            flag = 3
-            break
-    if flag == 3:
-        cnt += 1
-print(cnt)
+print(judge(onetwothr('p'), onetwothr('s')))
