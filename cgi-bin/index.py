@@ -1,52 +1,26 @@
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=DSL_1_A&lang=ja
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
-
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
-
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
-
-        if x == y:
-            return
-
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
-
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-    # これ追加
-    def count_group(self):
-        return len({self.find(x) for x in range(n)})
-
-n, m = map(int, input().split())
-lista = [list(map(int, input().split())) for i in range(m)]
-
+n = int(input())
+s = input()
 cnt = 0
-# 自分以外の道を全て繋いで一つのグループになるか（自分を繋がなくてもグループが一つにまとまるか）
-# を調べる
-for i in range(m):
-    # UnionFindをm回生成する
-    U = UnionFind(n)
-    # 自分以外の道を全てunionしていく
-    for j in range(m):
-        if i == j:
-            continue
-        a, b = lista[j]
-        U.union(a - 1, b - 1)
-    # 繋ぎ終わったら全体でグループが１つにまとまっているか調べる
-    if U.count_group() > 1:
+
+one = [0 for i in range(10)]
+two = [0 for i in range(100)]
+thr = [0 for i in range(1000)]
+
+#1 ~ 1000内でsの各文字についてループする
+#1 ~ 1000を全通り調べる
+for i in range(1000):
+    flag = 0
+    # iが1から1000までのループ、stが入力した数字の一部
+    for st in s:
+        # 一番下の桁
+        if flag == 0 and st == str(i // 100):
+            flag = 1
+        # 192 % 100 = 92 92 // 10 = 9
+        elif flag == 1 and st == str((i % 100) // 10):
+            flag = 2
+        elif flag == 2 and st == str(i % 10):
+            flag = 3
+            break
+    if flag == 3:
         cnt += 1
 print(cnt)
