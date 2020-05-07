@@ -1,13 +1,14 @@
-import heapq
+n = int(input())
+ng1 = int(input())
+ng2 = int(input())
+ng3 = int(input())
 
-N,M = map(int, input().split())
-A = list(map(lambda x:int(x) * (-1), input().split())) #-1倍してからリストに格納
-heapq.heapify(A) #優先度付きキューに変換
-
-for _ in range(M):
-    # 一回正に戻して
-    max_value = heapq.heappop(A) * (-1) #最大値の取得
-    # また負に
-    heapq.heappush(A, (max_value // 2) * (-1)) #半額にして-1倍してからキューに戻す
-
-print((-1) * sum(A))
+# ある条件下で数を足し上げられるかはdpが使える
+dp = [float('inf') for _ in range(301)]
+dp[0] = 0
+for i in range(len(dp)):
+    if i in not [ng1, ng2, ng3]:
+        # i - 3, i - 2, i - 1について調べる
+        for j in range(max(i - 3), i):
+            dp[i] = min(dp[i], dp[j] + 1)
+print('YES' if 0 <= dp[n] <= 100 else 'NO')
