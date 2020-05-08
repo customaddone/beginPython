@@ -1,14 +1,29 @@
-n = int(input())
-ng1 = int(input())
-ng2 = int(input())
-ng3 = int(input())
+from collections import defaultdict
 
-# ある条件下で数を足し上げられるかはdpが使える
-dp = [float('inf') for _ in range(301)]
-dp[0] = 0
-for i in range(len(dp)):
-    if i in not [ng1, ng2, ng3]:
-        # i - 3, i - 2, i - 1について調べる
-        for j in range(max(i - 3), i):
-            dp[i] = min(dp[i], dp[j] + 1)
-print('YES' if 0 <= dp[n] <= 100 else 'NO')
+def binary_search_loop(data, target):
+    imin = 0
+    imax = len(data) - 1
+    while imin <= imax:
+        imid = imin + (imax - imin) // 2
+        if target == data[imid]:
+            return imid
+        elif target < data[imid]:
+            imax = imid - 1
+        else:
+            imin = imid + 1
+    return False
+
+N = int(input())
+A = [int(input()) for i in range(N)]
+
+lista = set()
+for i in A:
+    lista.add(i)
+# setは勝手にsortしてくれる訳ではない
+lista = sorted(list(lista))
+
+listb = []
+for i in A:
+    listb.append(binary_search_loop(lista, i))
+for i in listb:
+    print(i)
