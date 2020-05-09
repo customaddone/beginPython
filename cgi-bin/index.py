@@ -1,22 +1,32 @@
-# https://atcoder.jp/contests/abc122/tasks/abc122_b
-# 最も長いACGT文字列の長さを求める →　前から条件についてジャッジして、NGなら0にする
-# 最長共通部分列、最長増加部分列が思い浮かぶ
-# 前から条件についてジャッジして、NGなら0にする
-s = input()
-l = ['A', 'T', 'G', 'C']
-n = len(s)
-# 現在の長さ
-num = 0
-# 一番の長さ
-ans = 0
-for i in range(n):
-    if s[i] in l:
-        num += 1
+N = int(input())
+A = list(map(int, input().split()))
+alta = []
+for i in range(N):
+    alta.append(A[i] - (i + 1))
+# 最小値を0に揃えないとバグる
+plus = min(alta)
+for i in range(N):
+    alta[i] -= plus
+
+def f(x):
+    sum = 0
+    for i in alta:
+        sum += abs(x - i)
+    return sum
+
+# 極地があるので三分探索使う
+left, right = 0, max(alta)
+# 答えが整数になる場合このrightとleftの幅を3未満にするとバグる
+while abs(right - left) > 3:
+    mid1 = (right * 2 + left) // 3 + 1
+    mid2 = (right + left * 2) // 3
+    if f(mid1) >= f(mid2):
+        # 上限を下げる（最小値をとるxはもうちょい下めの数だな）
+        right = mid1
     else:
-         # ansの更新
-        # numのリセット
-        ans = max(num, ans)
-        num = 0
-# 最後の一つが'A','T','G','C'だった時用
-ans = max(num, ans)
+        # 下限を上げる（最小値をとるxはもうちょい上めの数だな）
+        left = mid2
+ans = float('inf')
+for i in range(left, right + 1):
+    ans = min(ans, f(i))
 print(ans)
