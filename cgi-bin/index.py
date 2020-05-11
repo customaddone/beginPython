@@ -9,6 +9,7 @@ def getArray(intn):
 
 from collections import defaultdict, deque
 from sys import exit
+import heapq
 import math
 import copy
 from bisect import bisect_left
@@ -17,25 +18,15 @@ import sys
 # sys.setrecursionlimit(1000000)
 # list(map(int, input().split()))
 mod = 10 ** 9 + 7
+# https://atcoder.jp/contests/abc141/tasks/abc141_d
 
-from collections import deque
+N,M = getNM()
+# mapをlambdaで改造
+A = list(map(lambda x:int(x) * (-1), input().split())) #-1倍してからリストに格納
+heapq.heapify(A) #優先度付きキューに変換
 
-# まず、Kの最小値を求める
-#　頂点に繋がる辺の数 <= Kを全ての頂点で満たす
-N, K = getNM()
-R, S, P = getNM()
-T = input()
-# 手を出したか出してないか
-flag = [0] * N
-ans = 0
-for i in range(N):
-    if i - K >= 0 and T[i - K] == T[i] and flag[i - K]:
-        continue
-    if T[i] == 'r':
-        ans+=P
-    elif T[i] == 's':
-        ans+=R
-    else:
-        ans+=S
-    flag[i] = True
-print(ans)
+for _ in range(M):
+    max_value = heapq.heappop(A) * (-1) #最大値の取得
+    heapq.heappush(A, (max_value // 2) * (-1)) #半額にして-1倍してからキューに戻す
+
+print((-1)*sum(A)) #最後に-1倍を忘れずに
