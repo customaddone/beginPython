@@ -1,21 +1,28 @@
-def dijkstra(s, n, cost):#スタート, 頂点数, cost[s][t]:辺stのコスト（存在しなければinf）
-    inf = 10**18
-    dist = [inf] * n
-    used = [False] * n
-    dist[s] = 0
-    for _ in range(n):
-        v = -1
-        for i in range(n):
-            if used[i]:
-                continue
-            if v == -1:
-                v = i
-            elif dist[i]<dist[v]:
-                v = i
-        if v == -1:
-            break
-        used[v] = True
-        for nv in range(n):
-            dist[nv] = min(dist[nv], dist[v]+cost[v][nv])
-    return dist[-1]
-print (dij(0, 4))
+N, K = map(int, input().split())
+dist = [[] for i in range(N)]
+A = list(map(int, input().split()))
+for i in range(N):
+    dist[i].append(A[i] - 1)
+dp = [[0, 0] for i in range(N)]
+
+def dfs(pos, depth):
+    # 初めての訪問なら
+    if dp[pos][0] == 0:
+        dp[pos][0] = depth
+        for i in dist[pos]:
+            dfs(i, depth + 1)
+    elif dp[pos][1] == 0:
+        dp[pos][1] = depth
+        for i in dist[pos]:
+            dfs(i, depth + 1)
+dfs(0, 0)
+for i in range(N):
+    if dp[i][0] == K or dp[i][1] == K:
+        print(i + 1)
+        break
+    else:
+        split = dp[i][1] - dp[i][0]
+        if split > 0:
+            if (K - dp[i][0]) % split == 0:
+                print(i + 1)
+                break
