@@ -18,28 +18,43 @@ import sys
 # list(map(int, input().split()))
 mod = 10 ** 9 + 7
 
+from collections import deque
+
+# まず、Kの最小値を求める
+#　頂点に繋がる辺の数 <= Kを全ての頂点で満たす
 N = getN()
-A = getList()
-# Aの各数字の（２進数における）各桁ごとに分解して排他的論理和を求める
-# 例
-# 3
-# 1 2 3 →
-# 1, 10, 11
-# 2 ** 0の桁について(1 ^ 2) 1 ^ 0 = 1,(1 ^ 3) 1 ^ 1 = 0,(2 ^ 3) 0 ^ 1 = 1
-# 2 ** 1の桁について 0(1の2 ** 1の桁は0) ^ 1 = 1, 0 ^ 1 = 1, 1 ^ 1 = 0
-# 各桁について2 ** iの桁が1の数字の選び方 * 2 ** iの桁が0の数字の選び方 * 2 ** iを
-# 足し合わせる
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][1] += 1
-        else:
-            lista[i][0] += 1
-for i in A:
-    splitbit(i)
-ans = 0
-for i in range(61):
-    ans += ((lista[i][0] * lista[i][1]) * (2 ** i)) % mod
-print(ans % mod)
+dist = [[] for i in range(N + 1)]
+# エッジの配列はこうする
+edge = {}
+for i in range(N - 1):
+    a, b = getNM()
+    dist[a].append(b)
+    dist[b].append(a)
+    # エッジの色の入力の仕方
+    edge[(a, b)] = i
+    edge[(b, a)] = i
+
+ignore = [-1] * (N + 1)
+ignore[1] = 0
+# 辺の数は頂点の数より一つ少ない
+ans = [0] * (N - 1)
+
+pos = deque([1])
+while len(pos) > 0:
+    u = pos.popleft()
+    # 一番最初の色から順にサーチしていく
+    j = 1
+    for i in dist[u]:
+        if ignore[i] < 0:
+            # 根元の頂点の色と一致していたら色を変える
+            if j == ignore[u]:
+                j += 1
+            # 辺をスライドしていくたびに行先の頂点の色を変える
+            ignore[i] = j
+            # 辺の色は行先の頂点の色に合わせる
+            ans[edge[(i, u)]] = j
+            pos.append(i)
+            j += 1
+print(max(ans))
+for a in ans:
+    print(a)
