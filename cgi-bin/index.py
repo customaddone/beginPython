@@ -20,13 +20,36 @@ import sys
 mod = 10 ** 9 + 7
 # https://atcoder.jp/contests/abc141/tasks/abc141_d
 
-N,M = getNM()
-# mapをlambdaで改造
-A = list(map(lambda x:int(x) * (-1), input().split())) #-1倍してからリストに格納
-heapq.heapify(A) #優先度付きキューに変換
-
-for _ in range(M):
-    max_value = heapq.heappop(A) * (-1) #最大値の取得
-    heapq.heappush(A, (max_value // 2) * (-1)) #半額にして-1倍してからキューに戻す
-
-print((-1)*sum(A)) #最後に-1倍を忘れずに
+# Nは人、Mは関係の数
+N, M, K = getNM()
+friend = [[] for i in range(N)]
+for i in range(M):
+    a, b = getNM()
+    friend[a - 1].append(b - 1)
+    friend[b - 1].append(a - 1)
+blocked = [[] for i in range(N)]
+for i in range(K):
+    a, b = getNM()
+    blocked[a - 1].append(b - 1)
+    blocked[b - 1].append(a - 1)
+def matcher(n):
+    ignore = [0] * (N + 1)
+    ignore[n] = 1
+    pos = deque([n])
+    setfriend = set(friend[n])
+    setblocked = set(blocked[n])
+    res = set()
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in friend[u]:
+            if ignore[i] > 0:
+                continue
+            ignore[i] = 1
+            if not i in (setfriend | setblocked):
+                res.add(i)
+            pos.append(i)
+    return len(res)
+ans = []
+for i in range(N):
+    ans.append(matcher(i))
+print(*ans)
