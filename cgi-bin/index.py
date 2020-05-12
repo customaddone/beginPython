@@ -19,32 +19,20 @@ sys.setrecursionlimit(1000000000)
 # list(map(int, input().split()))
 mod = 10 ** 9 + 7
 
-N = getN()
-splitlist = [1]
-splitsix = 6
-while splitsix < 100000:
-    splitlist.append(splitsix)
-    splitsix *= 6
-splitnine = 9
-while splitnine < 100000:
-    splitlist.append(splitnine)
-    splitnine *= 9
-splitlist.sort()
-# これやらないと再帰が無限に実行される
-splitlist.reverse()
-
-ans = float('inf')
-dp = [float('inf')] * (N + 1)
-dp[0] = 0
-
-def spliter(n):
-    if dp[n] < 1000000:
-        return dp[n]
-    res = float('inf')
-    for split in splitlist:
-        if n >= split:
-            res = min(res, spliter(n - split) + 1)
-    dp[n] = res
-    return res
-spliter(N)
-print(dp[-1])
+N, Q = getNM()
+board = [0] * (N + 1)
+boardalta = [0]
+# ひっくり返す(+=1)何もしない(-=1)で累積和
+for i in range(Q):
+    l, r = getNM()
+    board[l - 1] += 1
+    # board[r + 1]より向こうは何も操作しない
+    board[r] -= 1
+for i in range(N):
+    # 累積和の亜種
+    if (boardalta[i] + board[i]) % 2 == 0:
+        boardalta.append(0)
+    else:
+        boardalta.append(1)
+# joinはlistでは使えないためmapでstrに
+print(''.join(map(str, boardalta[1:])))
