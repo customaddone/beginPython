@@ -37,9 +37,14 @@ ans = float('inf')
 dp = [float('inf')] * (N + 1)
 dp[0] = 0
 
-# 貰うdp
-for i in range(N + 1):
-    for k in splitlist:
-        if i >= k:
-            dp[i] = min(dp[i], dp[i - k] + 1)
+def spliter(n):
+    if dp[n] < 1000000:
+        return dp[n]
+    res = float('inf')
+    for split in splitlist:
+        if n >= split:
+            res = min(res, spliter(n - split) + 1)
+    dp[n] = res
+    return res
+spliter(N)
 print(dp[-1])
