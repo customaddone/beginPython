@@ -16,26 +16,20 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
-S = input()
 
-while len(S) >= 5:
-    # Sを４つの単語で順に調べて刈っていく
-    if len(S) >= 7 and S[-7:] == "dreamer":
-        S = S[:-7]
-        continue
+sx, sy, tx, ty = getNM()
 
-    if len(S) >= 6 and S[-6:] == "eraser":
-        S = S[:-6]
-        continue
+path = ""
+path_s = ""
+for _ in range(tx - sx):
+    path_s += "R"
+for _ in range(ty - sy):
+    path_s += "U"
+path_e = ""
+for _ in range(tx - sx):
+    path_e += "L"
+for _ in range(ty - sy):
+    path_e += "D"
 
-    elif S[-5:] == "dream" or S[-5:] == "erase":
-        S = S[:-5]
-        continue
-
-    else:
-        break
-
-if len(S) == 0:
-    print("YES")
-else:
-    print("NO")
+path = path_s + path_e + "DR" + path_s + "UL" + "UL" + path_e + "DR"
+print(path)
