@@ -16,35 +16,26 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
+S = input()
 
-N, K = getNM()
-intlist = [i for i in range(10)]
-D = getList()
-for i in D:
-    if i in D:
-        # 嫌いな数字を消す
-        intlist.pop(intlist.index(i))
+while len(S) >= 5:
+    # Sを４つの単語で順に調べて刈っていく
+    if len(S) >= 7 and S[-7:] == "dreamer":
+        S = S[:-7]
+        continue
 
-anslist = []
-# intlist内の数字でできる５桁以内の数字を全列挙（５桁の数字も列挙するのは無駄な気もする）
-# dfsで解いてる人はあんまりいない
-# 基本的に全探索
-def dfs(i, num):
-    anslist.append(num)
-    # num < Nの条件で計算量を制限
-    if i < 5 and num < N:
-        for j in intlist:
-            newnum = int(str(num) + str(j))
-            dfs(i + 1, newnum)
+    if len(S) >= 6 and S[-6:] == "eraser":
+        S = S[:-6]
+        continue
 
-for i in intlist:
-    if i != 0:
-        dfs(1, i)
+    elif S[-5:] == "dream" or S[-5:] == "erase":
+        S = S[:-5]
+        continue
 
-anslist.sort()
-
-for i in anslist:
-    if i >= N:
-        ans = i
+    else:
         break
-print(ans)
+
+if len(S) == 0:
+    print("YES")
+else:
+    print("NO")
