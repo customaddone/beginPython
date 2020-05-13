@@ -17,27 +17,34 @@ from bisect import bisect_left, bisect_right
 import sys
 sys.setrecursionlimit(1000000000)
 
-N, X = getNM()
-A = getList()
-ans = 0
-flag = True
-while flag:
-    flag = False
-    for i in range(N - 2):
-        # A[i1とA[i + 1]の過剰分
-        minus1 = A[i] + A[i + 1] - X
-        # A[i + 1]とA[i + 2]の過剰分
-        minus2 = A[i + 1] + A[i + 2] - X
-        if minus1 > 0 and minus2 > 0:
-            # minus1とminus2が両方プラスなら一個食べるだけでminu1とminu2の分を
-            # 両方減らせる
-            minuspoint = min(minus1, minus2, A[i + 1])
-            A[i + 1] -= minuspoint
-            ans += minuspoint
-            # これをminu1,minu2が両方プラスになる部分（お得な点)がなくなるまで繰り返す
-            flag = True
-between = [A[i] + A[i + 1] - X for i in range(N - 1)]
-for i in between:
-    if i > 0:
-        ans += i
+N, K = getNM()
+intlist = [i for i in range(10)]
+D = getList()
+for i in D:
+    if i in D:
+        # 嫌いな数字を消す
+        intlist.pop(intlist.index(i))
+
+anslist = []
+# intlist内の数字でできる５桁以内の数字を全列挙（５桁の数字も列挙するのは無駄な気もする）
+# dfsで解いてる人はあんまりいない
+# 基本的に全探索
+def dfs(i, num):
+    anslist.append(num)
+    # num < Nの条件で計算量を制限
+    if i < 5 and num < N:
+        for j in intlist:
+            newnum = int(str(num) + str(j))
+            dfs(i + 1, newnum)
+
+for i in intlist:
+    if i != 0:
+        dfs(1, i)
+
+anslist.sort()
+
+for i in anslist:
+    if i >= N:
+        ans = i
+        break
 print(ans)
