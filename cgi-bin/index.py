@@ -18,36 +18,43 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
+mod = 10 ** 9 + 7
 
 N = getN()
-dist = [[] for i in range(N + 1)]
-for i in range(N - 1):
-    a, b, c = getNM()
-    dist[a].append([b, c])
-    dist[b].append([a, c])
-ignore = [-1] * (N + 1)
-
-# Kからの最短距離をbfsで測る
-# 必ずKを経由するのがポイント
-# 前処理O(n)だけですむ
-def distance(sta):
-    # 木をKから順にたどる（戻るの禁止）
-    pos = deque([sta])
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in dist[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
-
-Q, K = getNM()
-ignore[K] = 0
-distance(K)
-# 答えはK~xまでの距離+K~yまでの距離
-ans = []
-for i in range(Q):
-    x, y = getNM()
-    ans.append(ignore[x] + ignore[y])
-for i in ans:
-    print(i)
+S1 = input()
+S2 = input()
+dp = [0 for i in range(N)]
+if S1[0] == S2[0]:
+    dp[0] = 3
+else:
+    dp[0] = 6
+# i - 1個目、i個目が
+# 横ドミノ１個目→横ドミノ２個目
+# 横ドミノ→横ドミノ
+# 横ドミノ→縦ドミノ
+# 縦ドミノ→縦ドミノ
+# 縦ドミノ→横ドミノそれぞれについて場合分け
+# 各回について
+for i in range(1, N):
+    # 横ドミノ２つ目だった場合
+    if S1[i] == S1[i - 1]:
+        dp[i] = dp[i - 1]
+    # 横ドミノ１つめor縦ドミノ１つ目の場合
+    else:
+        # 縦ドミノ１つ目
+        if S1[i] == S2[i]:
+            # 一つ前も縦ドミノ
+            if S1[i - 1] == S2[i - 1]:
+                dp[i] = (dp[i - 1] * 2) % mod
+            # 横ドミノ
+            else:
+                dp[i] = dp[i - 1]
+        # 横ドミノ1つ目
+        else:
+            # 一つ前が縦ドミノ
+            if S1[i - 1] == S2[i - 1]:
+                dp[i] = (dp[i - 1] * 2) % mod
+            # 一つ前が２つ目横ドミノ
+            else:
+                dp[i] = (dp[i - 1] * 3) % mod
+print(dp[-1])
