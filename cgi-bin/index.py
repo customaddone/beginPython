@@ -7,7 +7,7 @@ def getList():
 def getArray(intn):
     return [int(input()) for i in range(intn)]
 
-from collections import defaultdict, deque
+from collections import defaultdict, deque, Counter
 from sys import exit
 import heapq
 import math
@@ -17,19 +17,18 @@ from bisect import bisect_left, bisect_right
 import sys
 sys.setrecursionlimit(1000000000)
 
-sx, sy, tx, ty = getNM()
-
-path = ""
-path_s = ""
-for _ in range(tx - sx):
-    path_s += "R"
-for _ in range(ty - sy):
-    path_s += "U"
-path_e = ""
-for _ in range(tx - sx):
-    path_e += "L"
-for _ in range(ty - sy):
-    path_e += "D"
-
-path = path_s + path_e + "DR" + path_s + "UL" + "UL" + path_e + "DR"
-print(path)
+N = getN()
+nums = getList()
+nums.sort()
+checker = nums[0]
+count = 1
+for i in range(1,N):
+    if(checker != nums[i]):
+        count += 1
+        checker = nums[i]
+# 効率的にやっていけばダブった数字だけを-2ずつしていける
+if (N - count) % 2 == 0:
+    print(count)
+# もしダブった数字の個数が奇数なら
+else:
+    print(count - 1)
