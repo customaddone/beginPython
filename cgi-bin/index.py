@@ -17,18 +17,19 @@ from bisect import bisect_left, bisect_right
 import sys
 sys.setrecursionlimit(1000000000)
 
-N = getN()
-nums = getList()
-nums.sort()
-checker = nums[0]
-count = 1
-for i in range(1,N):
-    if(checker != nums[i]):
-        count += 1
-        checker = nums[i]
-# 効率的にやっていけばダブった数字だけを-2ずつしていける
-if (N - count) % 2 == 0:
-    print(count)
-# もしダブった数字の個数が奇数なら
-else:
-    print(count - 1)
+n = int(input())
+s = input()
+
+op, cl = 0 ,0
+# sを右から調べていく
+# s[i]が何なら何が必要になるのか
+for c in s:
+    if c == '(':
+        op += 1
+    else:
+        if op > 0:
+            op -= 1
+        else:
+            cl += 1
+# 追加するのは左に'('いくつか右に')'いくつか
+print(('(' * cl) + s + (')' * op))
