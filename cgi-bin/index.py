@@ -20,21 +20,34 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-n = getNM()
-cc = []
-ss = []
-ff = []
-for i in range(n - 1):
-    c, s, f = getList()
-    cc.append(c)
-    ss.append(s)
-    ff.append(f)
-for l in range(n - 1):
-    ans = ss[l] + cc[l]
-    for k in range(l + 1, n - 1):
-        temp = ss[k]
-        while temp < ans:
-            temp += ff[k]
-        ans = temp + cc[k]
-    print(ans)
-print(0)
+N, H = getNM()
+
+a = []
+b = []
+
+for i in range(N):
+  x, y = map(int, input().split())
+  a.append(x)
+  b.append(y)
+
+# 振った場合の最大値
+max_a = max(a)
+
+ans = 0
+# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
+# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
+# 両方利用することができる
+# 実は投げてしまった刀も振ることができるというルールに変更しても
+# 問題の答えは変わらない
+# 実際のムーブとしては
+# ①最も攻撃力が高い振り刀で攻撃する
+# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
+# という流れになる
+for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
+    H -= x
+    ans += 1
+    if H <= 0: break
+
+# max_aをN回繰り返してH以上にするコード
+ans += max(0, (H + max_a - 1) // max_a)
+print(ans)
