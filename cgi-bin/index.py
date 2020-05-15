@@ -21,40 +21,30 @@ sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
 N = getN()
-S1 = input()
-S2 = input()
-dp = [0 for i in range(N)]
-if S1[0] == S2[0]:
-    dp[0] = 3
-else:
-    dp[0] = 6
-# i - 1個目、i個目が
-# 横ドミノ１個目→横ドミノ２個目
-# 横ドミノ→横ドミノ
-# 横ドミノ→縦ドミノ
-# 縦ドミノ→縦ドミノ
-# 縦ドミノ→横ドミノそれぞれについて場合分け
-# 各回について
-for i in range(1, N):
-    # 横ドミノ２つ目だった場合
-    if S1[i] == S1[i - 1]:
-        dp[i] = dp[i - 1]
-    # 横ドミノ１つめor縦ドミノ１つ目の場合
-    else:
-        # 縦ドミノ１つ目
-        if S1[i] == S2[i]:
-            # 一つ前も縦ドミノ
-            if S1[i - 1] == S2[i - 1]:
-                dp[i] = (dp[i - 1] * 2) % mod
-            # 横ドミノ
-            else:
-                dp[i] = dp[i - 1]
-        # 横ドミノ1つ目
-        else:
-            # 一つ前が縦ドミノ
-            if S1[i - 1] == S2[i - 1]:
-                dp[i] = (dp[i - 1] * 2) % mod
-            # 一つ前が２つ目横ドミノ
-            else:
-                dp[i] = (dp[i - 1] * 3) % mod
-print(dp[-1])
+F = []
+for i in range(N):
+    # 各数字をstrに変換
+    f = list(map(str, input().split()))
+    # join
+    falta = ''.join(f)
+    # 二進数に変換
+    F.append(int(falta, 2))
+P = []
+for i in range(N):
+    p = getList()
+    P.append(p)
+# -10 ** 7ぐらいだとばか小さい数にならずWA
+# ばかでかい数、ばか小さい数にするときは思いっきりばかでかく、小さくしよう
+ans = -10 ** 24
+# bit全探索するため状態を生成
+# 0000000000はダメ（必ず店は開く）
+for bit in range(1, 1 << 10):
+    sum = 0
+    # 各お店と照合
+    for i in range(N):
+        open = F[i] & bit
+        # 二進数表記でのフラグの数をカウント
+        index = str(bin(open)).count('1')
+        sum += P[i][index]
+    ans = max(ans, sum)
+print(ans)
