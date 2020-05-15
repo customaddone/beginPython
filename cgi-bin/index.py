@@ -20,31 +20,21 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N = getN()
-F = []
-for i in range(N):
-    # 各数字をstrに変換
-    f = list(map(str, input().split()))
-    # join
-    falta = ''.join(f)
-    # 二進数に変換
-    F.append(int(falta, 2))
-P = []
-for i in range(N):
-    p = getList()
-    P.append(p)
-# -10 ** 7ぐらいだとばか小さい数にならずWA
-# ばかでかい数、ばか小さい数にするときは思いっきりばかでかく、小さくしよう
-ans = -10 ** 24
-# bit全探索するため状態を生成
-# 0000000000はダメ（必ず店は開く）
-for bit in range(1, 1 << 10):
-    sum = 0
-    # 各お店と照合
-    for i in range(N):
-        open = F[i] & bit
-        # 二進数表記でのフラグの数をカウント
-        index = str(bin(open)).count('1')
-        sum += P[i][index]
-    ans = max(ans, sum)
-print(ans)
+n = getNM()
+cc = []
+ss = []
+ff = []
+for i in range(n - 1):
+    c, s, f = getList()
+    cc.append(c)
+    ss.append(s)
+    ff.append(f)
+for l in range(n - 1):
+    ans = ss[l] + cc[l]
+    for k in range(l + 1, n - 1):
+        temp = ss[k]
+        while temp < ans:
+            temp += ff[k]
+        ans = temp + cc[k]
+    print(ans)
+print(0)
