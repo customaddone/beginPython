@@ -22,22 +22,31 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N = getN()
-rength = len(str(N))
-numlist = [3, 5, 7]
-cnt = 0
+layers = [1] * 51
+patties = [1] * 51
+for i in range(1, 51):
+    # レベルiバーガーの総枚数、パティの数を計算
+    layers[i] = 3 + layers[i - 1] * 2
+    patties[i] = 1 + patties[i - 1] * 2
 
-def sevfivthr(i, strint):
-    global cnt
-    if i == rength:
-        return
+
+def count_patties(l, x):
+    # レベル0バーガーなら
+    if l == 0 and x == 1:
+        return 1
+    # レベル0以外の場合、x <= 1なら
+    if x <= 1:
+        return 0
+    y = layers[l - 1]
+    # もしB(レベルl - 1バーガー)P(レベルl - 1バーガー)B
+    #             ↑
+    # にxがあれば
+    if x <= y + 1:
+        # 左端の一枚を除いて
+        return count_patties(l-1, max(x - 1, 0))
     else:
-        for num in numlist:
-            newstr = strint + str(num)
-            if ('3' in newstr) and ('5' in newstr) and ('7' in newstr):
-                if int(newstr) <= N:
-                    cnt += 1
-            sevfivthr(i + 1, newstr)
-for i in numlist:
-    sevfivthr(1, str(i))
-print(cnt)
+        # 一枚目のl - 1バーガーの内部に                # 2枚目のl - 1バーガーのパティの数 + 中央の1枚
+        return count_patties(l-1, min(x-y-2, y)) + patties[l-1] + 1
+
+N, X = getNM()
+print(count_patties(N, X))
