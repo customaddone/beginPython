@@ -22,14 +22,33 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-s = input()
-K = getN()
+# O(n)までOK a, b, cどれかを固定（ループ）させる
+N, K = getNM()
+# Kで割ってi余る数リスト
+lista = [0] * K
+ans = 0
+for i in range(1, N + 1):
+    lista[i % K] += 1
+# 例えばN = 5, K = 3のとき1と４、2と5は同じものとして扱う
+for a in range(K):
+    # a（あまりがaであるもののどれか）に対応するb, cは
+    # b == k - a(mod K)
+    b = (K - a) % K
+    c = (K - a) % K
+    if (b + c) % K == 0:
+        ans += lista[a] * lista[b] * lista[c]
+print(ans)
 
-# K <= 5なのでS[i] ~ s[i:i + k]までを取り出すだけでOK
-sub = set()
-for k in range(1, 6):
-    for i in range(len(s)):
-        sub.add(s[i:i + k])
+# O(1)でやる場合
+# a + b and b + c and c + a (mod k) ⇄
+# a == b == c (mod k)
+# また a + b == 0 と上記 a == bより
+# a + b == 0 (mod K) ⇄ a + a == (mod K)
+# ⇄ 2a == 0 (mod K)
 
-sub = sorted(list(sub))
-print(sub[K - 1])
+# Kが奇数のとき
+# Kの約数に2がないのでaがKで割り切れる必要がある
+# よってKが奇数のとき問題の条件を満たすのはx ** 3通りある
+
+# Kが偶数の時
+# aがKで割り切れる、またはあまりがK / 2である必要がある
