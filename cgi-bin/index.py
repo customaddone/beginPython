@@ -23,28 +23,21 @@ sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
 N = getN()
-info = []
-for i in range(N):
-    x, y, h = getNM()
-    info.append([x, y, h])
-info.sort(reverse = True,key = lambda info:info[2])
+rength = len(str(N))
+numlist = [3, 5, 7]
+cnt = 0
 
-ans = []
-for i in range(101):
-    for j in range(101):
-        height = -1
-        flag = True
-        for k in range(N):
-            minusx = abs(i - info[k][0])
-            minusy = abs(j - info[k][1])
-            if height == -1:
-                # 上で逆順にソートしてるので確実に１以上の高さがでる
-                height = info[k][2] + minusx + minusy
-            else:
-                # 問題の式に沿うように
-                if info[k][2] != max(height - minusx - minusy, 0):
-                    flag = False
-                    break
-        if flag:
-            ans = [i, j, height]
-print(*ans)
+def sevfivthr(i, strint):
+    global cnt
+    if i == rength:
+        return
+    else:
+        for num in numlist:
+            newstr = strint + str(num)
+            if ('3' in newstr) and ('5' in newstr) and ('7' in newstr):
+                if int(newstr) <= N:
+                    cnt += 1
+            sevfivthr(i + 1, newstr)
+for i in numlist:
+    sevfivthr(1, str(i))
+print(cnt)
