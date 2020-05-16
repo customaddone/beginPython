@@ -21,33 +21,24 @@ from bisect import bisect_left, bisect_right
 import sys
 sys.setrecursionlimit(1000000000)
 
-N, K = getNM()
-S = input()
+N, M = getNM()
+A = getList()
+A.sort()
 
-flag = S[0]
-sta = 1
 lista = []
-# 14 2
-# 11101010110011なら
-# ２回まで0の箇所を消すことができる
+for i in range(M):
+    b, c = getNM()
+    lista.append([b, c])
+lista.sort(reverse = True,key = lambda i:i[1])
 
-# 00010を['0', 1, 3], ['1', 4, 4], ['0', 5, 5]という風に整頓する
-for i in range(1, N):
-    if flag != S[i]:
-        # flag(0か1か), sta(どこから続いているか), i(最終的にどこまで続いたか)
-        lista.append([flag, sta, i])
-        flag = S[i]
-        sta = i + 1
-lista.append([flag, sta, N])
-ans = 0
-np = len(lista)
-for i in range(np):
-    if lista[i][0] == '0':
-        index = min(i + 2 * K - 1, np - 1)
-        opt = lista[index][2] - lista[i][1] + 1
-        ans = max(ans, opt)
-    else:
-        index = min(i + 2 * K, np - 1)
-        opt = lista[index][2] - lista[i][1] + 1
-        ans = max(ans, opt)
-print(ans)
+listalta = [0]
+for i in range(M):
+    listalta.append(listalta[i] + lista[i][0])
+listalta.pop(0)
+
+for i in range(N):
+    index = bisect_left(listalta, i + 1)
+    # index >= M(indexが枠外に飛んでないか)
+    if index != M and A[i] < lista[index][1]:
+        A[i] = lista[index][1]
+print(sum(A))
