@@ -22,32 +22,14 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N = getN()
-train = []
+s = input()
+K = getN()
 
-for i in range(N - 1):
-    c, s, f = getNM()
-    train.append([c, s, f])
+# K <= 5なのでS[i] ~ s[i:i + k]までを取り出すだけでOK
+sub = set()
+for k in range(1, 6):
+    for i in range(len(s)):
+        sub.add(s[i:i + k])
 
-# sta~Nまで行くのにかかる時間を求める関数
-def gotowest(sta):
-    # sta ~ sta + 1まで
-    time = train[sta][0] + train[sta][1]
-    # sta + 1~ Nまで
-    for j in range(sta + 1, N - 1):
-        if time <= train[j][1]:
-            # もし到着した時間が一本目の列車が出発する前なら
-            time = train[j][0] + train[j][1]
-        else:
-            # 最初の一本のその次の便(train[j][1] + train[j][2]分後出発)から数えてwait本目の列車に乗る
-            wait = ((time - train[j][1]) + train[j][2] - 1) // train[j][2]
-            time = train[j][1] + (train[j][2] * wait) + train[j][0]
-    return time
-
-ans = []
-for i in range(N - 1):
-    ans.append(gotowest(i))
-# N~Nまで（０分）
-ans.append(0)
-for i in ans:
-    print(i)
+sub = sorted(list(sub))
+print(sub[K - 1])
