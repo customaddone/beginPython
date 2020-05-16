@@ -22,31 +22,35 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N = getN()
-V = getList()
+# N個の県、M個の市
+N, M = getNM()
+city = []
+# i県の中でn番目に→誕生が早い順に全ての都市を並べる
+# →i県の市が来た時だけpref[i] += 1する　
+# i県の中での順位が効率よく求められる
+pref = [1] * (N + 1)
+for i in range(M):
+    # 市iについて
+    # p県に属し、y年生まれ
+    p, y = getNM()
+    # 入力した順番についてのインデックス(i)を通っておく
+    city.append([i + 1, p, y])
+# 誕生が早い順に全ての都市を並べる
+city = sorted(city, key=lambda i: i[2])
 
-# 条件を満たすもののうちで最も多く現れる多い２数を採用する方針
-even = [0] * (10 ** 5 + 1)
-odd = [0] * (10 ** 5 + 1)
-for i in range(N):
-    if i % 2 == 0:
-        even[V[i]] += 1
-    else:
-        odd[V[i]] += 1
-# 偶数列、奇数列に現れる数字の中で一番多かったもの
-topeven = even.index(max(even))
-topodd = odd.index(max(odd))
-even.sort()
-odd.sort()
+ans = []
+for i, p, y in city:
+    np = len(str(p))
+    uppercode = '0' * (6 - np) + str(p)
 
-ans = 0
-if topeven == topodd:
-    # 偶数列で一番多かった数、奇数列で２番目に多かった数
-    opt1 = N - even[-1] - odd[-2]
-    # 偶数列で２番目に多かった数、奇数列で一番多かった数
-    opt2 = N - even[-2] - odd[-1]
-    # どちらか小さい方
-    ans = min(opt1, opt2)
-else:
-    ans = N - even[-1] - odd[-1]
-print(ans)
+    # p県のうちで何番目か
+    order = pref[p]
+    yp = len(str(order))
+    undercode = '0' * (6 - yp) + str(order)
+    # 次に来るp県の都市はpref[i] + 1番目に早く生まれた
+    pref[p] += 1
+    ans.append([i, uppercode + undercode])
+
+ans = sorted(ans, key=lambda i: i[0])
+for i in ans:
+    print(i[1])
