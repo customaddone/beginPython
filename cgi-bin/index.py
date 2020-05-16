@@ -22,26 +22,31 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-S = input()
-T = input()
+N = getN()
+V = getList()
 
-s = Counter(S)
-t = Counter(T)
+# 条件を満たすもののうちで最も多く現れる多い２数を採用する方針
+even = [0] * (10 ** 5 + 1)
+odd = [0] * (10 ** 5 + 1)
+for i in range(N):
+    if i % 2 == 0:
+        even[V[i]] += 1
+    else:
+        odd[V[i]] += 1
+# 偶数列、奇数列に現れる数字の中で一番多かったもの
+topeven = even.index(max(even))
+topodd = odd.index(max(odd))
+even.sort()
+odd.sort()
 
-# azzelをappleにするとき
-# 問題参照
-
-# aplezをappleにする時
-# c1 = z c2 = aにすると
-# apleaにできる
-# c1 = a, c2 = pにすると
-# aalep ⇄ できない
-
-# Sの文字列にaがi1個、bがi2個,,,
-# Tの文字列にaがj1個、bがj2個,,,あるとすると
-# sort(i1, i2...)とsort(j1, j2...)が一致していればいい
-# 構成要素の個数の集合が一致していればいい
-if sorted(s.values()) == sorted(t.values()):
-	print("Yes")
+ans = 0
+if topeven == topodd:
+    # 偶数列で一番多かった数、奇数列で２番目に多かった数
+    opt1 = N - even[-1] - odd[-2]
+    # 偶数列で２番目に多かった数、奇数列で一番多かった数
+    opt2 = N - even[-2] - odd[-1]
+    # どちらか小さい方
+    ans = min(opt1, opt2)
 else:
-	print("No")
+    ans = N - even[-1] - odd[-1]
+print(ans)
