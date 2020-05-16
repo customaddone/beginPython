@@ -22,29 +22,26 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-H, W = getNM()
-maze = []
-for i in range(H):
-    a = getList()
-    maze.append(a)
+S = input()
+T = input()
 
-ans = []
+s = Counter(S)
+t = Counter(T)
 
-# 部屋の掃除の要領で奇数の1を右端に運ぶ
-for i in range(H):
-    for j in range(W - 1):
-        if maze[i][j] % 2 == 1:
-            maze[i][j] -= 1
-            maze[i][j + 1] += 1
-            ans.append([i + 1, j + 1, i + 1, j + 2])
+# azzelをappleにするとき
+# 問題参照
 
-# 右端の1を右下に運ぶ
-for i in range(H - 1):
-    if maze[i][-1] % 2 == 1:
-        maze[i][-1] -= 1
-        maze[i + 1][-1] += 1
-        ans.append([i + 1, W, i + 2, W])
+# aplezをappleにする時
+# c1 = z c2 = aにすると
+# apleaにできる
+# c1 = a, c2 = pにすると
+# aalep ⇄ できない
 
-print(len(ans))
-for i in ans:
-    print(*i)
+# Sの文字列にaがi1個、bがi2個,,,
+# Tの文字列にaがj1個、bがj2個,,,あるとすると
+# sort(i1, i2...)とsort(j1, j2...)が一致していればいい
+# 構成要素の個数の集合が一致していればいい
+if sorted(s.values()) == sorted(t.values()):
+	print("Yes")
+else:
+	print("No")
