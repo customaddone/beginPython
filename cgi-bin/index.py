@@ -22,15 +22,24 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N = getN()
-A = getList()
-A.sort()
+N, K = getNM()
+X = getList()
+ans = float('inf')
 
-max = max(A)
-index = bisect_left(A, max / 2)
-# nCrのrはnの真ん中に行くほど強い
-if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
-    ans = [max, A[index]]
-else:
-    ans = [max, A[index - 1]]
-print(*ans)
+# 一直線に行くのが一番いいやり方
+for i in range(N - K + 1):
+    # もしX[i],X[i + K - 1]とも0以下の場合
+    # 最短経路は0 ~ (X[i + K - 1]) ~ X[i]まで
+    if X[i] <= 0 and X[i + K - 1] <= 0:
+        ans = min(ans, -X[i])
+    # もしX[i] < 0 <= X[i + K - 1]の場合
+    # 最短経路は
+    # X[i] ~ 0, 0 ~ X[i + K - 1]のうち近い方
+    # + X[i] ~ X[i + K - 1]
+    elif X[i] < 0 <= X[i + K - 1]:
+        ans = min(ans, min(-X[i], X[i + K - 1]) + (X[i + K - 1] - X[i]))
+    # もしX[i],X[i + K - 1]とも0以上の場合
+    # 最短経路は0 ~ (X[i]) ~ X[i + K - 1]まで
+    else:
+        ans = min(ans, X[i + K - 1])
+print(ans)
