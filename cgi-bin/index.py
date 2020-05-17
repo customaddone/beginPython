@@ -22,38 +22,19 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N, M = getNM()
-dist = [[] for i in range(N + 1)]
-for i in range(M):
-    a, b = getNM()
-    dist[a].append(b)
-    dist[b].append(a)
+A, B, H, M = getNM()
+minu = H * 60 + M
 
-pos = deque([[1, 0]])
-ignore = [-1] * (N + 1)
-ans = [-1] * (N + 1)
-ignore[1] = 0
+# 時針の角度
+angh = minu / 2
+# 分針の角度
+angm = M * 6
 
-# 最短経路の求め方
-while len(pos) > 0:
-    u, time = pos.popleft()
-    for i in dist[u]:
-        if ignore[i] != -1:
-            continue
-        ignore[i] = time + 1
-        # 経路復元
-        ans[i] = u
-        pos.append([i, time + 1])
-ans.pop(0)
-ans.pop(0)
+# 角度の差
+anglepre = abs(angh - angm)
+angle = min(360 - anglepre, anglepre)
 
-flag = True
-for i in ans:
-    if i < 0:
-        flag = False
-if flag:
-    print('Yes')
-    for i in ans:
-        print(i)
-else:
-    print('No')
+# ラジアンに直してからmath.cosとかmath.tanとか
+ans = (A ** 2) + (B ** 2) - (2 * A * B * math.cos(math.radians(angle)))
+
+print(math.sqrt(ans))
