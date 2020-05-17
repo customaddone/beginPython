@@ -22,17 +22,23 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N, K = getNM()
-red = N - K
+N = getN()
+A = [-1] + getList()
+lista = [0 for i in range(N + 1)]
 
-def cmb(n, r):
-    a = 1
-    b = 1
-    for i in range(r):
-        a *= (n - i)
-        b *= (i + 1)
-    return a // b
-
-for i in range(1, K + 1):
-    ans = (cmb(red + 1, i) * cmb(K - 1, i - 1)) % mod
-    print(ans)
+# 逆順に実施する
+# 1からループ回さないと34行目でバグる
+for i in range(1, N + 1)[::-1]:
+    cnt = 0
+    # 2 * i, 3 * i...について
+    for j in range(2 * i, N + 1, i):
+        cnt += lista[j]
+    # もしcnt % 2とa[i]が合わなければb[i]にボールを置いて修正
+    if cnt % 2 != A[i]:
+        lista[i] = 1
+ans = []
+for i in range(N + 1):
+    if lista[i] == 1:
+        ans.append(str(i))
+print(len(ans))
+print(" ".join(ans))
