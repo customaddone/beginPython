@@ -20,25 +20,19 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
+mod = 10 ** 9 + 7
 
-N, M = getNM()
-A = getList()
-A.sort()
+N, K = getNM()
+red = N - K
 
-lista = []
-for i in range(M):
-    b, c = getNM()
-    lista.append([b, c])
-lista.sort(reverse = True,key = lambda i:i[1])
+def cmb(n, r):
+    a = 1
+    b = 1
+    for i in range(r):
+        a *= (n - i)
+        b *= (i + 1)
+    return a // b
 
-listalta = [0]
-for i in range(M):
-    listalta.append(listalta[i] + lista[i][0])
-listalta.pop(0)
-
-for i in range(N):
-    index = bisect_left(listalta, i + 1)
-    # index >= M(indexが枠外に飛んでないか)
-    if index != M and A[i] < lista[index][1]:
-        A[i] = lista[index][1]
-print(sum(A))
+for i in range(1, K + 1):
+    ans = (cmb(red + 1, i) * cmb(K - 1, i - 1)) % mod
+    print(ans)
