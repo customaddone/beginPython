@@ -22,20 +22,38 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-H, N = getNM()
-magic = []
-for i in range(N):
+N, M = getNM()
+dist = [[] for i in range(N + 1)]
+for i in range(M):
     a, b = getNM()
-    # AがATC,BがMP
-    magic.append([a, b])
+    dist[a].append(b)
+    dist[b].append(a)
 
-dp = [float('inf')] * (H + 1)
-dp[0] = 0
-# HP = iを削るための最小MP
-for i in range(1, H + 1):
-    for j in magic:
-        if i < j[0]:
-            dp[i] = min(dp[i], j[1])
-        else:
-            dp[i] = min(dp[i], dp[i - j[0]] + j[1])
-print(dp[-1])
+pos = deque([[1, 0]])
+ignore = [-1] * (N + 1)
+ans = [-1] * (N + 1)
+ignore[1] = 0
+
+# 最短経路の求め方
+while len(pos) > 0:
+    u, time = pos.popleft()
+    for i in dist[u]:
+        if ignore[i] != -1:
+            continue
+        ignore[i] = time + 1
+        # 経路復元
+        ans[i] = u
+        pos.append([i, time + 1])
+ans.pop(0)
+ans.pop(0)
+
+flag = True
+for i in ans:
+    if i < 0:
+        flag = False
+if flag:
+    print('Yes')
+    for i in ans:
+        print(i)
+else:
+    print('No')
