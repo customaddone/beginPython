@@ -22,49 +22,20 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-h,w = [int(i) for i in input().split()]
-b = [input() for i in range(h)]
+H, N = getNM()
+magic = []
+for i in range(N):
+    a, b = getNM()
+    # AがATC,BがMP
+    magic.append([a, b])
 
-ans = [[0]*w for i in range(h)]
-
-for i in range(h):
-    res = 0
-    for j in range(w):
-        if b[i][j] == ".":
-            ans[i][j] += res
-        if b[i][j] == ".":
-            res += 1
+dp = [float('inf')] * (H + 1)
+dp[0] = 0
+# HP = iを削るための最小MP
+for i in range(1, H + 1):
+    for j in magic:
+        if i < j[0]:
+            dp[i] = min(dp[i], j[1])
         else:
-            res = 0
-
-for i in range(h):
-    res = 0
-    for j in range(w-1,-1,-1):
-        if b[i][j] == ".":
-            ans[i][j] += res
-        if b[i][j] == ".":
-            res += 1
-        else:
-            res = 0
-
-for j in range(w):
-    res = 0
-    for i in range(h):
-        if b[i][j] == ".":
-            ans[i][j] += res
-        if b[i][j] == ".":
-            res += 1
-        else:
-            res = 0
-
-for j in range(w):
-    res = 0
-    for i in range(h-1,-1,-1):
-        if b[i][j] == ".":
-            ans[i][j] += res
-        if b[i][j] == ".":
-            res += 1
-        else:
-            res = 0
-
-print(max(max(row) for row in ans) + 1)
+            dp[i] = min(dp[i], dp[i - j[0]] + j[1])
+print(dp[-1])
