@@ -23,22 +23,27 @@ sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
 N = getN()
-A = [-1] + getList()
-lista = [0 for i in range(N + 1)]
-
-# 逆順に実施する
-# 1からループ回さないと34行目でバグる
-for i in range(1, N + 1)[::-1]:
-    cnt = 0
-    # 2 * i, 3 * i...について
-    for j in range(2 * i, N + 1, i):
-        cnt += lista[j]
-    # もしcnt % 2とa[i]が合わなければb[i]にボールを置いて修正
-    if cnt % 2 != A[i]:
-        lista[i] = 1
-ans = []
-for i in range(N + 1):
-    if lista[i] == 1:
-        ans.append(str(i))
-print(len(ans))
-print(" ".join(ans))
+convict = [[] for _ in range(N)]
+for i in range(N):
+    a = getN()
+    for j in range(a):
+        x, y = getNM()
+        convict[i].append([x - 1, y])
+ans = 0
+# 状態を生成
+for bit in range(1 << N):
+    flag = True
+    # 人iの証言について
+    for i in range(N):
+        # 正直者のフラグが立っていれば
+        if bit & (1 << i):
+            for j in convict[i]:
+                # もし正直者が行ったことに間違いがあれば
+                if j[1] == 0 and bit & (1 << j[0]) > 0:
+                    flag = False
+                if j[1] == 1 and bit & (1 << j[0]) == 0:
+                    flag = False
+    if flag:
+        index = str(bin(bit)).count('1')
+        ans = max(ans, index)
+print(ans)
