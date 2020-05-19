@@ -22,23 +22,20 @@ from bisect import bisect_left, bisect_right
 import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
-# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=ITP1_7_B
+# https://atcoder.jp/contests/pakencamp-2019-day3/tasks/pakencamp_2019_day3_c
 
-N, X = getNM()
-lista = [i for i in range(1, N + 1)]
-dp = [[0] * (N + 1) for i in range(N)]
-ans = 0
+import itertools
+n, m = map(int, input().split())
+lista = []
+for i in range(n):
+    a = getList()
+    lista.append(a)
 
-def rec_memo(i, plus, sum):
-    global ans
-    if i == N or plus == 3:
-        if plus == 3:
-            print([i, sum])
-            ans += (sum == 0)
-    elif sum < lista[i]:
-        rec_memo(i + 1, plus, sum)
-    else:
-        rec_memo(i + 1, plus, sum)
-        rec_memo(i + 1, plus + 1, sum - lista[i])
-rec_memo(0, 0, X)
-print(ans)
+res = 0
+for i in range(m):
+    for j in range(i + 1, m):
+        tmp = 0
+        for k in range(n):
+            tmp += max(lista[k][i], lista[k][j])
+        res = max(res, tmp)
+print(res)
