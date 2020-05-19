@@ -13,6 +13,7 @@ from collections import defaultdict, deque, Counter
 from sys import exit
 import heapq
 import math
+import fractions
 import copy
 from operator import mul
 from functools import reduce
@@ -21,20 +22,23 @@ from bisect import bisect_left, bisect_right
 import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
+# http://judge.u-aizu.ac.jp/onlinejudge/description.jsp?id=ITP1_7_B
 
-A, B, H, M = getNM()
-minu = H * 60 + M
+N, X = getNM()
+lista = [i for i in range(1, N + 1)]
+dp = [[0] * (N + 1) for i in range(N)]
+ans = 0
 
-# 時針の角度
-angh = minu / 2
-# 分針の角度
-angm = M * 6
-
-# 角度の差
-anglepre = abs(angh - angm)
-angle = min(360 - anglepre, anglepre)
-
-# ラジアンに直してからmath.cosとかmath.tanとか
-ans = (A ** 2) + (B ** 2) - (2 * A * B * math.cos(math.radians(angle)))
-
-print(math.sqrt(ans))
+def rec_memo(i, plus, sum):
+    global ans
+    if i == N or plus == 3:
+        if plus == 3:
+            print([i, sum])
+            ans += (sum == 0)
+    elif sum < lista[i]:
+        rec_memo(i + 1, plus, sum)
+    else:
+        rec_memo(i + 1, plus, sum)
+        rec_memo(i + 1, plus + 1, sum - lista[i])
+rec_memo(0, 0, X)
+print(ans)
