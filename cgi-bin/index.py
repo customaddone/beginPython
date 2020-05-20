@@ -25,29 +25,17 @@ sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
 N, K = getNM()
-S = [getN() for i in range(N)]
+A = getList()
 
-# 条件を満たす限り右端を進める
-# 条件を満たさなくなったら左端を条件を満たすまで進める
-# かける数に0が混じる
-if 0 in S:
-    print(N)
-    exit()
-else:
-    # r:右端
-    r, ans, tmp = 0, 0, 1
-    # l:左端
-    for l in range(N):
-        while r < N and tmp * S[r] <= K:
-            # 右端を伸ばす
-            tmp *= S[r]
-            r += 1
-        # 最大まで伸ばしてところでジャッジ
-        # ここで１回ループ　左端が1進む
-        ans = max(ans, r - l)
-        if l == r:
-            r += 1
-        else:
-            # 左端が1進むと同時にtmpの左端の分を削る
-            tmp //= S[l]
+left = 0
+# 部分列の和
+total = 0
+ans = 0
+
+for right in range(0, N):
+    total += A[right]
+    while total >= K:
+        ans += N - right
+        total -= A[left]
+        left += 1
 print(ans)
