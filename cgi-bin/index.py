@@ -27,7 +27,7 @@ mod = 10 ** 9 + 7
 A, B, C, D, E, F = map(int, input().split())
 
 def calc(a, b):
-    if a == 0 or b == 0: return -1
+    if a == 0 or b == 0: return 0
     return 100 * b / (a + b)
 ans = (0, 0)
 tmp = 0
@@ -42,11 +42,11 @@ for i in range(3001):
                 if water + suger > F: break
                 if water * E // 100 < suger: break
                 t = calc(water, suger)
-                ret.add((t, water+suger, suger))
+                #ret.add((t, water+suger, suger))
                 if tmp <= t:
                     tmp = t
                     ans = (water+suger, suger)
 
-ret = list(ret)
-ret.sort(reverse=True)
+#ret = list(ret)
+#ret.sort(reverse=True)
 print(*ans)
