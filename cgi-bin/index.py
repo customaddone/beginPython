@@ -24,43 +24,29 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-S = input()
-N = len(S)
-modlist = [0] * 13
-splitmod = []
+A, B, C, D, E, F = map(int, input().split())
 
-if S[0] == "?":
-    for i in range(10):
-        modlist[i % 13] += 1
-else:
-    modlist[int(S[0])] += 1
-S = S[1:]
+def calc(a, b):
+    if a == 0 or b == 0: return -1
+    return 100 * b / (a + b)
+ans = (0, 0)
+tmp = 0
+ret = set()
+for i in range(3001):
+    for j in range(3001):
+        water = i * A * 100 + j * B * 100
+        if 1 > water or water > F: break
+        for k in range((F-water)//C+1):
+            for l in range((F-water)//D+1):
+                suger = k * C + l * D
+                if water + suger > F: break
+                if water * E // 100 < suger: break
+                t = calc(water, suger)
+                ret.add((t, water+suger, suger))
+                if tmp <= t:
+                    tmp = t
+                    ans = (water+suger, suger)
 
-# 前から処理していく
-# 10と13は互いに素なので
-# a == b (mod z)なら
-# 10a == 10b (mod z)
-# 例
-# 18 == 5 (mod 13)
-# 180 == 50 (mod 13)
-# 13 * 13 + 11 == 13 * 3 + 11 (mod 13)
-for st in S:
-    modalta = [0] * 13
-    if st == "?":
-        # 例えば 7?4の時
-        # 7 * 10 + 1, 2, 3...
-        for i in range(10):
-            # modlist
-            for j in range(13):
-                opt = (j * 10 + i) % 13
-                modalta[opt] += modlist[j]
-    else:
-        for j in range(13):
-            opt = (j * 10 + int(st)) % 13
-            modalta[opt] += modlist[j]
-    # mod調整
-    for i in range(13):
-        modalta[i] %= mod
-    modlist = copy.deepcopy(modalta)
-
-print(modlist[5] % mod)
+ret = list(ret)
+ret.sort(reverse=True)
+print(*ans)
