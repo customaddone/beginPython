@@ -24,18 +24,43 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N, K = getNM()
-A = getList()
+S = input()
+N = len(S)
+modlist = [0] * 13
+splitmod = []
 
-left = 0
-# 部分列の和
-total = 0
-ans = 0
+if S[0] == "?":
+    for i in range(10):
+        modlist[i % 13] += 1
+else:
+    modlist[int(S[0])] += 1
+S = S[1:]
 
-for right in range(0, N):
-    total += A[right]
-    while total >= K:
-        ans += N - right
-        total -= A[left]
-        left += 1
-print(ans)
+# 前から処理していく
+# 10と13は互いに素なので
+# a == b (mod z)なら
+# 10a == 10b (mod z)
+# 例
+# 18 == 5 (mod 13)
+# 180 == 50 (mod 13)
+# 13 * 13 + 11 == 13 * 3 + 11 (mod 13)
+for st in S:
+    modalta = [0] * 13
+    if st == "?":
+        # 例えば 7?4の時
+        # 7 * 10 + 1, 2, 3...
+        for i in range(10):
+            # modlist
+            for j in range(13):
+                opt = (j * 10 + i) % 13
+                modalta[opt] += modlist[j]
+    else:
+        for j in range(13):
+            opt = (j * 10 + int(st)) % 13
+            modalta[opt] += modlist[j]
+    # mod調整
+    for i in range(13):
+        modalta[i] %= mod
+    modlist = copy.deepcopy(modalta)
+
+print(modlist[5] % mod)
