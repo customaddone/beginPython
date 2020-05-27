@@ -27,19 +27,18 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-N = int(input())
-P = [list(map(int, input().split())) for i in range(N)]
+lista = [i for i in range(10)]
 
-ans = 0
-
-for ps in permutations(P):
-    # 最初の一つ目
-    x1, y1 = ps[0]
-    # 条件についてループ
-    for i in range(n):
-        x2, y2 = ps[i]
-        ans += hypot(x1-x2, y1-y2)
-        x1, y1 = x2, y2
-ans /= factorial(n)
-print(ans) += 1
-print(sumans)
+def binary_search_loop(data, target):
+    imin = 0
+    imax = len(data) - 1
+    while imin <= imax:
+        imid = imin + (imax - imin) // 2
+        if target == data[imid]:
+            return imid
+        elif target < data[imid]:
+            imax = imid - 1
+        else:
+            imin = imid + 1
+    return False
+print(binary_search_loop(lista, 4))
