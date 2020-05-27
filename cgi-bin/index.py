@@ -27,29 +27,22 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-n, q = map(int, input().split())
-dist = [[] for i in range(n)]
-for i in range(n - 1):
-    a, b = map(int, input().split())
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-value = [0 for i in range(n)]
+S = "14282668646"
 
-for i in range(q):
-    p, x = map(int, input().split())
-    value[p - 1] += x
-#  重複を防ぐ
-ignore = [0] * n
-ignore[0] = 1
+prev1 = 0
 
-pos = deque([0])
+pw = 1
+prev2 = 0
 
-while len(pos) > 0:
-    u = pos.popleft()
-    for i in dist[u]:
-        if ignore[i] == 0:
-            ignore[i] = 1
-            value[i] += value[u]
-            pos.append(i)
+# 1, 14, 142...の余り
+for b in S:
+    mi = (prev1 * 10 + int(b)) % 2019
+    print(mi)
+    prev1 = mi
 
-print(*value)
+# 6, 46, 646...の余り
+for c in S[::-1]:
+    m = ((int(c) * pw + int(prev2)) % 2019)
+    print(m)
+    pw = pw * 10 % 2019
+    prev2 = m
