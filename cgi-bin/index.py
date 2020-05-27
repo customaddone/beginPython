@@ -24,22 +24,20 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-n = int(input())
-s = input()
-cnt = 0
 
-for i in range(1000):
-    flag = 0
+n, m = map(int, input().split())
+lista = []
+for i in range(n):
+    a = getList()
+    lista.append(a)
 
-    for st in s:
-        # 条件を書き込む
-        if flag == 0 and st == str(i // 100):
-            flag = 1
-        elif flag == 1 and st == str((i % 100) // 10):
-            flag = 2
-        elif flag == 2 and st == str(i % 10):
-            flag = 3
-            break
-    if flag == 3:
-        cnt += 1
-print(cnt)
+res = 0
+for i in range(m):
+    for j in range(i + 1, m):
+        # 集計
+        tmp = 0
+        # 入力されたものをループさせて、それぞれの場合の値を求める
+        for k in range(n):
+            tmp += max(lista[k][i], lista[k][j])
+        res = max(res, tmp)
+print(res)
