@@ -24,21 +24,19 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-# 個数制限あり（３個）重複なし再帰
-N, X = getNM()
-lista = [i for i in range(1, N + 1)]
-dp = [[0] * (N + 1) for i in range(N)]
+s = input()
+l = ['A', 'T', 'G', 'C']
+n = len(s)
+
+num = 0
 ans = 0
 
-def rec_memo(i, plus, sum):
-    global ans
-    if i == N or plus == 3:
-        if plus == 3:
-            print([i, sum])
-            ans += (sum == 0)
-    elif sum < lista[i]:
-        rec_memo(i + 1, plus, sum)
+for i in range(n):
+    # 条件を書く
+    if s[i] in l:
+        num += 1
     else:
-        rec_memo(i + 1, plus, sum)
-        rec_memo(i + 1, plus + 1, sum - lista[i])
-rec_memo(0, 0, X)
+        ans = max(num, ans)
+        num = 0
+ans = max(num, ans)
+print(ans)
