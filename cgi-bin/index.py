@@ -27,22 +27,26 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-a, b, x = map(int, input().split())
+# numの中でのi以下の数字の最大値を求める
+num = [i for i in range(0, 10, 2)]
+A = [2, 4, 5]
+B = [2, 3]
 
-def solve(mid):
-    ans = a * mid + b * len(str(mid))
-    if ans <= x:
-        return True
-    else:
-        return False
+for i in A:
+    index = bisect_right(num, i)
+    print(num[index - 1])
 
-ok = 0
-ng = 10 ** 9 + 1
+# numの中でのi未満の数字の最大値を求める
+for i in A:
+    index = bisect_left(num, i)
+    print(num[index - 1])
 
-while abs(ok - ng) > 1:
-    mid = (ok + ng) // 2
-    if solve(mid):
-        ok = mid
-    else:
-        ng = mid
-print(ok)
+# numの中でのiより大きい数字の最小値を求める
+for i in B:
+    index = bisect_right(num, i)
+    print(num[index])
+
+# numの中でのi以上の数字の最小値を求める
+for i in B:
+    index = bisect_left(num, i)
+    print(num[index])
