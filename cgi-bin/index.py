@@ -27,21 +27,19 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-odd = [i for i in range(0, 16, 3)]
-limit = 33
+def dfs(i, sum):
+    if i == N:
+        return sum == K
+    if dfs(i + 1, sum):
+        return True
+    if dfs(i + 1, sum + A[i]):
+        return True
+    return False
 
-lista = set()
-for i in odd:
-    for j in odd:
-        lista.add(i + j)
-lista = list(lista)
+N, K = map(int, input().split())
+A = list(map(int, input().split()))
 
-# ４つの数字を足し合わせた時に33以下になる数字
-for i in lista:
-    index = bisect_right(lista, limit - i)
-    print(i, lista[index - 1])
-
-# ４つの数字を足し合わせた時に33未満になる数字
-for i in lista:
-    index = bisect_left(lista, limit - i)
-    print(i, lista[index - 1])
+if dfs(0, 0):
+    print("Yes")
+else:
+    print("No")
