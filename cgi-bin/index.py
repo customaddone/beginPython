@@ -25,19 +25,30 @@ sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
 
-n, m = map(int, input().split())
+N, M, Q = getNM()
 lista = []
-for i in range(n):
-    a = getList()
-    lista.append(a)
+for i in range(Q):
+    a, b, c, d = getNM()
+    lista.append([a - 1, b - 1, c, d])
 
-res = 0
-for i in range(m):
-    for j in range(i + 1, m):
+def dfs(i, numlist):
+    if i == N:
         # 集計
-        tmp = 0
-        # 入力されたものをループさせて、それぞれの場合の値を求める
-        for k in range(n):
-            tmp += max(lista[k][i], lista[k][j])
-        res = max(res, tmp)
-print(res)
+        cnt = 0
+        for jud in lista:
+            if numlist[jud[1]] - numlist[jud[0]] == jud[2]:
+                cnt += jud[3]
+        return cnt
+
+    ans = 0
+    sta = 0
+
+    if i > 0:
+        sta = numlist[i - 1]
+
+    # 条件についてループさせてdfs
+    for j in range(sta, M):
+        numlist[i] = j
+        ans = max(ans, dfs(i + 1, numlist))
+    return ans
+print(dfs(0, [0] * N))
