@@ -27,22 +27,38 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-S = "14282668646"
+N, K = getNM()
+S = [getN() for i in range(N)]
 
-prev1 = 0
+# 左を伸ばしていく
+# その部分列に含まれる全ての要素の値の積はK以下である。
+# lはrをオーバーすることもある
 
-pw = 1
-prev2 = 0
+if 0 in S:
+    print(N)
+    exit()
+else:
+    l, ans, total = 0, 0, 1
+    for r in range(N):
+        total *= S[r]
+        while total > K and l <= r:
+            total //= S[l]
+            l += 1
+        ans = max(ans, r - l + 1)
+print(ans)
 
-# 1, 14, 142...の余り
-for b in S:
-    mi = (prev1 * 10 + int(b)) % 2019
-    print(mi)
-    prev1 = mi
+# (条件) 連続部分列に含まれる全ての要素の値の和は、K以上である。
+N, K = getNM()
+A = getList()
 
-# 6, 46, 646...の余り
-for c in S[::-1]:
-    m = ((int(c) * pw + int(prev2)) % 2019)
-    print(m)
-    pw = pw * 10 % 2019
-    prev2 = m
+left = 0
+total = 0
+ans = 0
+
+for right in range(0, N):
+    total += A[right]
+    while total >= K:
+        ans += N - right
+        total -= A[left]
+        left += 1
+print(ans)
