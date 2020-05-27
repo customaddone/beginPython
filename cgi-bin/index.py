@@ -27,26 +27,18 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-# numの中でのi以下の数字の最大値を求める
-num = [i for i in range(0, 10, 2)]
-A = [2, 4, 5]
-B = [2, 3]
+def f(x):
+    return x + p / pow(2, 2 * x / 3)
 
-for i in A:
-    index = bisect_right(num, i)
-    print(num[index - 1])
+p = float(input())
+left, right = 0, 100
 
-# numの中でのi未満の数字の最大値を求める
-for i in A:
-    index = bisect_left(num, i)
-    print(num[index - 1])
-
-# numの中でのiより大きい数字の最小値を求める
-for i in B:
-    index = bisect_right(num, i)
-    print(num[index])
-
-# numの中でのi以上の数字の最小値を求める
-for i in B:
-    index = bisect_left(num, i)
-    print(num[index])
+while right > left + 10 ** -10:
+    # mid二つ
+    mid1 = (right * 2 + left) / 3
+    mid2 = (right + left * 2) / 3
+    if f(mid1) >= f(mid2):
+        right = mid1
+    else:
+        left = mid2
+print(f(right))
