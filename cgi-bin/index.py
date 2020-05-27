@@ -27,18 +27,21 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-def f(x):
-    return x + p / pow(2, 2 * x / 3)
+odd = [i for i in range(0, 16, 3)]
+limit = 33
 
-p = float(input())
-left, right = 0, 100
+lista = set()
+for i in odd:
+    for j in odd:
+        lista.add(i + j)
+lista = list(lista)
 
-while right > left + 10 ** -10:
-    # mid二つ
-    mid1 = (right * 2 + left) / 3
-    mid2 = (right + left * 2) / 3
-    if f(mid1) >= f(mid2):
-        right = mid1
-    else:
-        left = mid2
-print(f(right))
+# ４つの数字を足し合わせた時に33以下になる数字
+for i in lista:
+    index = bisect_right(lista, limit - i)
+    print(i, lista[index - 1])
+
+# ４つの数字を足し合わせた時に33未満になる数字
+for i in lista:
+    index = bisect_left(lista, limit - i)
+    print(i, lista[index - 1])
