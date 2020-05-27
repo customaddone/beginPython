@@ -27,25 +27,26 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][1] += 1
-        else:
-            lista[i][0] += 1
-splitbit(31)
-print(lista)
+# うなぎ
+H, W = 3, 5
 
-flags1 = [0] * 61
-# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
-def bitflag(ny, flaglist):
-    if ny > 0:
-        for i in range(1, 61):
-            split = 2 ** i
-            flag1 = (ny // split) * (split // 2)
-            flag2 = max(ny % split + 1 - (split // 2), 0)
-            flaglist[i - 1] += flag1 + flag2
-bitflag(31, flags1)
-print(flags1)
+distalta = [[0] * W for i in range(H)]
+for i in range(H * W):
+    # ジグザグに降りていく感じで縦と横のインデックスを決める
+    hei = i // W
+    if hei % 2 == 0:
+        wid = i % W
+    else:
+        wid = -1 * (i % W) - 1
+    distalta[hei][wid] = i
+print(distalta)
+
+# 階段
+N = 5
+dp = [[float('inf')] * N for i in range(N)]
+cnt = 1
+for i in range(N):
+    for j in range(0, N - i):
+        dp[j][j + i] = cnt
+        cnt += 1
+print(dp)
