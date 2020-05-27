@@ -24,25 +24,25 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-n, m = map(int, input().split())
+N, M = map(int, input().split())
 lista = []
-for i in range(m):
+for i in range(M):
     k, *s, = map(int, input().split())
     lista.append(list(s))
-p = list(map(int, input().split()))
+P = list(map(int, input().split()))
 
 sumans = 0
 
-for bit in range(1 << n):
+for bit in range(1 << N):
     # 各状態でフラグを立てる
     flag = True
     # 条件についてループ
-    for i in range(m):
+    for i in range(M):
         sum = 0
         for j in lista[i]:
             if bit & (1 << (j - 1)):
                 sum += 1
-        if sum % 2 != p[i]:
+        if sum % 2 != P[i]:
             flag = False
             break
     # 判定
