@@ -27,25 +27,21 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-N = getN()
-rength = len(str(N))
-numlist = [3, 5, 7]
-cnt = 0
+N = int(input())
 
-def sevfivthr(i, strint):
-    global cnt
-    # 上限
-    if i == rength:
-        return
-    # ループ
-    else:
-        # 各条件についてループ
-        for num in numlist:
-            newstr = strint + str(num)
-            if ('3' in newstr) and ('5' in newstr) and ('7' in newstr):
-                if int(newstr) <= N:
-                    cnt += 1
-            sevfivthr(i + 1, newstr)
-for i in numlist:
-    sevfivthr(1, str(i))
-print(cnt)
+ans = 0
+numlist = [3, 5, 7]
+
+def dfs(s):
+    global ans
+    if s:
+        # 上限
+        if int(s) > N:
+            return
+        elif "3" in s and "5" in s and "7" in s:
+            ans += 1
+    # dfs
+    for i in numlist:
+        dfs(s + str(i))
+dfs("")
+print(ans)
