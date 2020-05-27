@@ -27,38 +27,25 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-N, K = getNM()
-S = [getN() for i in range(N)]
+lista = [[0, 0] for i in range(61)]
+# bitの各桁が１か０かをlistaに収納
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            lista[i][1] += 1
+        else:
+            lista[i][0] += 1
+splitbit(31)
+print(lista)
 
-# 左を伸ばしていく
-# その部分列に含まれる全ての要素の値の積はK以下である。
-# lはrをオーバーすることもある
-
-if 0 in S:
-    print(N)
-    exit()
-else:
-    l, ans, total = 0, 0, 1
-    for r in range(N):
-        total *= S[r]
-        while total > K and l <= r:
-            total //= S[l]
-            l += 1
-        ans = max(ans, r - l + 1)
-print(ans)
-
-# (条件) 連続部分列に含まれる全ての要素の値の和は、K以上である。
-N, K = getNM()
-A = getList()
-
-left = 0
-total = 0
-ans = 0
-
-for right in range(0, N):
-    total += A[right]
-    while total >= K:
-        ans += N - right
-        total -= A[left]
-        left += 1
-print(ans)
+flags1 = [0] * 61
+# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
+def bitflag(ny, flaglist):
+    if ny > 0:
+        for i in range(1, 61):
+            split = 2 ** i
+            flag1 = (ny // split) * (split // 2)
+            flag2 = max(ny % split + 1 - (split // 2), 0)
+            flaglist[i - 1] += flag1 + flag2
+bitflag(31, flags1)
+print(flags1)
