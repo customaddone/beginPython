@@ -27,22 +27,25 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-def rec_memo(i, j):
-    if dp[i][j]:
-        return dp[i][j]
-    if i == N:
-        res = 0
-    elif j < w[i]:
-        res = rec_memo(i + 1, j)
+N = getN()
+rength = len(str(N))
+numlist = [3, 5, 7]
+cnt = 0
+
+def sevfivthr(i, strint):
+    global cnt
+    # 上限
+    if i == rength:
+        return
+    # ループ
     else:
-        res = max(rec_memo(i + 1, j), rec_memo(i + 1, j - w[i]) + v[i])
-    dp[i][j] = res
-    return res
-
-N = 4
-w = [2, 1, 3, 2]
-v = [3, 2, 4, 2]
-
-W = 5
-dp = [[0] * (W + 1) for i in range(N + 1)]  # メモ化テーブル
-print(rec_memo(0, W))
+        # 各条件についてループ
+        for num in numlist:
+            newstr = strint + str(num)
+            if ('3' in newstr) and ('5' in newstr) and ('7' in newstr):
+                if int(newstr) <= N:
+                    cnt += 1
+            sevfivthr(i + 1, newstr)
+for i in numlist:
+    sevfivthr(1, str(i))
+print(cnt)
