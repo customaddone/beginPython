@@ -24,28 +24,22 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N, M = map(int, input().split())
-lista = []
-for i in range(M):
-    k, *s, = map(int, input().split())
-    lista.append(list(s))
-P = list(map(int, input().split()))
+from itertools import permutations
+from math import factorial, hypot
 
-sumans = 0
+N = int(input())
+P = [list(map(int, input().split())) for i in range(N)]
 
-for bit in range(1 << N):
-    # 各状態でフラグを立てる
-    flag = True
+ans = 0
+
+for ps in permutations(P):
+    # 最初の一つ目
+    x1, y1 = ps[0]
     # 条件についてループ
-    for i in range(M):
-        sum = 0
-        for j in lista[i]:
-            if bit & (1 << (j - 1)):
-                sum += 1
-        if sum % 2 != P[i]:
-            flag = False
-            break
-    # 判定
-    if flag:
-        sumans += 1
+    for i in range(n):
+        x2, y2 = ps[i]
+        ans += hypot(x1-x2, y1-y2)
+        x1, y1 = x2, y2
+ans /= factorial(n)
+print(ans) += 1
 print(sumans)
