@@ -27,19 +27,22 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-def dfs(i, sum):
+def rec_memo(i, j):
+    if dp[i][j]:
+        return dp[i][j]
     if i == N:
-        return sum == K
-    if dfs(i + 1, sum):
-        return True
-    if dfs(i + 1, sum + A[i]):
-        return True
-    return False
+        res = 0
+    elif j < w[i]:
+        res = rec_memo(i + 1, j)
+    else:
+        res = max(rec_memo(i + 1, j), rec_memo(i + 1, j - w[i]) + v[i])
+    dp[i][j] = res
+    return res
 
-N, K = map(int, input().split())
-A = list(map(int, input().split()))
+N = 4
+w = [2, 1, 3, 2]
+v = [3, 2, 4, 2]
 
-if dfs(0, 0):
-    print("Yes")
-else:
-    print("No")
+W = 5
+dp = [[0] * (W + 1) for i in range(N + 1)]  # メモ化テーブル
+print(rec_memo(0, W))
