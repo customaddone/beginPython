@@ -13,7 +13,7 @@ from collections import defaultdict, deque, Counter
 from sys import exit
 import heapq
 import math
-import fractions
+from fractions import gcd
 import copy
 from itertools import permutations
 from operator import mul
@@ -27,22 +27,34 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-S = list(map(int, list(input())))
-N = len(S)
+N = getN()
+A = getList()
 
-dp = [[-1] * (N + 1) for i in range(N + 1)]
+course = []
+x1 = A[0]
+for i in A:
+    x2 = i
+    opt = gcd(x1, x2)
+    course.append(opt)
+    x1 = opt
 
-def rec(l, r):
-    if dp[l][r] != -1:
-        return dp[l][r]
-    if abs(l - r) <= 1:
-        return 0
+reverse = []
+y1 = A[-1]
+for i in A[::-1]:
+    y2 = i
+    opt = gcd(y1, y2)
+    reverse.append(opt)
+    y1 = opt
+reverse.sort()
 
+ans = 0
+for i in range(N):
     res = 0
-    if S[l] != S[r - 1] and rec(l + 1, r - 1) == r - l - 2:
-        res = r - l
-    for i in range(l + 1, r):
-        res = max(res, rec(l, i) + rec(i, r))
-    dp[l][r] = res
-    return res
-print(rec(0, N))
+    if i == 0:
+        res = reverse[1]
+    elif i == N - 1:
+        res = course[-2]
+    else:
+        res = gcd(course[i - 1], reverse[i + 1])
+    ans = max(ans, res)
+print(ans)
