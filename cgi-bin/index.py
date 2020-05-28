@@ -27,29 +27,39 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-N = 4
-inf = float('inf')
+N, M = 3, 3
+inf = 10 ** 20
 
-d = [
-[0, 2, inf, inf],
-[inf, 0, 3, 9],
-[1, inf, 0, 6],
-[inf, inf, 4, 0]
+# 距離
+g = [
+[0, 1, 3],
+[1, 0, 2],
+[3, 2, 0],
 ]
 
-dp = [[-1] * N for i in range(1 << N)]
+# dp[S][v][0]: 訪れた点の集合がS。現在vにいてそこから0に帰ってくるときの最小距離。
+# dp[S][v][1]:何通りあるか
+dp = [[[inf, 1] for i in range(N)] for i in range(1 << N)]
+# 全ての道を訪れて0に戻った時の通りが1通り
+dp[(1 << N) - 1][0]=[0, 1]
 
-def rec(s, v, dp):
-    if dp[s][v] >= 0:
-        return dp[s][v]
-    if s == (1 << N) - 1 and v == 0:
-        dp[s][v] = 0
-        return 0
-    res = float('inf')
-    for u in range(N):
-        if s & (1 << u) == 0:
-            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
-    dp[s][v] = res
-    return res
-# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
-print(rec(0,0,dp))
+# 巡回状況　逆順に
+for s in range((1 << N) - 2, -1, -1):
+    # 現在の場所
+    for j in range(N):
+        # 次の道について
+        for k in range(N):
+            if not s & (1 << k):
+                # 値が小さくなるなら更新。
+                if dp[s][j][0] > dp[s | 1 << k][k][0] + g[j][k]:
+                    dp[s][j][0] = dp[s | 1 << k][k][0] + g[j][k]
+                    dp[s][j][1] = dp[s | 1 << k][k][1]
+                # 値が同値なら、組み合わせに足す
+                elif dp[s][j][0] == dp[s | 1 << k][k][0] + g[j][k]:
+                    dp[s][j][1] += dp[s | 1 << k][k][1]
+
+# 0から巡回して再び戻ってくる最短距離
+if dp[0][0][0] < 10 ** 20:
+    print(*dp[0][0])
+else:
+    print("IMPOSSIBLE")
