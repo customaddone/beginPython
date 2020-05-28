@@ -36,10 +36,17 @@ W = 5
 dp = [[0] * (W + 1) for i in range(N + 1)]
 dp[0][0] = 0
 
-for i in range(N):
-    for j in range(W + 1):
-        if w[i] <= j:
-            dp[i + 1][j] = max(dp[i][j], dp[i][j - w[i]] + v[i])
-        else:
-            dp[i + 1][j] = dp[i][j]
-print(dp[N][W])
+def rec_memo(i, j):
+    if dp[i][j]:
+        return dp[i][j]
+    if i == N:
+        res = 0
+    else:
+        res = rec_memo(i + 1, j)
+        for r in range(N):
+            # ここ「以下」になることに気をつける
+            if w[r] <= j:
+                res = max(res, rec_memo(i + 1, j - w[r]) + v[r])
+    dp[i][j] = max(dp[i][j], res)
+    return res
+print(rec_memo(0, W))
