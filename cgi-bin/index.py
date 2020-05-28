@@ -27,23 +27,22 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-T = getN()
-N = getN()
-A = getList()
-M = getN()
-B = getList()
+S = list(map(int, list(input())))
+N = len(S)
 
-# B1, B2, B3..にそれぞれ売れるかが
-for buy in B:
-    sellable = False
-    # 作った順に売ってていけばok
-    for index, sell in enumerate(A):
-        if 0 <= buy - sell <= T:
-            A[index] = float('inf')
-            sellable = True
-            break
-    if not sellable:
-        print('no')
-        break
-else:
-    print('yes')
+dp = [[-1] * (N + 1) for i in range(N + 1)]
+
+def rec(l, r):
+    if dp[l][r] != -1:
+        return dp[l][r]
+    if abs(l - r) <= 1:
+        return 0
+
+    res = 0
+    if S[l] != S[r - 1] and rec(l + 1, r - 1) == r - l - 2:
+        res = r - l
+    for i in range(l + 1, r):
+        res = max(res, rec(l, i) + rec(i, r))
+    dp[l][r] = res
+    return res
+print(rec(0, N))
