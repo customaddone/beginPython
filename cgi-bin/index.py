@@ -33,15 +33,12 @@ v = [3, 2, 4, 2]
 
 W = 5
 
-dp = [0] * (W + 1)
-dp[0] = 0
-
-def rec_memo(j):
-    if dp[j]:
-        return dp[j]
-    res = 0
-    for r in range(N):
-        if w[r] <= j:
-            res = max(res, rec_memo(j - w[r]) + v[r])
-    return res
-print(rec_memo(W))
+dp = [[0] * (W + 1) for i in range(N + 1)]
+dp[0][0] = 0
+for i in range(N):
+    for j in range(W + 1):
+        dp[i + 1][j] = dp[i][j]
+        for r in range(N):
+            if w[r] <= j:
+                dp[i + 1][j] = max(dp[i + 1][j], dp[i][j - w[r]] + v[r])
+print(dp[N][W])
