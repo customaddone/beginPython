@@ -27,24 +27,23 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-N = 3
+T = getN()
+N = getN()
+A = getList()
+M = getN()
+B = getList()
 
-dist = [
-[1, 2],
-[0, 2],
-[0, 1]
-]
-
-ans = 0
-def rec(s, v):
-    global ans
-    if s == (1 << N) - 1 and v == 0:
-        ans += 1
-        return
-    for u in dist[v]:
-        if s & (1 << u):
-            continue
-        rec(s | (1 << u), u)
-
-rec(0,0)
-print(ans)
+# B1, B2, B3..にそれぞれ売れるかが
+for buy in B:
+    sellable = False
+    # 作った順に売ってていけばok
+    for index, sell in enumerate(A):
+        if 0 <= buy - sell <= T:
+            A[index] = float('inf')
+            sellable = True
+            break
+    if not sellable:
+        print('no')
+        break
+else:
+    print('yes')
