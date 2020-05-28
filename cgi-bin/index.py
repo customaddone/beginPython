@@ -27,26 +27,19 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-# うなぎ
-H, W = 3, 5
+N = 4
+w = [2, 1, 3, 2]
+v = [3, 2, 4, 2]
 
-distalta = [[0] * W for i in range(H)]
-for i in range(H * W):
-    # ジグザグに降りていく感じで縦と横のインデックスを決める
-    hei = i // W
-    if hei % 2 == 0:
-        wid = i % W
-    else:
-        wid = -1 * (i % W) - 1
-    distalta[hei][wid] = i
-print(distalta)
+W = 5
 
-# 階段
-N = 5
-dp = [[float('inf')] * N for i in range(N)]
-cnt = 1
+dp = [[0] * (W + 1) for i in range(N + 1)]
+dp[0][0] = 0
+
 for i in range(N):
-    for j in range(0, N - i):
-        dp[j][j + i] = cnt
-        cnt += 1
-print(dp)
+    for j in range(W + 1):
+        if w[i] <= j:
+            dp[i + 1][j] = max(dp[i][j], dp[i][j - w[i]] + v[i])
+        else:
+            dp[i + 1][j] = dp[i][j]
+print(dp[N][W])
