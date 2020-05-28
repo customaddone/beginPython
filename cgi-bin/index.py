@@ -27,20 +27,18 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-def part_sum(a,A):
-    p = 10 ** 9 + 7
-    N = len(a)
-    dp = [[0] * (A + 1) for i in range(N + 1)]
-    dp[0][0] = 1
+# 例えばジャンケンで３回同じ手を出さない場合の通り
+# N = 3のときは3 ** 3 - 3 = 24通り
+N = 5
+dp = [[[0] * 3 for i in range(3)] for j in range(N)]
+for i in range(3):
+    dp[0][i][i - 1] = 1
 
-    for i in range(N):
-        for j in range(A + 1):
-            if a[i] <= j:
-                dp[i + 1][j] = dp[i][j - a[i]] + dp[i][j]
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][A]
-
-a = [1, 3, 5, 7, 9]
-A = 10
-print(part_sum(a, A))
+for i in range(1, N):
+    for l in range(3):
+        for m in range(3):
+            for n in range(3):
+                if l == m and m == n:
+                    continue
+                dp[i][l][m] += dp[i - 1][m][n]
+print(dp)
