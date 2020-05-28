@@ -29,19 +29,15 @@ from math import factorial, hypot
 
 # 1 + 3 と3 + 1 と1 + 1 + 1 + 1は違う通りになる
 # dfs使った方がいい
-def part_sum(a,A):
-    p = 10 ** 9 + 7
-    W = len(a)
-
-    dp = [0] * (A + 1)
-    dp[0] = 1
-
-    for i in range(1, A + 1):
-        for j in range(W):
-            if i >= a[j]:
-                dp[i] += dp[i - a[j]]
-    return dp
+def dfs(now, sum):
+    if sum <= 0:
+        return sum == 0
+    res = 0
+    for i in range(now, W):
+        res += dfs(i, sum - a[i])
+    return res
 
 a = [1, 3, 5, 7, 9]
-A = 10
-print(part_sum(a, A))
+W = len(a)
+A = 9
+print(dfs(0, A))
