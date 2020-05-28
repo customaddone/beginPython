@@ -27,17 +27,20 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-N = 4
-w = [2, 1, 3, 2]
-v = [3, 2, 4, 2]
+def part_sum(a,A):
+    p = 10 ** 9 + 7
+    N = len(a)
+    dp = [[0] * (A + 1) for i in range(N + 1)]
+    dp[0][0] = 1
 
-W = 5
+    for i in range(N):
+        for j in range(A + 1):
+            if a[i] <= j:
+                dp[i + 1][j] = dp[i][j - a[i]] + dp[i][j]
+            else:
+                dp[i + 1][j] = dp[i][j]
+    return dp[N][A]
 
-dp = [0] * (W + 1)
-dp[0] = 0
-
-for j in range(W + 1):
-    for r in range(N):
-        if w[r] <= j:
-            dp[j] = max(dp[j], dp[j - w[r]] + v[r])
-print(dp[W])
+a = [1, 3, 5, 7, 9]
+A = 10
+print(part_sum(a, A))
