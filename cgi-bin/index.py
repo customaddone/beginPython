@@ -28,21 +28,24 @@ from itertools import permutations
 from math import factorial, hypot
 
 N = getN()
-A = getList()
+D = getList()
+if D[0] != 0:
+    print(0)
+    exit()
+D = Counter(D)
+D = sorted(D.items(), key = lambda x: x[0])
+if D[0][1] != 1:
+    print(0)
+    exit()
 
-def spliter(n, split):
-    splited = n
-    cnt = 0
-
-    while splited % split == 0:
-        if splited == 0:
-            break
-        splited //= split
-        cnt += 1
-    # print(cnt)
-    return splited
-
-ans = set()
-for i in range(N):
-    ans.add(spliter(A[i], 2))
-print(len(ans))
+x1 = 0
+y1 = 1
+ans = 1
+for i in D[1:]:
+    if x1 + 1 != i[0]:
+        ans = 0
+        break
+    ans *= y1 ** i[1]
+    x1 = i[0]
+    y1 = i[1]
+print(ans % 998244353)
