@@ -27,34 +27,47 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-N = getN()
-A = getList()
-
-course = []
-x1 = A[0]
-for i in A:
-    x2 = i
-    opt = gcd(x1, x2)
-    course.append(opt)
-    x1 = opt
-
-reverse = []
-y1 = A[-1]
-for i in A[::-1]:
-    y2 = i
-    opt = gcd(y1, y2)
-    reverse.append(opt)
-    y1 = opt
-reverse.sort()
-
-ans = 0
+N, K = getNM()
+query = []
 for i in range(N):
-    res = 0
+    t = getList()
+    query.append(t)
+
+# n重ループは素直にデカルト積使え
+# 下のでN重ループできる
+def dfs(i, now):
     if i == 0:
-        res = reverse[1]
-    elif i == N - 1:
-        res = course[-2]
-    else:
-        res = gcd(course[i - 1], reverse[i + 1])
-    ans = max(ans, res)
-print(ans)
+        for m in query[0]:
+            if m == 0:
+                print('Found')
+                exit()
+            dfs(i + 1, m)
+    elif i < N:
+        for j in query[i]:
+            newnow = j ^ now
+            if newnow == 0:
+                print('Found')
+                exit()
+            else:
+                dfs(i + 1, newnow)
+dfs(0, 0)
+print('Nothing')
+
+"""
+N, K = map(int, input().split())
+T = []
+for i in range(N):
+    t = list(map(int, input().split()))
+    T.append(t)
+flag = True
+# 各配列のデカルト積
+for ps in itertools.product(*T):
+    x1 = ps[0]
+    for i in range(1, N):
+        x2 = ps[i]
+        # 排他的論理和 x1, x2に含まれるもの - x1, x2両方に含まれるもの
+        x1 = x1 ^ x2
+    if x1 == 0:
+        flag = False
+print('Nothing' if flag else 'Found')
+"""
