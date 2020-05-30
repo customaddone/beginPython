@@ -31,13 +31,29 @@ from math import factorial, hypot
 # Main Code #
 #############
 
-N = 5
-A = [3, 3, 1, 6, 1]
+n = int(input())
+A = list(map(int, input().split()))
+m = 10 ** 9 + 7
 
-alta_A = list(sorted(set(A)))
-dict_A= {}
-for i in range(len(alta_A)):
-    dict_A[alta_A[i]] = i
+from operator import mul
+from functools import reduce
 
-for i in A:
-    print(dict_A[i])
+# mod使わない時はこっち
+def cmb(n, r):
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
+
+mono = 1
+sum = 0
+for i in range(1, n):
+    if A[i] > A[i - 1]:
+        mono += 1
+    else:
+        # 重複組み合わせ
+        sum += cmb(mono + 1, 2)
+        mono = 1
+sum += cmb(mono + 1, 2)
+print(sum)
