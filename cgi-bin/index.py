@@ -27,25 +27,17 @@ mod = 10 ** 9 + 7
 from itertools import permutations
 from math import factorial, hypot
 
-N = getN()
-D = getList()
-if D[0] != 0:
-    print(0)
-    exit()
-D = Counter(D)
-D = sorted(D.items(), key = lambda x: x[0])
-if D[0][1] != 1:
-    print(0)
-    exit()
+#############
+# Main Code #
+#############
 
-x1 = 0
-y1 = 1
-ans = 1
-for i in D[1:]:
-    if x1 + 1 != i[0]:
-        ans = 0
-        break
-    ans *= y1 ** i[1]
-    x1 = i[0]
-    y1 = i[1]
-print(ans % 998244353)
+N = 5
+A = [3, 3, 1, 6, 1]
+
+alta_A = list(sorted(set(A)))
+dict_A= {}
+for i in range(len(alta_A)):
+    dict_A[alta_A[i]] = i
+
+for i in A:
+    print(dict_A[i])
