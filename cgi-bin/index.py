@@ -31,29 +31,49 @@ from math import factorial, hypot
 # Main Code #
 #############
 
-n = int(input())
-A = list(map(int, input().split()))
-m = 10 ** 9 + 7
+H, W = getNM()
+maze = [list(input()) for i in range(H)]
+prevmaze = [['.'] * W for i in range(H)]
+# 8方向のベクトル
+dx = [0, 1, 1, 1, 0, -1, -1, -1]
+dy = [1, 1, 0, -1, -1, -1, 0, 1]
 
-from operator import mul
-from functools import reduce
+# #がある点の周囲を#にする
+def alter(x, y):
+    for i in range(8):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if 0 <= nx < W and 0 <= ny < H and prevmaze[ny][nx] == ".":
+            prevmaze[ny][nx] = "#"
 
-# mod使わない時はこっち
-def cmb(n, r):
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+grass = []
 
-mono = 1
-sum = 0
-for i in range(1, n):
-    if A[i] > A[i - 1]:
-        mono += 1
-    else:
-        # 重複組み合わせ
-        sum += cmb(mono + 1, 2)
-        mono = 1
-sum += cmb(mono + 1, 2)
-print(sum)
+# 周囲を#に囲まれた地点を検索
+def rounder(x, y):
+    flag = True
+    for i in range(8):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if 0 <= nx < W and 0 <= ny < H:
+            if maze[ny][nx] == ".":
+                flag = False
+    if flag:
+        grass.append([x, y])
+        prevmaze[y][x] = "#"
+
+for i in range(W):
+    for j in range(H):
+        if maze[j][i] == "#":
+            rounder(i, j)
+
+anscopy = copy.deepcopy(prevmaze)
+
+for i in grass:
+    px, py = i[0], i[1]
+    alter(px, py)
+if (maze == prevmaze):
+    print('possible')
+    for i in anscopy:
+        print(''.join(map(str, i)))
+else:
+    print('impossible')
