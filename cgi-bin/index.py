@@ -20,19 +20,51 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-N, K = 14, 2
-S = "11101010110011"
+N = 24
+if N == 1:
+    print(0)
+    exit()
 
-flag = S[0]
-sta = 1
-lista = []
+# 1(1), 2(1 + 2), 3(1 + 2 + 3)...を超えられるか
+def factime(ny):
+    cnt = 1
+    sum = 0
+    while True:
+        if sum + cnt > ny:
+            return cnt - 1
+            break
+        sum += cnt
+        cnt += 1
+# 1
+print(factime(2))
+# 2
+print(factime(3))
+# 3
+print(factime(9))
+# 4 (1 + 2 + 3 + 4)
+print(factime(10))
+# 素因数分解
+def prime_factorize(n):
+    divisors = []
+    # 27(2 * 2 * 7)の7を出すためにtemp使う
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
 
-for i in range(1, N):
-    if flag != S[i]:
-        # flag(0か1か), sta(どこから続いているか), i(最終的にどこまで続いたか)
-        lista.append([flag, sta, i])
-        flag = S[i]
-        sta = i + 1
-lista.append([flag, sta, N])
+    return divisors
 
-print(lista)
+ans = 0
+for i in prime_factorize(N):
+    ans += factime(i[1])
+# 3
+print(ans)
