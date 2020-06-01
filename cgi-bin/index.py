@@ -32,7 +32,23 @@ from math import factorial, hypot
 # Main Code #
 #############
 
-# 小数を丸める
-# Decimal型を扱う場合は「Decimal("0.1")」のように小数点を文字列型で定義する必要がある
-A, B = map(Decimal, input().split())
-print(int(A * B))
+N = getN()
+A = getList()
+
+cnt4 = 0
+cnt2 = 0
+# 実際に数字を並べて確かめてみる
+for i in A:
+    if i % 4 == 0:
+        cnt4 += 1
+    elif i % 2 == 0:
+        cnt2 += 1
+
+if cnt4 * 2 + 1 >= N:
+    print('Yes')
+else:
+    left = N - cnt4 * 2
+    if cnt2 >= left:
+        print('Yes')
+    else:
+        print('No')
