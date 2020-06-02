@@ -8,6 +8,19 @@ def getArray(intn):
     return [int(input()) for i in range(intn)]
 def input():
     return sys.stdin.readline().rstrip()
+def rand_N(ran1, ran2):
+    return random.randint(ran1, ran2)
+def rand_List(ran1, ran2, rantime):
+    return [random.randint(ran1, ran2) for i in range(rantime)]
+def rand_ints_nodup(ran1, ran2, rantime):
+  ns = []
+  while len(ns) < rantime:
+    n = random.randint(ran1, ran2)
+    if not n in ns:
+      ns.append(n)
+  return sorted(ns)
+
+
 
 from collections import defaultdict, deque, Counter
 from sys import exit
@@ -15,6 +28,7 @@ from decimal import *
 import heapq
 import math
 from fractions import gcd
+import random
 import copy
 from itertools import permutations
 from operator import mul
@@ -25,30 +39,18 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
-from itertools import permutations
-from math import factorial, hypot
 
 #############
 # Main Code #
 #############
 
-N = getN()
-A = getList()
+N = rand_N(5, 10)
+M = rand_N(10, 30)
+print(N)
+print(M)
 
-cnt4 = 0
-cnt2 = 0
-# 実際に数字を並べて確かめてみる
-for i in A:
-    if i % 4 == 0:
-        cnt4 += 1
-    elif i % 2 == 0:
-        cnt2 += 1
-
-if cnt4 * 2 + 1 >= N:
-    print('Yes')
-else:
-    left = N - cnt4 * 2
-    if cnt2 >= left:
-        print('Yes')
-    else:
-        print('No')
+for l in range(1, N):
+    for m in range(1, N):
+        for n in range(1, N):
+            if 2 * l + 3 * m + 4 * n == M and l + m + n == N:
+                print(l, m, n)
