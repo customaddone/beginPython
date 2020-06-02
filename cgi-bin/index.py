@@ -12,6 +12,13 @@ def rand_N(ran1, ran2):
     return random.randint(ran1, ran2)
 def rand_List(ran1, ran2, rantime):
     return [random.randint(ran1, ran2) for i in range(rantime)]
+def rand_ints_nodup(ran1, ran2, rantime):
+  ns = []
+  while len(ns) < rantime:
+    n = random.randint(ran1, ran2)
+    if not n in ns:
+      ns.append(n)
+  return sorted(ns)
 
 from collections import defaultdict, deque, Counter
 from sys import exit
@@ -36,49 +43,26 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 重複なし
-def rand_ints_nodup(ran1, ran2, rantime):
-  ns = []
-  while len(ns) < rantime:
-    n = random.randint(ran1, ran2)
-    if not n in ns:
-      ns.append(n)
-  return sorted(ns)
+N, K = getNM()
+query = []
+for i in range(N):
+    t = getList()
+    query.append(t)
 
-# rand_dist
-def rand_dist(ransize, rantime):
-    dist_alta = []
-    while len(dist_alta) < min(rantime, ransize * (ransize - 1) // 2):
-        a, b = rand_ints_nodup(0, ransize - 1, 2)
-        if not [a, b] in dist_alta:
-            dist_alta.append([a, b])
-    return sorted(dist_alta)
-print(rand_dist(4, 5))
-
-# rand_letter
-def rand_letter(size):
-    ascii_original='ATCG'
-    digits_original='01'
-
-    digits='0123456789'
-    ascii_lowercase='abcdefghijklmnopqrstuvwxyz'
-    ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
-    # 好きなものを使ってね
-    psuedo = ascii_original
-
-    return ''.join([random.choice(psuedo) for i in range(size)])
-print(rand_letter(12))
-
-# 使い方
-# ABC006 C - スフィンクスのなぞなぞ
-N = rand_N(5, 10)
-M = rand_N(10, 30)
-print(N)
-print(M)
-
-for l in range(1, N):
-    for m in range(1, N):
-        for n in range(1, N):
-            if 2 * l + 3 * m + 4 * n == M and l + m + n == N:
-                print(l, m, n)
+def dfs(i, now):
+    if i == 0:
+        for m in query[0]:
+            if m == 0:
+                print('Found')
+                exit()
+            dfs(i + 1, m)
+    elif i < N:
+        for j in query[i]:
+            newnow = j ^ now
+            if newnow == 0:
+                print('Found')
+                exit()
+            else:
+                dfs(i + 1, newnow)
+dfs(0, 0)
+print('Nothing')
