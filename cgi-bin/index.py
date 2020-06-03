@@ -20,20 +20,6 @@ def rand_ints_nodup(ran1, ran2, rantime):
       ns.append(n)
   return sorted(ns)
 
-from collections import defaultdict, deque, Counter
-from sys import exit
-from decimal import *
-import heapq
-import math
-from fractions import gcd
-import random
-import string
-import copy
-from itertools import permutations
-from operator import mul
-from functools import reduce
-from bisect import bisect_left, bisect_right
-
 import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
@@ -43,33 +29,22 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M, Q = 10, 3, 2
-query = [
-[1, 5],
-[2, 8],
-[7, 10],
-[1, 7],
-[3, 10]
-]
+w = getN()
+n,k = getNM()
+A = []
+B = []
+for i in range(n):
+    a_,b_ = getNM()
+    A.append(a_)
+    B.append(b_)
+# dp[n][k][w] k個足してw以内で
+dp = [[[0] * (w + 1) for i in range(k + 1)] for j in range(n + 1)]
 
-# l から rまで行く鉄道の数
-lr = [[0 for i in range(N + 1)] for j in range(N + 1)]
-# l から r以前のどこかまで行く鉄道の数
-imos = [[0 for i in range(N + 1)] for j in range(N + 1)]
-imos2 = [[0 for i in range(N + 1)] for j in range(N + 1)]
-
-for i in query:
-    l, r = i
-    lr[l][r] += 1
-
-for i in range(1, N + 1):
-    for j in range(1, N + 1):
-        # j - 1以前のどこかまで行くもの　+ jまで行くもの
-        imos[i][j] = imos[i][j - 1] + lr[i][j]
-
-for i in range(1, N + 1):
-    for j in range(1, N + 1):
-        # i - 1以前のどこかからスタート + iスタート
-        imos2[i][j] = imos2[i - 1][j] + lr[i][j]
-
-print(imos2)
+for i in range(n):
+    for j in range(k + 1):
+        for l in range(w + 1):
+            if l >= A[i] and j >= 1:
+                dp[i + 1][j][l] = max(dp[i][j][l],dp[i][j - 1][l - A[i]] + B[i])
+            else:
+                dp[i + 1][j][l] = dp[i][j][l]
+print(dp[n][k][w])
