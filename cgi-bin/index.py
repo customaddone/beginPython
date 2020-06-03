@@ -43,26 +43,64 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = getNM()
-query = []
-for i in range(N):
-    t = getList()
-    query.append(t)
+"""
+3
+3 2 1
+2 2 1
+1 1 1
+3
+1
+4
+9
+"""
 
-def dfs(i, now):
-    if i == 0:
-        for m in query[0]:
-            if m == 0:
-                print('Found')
-                exit()
-            dfs(i + 1, m)
-    elif i < N:
-        for j in query[i]:
-            newnow = j ^ now
-            if newnow == 0:
-                print('Found')
-                exit()
-            else:
-                dfs(i + 1, newnow)
-dfs(0, 0)
-print('Nothing')
+N = getN()
+maze = [getList() for i in range(N)]
+Q = getN()
+query = getArray(Q)
+
+# 二次元累積和
+dp = [[0] * N for i in range(N)]
+# 縦１行目、横１行目
+for i in range(N):
+    dp[i][0] = maze[i][0]
+for i in range(N):
+    for j in range(1, N):
+        dp[i][j] = dp[i][j - 1] + maze[i][j]
+# 全て
+for i in range(1, N):
+    for j in range(N):
+        dp[i][j] += dp[i - 1][j]
+
+# 採点マシーン
+def judge(sx, sy, ex, ey):
+    mother = dp[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
+
+# 「大きさNの時の美味しさ」のリスト
+anslist = [0] * (N ** 2 + 1)
+for nsx in range(N):
+    for nex in range(nsx, N):
+        for nsy in range(N):
+            for ney in range(nsy, N):
+                opt = judge(nsx, nsy, nex, ney)
+                #print(opt, [nsx, nsy, nex, ney])
+                index = (nex - nsx + 1) * (ney - nsy + 1)
+                anslist[index] = max(anslist[index], opt)
+
+# 「大きさN以下の時の美味しさ」のリスト
+ans_alta = [0] * (N ** 2 + 1)
+for i in range(1, len(ans_alta)):
+    ans_alta[i] = max(ans_alta[i - 1], anslist[i])
+
+for i in query:
+    print(ans_alta[i])
