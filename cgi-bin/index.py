@@ -43,21 +43,33 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-n = 4
-lista = [
-[0, 2],
-[2, 3],
-[2, 4],
-[5, 6]
+N, M, Q = 10, 3, 2
+query = [
+[1, 5],
+[2, 8],
+[7, 10],
+[1, 7],
+[3, 10]
 ]
-maxi = 10 ** 6 + 2
 
-# (10 ** 6 + 2)は上限
-listb = [0] * maxi
-for i in lista:
-    listb[i[0]] += 1
-    listb[i[1] + 1] -= 1
-listc = [0]
-for i in range(maxi):
-    listc.append(listb[i] + listc[i])
-print(max(listc))
+# l から rまで行く鉄道の数
+lr = [[0 for i in range(N + 1)] for j in range(N + 1)]
+# l から r以前のどこかまで行く鉄道の数
+imos = [[0 for i in range(N + 1)] for j in range(N + 1)]
+imos2 = [[0 for i in range(N + 1)] for j in range(N + 1)]
+
+for i in query:
+    l, r = i
+    lr[l][r] += 1
+
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # j - 1以前のどこかまで行くもの　+ jまで行くもの
+        imos[i][j] = imos[i][j - 1] + lr[i][j]
+
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # i - 1以前のどこかからスタート + iスタート
+        imos2[i][j] = imos2[i - 1][j] + lr[i][j]
+
+print(imos2)
