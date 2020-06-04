@@ -20,6 +20,20 @@ def rand_ints_nodup(ran1, ran2, rantime):
       ns.append(n)
   return sorted(ns)
 
+from collections import defaultdict, deque, Counter
+from sys import exit
+from decimal import *
+import heapq
+import math
+from fractions import gcd
+import random
+import string
+import copy
+from itertools import permutations
+from operator import mul
+from functools import reduce
+from bisect import bisect_left, bisect_right
+
 import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
@@ -29,47 +43,61 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# y = line[0]x + line[1]
-# 傾きmaxならx = line[3]
-def line(Ax, Ay, Bx, By):
-    if Ay == By:
-        return 0, Ay, None
-    if Ax == Bx:
-        return float("inf"), 0, Ax
-    a = (Ay - By) / (Ax - Bx)
-    b = Ay - a * Ax
-    return a, b, None
+# 菱形の関数
+"""
+dp1 = [[0] * C for i in range(R)]
+def diam(x, y, size, dp):
+    max_x = len(dp[0]) - 1
+    max_y = len(dp) - 1
+    wid = size - 1
+    if wid <= x <= max_x - wid and wid <= y <= max_y - wid:
+        for h in range(y - wid, y + wid + 1):
+            diff = abs(y - h)
+            for w in range(x - (wid - diff), x + (wid - diff) + 1):
+                dp[h][w] = 1
+"""
 
-# print(line(0, 2, 1, 3))
-# 二つの線がクロスするx,y座標を出す
-def cross(l1, l2):
-    a1, b1, xx1 = min(l1, l2)
-    a2, b2, xx2 = max(l1, l2)
-    if a1 == a2:
-        return None
-    if a2 == float("inf"):
-        x = xx2
+R, C, K = getNM()
+S = [list(input()) for i in range(R)]
+
+def diam(x, y, size, dp):
+    max_x = len(dp[0]) - 1
+    max_y = len(dp) - 1
+    wid = size - 1
+    flag = True
+    if wid <= x <= max_x - wid and wid <= y <= max_y - wid:
+        for h in range(y - wid, y + wid + 1):
+            diff = abs(y - h)
+            for w in range(x - (wid - diff), x + (wid - diff) + 1):
+                if dp[h][w] == 'x':
+                    flag = False
+                    break
+            else:
+                continue
+            break
     else:
-        x = (b1 - b2) / (a2 - a1)
-    y = a1 * x + b1
-    return x, y
+        flag = False
+    return flag
 
-# print(cross([1, 2, None], [0, 3, None]))
+cnt = 0
+xlist = [[-1] for i in range(R)]
+for i in range(R):
+    for j in range(C):
+        if S[i][j] == "x":
+            xlist[i].append(j)
+for i in range(R):
+    xlist[i].append(C)
 
-Ax, Ay, Bx, By = getNM()
-N = getN()
-P = [tuple(getNM()) for _ in range(N)]
-P += [P[0]]
-chop = line(Ax, Ay, Bx, By)
-ans = 0
-for i in range(N):
-    p1 = P[i]
-    p2 = P[i + 1]
-    side = line(p1[0], p1[1], p2[0], p2[1])
-    c = cross(chop, side)
-    if not c:
-        continue
-    x, y = c
-    if min(p1[0], p2[0]) <= x <= max(p1[0], p2[0]) and min(Ax, Bx) <= x <= max(Ax, Bx):
-        ans += 1
-print(ans // 2 + 1)
+optlist = [[] for i in range(R)]
+for i in range(R):
+    for j in range(C):
+        wid = K - 1
+        index = bisect_right(xlist[i], j)
+        #print(i, j, xlist[i][index - 1], xlist[i][index])
+        if j - xlist[i][index - 1] > wid and xlist[i][index] - j > wid:
+            optlist[i].append(j)
+
+for i in range(wid, R - wid):
+    for j in optlist[i]:
+        cnt += diam(j, i, K, S)
+print(cnt)
