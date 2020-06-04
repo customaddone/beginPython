@@ -59,45 +59,28 @@ def diam(x, y, size, dp):
 
 R, C, K = getNM()
 S = [list(input()) for i in range(R)]
+Salta = copy.deepcopy(S)
+wid = K - 1
 
+# 菱形状に"X"をつける関数
 def diam(x, y, size, dp):
     max_x = len(dp[0]) - 1
     max_y = len(dp) - 1
-    wid = size - 1
-    flag = True
-    if wid <= x <= max_x - wid and wid <= y <= max_y - wid:
-        for h in range(y - wid, y + wid + 1):
-            diff = abs(y - h)
-            for w in range(x - (wid - diff), x + (wid - diff) + 1):
-                if dp[h][w] == 'x':
-                    flag = False
-                    break
-            else:
-                continue
-            break
-    else:
-        flag = False
-    return flag
-
-cnt = 0
-xlist = [[-1] for i in range(R)]
+    for h in range(y - wid, y + wid + 1):
+        diff = abs(y - h)
+        for w in range(x - (wid - diff), x + (wid - diff) + 1):
+            if 0 <= h <= R - 1 and 0 <= w <= C - 1:
+                dp[h][w] = "x"
+# "x"がついたところ起点で菱形状に"X"をつける（候補から除外する）
 for i in range(R):
     for j in range(C):
         if S[i][j] == "x":
-            xlist[i].append(j)
-for i in range(R):
-    xlist[i].append(C)
+            diam(j, i, K, Salta)
 
-optlist = [[] for i in range(R)]
-for i in range(R):
-    for j in range(C):
-        wid = K - 1
-        index = bisect_right(xlist[i], j)
-        #print(i, j, xlist[i][index - 1], xlist[i][index])
-        if j - xlist[i][index - 1] > wid and xlist[i][index] - j > wid:
-            optlist[i].append(j)
-
+cnt = 0
+# はじの方はやるまでもなくX
 for i in range(wid, R - wid):
-    for j in optlist[i]:
-        cnt += diam(j, i, K, S)
+    for j in range(wid, C - wid):
+        if Salta[i][j] == "o":
+            cnt += 1
 print(cnt)
