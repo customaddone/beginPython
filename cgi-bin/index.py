@@ -43,51 +43,56 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-H, W, N = getNM()
-maze = []
+H, W, T = getNM()
+s = [list(input()) for _ in range(H)]
+
+minT = 0
+maxT = 10 ** 9 + 1
+
+start = []
+goal = []
 for i in range(H):
-    a = input()
-    maze.append(list(a))
+    for j in range(W):
+        if s[i][j] == "S":
+            start = [i,j]
+        if s[i][j] == "G":
+            goal = [i,j]
 
-start = [-1, -1]
-end = [-1, -1]
-ans = 0
-# スタート位置特定
-for i in range(W):
-    for j in range(H):
-        if maze[j][i] == 'S':
-            start = [i, j]
-            break
-    else:
-        continue
-    break
+def comp_dist(x, s):
+    return x if s == "#" else 1
 
-dx = [0, 1, 0, -1]
-dy = [1, 0, -1, 0]
-mazealta = [[1] * W for i in range(H)]
-mazealta[start[1]][start[0]] = 0
-ans = 0
+dx = [1, -1, 0, 0]
+dy = [0, 0, 1, -1]
 
-def dfs(x, y, cnt):
-    global ans
-    cnt_h, cnt_b = cnt
-    if cnt_b * ans + cnt_h > N:
-        return
-    if maze[y][x] == 'G':
-        opt = (N - 1 - cnt_h) // cnt_b
-        ans = max(ans, opt)
-    mazealta[y][x] = 0
+# 二分探索 + ダイクストラ
+while maxT - minT > 1:
+    dis = minT + (maxT - minT) // 2
+    dist = [[float("inf") for _ in range(W)] for _ in range(H)]
+    dist[start[0]][start[1]]=0
 
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if 0 <= nx < W and 0 <= ny < H and mazealta[ny][nx] == 1:
-            if maze[ny][nx] == ".":
-                dfs(nx, ny, [cnt_h + 1, cnt_b])
-            elif maze[ny][nx] == "#":
-                dfs(nx, ny, [cnt_h, cnt_b + 1])
-            else:
-                dfs(nx, ny, [cnt_h, cnt_b])
-    mazealta[y][x] = 1
-dfs(start[0], start[1], [0, 0])
-print(ans)
+    q = []
+    q.append([0, start[0], start[1]])
+    heapq.heapify(q)
+    while len(q) > 0:
+        distance, x, y = heapq.heappop(q)
+        if dist[x][y] < distance:
+            continue
+
+        for i in range(len(dx)):
+            nx = x + dx[i]
+            ny = y + dy[i]
+
+            if nx < 0 or nx >= H or ny < 0 or ny >= W:
+                continue
+
+            nd = dist[x][y] + comp_dist(dis, s[nx][ny])
+            if dist[nx][ny] > nd:
+                dist[nx][ny] = nd
+                heapq.heappush(q, [nd, nx, ny])
+
+    if dist[goal[0]][goal[1]] > T:
+        maxT = dis
+    elif dist[goal[0]][goal[1]] <= T:
+        minT = dis
+
+print(minT)
