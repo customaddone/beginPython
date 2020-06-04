@@ -54,6 +54,8 @@ def cross(l1, l2):
     y = a1 * x + b1
     return x, y
 
+# print(cross([1, 2, None], [0, 3, None]))
+
 Ax, Ay, Bx, By = getNM()
 N = getN()
 P = [tuple(getNM()) for _ in range(N)]
