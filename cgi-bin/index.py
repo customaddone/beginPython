@@ -43,44 +43,51 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 菱形の関数
-"""
-dp1 = [[0] * C for i in range(R)]
-def diam(x, y, size, dp):
-    max_x = len(dp[0]) - 1
-    max_y = len(dp) - 1
-    wid = size - 1
-    if wid <= x <= max_x - wid and wid <= y <= max_y - wid:
-        for h in range(y - wid, y + wid + 1):
-            diff = abs(y - h)
-            for w in range(x - (wid - diff), x + (wid - diff) + 1):
-                dp[h][w] = 1
-"""
+H, W, N = getNM()
+maze = []
+for i in range(H):
+    a = input()
+    maze.append(list(a))
 
-R, C, K = getNM()
-S = [list(input()) for i in range(R)]
-Salta = copy.deepcopy(S)
-wid = K - 1
+start = [-1, -1]
+end = [-1, -1]
+ans = 0
+# スタート位置特定
+for i in range(W):
+    for j in range(H):
+        if maze[j][i] == 'S':
+            start = [i, j]
+            break
+    else:
+        continue
+    break
 
-# 菱形状に"X"をつける関数
-def diam(x, y, size, dp):
-    max_x = len(dp[0]) - 1
-    max_y = len(dp) - 1
-    for h in range(y - wid, y + wid + 1):
-        diff = abs(y - h)
-        for w in range(x - (wid - diff), x + (wid - diff) + 1):
-            if 0 <= h <= R - 1 and 0 <= w <= C - 1:
-                dp[h][w] = "x"
-# "x"がついたところ起点で菱形状に"X"をつける（候補から除外する）
-for i in range(R):
-    for j in range(C):
-        if S[i][j] == "x":
-            diam(j, i, K, Salta)
+dx = [0, 1, 0, -1]
+dy = [1, 0, -1, 0]
+mazealta = [[1] * W for i in range(H)]
+mazealta[start[1]][start[0]] = 0
+ans = 0
 
-cnt = 0
-# はじの方はやるまでもなくX
-for i in range(wid, R - wid):
-    for j in range(wid, C - wid):
-        if Salta[i][j] == "o":
-            cnt += 1
-print(cnt)
+def dfs(x, y, cnt):
+    global ans
+    cnt_h, cnt_b = cnt
+    if cnt_b * ans + cnt_h > N:
+        return
+    if maze[y][x] == 'G':
+        opt = (N - 1 - cnt_h) // cnt_b
+        ans = max(ans, opt)
+    mazealta[y][x] = 0
+
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if 0 <= nx < W and 0 <= ny < H and mazealta[ny][nx] == 1:
+            if maze[ny][nx] == ".":
+                dfs(nx, ny, [cnt_h + 1, cnt_b])
+            elif maze[ny][nx] == "#":
+                dfs(nx, ny, [cnt_h, cnt_b + 1])
+            else:
+                dfs(nx, ny, [cnt_h, cnt_b])
+    mazealta[y][x] = 1
+dfs(start[0], start[1], [0, 0])
+print(ans)
