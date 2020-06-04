@@ -43,56 +43,51 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-H, W, T = getNM()
-s = [list(input()) for _ in range(H)]
+N = getN()
+a, b = getNM()
+M = getN()
+dist = [[] for i in range(N)]
+for i in range(M):
+    x, y = getNM()
+    dist[x - 1].append(y - 1)
+    dist[y - 1].append(x - 1)
 
-minT = 0
-maxT = 10 ** 9 + 1
+# スタートからの最短距離測定
+def distance(sta):
+    # 木をstaから順にたどる（戻るの禁止）
+    pos = deque([sta])
+    ignore = [-1] * N
+    ignore[sta] = 0
 
-start = []
-goal = []
-for i in range(H):
-    for j in range(W):
-        if s[i][j] == "S":
-            start = [i,j]
-        if s[i][j] == "G":
-            goal = [i,j]
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in dist[u]:
+            if ignore[i] == -1:
+                ignore[i] = ignore[u] + 1
+                pos.append(i)
 
-def comp_dist(x, s):
-    return x if s == "#" else 1
+    return ignore
 
-dx = [1, -1, 0, 0]
-dy = [0, 0, 1, -1]
+d = distance(a - 1)
 
-# 二分探索 + ダイクストラ
-while maxT - minT > 1:
-    dis = minT + (maxT - minT) // 2
-    dist = [[float("inf") for _ in range(W)] for _ in range(H)]
-    dist[start[0]][start[1]]=0
+# スタートから特定の点まで最短距離で行く通りの数
+def counter(sta):
+    pos = deque([sta])
+    ignore = [0] * N
+    cnt = [0] * N
+    cnt[sta] = 1
 
-    q = []
-    q.append([0, start[0], start[1]])
-    heapq.heapify(q)
-    while len(q) > 0:
-        distance, x, y = heapq.heappop(q)
-        if dist[x][y] < distance:
-            continue
+    while len(pos) > 0:
+        u = pos.popleft()
+        # ignoreゲートをforの外に置く
+        if ignore[u] == 0:
+            ignore[u] = 1
+            # d[i] == d[u] + 1を満たすuの子ノード全てに
+            # 「スタートからuまでの通りの数」をプラス（他のルートからも来る）
+            for i in dist[u]:
+                if d[i] == d[u] + 1:
+                    cnt[i] += cnt[u]
+                    pos.append(i)
+    return cnt
 
-        for i in range(len(dx)):
-            nx = x + dx[i]
-            ny = y + dy[i]
-
-            if nx < 0 or nx >= H or ny < 0 or ny >= W:
-                continue
-
-            nd = dist[x][y] + comp_dist(dis, s[nx][ny])
-            if dist[nx][ny] > nd:
-                dist[nx][ny] = nd
-                heapq.heappush(q, [nd, nx, ny])
-
-    if dist[goal[0]][goal[1]] > T:
-        maxT = dis
-    elif dist[goal[0]][goal[1]] <= T:
-        minT = dis
-
-print(minT)
+print(counter(a - 1)[b - 1] % mod)
