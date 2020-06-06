@@ -51,36 +51,14 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-edges = [[] for i in range(N)]
-for i in range(N - 1):
-    u, v, d = getNM()
-    edges[u - 1].append([v - 1, d])
-    edges[v - 1].append([u - 1, d])
+N,K = getNM()
+ans = 0
+rec = [0] * (K + 1)
 
-def dij(start):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-
-    while len(pq) > 0:
-        d, now = heapq.heappop(pq)
-        if (d > dist[now]):
-            continue
-        for i in edges[now]:
-            if dist[i[0]] > dist[now] + i[1]:
-                dist[i[0]] = dist[now] + i[1]
-                heapq.heappush(pq, (dist[i[0]], i[0]))
-    return dist
-
-ans = [0] * N
-dij_list = dij(0)
-# 木（頂点がNで辺がN - 1のもの）にはループがない
-# 0からの距離が奇数、偶数かでグループ分けできる
-for i in range(N):
-    if dij_list[i] % 2 == 0:
-        ans[i] = 0
-    else:
-        ans[i] = 1
-for i in ans:
-    print(i)
+# 逆から
+for X in range(K, 0, -1):
+    rec[X] = pow(K//X, N, mod)
+    for i in range(2, K // X + 1):
+        rec[X] -= rec[i * X] % mod
+    ans += (X * rec[X]) % mod
+print(ans % mod)
