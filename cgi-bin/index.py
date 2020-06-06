@@ -50,30 +50,37 @@ mod = 10 ** 9 + 7
 #############
 # Main Code #
 #############
-"""
-N = rand_N(2, 6)
-query = rand_query(2, 10, N)
-print(query)
-ans_taka, ans_aoki = query[0]
-"""
 
 N = getN()
-query =  [getList() for i in range(N)]
-# 一回目の選挙速報の結果を受けて
-ans_taka, ans_aoki = query[0]
+edges = [[] for i in range(N)]
+for i in range(N - 1):
+    u, v, d = getNM()
+    edges[u - 1].append([v - 1, d])
+    edges[v - 1].append([u - 1, d])
 
-# 現在の高橋くん、青木くんの票数、選挙速報の結果の比を基に
-# 次の高橋くん、青木くんの票数の最小値が出てくる
-def vote(taka, aoki, ratio):
-    ratio_taka, ratio_aoki = ratio
-    taka_multi = (taka + ratio_taka - 1) // ratio_taka
-    aoki_multi = (aoki + ratio_aoki - 1) // ratio_aoki
-    multi = max(taka_multi, aoki_multi)
+def dij(start):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
 
-    return [ratio_taka * multi, ratio_aoki * multi]
+    while len(pq) > 0:
+        d, now = heapq.heappop(pq)
+        if (d > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i[0]] > dist[now] + i[1]:
+                dist[i[0]] = dist[now] + i[1]
+                heapq.heappush(pq, (dist[i[0]], i[0]))
+    return dist
 
-# 選挙速報２回目〜
-for i in range(1, N):
-    ans_taka, ans_aoki = vote(ans_taka, ans_aoki, query[i])
-    # print(ans_taka, ans_aoki)
-print(ans_taka + ans_aoki)
+ans = [0] * N
+dij_list = dij(0)
+# 木（頂点がNで辺がN - 1のもの）にはループがない
+# 0からの距離が奇数、偶数かでグループ分けできる
+for i in range(N):
+    if dij_list[i] % 2 == 0:
+        ans[i] = 0
+    else:
+        ans[i] = 1
+for i in ans:
+    print(i)
