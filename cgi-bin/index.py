@@ -43,51 +43,19 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-a, b = getNM()
-M = getN()
-dist = [[] for i in range(N)]
-for i in range(M):
-    x, y = getNM()
-    dist[x - 1].append(y - 1)
-    dist[y - 1].append(x - 1)
+N = getList()
+limit = 5
+num = set()
 
-# スタートからの最短距離測定
-def distance(sta):
-    # 木をstaから順にたどる（戻るの禁止）
-    pos = deque([sta])
-    ignore = [-1] * N
-    ignore[sta] = 0
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in dist[u]:
-            if ignore[i] == -1:
-                ignore[i] = ignore[u] + 1
-                pos.append(i)
-
-    return ignore
-
-d = distance(a - 1)
-
-# スタートから特定の点まで最短距離で行く通りの数
-def counter(sta):
-    pos = deque([sta])
-    ignore = [0] * N
-    cnt = [0] * N
-    cnt[sta] = 1
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        # ignoreゲートをforの外に置く
-        if ignore[u] == 0:
-            ignore[u] = 1
-            # d[i] == d[u] + 1を満たすuの子ノード全てに
-            # 「スタートからuまでの通りの数」をプラス（他のルートからも来る）
-            for i in dist[u]:
-                if d[i] == d[u] + 1:
-                    cnt[i] += cnt[u]
-                    pos.append(i)
-    return cnt
-
-print(counter(a - 1)[b - 1] % mod)
+def rec_memo(i, plus, sum):
+    global ans
+    # 条件を満たすか
+    if plus == 3:
+        return sum
+    # 条件を満たさずに上限に達するか
+    elif i == limit:
+        return 0
+        # 満たさなければ
+    else:
+        return max(rec_memo(i + 1, plus, sum), rec_memo(i + 1, plus + 1, sum + N[i]))
+print(rec_memo(0, 0, 0))
