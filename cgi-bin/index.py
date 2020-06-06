@@ -51,30 +51,44 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
+N, M = getNM()
+A = [int(i) // 2 for i in input().split()]
 
-# -2進数　N = -9のとき
-# -9を1, -2, 4, -8...で表現する → 1 + (-10) を1, -2, 4, -8...で表現する
-# -10を-2, 4, -8...で表現する
-# ↑　使う数に1を加えないと-9を-2, 4, -8...で表現する事になりこれは不可能
-def minus_digit(rev_n):
-    if rev_n == 0:
-        print('0')
-        return
+# 4と8の場合
+# 2 6 10 14 18...
+# 4 12 20 28... これを２で割ると
 
-    cnt = 0
-    rep = rev_n
-    lista = []
+# 1 3 5 7 9...
+# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
 
-    while rep != 0:
-        split = (abs(rep) % 2 ** (cnt + 1)) // 2 ** cnt
-        if split == 0:
-            lista.append(0)
+# 4と12なら
+# 2 6 10 14 18...
+# 6 18 30 42... これを２で割ると
+# 1 3 5 7 9...
+# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
+
+# Aの各要素がどれも2でn回ちょうど割れる必要がある
+def div_2(n):
+    cnt = n
+    res = 0
+    while cnt > 0:
+        if cnt % 2 == 0:
+            cnt //= 2
+            res += 1
         else:
-            lista.append(1)
-        rep -= (split * ((-2) ** cnt))
-        cnt += 1
-    lista.reverse()
-    return''.join(map(str, lista))
+            return res
 
-print(minus_digit(N))
+def lcm(x, y):
+    return x * (y // gcd(x, y))
+
+judge = [div_2(i) for i in A]
+
+if min(judge) != max(judge):
+    print(0)
+    exit()
+L = 1
+for i in range(N):
+    L = lcm(L, A[i])
+
+# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
+print(M // L - M // (2 * L))
