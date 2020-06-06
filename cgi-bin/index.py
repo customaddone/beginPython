@@ -43,9 +43,9 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getList()
+N = rand_List(1, 10, 5)
 limit = 5
-num = set()
+print(N)
 
 def rec_memo(i, plus, sum):
     global ans
@@ -55,7 +55,7 @@ def rec_memo(i, plus, sum):
     # 条件を満たさずに上限に達するか
     elif i == limit:
         return 0
-        # 満たさなければ
+    # それ以外
     else:
         return max(rec_memo(i + 1, plus, sum), rec_memo(i + 1, plus + 1, sum + N[i]))
 print(rec_memo(0, 0, 0))
