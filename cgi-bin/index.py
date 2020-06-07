@@ -51,23 +51,25 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
+N, K = getNM()
+A = getList()
+lista = [[0, 0] for i in range(61)]
+# bitの各桁が１か０かをlistaに収納
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            lista[i][0] += 1
+        else:
+            lista[i][1] += 1
+for i in A:
+    splitbit(i)
 
-def make_divisors(n):
-    divisors = []
-    for i in range(1, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            divisors.append(i)
-            # √nで無い数についてもう一個プラス
-            if i != n // i:
-                divisors.append(n // i)
-    return divisors
-
-ans = sum(make_divisors(N)) - N
-
-if ans == N:
-    print('Perfect')
-elif ans > N:
-    print('Abundant')
-else:
-    print('Deficient')
+ans = 0
+cnt = 0
+for i in range(60, -1, -1):
+    if lista[i][1] > lista[i][0] and cnt + 2 ** i <= K:
+        cnt += 2 ** i
+        ans += lista[i][1] * 2 ** i
+    else:
+        ans += lista[i][0] * 2 ** i
+print(ans)
