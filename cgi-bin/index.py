@@ -51,35 +51,20 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 3人、5回修行できる
-N, K = getNM()
-# 消化コスト
-A = getList()
-# 食べにくさ
-F = getList()
+K = getN()
 
-A.sort()
-F.sort(reverse = True)
+sta_a = 4
+sta_b = 2
 
-ng = -1
-ok = 10 ** 12 + 1
+for i in range(K - 1):
+    sta_a, sta_b = sta_a + sta_b, sta_a
+print(sta_a, sta_b)
 
-def judge(limit):
-    cnt = 0
-    for i in range(N):
-        # limit // F[i] 消費コストとして許される値
-        # A[i] - (limit // F[i]) 消費コストとして許される値との差
-        cnt += max(0, A[i] - (limit // F[i]))
-    return cnt
-
-while ok - ng > 1:
-    mid = (ok + ng) // 2
-    margin = judge(mid)
-
-    # 差がK以下であれば修正可能
-    # もうちょい下のmidも試してみる
-    if K >= margin:
-        ok = mid
+# ユークリッドの互除法
+def euclid(a, b):
+    print(a, b)
+    if b == 0:
+        return a
     else:
-        ng = mid
-print(ok)
+        return euclid(b, a % b)
+print(euclid(sta_a, sta_b))
