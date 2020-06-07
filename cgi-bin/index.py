@@ -51,30 +51,35 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-A, B, X = getNM()
+# 3人、5回修行できる
+N, K = getNM()
+# 消化コスト
+A = getList()
+# 食べにくさ
+F = getList()
 
-def small_tlit(a, b, x):
-    return (2 * b / a) - (2 * x / (a ** 3))
+A.sort()
+F.sort(reverse = True)
 
-def big_tlit(a, b, x):
-    return a * (b ** 2) / (2 * x)
+ng = -1
+ok = 10 ** 12 + 1
 
-def tan(angle):
-    return math.tan(math.radians(angle))
+def judge(limit):
+    cnt = 0
+    for i in range(N):
+        # limit // F[i] 消費コストとして許される値
+        # A[i] - (limit // F[i]) 消費コストとして許される値との差
+        cnt += max(0, A[i] - (limit // F[i]))
+    return cnt
 
-left = 0
-right = 90
+while ok - ng > 1:
+    mid = (ok + ng) // 2
+    margin = judge(mid)
 
-for _ in range(100):
-    mid = (left + right) / 2
-    res = 0
-    if 2 * X >= (A ** 2) * B:
-        res = small_tlit(A, B, X)
+    # 差がK以下であれば修正可能
+    # もうちょい下のmidも試してみる
+    if K >= margin:
+        ok = mid
     else:
-        res = big_tlit(A, B, X)
-
-    if tan(mid) <= res:
-        left = mid
-    else:
-        right = mid
-print(right)
+        ng = mid
+print(ok)
