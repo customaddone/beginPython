@@ -51,25 +51,33 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = getNM()
-A = getList()
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][0] += 1
-        else:
-            lista[i][1] += 1
-for i in A:
-    splitbit(i)
+N = 4
+A = [2, 5, 4, 6]
+dp = [[0] * 61 for i in range(N + 1)]
 
-ans = 0
-cnt = 0
-for i in range(60, -1, -1):
-    if lista[i][1] > lista[i][0] and cnt + 2 ** i <= K:
-        cnt += 2 ** i
-        ans += lista[i][1] * 2 ** i
-    else:
-        ans += lista[i][0] * 2 ** i
-print(ans)
+A_alta = [0]
+for i in range(N):
+    A_alta.append(A[i] + A_alta[i])
+print(A_alta)
+
+def splitbit(i, n):
+    for j in range(61):
+        if n & (1 << j):
+            dp[i][j] += 1
+
+for i in range(N):
+    splitbit(i + 1, A[i])
+
+# i番目の数字まででのi桁目でのフラグの数
+for i in range(1, N):
+    for j in range(61):
+        dp[i + 1][j] += dp[i][j]
+
+def rang_xor(sta, end):
+    cnt = 0
+    for i in range(61):
+        opt = dp[end + 1][i] - dp[sta][i]
+        if opt % 2 != 0:
+            cnt += 2 ** i
+    return cnt
+print(rang_xor(0, 3))
