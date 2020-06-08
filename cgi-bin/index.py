@@ -51,38 +51,67 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-
-next = [
-[0, 1],
-[0, 1, 2],
-[1, 2, 3],
-[2, 3, 4],
-[3, 4, 5],
-[4, 5, 6],
-[5, 6, 7],
-[6, 7, 8],
-[7, 8, 9],
-[8, 9]
+H, W = 3, 4
+# maze = [getList() for i in range(H)]
+maze = [
+[1, 2, 1, 2],
+[2, 3, 2, 3],
+[1, 3, 1, 3]
 ]
 
-ans = []
+# 二次元累積和
+dp_sum = [[0] * W for i in range(H)]
+dp_1 = [[0] * W for i in range(H)]
+dp_2 = [[0] * W for i in range(H)]
+dp_3 = [[0] * W for i in range(H)]
 
-def dfs(s):
-    global ans
-    if len(s) >= 11:
-        return
-    # 上限を超えない範囲で実行
-    else:
-        ans.append(int(s))
-        # dfs
-        s_last = int(s[-1])
-        for i in next[s_last]:
-            dfs(s + str(i))
+# x = 0 ~ i, y = 0 ~ j までの数の合計
+def bi_cumul_sum(dp_n):
+    # 縦１行目、横１行目
+    for i in range(H):
+        dp_n[i][0] = maze[i][0]
+    for i in range(H):
+        for j in range(1, W):
+            dp_n[i][j] = dp_n[i][j - 1] + maze[i][j]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_n[i][j] += dp_n[i - 1][j]
+bi_cumul_sum(dp_sum)
+# print(dp_sum)
 
-# 始点は1~9
-for i in range(1, 10):
-    dfs(str(i))
+# x = 0 ~ i, y = 0 ~ j までに出るnumの回数の合計
+def bi_cumul_cnt(num, dp_m):
+    # 縦１行目、横１行目
+    for i in range(H):
+        if maze[i][0] == num:
+            dp_m[i][0] = 1
+    for i in range(H):
+        for j in range(1, W):
+            if maze[i][j] == num:
+                dp_m[i][j] = dp_m[i][j - 1] + 1
+            else:
+                dp_m[i][j] = dp_m[i][j - 1]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_m[i][j] += dp_m[i - 1][j]
+bi_cumul_cnt(3, dp_3)
+# print(dp_1)
 
-ans.sort()
-print(ans[N - 1])
+# x = sx ~ ex y = sy ~ eyまで
+def judge(sx, sy, ex, ey, dp_l):
+    mother = dp_l[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp_l[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp_l[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp_l[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
+
+print(judge(1, 1, 3, 2, dp_sum))
+print(judge(2, 1, 3, 2, dp_3))
