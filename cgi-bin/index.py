@@ -51,33 +51,38 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 4
-A = [2, 5, 4, 6]
-dp = [[0] * 61 for i in range(N + 1)]
+N = getN()
 
-A_alta = [0]
-for i in range(N):
-    A_alta.append(A[i] + A_alta[i])
-print(A_alta)
+next = [
+[0, 1],
+[0, 1, 2],
+[1, 2, 3],
+[2, 3, 4],
+[3, 4, 5],
+[4, 5, 6],
+[5, 6, 7],
+[6, 7, 8],
+[7, 8, 9],
+[8, 9]
+]
 
-def splitbit(i, n):
-    for j in range(61):
-        if n & (1 << j):
-            dp[i][j] += 1
+ans = []
 
-for i in range(N):
-    splitbit(i + 1, A[i])
+def dfs(s):
+    global ans
+    if len(s) >= 11:
+        return
+    # 上限を超えない範囲で実行
+    else:
+        ans.append(int(s))
+        # dfs
+        s_last = int(s[-1])
+        for i in next[s_last]:
+            dfs(s + str(i))
 
-# i番目の数字まででのi桁目でのフラグの数
-for i in range(1, N):
-    for j in range(61):
-        dp[i + 1][j] += dp[i][j]
+# 始点は1~9
+for i in range(1, 10):
+    dfs(str(i))
 
-def rang_xor(sta, end):
-    cnt = 0
-    for i in range(61):
-        opt = dp[end + 1][i] - dp[sta][i]
-        if opt % 2 != 0:
-            cnt += 2 ** i
-    return cnt
-print(rang_xor(0, 3))
+ans.sort()
+print(ans[N - 1])
