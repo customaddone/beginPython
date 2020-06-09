@@ -51,30 +51,35 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-S = input()
-head = []
-tail = []
-rev = False
+N = input()
+K = getN()
+L = len(N)
 
-Q = getN()
-query = []
-for i in range(Q):
-    q = list(input().split())
-    query.append(q)
+dp = [[[0] * 4 for i in range(2)] for i in range(L + 1)]
+# i桁目がdで個数がkのとき
+dp[0][0][0] = 1
 
-for i in query:
-    if i[0] == '1':
-        # 反転
-        rev ^= True
-        # headとtailを入れ替える
-        head, tail = tail, head
-    else:
-        if i[1] == '1':
-            head.append(i[2])
-        else:
-            tail.append(i[2])
+for i in range(L):
+    # 各桁について
+    D = int(N[i])
 
-print("".join(head[::-1]) + (S[::-1] if rev else S) + "".join(tail))
+    # N = 103のとき
+    # j == 0 103
+    # j == 1 0 ~ 102まで
+    for j in range(2):
+        #
+        for d in range(10 if j else D + 1):
+            for k in range(4):
+                # d == 0のときkのカウントは進まない
+                if d == 0:
+                    # j == 1なら何も起こらない
+                    # j == 0でd == Dのときのみj == 0の列を +
+                    dp[i + 1][j | (d < D)][k] += dp[i][j][k]
+                else:
+                    if k + 1 <= 3:
+                        dp[i + 1][j | (d < D)][k + 1] += dp[i][j][k]
+
+print(dp[L][0][K] + dp[L][1][K])
 
 
 
