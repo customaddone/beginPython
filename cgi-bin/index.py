@@ -51,23 +51,36 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 点をつける、つけた点から最も遠いR以内の点を探す
-N = 6
-R = 10
-A = [1, 7, 15, 20, 30, 50]
+# ガソスタの個数
+N = 4
+#　距離
+L = 25
+# 最初の燃料
+P = 10
+# ガソスタの位置
+A = [10, 14, 20, 21]
+# ガソスタの補給量
+B = [10, 5, 2, 4]
 
-index_fir = bisect_right(A, A[0] + R)
-now = A[index_fir - 1]
-print(now)
+gas = []
+heapq.heapify(gas)
 
-cnt = 1
-while True:
-    index = bisect_right(A, now + R)
-    # 最後までカバーできたらbreak
-    if index == len(A):
-        break
-    # カバーしている限界の一つ向こうに点をうつ
-    now = A[index]
-    print(now)
-    cnt += 1
-print(cnt)
+tank = P
+now = 0
+ans = 0
+
+for i in range(N):
+    # 一旦ガソリンスタンドまで進む予定に
+    dis = A[i] - now
+    # タンクが貯まるまで続ける
+    while (tank - dis) < 0:
+        if len(gas) == 0:
+            print(-1)
+            exit()
+        tank += heapq.heappop(gas)
+        ans += 1
+        
+    tank -= dis
+    now = A[i]
+    heapq.heappush(gas, B[i])
+print(ans)
