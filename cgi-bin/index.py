@@ -51,50 +51,23 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = input()
-K = getN()
-L = len(N)
+# 点をつける、つけた点から最も遠いR以内の点を探す
+N = 6
+R = 10
+A = [1, 7, 15, 20, 30, 50]
 
-dp = [[[0] * 4 for i in range(2)] for i in range(L + 1)]
-# i桁目がdで個数がkのとき
-# 初期値は、0桁目までを使ってこの時点ではNと一致しているので
-dp[0][0][0] = 1
+index_fir = bisect_right(A, A[0] + R)
+now = A[index_fir - 1]
+print(now)
 
-# 桁dp
-# dp[i][j]: i桁目までを決めて、N未満で確定ならj=1、Nと一致しているならばj=0
-for i in range(L):
-    # 各桁について
-    D = int(N[i])
-
-    # N = 314159のとき
-    # j == 0 Nと一致
-    # j == 1 N未満が確定
-
-    # １桁目 3
-    # j == 0において0 <= d <= 3でループ回す
-    # d == 3のときj == 0 の方にプラスされる(3xxxxx)
-    # d == 0, 1, 2の場合j == 1の方にプラスされる(xxxxx, 1xxxxx, 2xxxxx)
-    # j == 1には何もないので何も起こらない
-
-    # ２桁目 1
-    # j == 0において0 <= d <= 1でループ回る
-    # j == 1において0 <= d <= 9でループ回る
-    # d == 0のときKのカウントは進まない
-    for j in range(2):
-        #
-        for d in range(10 if j else D + 1):
-            for k in range(4):
-                # d == 0のときkのカウントは進まない
-                if d == 0:
-                    # j == 1なら何も起こらない
-                    # j == 0でd == Dのときのみj == 0の列を +
-                    dp[i + 1][j | (d < D)][k] += dp[i][j][k]
-                else:
-                    if k + 1 <= 3:
-                        dp[i + 1][j | (d < D)][k + 1] += dp[i][j][k]
-
-print(dp[L][0][K] + dp[L][1][K])
-
-
-
-#
+cnt = 1
+while True:
+    index = bisect_right(A, now + R)
+    # 最後までカバーできたらbreak
+    if index == len(A):
+        break
+    # カバーしている限界の一つ向こうに点をうつ
+    now = A[index]
+    print(now)
+    cnt += 1
+print(cnt)
