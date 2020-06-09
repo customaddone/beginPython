@@ -51,196 +51,31 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-num = [1, 3, 5, 7, 9]
-limit = 10
+S = input()
+head = []
+tail = []
+rev = False
 
-# 個数制限あり重複なし部分和
-# 合計でlimitになる通りの数が出てくる
-# numは数字のリスト、limitは部分和
-def part_sum_1(num, limit):
-    N = len(num)
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 1
+Q = getN()
+query = []
+for i in range(Q):
+    q = list(input().split())
+    query.append(q)
 
-    for i in range(N):
-        for j in range(limit + 1):
-            if num[i] <= j:
-                dp[i + 1][j] = dp[i][j - num[i]] + dp[i][j]
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][limit]
-# print(part_sum_1(num, limit))
+for i in query:
+    if i[0] == '1':
+        # 反転
+        rev ^= True
+        # headとtailを入れ替える
+        head, tail = tail, head
+    else:
+        if i[1] == '1':
+            head.append(i[2])
+        else:
+            tail.append(i[2])
 
-# 個数制限なし重複あり部分和
-# 合計でlimitになる通りの数が出てくる
-# 1 + 3 と3 + 1 と1 + 1 + 1 + 1は違う通りになる
-def part_sum_2(num, limit):
-    N = len(num)
+print("".join(head[::-1]) + (S[::-1] if rev else S) + "".join(tail))
 
-    dp = [0] * (limit + 1)
-    dp[0] = 1
 
-    for i in range(1, limit + 1):
-        for j in range(N):
-            if i >= num[j]:
-                dp[i] += dp[i - num[j]]
-    return dp[limit]
-# print(part_sum_2(num, limit))
-
-# 個数制限あり重複なしナップサックdp
-# weightがW以内でのvalueの合計の最大値
-N = 4
-w = [2, 1, 3, 2]
-v = [3, 2, 4, 2]
-A = 5
-
-def knapsack_1(N, limit, weight, value):
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(limit + 1):
-            if weight[i] <= j:
-                dp[i + 1][j] = max(dp[i][j], dp[i][j - weight[i]] + value[i])
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][limit]
-# 7
-# print(knapsack_1(N, A, w, v))
-
-# 個数制限あり重複ありナップサックdp
-# N = 4個まで足せる
-def knapsack_2(N, limit, weight, value):
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(limit + 1):
-            dp[i + 1][j] = dp[i][j]
-            for r in range(N):
-                if weight[r] <= j:
-                    dp[i + 1][j] = max(dp[i + 1][j], dp[i][j - weight[r]] + value[r])
-    return dp[N][limit]
-
-# 9
-# print(knapsack_2(N, A, w, v))
-
-# 個数制限なし重複ありナップサックdp
-# 最大は当然w = 1, v = 2を5回
-def knapsack_3(N, limit, weight, value):
-    dp = [0] * (limit + 1)
-    dp[0] = 0
-
-    for j in range(limit + 1):
-        for r in range(N):
-            if weight[r] <= j:
-                dp[j] = max(dp[j], dp[j - weight[r]] + value[r])
-    return dp[limit]
-
-# 10
-# print(knapsack_3(N, A, w, v))
-
-N = 10
-w = [7550, 9680, 9790, 7150, 5818, 7712, 8227, 8671, 8228, 2461]
-v = [540, 691, 700, 510, 415, 551, 587, 619, 588, 176]
-A = 9999
-
-# ABC153 E - Crested Ibis vs Monster
-# Aをvalueで引き切るための最小weightを求める
-def knapsack_4(N, limit, weight, value):
-    dp = [float('inf')] * (limit + 1)
-    dp[0] = 0
-
-    for i in range(1, limit + 1):
-        for j in range(N):
-            if i < value[j]:
-                dp[i] = min(dp[i], weight[j])
-            else:
-                dp[i] = min(dp[i], dp[i - value[j]] + weight[j])
-    return dp[-1]
-
-# 139815
-# print(knapsack_4(N, A, w, v))
-
-A = 999
-# 重複なしver
-def knapsack_5(N, limit, weight, value):
-    dp = [[float('inf')] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(1, limit + 1):
-            if i == 0:
-                if j < value[i]:
-                    dp[i][j] = weight[i]
-            elif j < value[i]:
-                dp[i + 1][j] = min(dp[i][j], weight[i])
-            else:
-                dp[i + 1][j] = min(dp[i][j], dp[i][j - value[i]] + weight[i])
-    return dp[N][limit]
-
-# 14045
-# print(knapsack_5(N, A, w, v))
-
-W = 22
-N = 5
-K = 3
-w = [5, 8, 3, 4, 6]
-v = [40, 50, 60, 70, 80]
-
-# ナップサックdp個数
-# N個の選択肢、weightの上限upper, 足し合わせlimit個以内
-def knapsack_6(N, upper, limit, weight, value):
-    dp = [[[0] * (upper + 1) for i in range(limit + 1)] for j in range(N + 1)]
-
-    for i in range(N):
-        for j in range(limit + 1):
-            for l in range(upper + 1):
-                # もし残りweightがl以上でjが１以上（後ろがある）なら
-                if l >= weight[i] and j >= 1:
-                    dp[i + 1][j][l] = max(dp[i][j][l],dp[i][j - 1][l - weight[i]] + value[i])
-                else:
-                    dp[i + 1][j][l] = dp[i][j][l]
-    return dp[N][limit][upper]
-
-print(knapsack_6(N, W, K, w, v))
-
-# 最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
-
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
-
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
 
 #
