@@ -51,47 +51,44 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N1 = 3
-dist1 = [
-[1, 2],
-[0, 2],
-[0, 1]
+n = 7
+edge = [
+[[1, 1]],
+[[1, 0], [2, 2], [3, 3], [7, 4]],
+[[2, 1], [10, 5]],
+[[3, 1], [1, 4], [5, 6]],
+[[7, 1], [1, 3], [8, 6], [5, 5]],
+[[10, 2], [5, 4]],
+[[5, 3], [8, 4]]
 ]
 
-N2 = 4
-dist2 = [
-[1, 3],
-[0, 2],
-[1, 3],
-[0, 2]
-]
+def prim_heap():
+    used = [1] * n #True:未使用
 
-color1 = [-1] * N1
-color2 = [-1] * N2
+    edgelist = []
+    for e in edge[0]:
+        heapq.heappush(edgelist,e)
 
-pos = deque([0])
+    used[0] = 0
+    res = 0
 
-def colored(N, dist, color):
-    pos = deque([0])
-    color[0] = 0
-    while len(pos) > 0:
-        now = pos.popleft()
+    while len(edgelist) != 0:
+        minedge = heapq.heappop(edgelist)
+        # もし使用済なら飛ばす
+        if not used[minedge[1]]:
+            continue
 
-        for i in dist[now]:
-            if color[i] >= 0:
-                continue
+        # 距離最小のものを使用する
+        # エッジを一つ使うたびに頂点を消す
+        # これをN - 1回繰り返す
+        v = minedge[1]
+        used[v] = 0
 
-            lista = set()
-            for l in dist[i]:
-                lista.add(color[l])
+        for e in edge[v]:
+            if used[e[1]]:
+                heapq.heappush(edgelist,e)
+        res += minedge[0]
 
-            for j in range(N):
-                if not j in lista:
-                    color[i] = j
-                    break
+    return res
 
-            pos.append(i)
-
-    return color
-
-print(colored(N, dist2, color2))
+print(prim_heap())
