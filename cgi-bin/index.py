@@ -51,23 +51,18 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-A = getList()
+N = 3
+A = [8, 5, 8]
 
-r, tmp = 0, 0
-# l:左端
-cnt = 0
-for l in range(N):
-    while r < N and tmp ^ A[r] == tmp + A[r]:
-        # 右端を伸ばす
-        tmp += A[r]
-        r += 1
-    # 計算
-    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
-    # (r - l + 1) - 1
-    cnt += r - l
+heapq.heapify(A)
 
-    if l == r:
-        r += 1
-    tmp -= A[l]
-print(cnt)
+ans = 0
+
+# heapq.heappopはlogNで実行できる
+while len(A) > 1:
+    a1 = heapq.heappop(A)
+    a2 = heapq.heappop(A)
+    ans += a1 + a2
+    
+    heapq.heappush(A, a1 + a2)
+print(ans)
