@@ -51,85 +51,47 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
-
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
-
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
-
-        if x == y:
-            return
-
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
-
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-    # これ追加
-    def count_group(self):
-        return len({self.find(x) for x in range(n)})
-
-N = 100
-K = 7
-query = [
-[1, 101, 1],
-[2, 1, 2],
-[2, 2, 3],
-[2, 3, 3],
-[1, 1, 3],
-[2, 3, 1],
-[1, 5, 5]
+N1 = 3
+dist1 = [
+[1, 2],
+[0, 2],
+[0, 1]
 ]
 
-U = UnionFind(3 * N)
+N2 = 4
+dist2 = [
+[1, 3],
+[0, 2],
+[1, 3],
+[0, 2]
+]
 
-def checker(int_input, x, y):
-    if x < 0 or x >= N or y <0 or y >= N or int_input < 1 or int_input > 2:
-        return False
-    else:
-        return True
+color1 = [-1] * N1
+color2 = [-1] * N2
 
-for i in query:
-    int_input = i[0]
-    x = i[1]
-    y = i[2]
+pos = deque([0])
 
-    if not checker(int_input, x, y):
-        print(int_input, x, y)
-        continue
+def colored(N, dist, color):
+    pos = deque([0])
+    color[0] = 0
+    while len(pos) > 0:
+        now = pos.popleft()
 
-    if int_input == 1:
-        # xとyが異種の場合
-        if U.same(x, y + N) or U.same(x, y + 2 * N):
-            print(int_input, x, y)
-            continue
-        else:
-            # x == A and y == A
-            U.union(x, y)
-            # x == B and y == B
-            U.union(x + N, y + N)
-            U.union(x + 2 * N, y + 2 * N)
+        for i in dist[now]:
+            if color[i] >= 0:
+                continue
 
-    if int_input == 2:
-        # x,y が同種、もしくは逆の場合
-        if U.same(x, y) or U.same(x, y + 2 * N):
-            print(int_input, x, y)
-            continue
-        else:
-            U.union(x, y + N)
-            U.union(x + N, y + 2 * N)
-            U.union(x + 2 * N, y)
+            lista = set()
+            for l in dist[i]:
+                lista.add(color[l])
+
+            for j in range(N):
+                if not j in lista:
+                    color[i] = j
+                    break
+
+            pos.append(i)
+
+    return color
+
+print(colored(N, dist2, color2))
