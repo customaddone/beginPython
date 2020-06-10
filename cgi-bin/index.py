@@ -54,24 +54,20 @@ mod = 10 ** 9 + 7
 N = getN()
 A = getList()
 
-r, tmp = 0, A[0]
+r, tmp = 0, 0
 # l:左端
 cnt = 0
 for l in range(N):
-    # rを1進めたときにA[N - 1]以内に収まる　かつ　問題の条件を満たすなら
-    while r + 1 < N and tmp ^ A[r + 1] == tmp + A[r + 1]:
+    while r < N and tmp ^ A[r] == tmp + A[r]:
         # 右端を伸ばす
-        tmp += A[r + 1]
+        tmp += A[r]
         r += 1
     # 計算
-    cnt += r - l + 1
+    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
+    # (r - l + 1) - 1
+    cnt += r - l
 
-    # r == N - 1（最後まで）に達していないかつl == r（進めなかった）とき
-    if r + 1 < N and l == r:
+    if l == r:
         r += 1
-        # 新しいtmp = A[r + 1]をセットする
-        tmp = A[r]
-    else:
-        # 左端が1進むと同時にtmpの左端の分を削る
-        tmp -= A[l]
+    tmp -= A[l]
 print(cnt)
