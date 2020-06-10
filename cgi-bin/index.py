@@ -51,36 +51,27 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ガソスタの個数
-N = 4
-#　距離
-L = 25
-# 最初の燃料
-P = 10
-# ガソスタの位置
-A = [10, 14, 20, 21]
-# ガソスタの補給量
-B = [10, 5, 2, 4]
+N = getN()
+A = getList()
 
-gas = []
-heapq.heapify(gas)
+r, tmp = 0, A[0]
+# l:左端
+cnt = 0
+for l in range(N):
+    # rを1進めたときにA[N - 1]以内に収まる　かつ　問題の条件を満たすなら
+    while r + 1 < N and tmp ^ A[r + 1] == tmp + A[r + 1]:
+        # 右端を伸ばす
+        tmp += A[r + 1]
+        r += 1
+    # 計算
+    cnt += r - l + 1
 
-tank = P
-now = 0
-ans = 0
-
-for i in range(N):
-    # 一旦ガソリンスタンドまで進む予定に
-    dis = A[i] - now
-    # タンクが貯まるまで続ける
-    while (tank - dis) < 0:
-        if len(gas) == 0:
-            print(-1)
-            exit()
-        tank += heapq.heappop(gas)
-        ans += 1
-        
-    tank -= dis
-    now = A[i]
-    heapq.heappush(gas, B[i])
-print(ans)
+    # r == N - 1（最後まで）に達していないかつl == r（進めなかった）とき
+    if r + 1 < N and l == r:
+        r += 1
+        # 新しいtmp = A[r + 1]をセットする
+        tmp = A[r]
+    else:
+        # 左端が1進むと同時にtmpの左端の分を削る
+        tmp -= A[l]
+print(cnt)
