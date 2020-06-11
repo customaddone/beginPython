@@ -51,37 +51,28 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-H, W = getNM()
-maze = []
-for i in range(H):
-    m = getList()
-    maze.append(m)
+def rand_letter(size):
+    ascii_original='ABCD'
+    digits_original='01'
 
-memo = [[-1] * W for i in range(H)]
+    digits='0123456789'
+    ascii_lowercase='abcdefghijklmnopqrstuvwxyz'
+    ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+    # 好きなものを使ってね
+    psuedo = ascii_original
 
-# ぐるぐる回るやつはdfs
-def dfs(x, y):
-    if memo[y][x] != -1:
-        return memo[y][x]
+    return ''.join([random.choice(psuedo) for i in range(size)])
 
-    res = 1
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] > maze[y][x]:
-            res += dfs(nx, ny)
-            res %= mod
+S = input()
+N = len(S)
 
-    memo[y][x] = res
-    return res
-
-ans = 0
-for i in range(H):
-    for j in range(W):
-        ans += dfs(j, i)
-        ans %= mod
-
-print(ans % mod)
+ans = [-1, -1]
+for i in range(1, N):
+    if S[i] == S[i - 1]:
+        ans = [i, i + 1]
+        break
+    if i > 1 and S[i] == S[i - 2]:
+        ans = [i - 1, i + 1]
+        break
+print(*ans)
