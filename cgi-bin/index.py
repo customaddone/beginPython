@@ -51,34 +51,37 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M, R = getNM()
+H, W = getNM()
+maze = []
+for i in range(H):
+    m = getList()
+    maze.append(m)
 
-d = [[float("inf")] * N for i in range(N)]
-list_R = [int(i) - 1 for i in input().split()]
-for i in range(M):
-   x, y, z = getNM()
-   d[x - 1][y - 1] = min(d[x - 1][y - 1], z)
-   d[y - 1][x - 1] = min(d[x - 1][y - 1], z)
+memo = [[-1] * W for i in range(H)]
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    #return dist
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
-warshall_floyd(d)
+# ぐるぐる回るやつはdfs
+def dfs(x, y):
+    if memo[y][x] != -1:
+        return memo[y][x]
 
-ans = float('inf')
-# ワーシャルフロイド + 順列全探索
-# 全探索するので中間点は無視していい
-for case in permutations(list_R):
-    x1 = case[0]
-    opt = 0
-    for j in range(1, R):
-        x2 = case[j]
-        opt += d[x1][x2]
-        x1 = x2
-    ans = min(ans, opt)
-print(ans)
+    res = 1
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] > maze[y][x]:
+            res += dfs(nx, ny)
+            res %= mod
+
+    memo[y][x] = res
+    return res
+
+ans = 0
+for i in range(H):
+    for j in range(W):
+        ans += dfs(j, i)
+        ans %= mod
+
+print(ans % mod)
