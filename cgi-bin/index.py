@@ -51,17 +51,6 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-"""
-4 6 3
-2 3 4
-1 2 4
-2 3 3
-4 3 1
-1 4 1
-4 2 2
-3 1 6
-"""
-
 N, M, R = getNM()
 
 d = [[float("inf")] * N for i in range(N)]
@@ -71,37 +60,25 @@ for i in range(M):
    d[x - 1][y - 1] = min(d[x - 1][y - 1], z)
    d[y - 1][x - 1] = min(d[x - 1][y - 1], z)
 
-dp = [[-1] * N for i in range(1 << N)]
-goal = 0
-# Rの地点に全てフラグを立てればOK（順番は気にしない）
-for i in list_R:
-    goal |= (1 << i)
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    #return dist
 
+warshall_floyd(d)
 
 ans = float('inf')
-# sが行ったところのdp, vが現在の位置,sumが合計距離
-def rec(ns, nv, n_sum):
-    global ans
-
-    pos = []
-    heapq.heapify(pos)
-    heapq.heappush(pos, [n_sum, ns, nv])
-
-    dp = [[-1] * N for i in range(1 << N)]
-
-    while len(pos) > 0:
-        sum, s, v = heapq.heappop(pos)
-        print([sum, s, v])
-
-        if s & goal == goal:
-            ans = min(ans, sum)
-            break
-
-        for u in range(N):
-            if s & (1 << u) == 0:
-                heapq.heappush(pos, [sum + d[v][u], s|(1 << u), u])
-
-for i in range(R):
-    index = list_R[i]
-    rec((1 << index), index, 0)
+# ワーシャルフロイド + 順列全探索
+# 全探索するので中間点は無視していい
+for case in permutations(list_R):
+    x1 = case[0]
+    opt = 0
+    for j in range(1, R):
+        x2 = case[j]
+        opt += d[x1][x2]
+        x1 = x2
+    ans = min(ans, opt)
 print(ans)
