@@ -51,44 +51,57 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-n = 7
-edge = [
-[[1, 1]],
-[[1, 0], [2, 2], [3, 3], [7, 4]],
-[[2, 1], [10, 5]],
-[[3, 1], [1, 4], [5, 6]],
-[[7, 1], [1, 3], [8, 6], [5, 5]],
-[[10, 2], [5, 4]],
-[[5, 3], [8, 4]]
-]
+"""
+4 6 3
+2 3 4
+1 2 4
+2 3 3
+4 3 1
+1 4 1
+4 2 2
+3 1 6
+"""
 
-def prim_heap():
-    used = [1] * n #True:未使用
+N, M, R = getNM()
 
-    edgelist = []
-    for e in edge[0]:
-        heapq.heappush(edgelist,e)
+d = [[float("inf")] * N for i in range(N)]
+list_R = [int(i) - 1 for i in input().split()]
+for i in range(M):
+   x, y, z = getNM()
+   d[x - 1][y - 1] = min(d[x - 1][y - 1], z)
+   d[y - 1][x - 1] = min(d[x - 1][y - 1], z)
 
-    used[0] = 0
-    res = 0
+dp = [[-1] * N for i in range(1 << N)]
+goal = 0
+# Rの地点に全てフラグを立てればOK（順番は気にしない）
+for i in list_R:
+    goal |= (1 << i)
 
-    while len(edgelist) != 0:
-        minedge = heapq.heappop(edgelist)
-        # もし使用済なら飛ばす
-        if not used[minedge[1]]:
-            continue
 
-        # 距離最小のものを使用する
-        # エッジを一つ使うたびに頂点を消す
-        # これをN - 1回繰り返す
-        v = minedge[1]
-        used[v] = 0
+ans = float('inf')
+# sが行ったところのdp, vが現在の位置,sumが合計距離
+def rec(ns, nv, n_sum):
+    global ans
 
-        for e in edge[v]:
-            if used[e[1]]:
-                heapq.heappush(edgelist,e)
-        res += minedge[0]
+    pos = []
+    heapq.heapify(pos)
+    heapq.heappush(pos, [n_sum, ns, nv])
 
-    return res
+    dp = [[-1] * N for i in range(1 << N)]
 
-print(prim_heap())
+    while len(pos) > 0:
+        sum, s, v = heapq.heappop(pos)
+        print([sum, s, v])
+
+        if s & goal == goal:
+            ans = min(ans, sum)
+            break
+
+        for u in range(N):
+            if s & (1 << u) == 0:
+                heapq.heappush(pos, [sum + d[v][u], s|(1 << u), u])
+
+for i in range(R):
+    index = list_R[i]
+    rec((1 << index), index, 0)
+print(ans)
