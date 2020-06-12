@@ -52,20 +52,10 @@ mod = 10 ** 9 + 7
 #############
 
 N = getN()
+A = getArray(N)
 
-def judge(n, h, N1):
-    fraction = n * h * N1
-    denominator = (4 * h * n) - (N1 * n) - (N1 * h)
-    if denominator > 0 and fraction % denominator == 0 and 0 < fraction // denominator <= 3500:
-        return fraction // denominator
-    return -1
-
-for i in range(1, 3501):
-    for j in range(1, 3501):
-        res = judge(i, j, N)
-        if res > 0:
-            print(i, j, res)
-            break
-    else:
-        continue
-    break
+for i in A:
+    if i % 2 != 0:
+        print('first')
+        exit()
+print('second')
