@@ -51,28 +51,21 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def rand_letter(size):
-    ascii_original='ABCD'
-    digits_original='01'
+N = getN()
 
-    digits='0123456789'
-    ascii_lowercase='abcdefghijklmnopqrstuvwxyz'
-    ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+def judge(n, h, N1):
+    fraction = n * h * N1
+    denominator = (4 * h * n) - (N1 * n) - (N1 * h)
+    if denominator > 0 and fraction % denominator == 0 and 0 < fraction // denominator <= 3500:
+        return fraction // denominator
+    return -1
 
-    # 好きなものを使ってね
-    psuedo = ascii_original
-
-    return ''.join([random.choice(psuedo) for i in range(size)])
-
-S = input()
-N = len(S)
-
-ans = [-1, -1]
-for i in range(1, N):
-    if S[i] == S[i - 1]:
-        ans = [i, i + 1]
-        break
-    if i > 1 and S[i] == S[i - 2]:
-        ans = [i - 1, i + 1]
-        break
-print(*ans)
+for i in range(1, 3501):
+    for j in range(1, 3501):
+        res = judge(i, j, N)
+        if res > 0:
+            print(i, j, res)
+            break
+    else:
+        continue
+    break
