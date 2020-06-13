@@ -69,10 +69,32 @@ def build_tree(N, edge_list):
     return G, leaves
 
 N = getN()
-edges = [[] for i in range(N - 1)]
+query = [[] for i in range(N - 1)]
 for i in range(N - 1):
-    edges[i] = getList()
+    query[i] = getList()
 
 d = list(sorted(getList()))
 
-G, leaves = build_tree(N, edges)
+edges, leaves = build_tree(N, query)
+
+v = leaves[0]
+
+# 最も理想的な場合のsum = d[0] + d[1] + ... + d[-2]
+ans = -d[-1]
+nodes = [0] * N
+
+# 葉の先端から辿っていく
+def dfs(now):
+    global ans
+    if nodes[now] > 0:
+        return
+    nodes[now] = d.pop()
+    ans += nodes[now]
+    for i in edges[now]:
+        if nodes[i] > 0:
+            continue
+        dfs(i)
+
+dfs(v)
+print(ans)
+print(*nodes)
