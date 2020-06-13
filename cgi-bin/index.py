@@ -52,10 +52,38 @@ mod = 10 ** 9 + 7
 #############
 
 N = getN()
-A = getArray(N)
+A = sorted(getArray(N))
+A = deque(A)
+ans_list = deque([])
 
-for i in A:
-    if i % 2 != 0:
-        print('first')
-        exit()
-print('second')
+cnt = 0
+for i in range(N // 2):
+
+    m = A.popleft()
+    if cnt % 2 == 0:
+        ans_list.append(m)
+    else:
+        ans_list.appendleft(m)
+
+    m = A.pop()
+    if cnt % 2 == 0:
+        ans_list.appendleft(m)
+    else:
+        ans_list.append(m)
+    cnt += 1
+
+if N % 2 == 1:
+    m = A.pop()
+    opt1 = abs(ans_list[0] - m)
+    opt2 = abs(ans_list[-1] - m)
+
+    if opt1 >= opt2:
+        ans_list.appendleft(m)
+    else:
+        ans_list.append(m)
+
+ans_list = list(ans_list)
+ans = 0
+for i in range(N - 1):
+    ans += abs(ans_list[i + 1] - ans_list[i])
+print(ans)
