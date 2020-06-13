@@ -51,14 +51,24 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def build_tree(N, edge_list):
+N = 4
+R = 4
+
+query = [
+[1, 2, 100],
+[2, 3, 250],
+[2, 4, 200],
+[3, 4, 100]
+]
+
+def build_tree_dis(N, edge_list):
 
     G = [[] for i in range(N)]
 
     for i in range(len(edge_list)):
-        a, b = edge_list[i]
-        G[a - 1].append(b - 1)
-        G[b - 1].append(a - 1)
+        a, b, c = edge_list[i]
+        G[a - 1].append([b - 1, c])
+        G[b - 1].append([a - 1, c])
 
     # 葉（末端の数）
     leaves = []
@@ -66,35 +76,24 @@ def build_tree(N, edge_list):
         if len(G[i]) == 1:
             leaves.append(i)
 
-    return G, leaves
+    return G
 
-N = getN()
-query = [[] for i in range(N - 1)]
-for i in range(N - 1):
-    query[i] = getList()
+edges = build_tree_dis(N, query)
 
-d = list(sorted(getList()))
+def dij(start, goal):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
 
-edges, leaves = build_tree(N, query)
-
-v = leaves[0]
-
-# 最も理想的な場合のsum = d[0] + d[1] + ... + d[-2]
-ans = -d[-1]
-nodes = [0] * N
-
-# 葉の先端から辿っていく
-def dfs(now):
-    global ans
-    if nodes[now] > 0:
-        return
-    nodes[now] = d.pop()
-    ans += nodes[now]
-    for i in edges[now]:
-        if nodes[i] > 0:
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while (pq[0][1] != goal):
+        d, now = heapq.heappop(pq)
+        if (d > dist[now]):
             continue
-        dfs(i)
+        for i in edges[now]:
+            if dist[i[0]] > dist[now] + i[1]:
+                dist[i[0]] = dist[now] + i[1]
+                heapq.heappush(pq, (dist[i[0]], i[0]))
+    return pq[0][0]
 
-dfs(v)
-print(ans)
-print(*nodes)
+print(dij(0, 1))
