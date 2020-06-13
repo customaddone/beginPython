@@ -56,6 +56,7 @@ R = 4
 
 query = [
 [1, 2, 100],
+[1, 4, 200],
 [2, 3, 250],
 [2, 4, 200],
 [3, 4, 100]
@@ -82,18 +83,26 @@ edges = build_tree_dis(N, query)
 
 def dij(start, goal):
     dist = [float('inf') for i in range(N)]
+    dist_sec = [float('inf') for i in range(N)]
     dist[start] = 0
+
     pq = [(0, start)]
 
     # pqの先頭がgoal行きのものなら最短距離を返す
-    while (pq[0][1] != goal):
+    while len(pq) > 0:
         d, now = heapq.heappop(pq)
-        if (d > dist[now]):
+        # 制限緩和
+        if d > dist_sec[now]:
             continue
         for i in edges[now]:
             if dist[i[0]] > dist[now] + i[1]:
                 dist[i[0]] = dist[now] + i[1]
                 heapq.heappush(pq, (dist[i[0]], i[0]))
-    return pq[0][0]
+            # ２番目の最短路
+            if dist[i[0]] < d + i[1] < dist_sec[i[0]]:
+                dist_sec[i[0]] = d + i[1]
+                heapq.heappush(pq, (dist_sec[i[0]], i[0]))
+    return dist_sec
 
-print(dij(0, 1))
+# 0から2への最短路は0→1→0→1
+print(dij(0, 3))
