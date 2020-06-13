@@ -51,39 +51,46 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-A = sorted(getArray(N))
-A = deque(A)
-ans_list = deque([])
+H, W = getNM()
+maze = []
+for i in range(H):
+    m = list(input())
+    maze.append(m)
 
-cnt = 0
-for i in range(N // 2):
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
-    m = A.popleft()
-    if cnt % 2 == 0:
-        ans_list.append(m)
+memo = [[-1] * W for i in range(H)]
+
+def counter(sx, sy):
+    black_cnt = 0
+    white_cnt = 0
+
+    memo[sy][sx] = 1
+    if maze[sy][sx] == "#":
+        black_cnt += 1
     else:
-        ans_list.appendleft(m)
+        white_cnt += 1
 
-    m = A.pop()
-    if cnt % 2 == 0:
-        ans_list.appendleft(m)
-    else:
-        ans_list.append(m)
-    cnt += 1
+    pos = deque([[sx, sy]])
 
-if N % 2 == 1:
-    m = A.pop()
-    opt1 = abs(ans_list[0] - m)
-    opt2 = abs(ans_list[-1] - m)
+    while len(pos) > 0:
+        x, y = pos.popleft()
 
-    if opt1 >= opt2:
-        ans_list.appendleft(m)
-    else:
-        ans_list.append(m)
+        for i in range(4):
+            nx = x + dx[i]
+            ny = y + dy[i]
+            if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] != maze[y][x] and memo[ny][nx] == -1:
+                memo[ny][nx] = 1
+                pos.append([nx, ny])
+                if maze[ny][nx] == "#":
+                    black_cnt += 1
+                else:
+                    white_cnt += 1
+    return black_cnt * white_cnt
 
-ans_list = list(ans_list)
 ans = 0
-for i in range(N - 1):
-    ans += abs(ans_list[i + 1] - ans_list[i])
+for i in range(H):
+    for j in range(W):
+        ans += counter(j, i)
 print(ans)
