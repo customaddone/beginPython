@@ -51,46 +51,28 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-H, W = getNM()
-maze = []
-for i in range(H):
-    m = list(input())
-    maze.append(m)
+def build_tree(N, edge_list):
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+    G = [[] for i in range(N)]
 
-memo = [[-1] * W for i in range(H)]
+    for i in range(len(edge_list)):
+        a, b = edge_list[i]
+        G[a - 1].append(b - 1)
+        G[b - 1].append(a - 1)
 
-def counter(sx, sy):
-    black_cnt = 0
-    white_cnt = 0
+    # 葉（末端の数）
+    leaves = []
+    for i in range(N):
+        if len(G[i]) == 1:
+            leaves.append(i)
 
-    memo[sy][sx] = 1
-    if maze[sy][sx] == "#":
-        black_cnt += 1
-    else:
-        white_cnt += 1
+    return G, leaves
 
-    pos = deque([[sx, sy]])
+N = getN()
+edges = [[] for i in range(N - 1)]
+for i in range(N - 1):
+    edges[i] = getList()
 
-    while len(pos) > 0:
-        x, y = pos.popleft()
+d = list(sorted(getList()))
 
-        for i in range(4):
-            nx = x + dx[i]
-            ny = y + dy[i]
-            if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] != maze[y][x] and memo[ny][nx] == -1:
-                memo[ny][nx] = 1
-                pos.append([nx, ny])
-                if maze[ny][nx] == "#":
-                    black_cnt += 1
-                else:
-                    white_cnt += 1
-    return black_cnt * white_cnt
-
-ans = 0
-for i in range(H):
-    for j in range(W):
-        ans += counter(j, i)
-print(ans)
+G, leaves = build_tree(N, edges)
