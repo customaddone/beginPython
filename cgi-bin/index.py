@@ -51,58 +51,34 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 4
-R = 4
+N, M = 4, 2
+A = [1, 1, 3, 4]
+A.sort()
 
-query = [
-[1, 2, 100],
-[1, 4, 200],
-[2, 3, 250],
-[2, 4, 200],
-[3, 4, 100]
-]
+ans = 0
+way = 1
 
-def build_tree_dis(N, edge_list):
+fact =[1] #階乗
+for i in range(1, N + 1):
+    fact.append(fact[i - 1] * i % mod)
 
-    G = [[] for i in range(N)]
+facv = [0] * (N + 1) #階乗の逆元
+facv[-1] = pow(fact[-1], mod - 2 , mod)
 
-    for i in range(len(edge_list)):
-        a, b, c = edge_list[i]
-        G[a - 1].append([b - 1, c])
-        G[b - 1].append([a - 1, c])
+for i in range(N - 1, -1, -1):
+    facv[i] = facv[i + 1] * (i + 1) % mod
 
-    # 葉（末端の数）
-    leaves = []
-    for i in range(N):
-        if len(G[i]) == 1:
-            leaves.append(i)
+def cmb(n, r):
+    if n < r:
+        return 0
+    # 計算
+    return fact[n] * facv[r] * facv[n - r] % mod
 
-    return G
+# 6
+print(cmb(4, 2))
 
-edges = build_tree_dis(N, query)
-
-def dij(start, goal):
-    dist = [float('inf') for i in range(N)]
-    dist_sec = [float('inf') for i in range(N)]
-    dist[start] = 0
-
-    pq = [(0, start)]
-
-    # pqの先頭がgoal行きのものなら最短距離を返す
-    while len(pq) > 0:
-        d, now = heapq.heappop(pq)
-        # 制限緩和
-        if d > dist_sec[now]:
-            continue
-        for i in edges[now]:
-            if dist[i[0]] > dist[now] + i[1]:
-                dist[i[0]] = dist[now] + i[1]
-                heapq.heappush(pq, (dist[i[0]], i[0]))
-            # ２番目の最短路
-            if dist[i[0]] < d + i[1] < dist_sec[i[0]]:
-                dist_sec[i[0]] = d + i[1]
-                heapq.heappush(pq, (dist_sec[i[0]], i[0]))
-    return dist_sec
-
-# 0から2への最短路は0→1→0→1
-print(dij(0, 3))
+for i in range(N - 2 + 1):
+    min_sum = A[i] * cmb(N - i - 1, M - 1)
+    max_sum = A[-i - 1] * cmb(N - i - 1, M - 1)
+    ans += (max_sum - min_sum) % mod
+print(ans % mod)
