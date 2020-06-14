@@ -51,116 +51,45 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 二分探索（特定の値を求める）
-lista = [i for i in range(1, 10, 2)]
+num = [i for i in range(0, 10, 2)]
+A = [2, 4, 5]
+B = [2, 3]
 
-def binary_search_loop(data, target):
-    imin = 0
-    imax = len(data) - 1
-    while imin <= imax:
-        imid = imin + (imax - imin) // 2
-        if target == data[imid]:
-            return imid
-        elif target < data[imid]:
-            imax = imid - 1
-        else:
-            imin = imid + 1
-    return False
+for i in A:
+    index = bisect_right(num, i)
+    print(num[index - 1])
 
-# 2
-print(binary_search_loop(lista, 5))
+# numの中でのi未満の数字の最大値を求める
+for i in A:
+    index = bisect_left(num, i)
+    print(num[index - 1])
 
-# 二分探索（条件を満たす値の最大値を求める）
-def judge(n):
-    if n < 300:
-        return True
-    else:
-        return False
+# numの中でのiより大きい数字の最小値を求める
+for i in B:
+    index = bisect_right(num, i)
+    print(num[index])
 
-ok = -1
-ng = 10 ** 9 + 1
-# OKになるギリギリのラインを攻める
-# 最後の一回でabs(ok - ng) <= 1になってもokは書き換えられない
-while abs(ok - ng) > 1:
-    mid = (ok + ng) // 2
-    if judge(mid):
-        ok = mid
-    else:
-        ng = mid
+# numの中でのi以上の数字の最小値を求める
+for i in B:
+    index = bisect_left(num, i)
+    print(num[index])
 
-# 299 NGは300
-print(ok)
+# 足し合わせ
+odd = [i for i in range(0, 16, 3)]
+limit = 33
 
-# 二分探索（条件を満たす値の最大値を求める）
-# 複雑なパターン
-N = 5
-A = [2, 4, 6, 19, 17]
+lista = set()
+for i in odd:
+    for j in odd:
+        lista.add(i + j)
+lista = list(lista)
 
-ng = -1
-ok = 10 ** 12 + 1
+# ４つの数字を足し合わせた時に33以下になる数字
+for i in lista:
+    index = bisect_right(lista, limit - i)
+    print(i, lista[index - 1])
 
-# 超えてはいけないラインを設定
-def judge(limit):
-    flag = True
-    for i in range(N):
-        if A[i] > limit:
-            flag = False
-            break
-
-    return flag
-
-while ok - ng > 1:
-    mid = (ok + ng) // 2
-    # 差がK以下であれば修正可能
-    # もうちょい下のmidも試してみる
-    if judge(mid):
-        ok = mid
-    else:
-        ng = mid
-# 19
-print(ok)
-
-# 三分探索整数ver
-num = []
-for i in range(100):
-    if i < 50:
-        num.append(i)
-    else:
-        num.append(100 - i)
-
-left, right = 0, len(num) - 1
-while abs(right - left) > 3:
-    mid1 = (right * 2 + left) // 3 + 1
-    mid2 = (right + left * 2) // 3
-    # 最小値を求める場合は矢印逆になる
-    if num[mid1] <= num[mid2]:
-        right = mid1
-    else:
-        left = mid2
-
-# どうしても間は３つ空く
-# 51
-print(right)
-# 48
-print(left)
-
-# 三分探索小数点以下ver
-def f(x):
-    # これの最小値を求める
-    return x + p / pow(2, 2 * x / 3)
-
-p = 50
-left, right = 0, 100
-
-while right > left + 10 ** -10:
-    mid1 = (right * 2 + left) / 3
-    mid2 = (right + left * 2) / 3
-    if f(mid1) >= f(mid2):
-        # 上限を下げる（最小値をとるxはもうちょい下めの数だな）
-        right = mid1
-    else:
-        # 下限を上げる（最小値をとるxはもうちょい上めの数だな）
-        left = mid2
-
-# 8.959233535496452
-print(f(right))
+# ４つの数字を足し合わせた時に33未満になる数字
+for i in lista:
+    index = bisect_left(lista, limit - i)
+    print(i, lista[index - 1])
