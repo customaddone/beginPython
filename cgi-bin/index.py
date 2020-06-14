@@ -51,17 +51,30 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-A = [1, 2, 3, 4, 5]
+lista = [[0, 0] for i in range(61)]
+# bitの各桁が１か０かをlistaに収納
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            lista[i][0] += 1
+        else:
+            lista[i][1] += 1
 
-# 組み合わせ
-for i in combinations(A, 2):
-    print(i)
+splitbit(31)
+# [[1, 0], [1, 0], [1, 0], [1, 0], [1, 0], [0, 1]...
+print(lista)
 
-# 順列
-for i in permutations(A, 2):
-    print(i)
+# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
+flags1 = [0] * 61
 
-# デカルト積
-B = [[1, 2, 3], [4, 5, 6]]
-for ps in product(*B):
-    print(ps)
+def bitflag(n, flaglist):
+    if n > 0:
+        for i in range(1, 61):
+            split = 2 ** i
+            flag1 = (n // split) * (split // 2)
+            flag2 = max(n % split + 1 - (split // 2), 0)
+            flaglist[i - 1] += flag1 + flag2
+
+bitflag(31, flags1)
+# [16, 16, 16, 16, 16, 0...
+print(flags1)
