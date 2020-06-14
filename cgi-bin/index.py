@@ -51,34 +51,43 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = 4, 2
-A = [1, 1, 3, 4]
-A.sort()
+# 約数列挙
+def make_divisors(n):
+    divisors = []
+    for i in range(1, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            divisors.append(i)
+            # √nで無い数についてもう一個プラス
+            if i != n // i:
+                divisors.append(n // i)
+    return sorted(divisors)
 
-ans = 0
-way = 1
+# [1, 2, 3, 4, 6, 12]
+print(make_divisors(12))
 
-fact =[1] #階乗
-for i in range(1, N + 1):
-    fact.append(fact[i - 1] * i % mod)
+# 公約数列挙
+def make_divisors(m, n):
+    divisors = []
+    numi = min(m, n)
+    numa = max(m, n)
+    for i in range(1, int(math.sqrt(numi)) + 1):
+        if numi % i == 0:
+            if numa % i == 0:
+                divisors.append(i)
+            # √nで無い数についてもう一個プラス
+            if i != numi // i and numa % (numi // i) == 0:
+                divisors.append(numi // i)
+    return sorted(divisors)
+# [1, 2, 3, 6]
+print(make_divisors(12, 18))
 
-facv = [0] * (N + 1) #階乗の逆元
-facv[-1] = pow(fact[-1], mod - 2 , mod)
-
-for i in range(N - 1, -1, -1):
-    facv[i] = facv[i + 1] * (i + 1) % mod
-
-def cmb(n, r):
-    if n < r:
-        return 0
-    # 計算
-    return fact[n] * facv[r] * facv[n - r] % mod
-
+# 最大公約数
 # 6
-print(cmb(4, 2))
+print(gcd(12, 18))
 
-for i in range(N - 2 + 1):
-    min_sum = A[i] * cmb(N - i - 1, M - 1)
-    max_sum = A[-i - 1] * cmb(N - i - 1, M - 1)
-    ans += (max_sum - min_sum) % mod
-print(ans % mod)
+# 最小公倍数
+def lcm(x, y):
+    return x * (y // gcd(x, y))
+
+# 36
+print(lcm(12, 18))
