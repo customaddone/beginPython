@@ -51,47 +51,68 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# mod不使用ver
-def cmb_1(n, r):
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+# N進数
+n = 12
+list = []
+digit = 7
+i = 0
 
-# 10
-print(cmb_1(5, 3))
+while n != 0:
+    list.insert(0, str(n % digit))
+    n //= digit
+    i += 1
+print(''.join(list))
 
-# mod使用ver
-def cmb_2(x,y):
-    r = 1
-    for i in range(1, y + 1):
-        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
-    return r
+# 文字列２進数を整数に変換
+print(int('010100', 2))
 
-# 10
-print(cmb_2(5, 3))
+# nを超えない最大のbase ** mは何か
+def max_pow(n, base):
+    if n == 0:
+        return None
+    opt = 1
+    cnt = 0
+    while base ** (cnt + 1) <= n:
+        opt *= base
+        cnt += 1
+    return opt, cnt
 
-# 逆元事前処理ver
-N = 10
+# (16, 4)
+print(max_pow(27, 2))
 
-fact =[1] #階乗
-for i in range(1, N + 1):
-    fact.append(fact[i - 1] * i % mod)
+# -2進数（いるこれ？）
+def minus_digit(rev_n):
+    if rev_n == 0:
+        print('0')
+        return
 
-facv = [0] * (N + 1) #階乗の逆元
-facv[-1] = pow(fact[-1], mod - 2 , mod)
+    cnt = 0
+    rep = rev_n
+    lista = []
 
-for i in range(N - 1, -1, -1):
-    facv[i] = facv[i + 1] * (i + 1) % mod
+    while rep != 0:
+        split = (abs(rep) % 2 ** (cnt + 1)) // 2 ** cnt
+        if split == 0:
+            lista.append(0)
+        else:
+            lista.append(1)
+        rep -= (split * ((-2) ** cnt))
+        cnt += 1
+    lista.reverse()
+    return''.join(map(str, lista))
 
-def cmb(n, r):
-    if n < r:
-        return 0
-    return fact[n] * facv[r] * facv[n - r] % mod
-# 120
-print(cmb(10, 3))
+# 11100
+print(minus_digit(12))
 
-# 重複組み合わせ
-# 10個のものから重複を許して3つとる
-print(cmb_1(10 + 3 - 1, 3))
+# 1(1), 2(1 + 2), 3(1 + 2 + 3)...を超えられるか
+def factime(ny):
+    cnt = 1
+    sum = 0
+    while True:
+        if sum + cnt > ny:
+            return cnt - 1
+            break
+        sum += cnt
+        cnt += 1
+# 2
+print(factime(2))
