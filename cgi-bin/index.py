@@ -51,52 +51,20 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
+N = getN()
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+# エラストテネスの篩
+prime = [2]
+max = 55555
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
 
-        if x == y:
-            return
+prime = sorted(prime)
 
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
-
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-N, M = getNM()
-# 1 ~ 5の並び替え
-# これを1, 2, 3, 4, 5にしたい
-P = getList()
-# Pのうちのペア
-query = []
-for i in range(M):
-    a, b = getNM()
-    query.append([a, b])
-
-U = UnionFind(N)
-for i in range(M):
-    a, b = query[i]
-    U.union(a - 1, b - 1)
-
-cnt = 0
-for i in range(N):
-    if U.same(P[i] - 1, i):
-        cnt += 1
-
-print(cnt)
+prime = [i for i in prime if i % 5 == 1]
+print(*prime[:N])
