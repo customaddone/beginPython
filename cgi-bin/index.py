@@ -51,34 +51,52 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 目標700点
-D, G = getNM()
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
+
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
+
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+
+        if x == y:
+            return
+
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+N, M = getNM()
+# 1 ~ 5の並び替え
+# これを1, 2, 3, 4, 5にしたい
+P = getList()
+# Pのうちのペア
 query = []
-for i in range(D):
-    p, c = getNM()
-    query.append([i + 1, p, c])
+for i in range(M):
+    a, b = getNM()
+    query.append([a, b])
 
-ans_cnt = float('inf')
+U = UnionFind(N)
+for i in range(M):
+    a, b = query[i]
+    U.union(a - 1, b - 1)
 
-for bit in range(1 << D):
-    sum = 0
-    cnt = 0
-    for i in range(D):
-        if bit & (1 << i):
-            sum += query[i][0] * query[i][1] * 100 + query[i][2]
-            cnt += query[i][1]
+cnt = 0
+for i in range(N):
+    if U.same(P[i] - 1, i):
+        cnt += 1
 
-    if sum < G:
-        for j in range(D - 1, -1, -1):
-            if not bit & (1 << j):
-                left = G - sum
-                fire = query[j][0] * 100
-                opt = min(query[j][1], (left + fire - 1) // fire)
-                sum += opt * query[j][0] * 100
-                cnt += opt
-                break
-
-    if sum >= G:
-        ans_cnt = min(ans_cnt, cnt)
-
-print(ans_cnt)
+print(cnt)
