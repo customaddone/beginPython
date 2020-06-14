@@ -51,39 +51,47 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 素因数分解
-def prime_factorize(n):
-    divisors = []
-    # 27(2 * 2 * 7)の7を出すためにtemp使う
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == []:
-        divisors.append([n, 1])
+# mod不使用ver
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-    return divisors
+# 10
+print(cmb_1(5, 3))
 
-# [[2, 3], [3, 1]]
-print(prime_factorize(12))
+# mod使用ver
+def cmb_2(x,y):
+    r = 1
+    for i in range(1, y + 1):
+        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
+    return r
 
-# エラストテネスの篩
-prime = [2]
-max = 12
-limit = int(math.sqrt(max))
-data = [i + 1 for i in range(2, max, 2)]
+# 10
+print(cmb_2(5, 3))
 
-while limit > data[0]:
-    prime.append(data[0])
-    data = [j for j in data if j % data[0] != 0]
-prime = prime + data
+# 逆元事前処理ver
+N = 10
 
-# [2, 3, 5, 7, 9, 11]
-print(prime)
+fact =[1] #階乗
+for i in range(1, N + 1):
+    fact.append(fact[i - 1] * i % mod)
+
+facv = [0] * (N + 1) #階乗の逆元
+facv[-1] = pow(fact[-1], mod - 2 , mod)
+
+for i in range(N - 1, -1, -1):
+    facv[i] = facv[i + 1] * (i + 1) % mod
+
+def cmb(n, r):
+    if n < r:
+        return 0
+    return fact[n] * facv[r] * facv[n - r] % mod
+# 120
+print(cmb(10, 3))
+
+# 重複組み合わせ
+# 10個のものから重複を許して3つとる
+print(cmb_1(10 + 3 - 1, 3))
