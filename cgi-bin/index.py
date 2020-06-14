@@ -51,52 +51,39 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 約数列挙
-def make_divisors(n):
+# 素因数分解
+def prime_factorize(n):
     divisors = []
-    for i in range(1, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            divisors.append(i)
-            # √nで無い数についてもう一個プラス
-            if i != n // i:
-                divisors.append(n // i)
-    return sorted(divisors)
+    # 27(2 * 2 * 7)の7を出すためにtemp使う
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
 
-# [1, 2, 3, 4, 6, 12]
-print(make_divisors(12))
+    return divisors
 
-# 公約数列挙
-def make_divisors(m, n):
-    divisors = []
-    numi = min(m, n)
-    numa = max(m, n)
-    for i in range(1, int(math.sqrt(numi)) + 1):
-        if numi % i == 0:
-            if numa % i == 0:
-                divisors.append(i)
-            # √nで無い数についてもう一個プラス
-            if i != numi // i and numa % (numi // i) == 0:
-                divisors.append(numi // i)
-    return sorted(divisors)
-# [1, 2, 3, 6]
-print(make_divisors(12, 18))
+# [[2, 3], [3, 1]]
+print(prime_factorize(12))
 
-# 最大公約数
-# 6
-print(gcd(12, 18))
+# エラストテネスの篩
+prime = [2]
+max = 12
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
 
-# ユークリッド互除法
-def euclid(a, b):
-    if b == 0:
-        return a
-    else:
-        return euclid(b, a % b)
-# 6
-print(euclid(12, 18))
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
 
-# 最小公倍数
-def lcm(x, y):
-    return x * (y // gcd(x, y))
-
-# 36
-print(lcm(12, 18))
+# [2, 3, 5, 7, 9, 11]
+print(prime)
