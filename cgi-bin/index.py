@@ -51,20 +51,52 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-# エラストテネスの篩
-prime = [2]
-max = 55555
-limit = int(math.sqrt(max))
-data = [i + 1 for i in range(2, max, 2)]
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-while limit > data[0]:
-    prime.append(data[0])
-    data = [j for j in data if j % data[0] != 0]
-prime = prime + data
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-prime = sorted(prime)
+        if x == y:
+            return
 
-prime = [i for i in prime if i % 5 == 1]
-print(*prime[:N])
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def group_count(self):
+        return len(self.roots())
+
+# カードN枚
+# 各カードには1か2が書かれている
+N, M = getNM()
+# A1 + A2 + 1は偶数
+query = []
+
+for i in range(M):
+    a, b, c = getNM()
+    query.append([a, b, c])
+
+U = UnionFind(N)
+for i in query:
+    U.union(i[0] - 1, i[1] - 1)
+
+print(U.group_count())

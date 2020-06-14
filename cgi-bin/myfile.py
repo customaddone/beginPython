@@ -19,3 +19,4 @@ mod = 10 ** 9 + 7
 
 # 文字列操作
 ABC029 C - Brute-force Attack
+ABC049 C - 白昼夢
