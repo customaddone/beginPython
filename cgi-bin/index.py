@@ -51,26 +51,34 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 要素を複数個入れた時に何番目に何があるか
-N, K = 3, 3
+# 目標700点
+D, G = getNM()
+query = []
+for i in range(D):
+    p, c = getNM()
+    query.append([i + 1, p, c])
 
-parent = [
-[1, 1],
-[2, 2],
-[3, 3]
-]
+ans_cnt = float('inf')
 
-parent.sort(key = lambda int: int[0])
+for bit in range(1 << D):
+    sum = 0
+    cnt = 0
+    for i in range(D):
+        if bit & (1 << i):
+            sum += query[i][0] * query[i][1] * 100 + query[i][2]
+            cnt += query[i][1]
 
-A = []
-B = []
-for a, b in parent:
-    A.append(a)
-    B.append(b)
+    if sum < G:
+        for j in range(D - 1, -1, -1):
+            if not bit & (1 << j):
+                left = G - sum
+                fire = query[j][0] * 100
+                opt = min(query[j][1], (left + fire - 1) // fire)
+                sum += opt * query[j][0] * 100
+                cnt += opt
+                break
 
-alta = [0]
-for i in range(N):
-    alta.append(alta[i] + B[i])
+    if sum >= G:
+        ans_cnt = min(ans_cnt, cnt)
 
-index = bisect_left(alta, K)
-print(A[index - 1])
+print(ans_cnt)
