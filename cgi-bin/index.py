@@ -51,30 +51,62 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][0] += 1
-        else:
-            lista[i][1] += 1
+H, W, T = 2, 3, 10
+maze = [
+['S', '#', '#'],
+['.', '#', 'G']
+]
 
-splitbit(31)
-# [[1, 0], [1, 0], [1, 0], [1, 0], [1, 0], [0, 1]...
-print(lista)
+start = []
+goal = []
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == "S":
+            start = [j, i]
+        if maze[i][j] == "G":
+            goal = [j, i]
 
-# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
-flags1 = [0] * 61
+dx = [1, -1, 0, 0]
+dy = [0, 0, 1, -1]
 
-def bitflag(n, flaglist):
-    if n > 0:
-        for i in range(1, 61):
-            split = 2 ** i
-            flag1 = (n // split) * (split // 2)
-            flag2 = max(n % split + 1 - (split // 2), 0)
-            flaglist[i - 1] += flag1 + flag2
+# 白マス、黒マスに侵入するコストを計算する関数
+def comp_dist(x, s):
+    return x if s == "#" else 1
 
-bitflag(31, flags1)
-# [16, 16, 16, 16, 16, 0...
-print(flags1)
+# 二次元ダイクストラの関数
+def dij(start_x, start_y, goal_x, goal_y, dis):
+    dist = [[float("inf") for _ in range(W)] for _ in range(H)]
+    dist[start_y][start_x] = 0
+    pq = [(0, start_x, start_y)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while (pq[0][1] != goal_x or pq[0][2] != goal_y):
+        distance, x, y = heapq.heappop(pq)
+
+        if distance > dist[y][x]:
+            continue
+
+        for i in range(4):
+            nx = x + dx[i]
+            ny = y + dy[i]
+
+            if 0 <= nx < W and 0 <= ny < H:
+                nd = dist[y][x] + comp_dist(dis, maze[ny][nx])
+                if dist[ny][nx] > nd:
+                    dist[ny][nx] = nd
+                    heapq.heappush(pq, [dist[ny][nx], nx, ny])
+    return pq[0][0]
+
+# にぶたん
+ok = -1
+ng = 10 ** 9 + 1
+
+while ng - ok > 1:
+    mid = (ok + ng) // 2
+
+    if dij(start[0], start[1], goal[0], goal[1], mid) > T:
+        ng = mid
+    else:
+        ok = mid
+
+print(ok)

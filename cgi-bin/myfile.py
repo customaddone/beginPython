@@ -1,28 +1,64 @@
-N, K = map(int, input().split())
-dist = [[] for i in range(N)]
-A = list(map(int, input().split()))
-for i in range(N):
-    dist[i].append(A[i] - 1)
-dp = [[0, 0] for i in range(N)]
+def getN():
+    return int(input())
+def getNM():
+    return map(int, input().split())
+def getList():
+    return list(map(int, input().split()))
+def getArray(intn):
+    return [int(input()) for i in range(intn)]
+def input():
+    return sys.stdin.readline().rstrip()
 
-def dfs(pos, depth):
-    # 初めての訪問なら
-    if dp[pos][0] == 0:
-        dp[pos][0] = depth
-        for i in dist[pos]:
-            dfs(i, depth + 1)
-    elif dp[pos][1] == 0:
-        dp[pos][1] = depth
-        for i in dist[pos]:
-            dfs(i, depth + 1)
-dfs(0, 0)
-for i in range(N):
-    if dp[i][0] == K or dp[i][1] == K:
-        print(i + 1)
-        break
-    else:
-        split = dp[i][1] - dp[i][0]
-        if split > 0:
-            if (K - dp[i][0]) % split == 0:
-                print(i + 1)
-                break
+import sys
+sys.setrecursionlimit(1000000000)
+mod = 10 ** 9 + 7
+
+#############
+# Main Code #
+#############
+
+H, W, T = getNM()
+maze = [list(input()) for _ in range(H)]
+
+minT = 0
+maxT = 10 ** 9 + 1
+
+start = []
+goal = []
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == "S":
+            start = [i,j]
+        if maze[i][j] == "G":
+            goal = [i,j]
+
+def comp_dist(x, s):
+    return x if s == "#" else 1
+
+dx = [1, -1, 0, 0]
+dy = [0, 0, 1, -1]
+
+def dij(start_x, start_y, goal_x, goal_y, dis):
+    dist = [[float("inf") for _ in range(W)] for _ in range(H)]
+    dist[start_y][start_x] = 0
+    pq = [(0, start_x, start_y)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while (pq[0][1] != goal_x or pq[0][2] != goal_y):
+        distance, x, y = heapq.heappop(q)
+
+        if distance > dist[y][x]:
+            continue
+
+        for i in range(4):
+            nx = x + dx[i]
+            ny = y + dy[i]
+
+            if 0 <= nx < W and 0 <= ny < H:
+                nd = dist[y][x] + comp_dist(dis, maze[ny][nx])
+                if dist[ny][nx] > nd:
+                    dist[ny][nx] = nd
+                    heapq.heappush(pq, [dist[ny][nx], nx, ny])
+    return pq[0][0]
+
+print(dij(0, 0, 2, 1, 1))
