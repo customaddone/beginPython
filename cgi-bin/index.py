@@ -85,6 +85,15 @@ print(make_divisors(12, 18))
 # 6
 print(gcd(12, 18))
 
+# ユークリッド互除法
+def euclid(a, b):
+    if b == 0:
+        return a
+    else:
+        return euclid(b, a % b)
+# 6
+print(euclid(12, 18))
+
 # 最小公倍数
 def lcm(x, y):
     return x * (y // gcd(x, y))
