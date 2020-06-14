@@ -51,45 +51,84 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-num = [i for i in range(0, 10, 2)]
-A = [2, 4, 5]
-B = [2, 3]
+# N進数
+n = 12
+list = []
+digit = 7
+i = 0
 
-for i in A:
-    index = bisect_right(num, i)
-    print(num[index - 1])
+while n != 0:
+    list.insert(0, str(n % digit))
+    n //= digit
+    i += 1
+print(''.join(list))
 
-# numの中でのi未満の数字の最大値を求める
-for i in A:
-    index = bisect_left(num, i)
-    print(num[index - 1])
+# 文字列２進数を整数に変換
+print(int('010100', 2))
 
-# numの中でのiより大きい数字の最小値を求める
-for i in B:
-    index = bisect_right(num, i)
-    print(num[index])
+# nを超えない最大のbase ** mは何か
+def max_pow(n, base):
+    if n == 0:
+        return None
+    opt = 1
+    cnt = 0
+    while base ** (cnt + 1) <= n:
+        opt *= base
+        cnt += 1
+    return opt, cnt
 
-# numの中でのi以上の数字の最小値を求める
-for i in B:
-    index = bisect_left(num, i)
-    print(num[index])
+# (16, 4)
+print(max_pow(27, 2))
 
-# 足し合わせ
-odd = [i for i in range(0, 16, 3)]
-limit = 33
+# 任意の整数で割り続ける
+def spliter(n, split):
+    splited = n
+    cnt = 0
 
-lista = set()
-for i in odd:
-    for j in odd:
-        lista.add(i + j)
-lista = list(lista)
+    while splited % split == 0:
+        if splited == 0:
+            break
+        splited //= split
+        cnt += 1
+    # print(cnt)
+    return splited, cnt
 
-# ４つの数字を足し合わせた時に33以下になる数字
-for i in lista:
-    index = bisect_right(lista, limit - i)
-    print(i, lista[index - 1])
+# (3, 4)
+print(spliter(48, 2))
 
-# ４つの数字を足し合わせた時に33未満になる数字
-for i in lista:
-    index = bisect_left(lista, limit - i)
-    print(i, lista[index - 1])
+# -2進数（いるこれ？）
+def minus_digit(rev_n):
+    if rev_n == 0:
+        print('0')
+        return
+
+    cnt = 0
+    rep = rev_n
+    lista = []
+
+    while rep != 0:
+        split = (abs(rep) % 2 ** (cnt + 1)) // 2 ** cnt
+        if split == 0:
+            lista.append(0)
+        else:
+            lista.append(1)
+        rep -= (split * ((-2) ** cnt))
+        cnt += 1
+    lista.reverse()
+    return''.join(map(str, lista))
+
+# 11100
+print(minus_digit(12))
+
+# 1(1), 2(1 + 2), 3(1 + 2 + 3)...を超えられるか
+def factime(ny):
+    cnt = 1
+    sum = 0
+    while True:
+        if sum + cnt > ny:
+            return cnt - 1
+            break
+        sum += cnt
+        cnt += 1
+# 2
+print(factime(2))
