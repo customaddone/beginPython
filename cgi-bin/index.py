@@ -51,84 +51,75 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# N進数
-n = 12
-list = []
-digit = 7
-i = 0
+# angle度のtan
+def tan(angle):
+    return math.tan(math.radians(angle))
 
-while n != 0:
-    list.insert(0, str(n % digit))
-    n //= digit
-    i += 1
-print(''.join(list))
+# 余弦定理
+A, B, H, M = 3, 4, 10, 40
+minu = H * 60 + M
 
-# 文字列２進数を整数に変換
-print(int('010100', 2))
+# 時針の角度
+angh = minu / 2
+# 分針の角度
+angm = M * 6
 
-# nを超えない最大のbase ** mは何か
-def max_pow(n, base):
-    if n == 0:
+# 角度の差
+anglepre = abs(angh - angm)
+angle = min(360 - anglepre, anglepre)
+
+# ラジアンに直してからmath.cosとかmath.tanとか
+ans = (A ** 2) + (B ** 2) - (2 * A * B * math.cos(math.radians(angle)))
+
+# 三角形の面積4.564257194330056
+print(math.sqrt(ans))
+
+# 二つの点を通る直線の方程式を求める
+# y = line[0]x + line[1]
+# 傾きmaxならx = line[3]
+def line(Ax, Ay, Bx, By):
+    if Ay == By:
+        return 0, Ay, None
+    if Ax == Bx:
+        return float("inf"), 0, Ax
+    a = (Ay - By) / (Ax - Bx)
+    b = Ay - a * Ax
+    return a, b, None
+
+# (1.0, 2.0, None)
+p1 = line(0, 2, 1, 3)
+print(p1)
+
+# 点[p1, p2]を通り、傾きslopeの直線に直行する直線を求める
+def perp(p1, p2, slope):
+    if slope == 0:
+        return float('inf'), 0, p1
+    if slope > 10 ** 12:
+        return 0, p2, None
+    opt_slope = (1 / slope) * (-1)
+    opt_inter = p2 - (opt_slope * p1)
+
+    return opt_slope, opt_inter, None
+
+def distance(Ax, Ay, Bx, By):
+    return math.hypot(Ax - Bx, Ay - By)
+
+# (-1.0, 2.0, None)
+p2 = perp(0, 2, 1)
+print(p2)
+
+# 二つの線がクロスするx,y座標を出す
+def cross(l1, l2):
+    a1, b1, xx1 = min(l1, l2)
+    a2, b2, xx2 = max(l1, l2)
+    if a1 == a2:
         return None
-    opt = 1
-    cnt = 0
-    while base ** (cnt + 1) <= n:
-        opt *= base
-        cnt += 1
-    return opt, cnt
+    elif a2 == float("inf"):
+        x = xx2
+    else:
+        x = (b1 - b2) / (a2 - a1)
+    y = a1 * x + b1
+    return x, y
 
-# (16, 4)
-print(max_pow(27, 2))
-
-# 任意の整数で割り続ける
-def spliter(n, split):
-    splited = n
-    cnt = 0
-
-    while splited % split == 0:
-        if splited == 0:
-            break
-        splited //= split
-        cnt += 1
-    # print(cnt)
-    return splited, cnt
-
-# (3, 4)
-print(spliter(48, 2))
-
-# -2進数（いるこれ？）
-def minus_digit(rev_n):
-    if rev_n == 0:
-        print('0')
-        return
-
-    cnt = 0
-    rep = rev_n
-    lista = []
-
-    while rep != 0:
-        split = (abs(rep) % 2 ** (cnt + 1)) // 2 ** cnt
-        if split == 0:
-            lista.append(0)
-        else:
-            lista.append(1)
-        rep -= (split * ((-2) ** cnt))
-        cnt += 1
-    lista.reverse()
-    return''.join(map(str, lista))
-
-# 11100
-print(minus_digit(12))
-
-# 1(1), 2(1 + 2), 3(1 + 2 + 3)...を超えられるか
-def factime(ny):
-    cnt = 1
-    sum = 0
-    while True:
-        if sum + cnt > ny:
-            return cnt - 1
-            break
-        sum += cnt
-        cnt += 1
-# 2
-print(factime(2))
+# (0.0, 2.0)
+print(cross(p1, p2))
