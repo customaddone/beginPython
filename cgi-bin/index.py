@@ -51,52 +51,60 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
+N, A, B, C = getNM()
+L = getArray(N)
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+def counter(array):
+    if (1 in array) and (2 in array) and (3 in array):
+        opt = [0, 0, 0, 0]
+        # 合成に10pかかる
+        cnt = 0
+        for i in range(len(array)):
+            if opt[array[i]] > 0:
+                cnt += 1
+            if array[i] >= 1:
+                opt[array[i]] += L[i]
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
+        res = cnt * 10
+        res += abs(opt[1] - A)
+        res += abs(opt[2] - B)
+        res += abs(opt[3] - C)
 
-        if x == y:
-            return
+        return res
 
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
+    else:
+        return float('inf')
 
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
+ans = float('inf')
+def four_pow(i, array):
+    global ans
+    if i == N:
+        ans = min(ans, counter(array))
+        return
+    # 4 ** Nループ
+    for j in range(4):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
 
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
+four_pow(0, [])
+print(ans)
 
-    def roots(self):
-        return [i for i, x in enumerate(self.parents) if x < 0]
+"""
+4 ** Nループ
+N = 5
+L = [1, 1, 1, 1, 1]
+cnt = 0
+def four_pow(i, array):
+    global cnt
+    if i == N:
+        cnt += 1
+        return
+    # ここの4を変えてrootを変更
+    for j in range(4):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
 
-    def group_count(self):
-        return len(self.roots())
-
-# カードN枚
-# 各カードには1か2が書かれている
-N, M = getNM()
-# A1 + A2 + 1は偶数
-query = []
-
-for i in range(M):
-    a, b, c = getNM()
-    query.append([a, b, c])
-
-U = UnionFind(N)
-for i in query:
-    U.union(i[0] - 1, i[1] - 1)
-
-print(U.group_count())
+four_pow(0, [])
+# 1024
+print(cnt)
+"""
