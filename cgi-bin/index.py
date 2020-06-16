@@ -51,60 +51,25 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, A, B, C = getNM()
-L = getArray(N)
+N, M = getNM()
+dp = [float("inf")] * (1 << N)
+dp[0] = 0
 
-def counter(array):
-    if (1 in array) and (2 in array) and (3 in array):
-        opt = [0, 0, 0, 0]
-        # 合成に10pかかる
-        cnt = 0
-        for i in range(len(array)):
-            if opt[array[i]] > 0:
-                cnt += 1
-            if array[i] >= 1:
-                opt[array[i]] += L[i]
+# 1 ~ Nを全て開けられる鍵を揃えるコストの最小値がO(M * 2 ** N)でわかる
+# 各鍵について
+for i in range(M):
+    a, b = getNM()
+    c = getList()
+    bit = 0
+    # その鍵で開けられる部屋を揃える
+    for item in c:
+        bit |= (1 << (item - 1))
+    # 部屋の各状態について
+    # そこからさらに鍵cを取得した場合と他の鍵を使用した場合とで比較する
+    for j in range(1 << N):
+        dp[j | bit] = min(dp[j | bit], dp[j] + a)
 
-        res = cnt * 10
-        res += abs(opt[1] - A)
-        res += abs(opt[2] - B)
-        res += abs(opt[3] - C)
-
-        return res
-
-    else:
-        return float('inf')
-
-ans = float('inf')
-def four_pow(i, array):
-    global ans
-    if i == N:
-        ans = min(ans, counter(array))
-        return
-    # 4 ** Nループ
-    for j in range(4):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-
-four_pow(0, [])
-print(ans)
-
-"""
-4 ** Nループ
-N = 5
-L = [1, 1, 1, 1, 1]
-cnt = 0
-def four_pow(i, array):
-    global cnt
-    if i == N:
-        cnt += 1
-        return
-    # ここの4を変えてrootを変更
-    for j in range(4):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-
-four_pow(0, [])
-# 1024
-print(cnt)
-"""
+if dp[(1 << N) - 1] == float("inf"):
+    print(-1)
+else:
+    print(dp[(1 << N) - 1])
