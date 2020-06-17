@@ -50,55 +50,88 @@ mod = 10 ** 9 + 7
 #############
 # Main Code #
 #############
-N = input()
-l = len(N)
 
-# dp[i][0 or 1][j]
-# 1つ目の引数　何桁目か
-# 2つ目の引数 inputした数になる可能性があるか
-# 3つ目の引数　これまで1が何個出てきたか
-dp = [[[0] * (l + 1) for _ in range(2)] for _ in range(l + 1)]
-dp[0][0][0] = 1
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-# 例 345
-for i in range(l):
-    # i = 0の時 v = 3
-    # i = 1の時 v = 4
-
-    # i = 0のループ終了時点で
-    # dp[1][0][0] = 1 (3○○)
-    # dp[1][1][0] = 2 (0○○, 2○○)
-    # dp[1][1][1] = 1 (1○○)
-    v = int(N[i])
-
-    for j in range(l):
-        # 1→1
-        # 0○○ + 2○○について02○ ~ 09○まで、22○ ~ 29○まで次のdpを更新（1のカウントは増えす0のまま）
-        # 1○○について12○ ~ 19○まで（1のカウントは増えす1のまま）
-        dp[i + 1][1][j] += dp[i][1][j] * 9
-        # 0○○ + 2○○について01○、21○（1のカウントが1増える）
-        # 1○○について11○（1のカウントが1増える）
-        dp[i + 1][1][j + 1] += dp[i][1][j]
-
-        # 0→1
-        # i = 1のときv = 4なので
-        if v > 1:
-            # 3○○について32○ ~ 33○まで（1のカウントは増えす0のまま）
-            dp[i + 1][1][j] += dp[i][0][j] * (v - 1)
-            # 3○○について31○（1のカウントが1増える）
-            dp[i + 1][1][j + 1] += dp[i][0][j]
-        elif v == 1:
-            dp[i + 1][1][j] += dp[i][0][j]
-
-        # 0→0
-        if v == 1:
-            # 3○○について34○
-            dp[i + 1][0][j + 1] = dp[i][0][j]
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
         else:
-            dp[i + 1][0][j] = dp[i][0][j]
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+
+        if x == y:
+            return
+
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
+
+N = 10
+
+query = [
+[4, 8, 6831],
+[1, 8, 4583],
+[0, 5, 6592],
+[0, 6, 3063],
+[3, 8, 4975],
+[1, 8, 2049],
+[4, 7, 2104],
+[2, 7, 781]
+]
+
+U = UnionFind(N)
+
+for i in query:
+    U.union(i[0], i[1])
+
+def part_spanning(members, query):
+    mem_alta = [-1] * (members[-1] + 1)
+    N_a = len(members)
+    for i in range(N_a):
+        mem_alta[members[i]] = i
+
+    part_query = []
+    for i in query:
+        if i[0] in members or i[1] in members:
+            part_query.append(i)
+    # 今回大きい順に繋いだ
+    part_query.sort(reverse = True, key = lambda i:i[2])
+
+    U1 = UnionFind(N_a)
+    res = 0
+    for e in part_query:
+        a, b, cost = e
+        # members.index(a)だと計算量が多くなる
+        if not U1.same(mem_alta[a], mem_alta[b]):
+            res += cost
+            U1.union(mem_alta[a], mem_alta[b])
+    return res
+
+# 各グループごとに最小全域木
 ans = 0
-for j in range(l + 1):
-    # dp[l]について各j(1のカウント)の通りの数 * j
-    ans += (dp[l][0][j] + dp[l][1][j]) * j
+for i in U.all_group_members().values():
+    ans += (len(i) * 10000 - part_spanning(i, query))
 print(ans)
