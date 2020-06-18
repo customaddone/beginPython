@@ -51,58 +51,63 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 4
-query1 = [
-[1, 3, 10],
-[2, 4, 20]
-]
+# mod不使用ver
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-query2 = [
-[2, 3, 3]
-]
+# 10
+print(cmb_1(5, 3))
 
-# 条件
-# d[i] <= d[i + 1]
-# d[AD] + DL >= d[BL]
-# d[AD] + DD <= d[BD]
-# 上記のような制約であればグラフの考え方を適用できる
+# mod使用ver
+# nが大きい場合に
+def cmb_2(x,y):
+    r = 1
+    for i in range(1, y + 1):
+        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
+    return r
 
-# グラフ問題も
-# コストwの辺e = (v, u)について
-# d(v) + w >= d(u)
-# vからコストwでuまでいけるが、他の道も使うことができる
+# 10
+print(cmb_2(5, 3))
 
-# 今回の場合
-# d(4) + 0 >= d(3), d(3) + 0 >= d(2)...
-# d(1) + 10 >= d(3), d(2) + 20 >= d(4)
-# d(2) + 3 <= d(3) → d(3) - 3 >= d(2)
+# 逆元事前処理ver
+# nが小さい場合に
+N = 10
 
-# このグラフの最小距離が条件を全て満たす通りとなり、答えとなる最大値となる
-# (少しでも周り道するとどれかの条件を満たさなくなる。最短距離で進むことが制約を全て満たす条件)
-edges = []
-for i in range(N - 1, 1, -1):
-    edges.append([i, i - 1, 0])
+fact =[1] #階乗
+for i in range(1, N + 1):
+    fact.append(fact[i - 1] * i % mod)
 
-for i in range(len(query1)):
-    a, b, dis = query1[i]
-    edges.append([a - 1, b - 1, dis])
+facv = [0] * (N + 1) #階乗の逆元
+facv[-1] = pow(fact[-1], mod - 2 , mod)
 
-for i in range(len(query2)):
-    a, b, dis = query2[i]
-    edges.append([b - 1, a - 1, -dis])
+for i in range(N - 1, -1, -1):
+    facv[i] = facv[i + 1] * (i + 1) % mod
 
-def bellman(edges, num_v):
-    dist = [float('inf') for i in range(num_v)]
-    dist[0] = 0
+def cmb(n, r):
+    if n < r:
+        return 0
+    return fact[n] * facv[r] * facv[n - r] % mod
+# 120
+print(cmb(10, 3))
 
-    changed = True
-    while changed:
-        changed = False
-        for edge in edges:
-            if dist[edge[1]] > dist[edge[0]] + edge[2]:
-                dist[edge[1]] = dist[edge[0]] + edge[2]
-                changed = True
+# 重複組み合わせ
+# 10個のものから重複を許して3つとる
+print(cmb_1(10 + 3 - 1, 3))
 
-    return dist
+# modが素数じゃない時
+def cmb_compose(n, k, mod):
+    dp = [[0] * (k + 1) for i in range(n + 1)]
+    dp[0][0] = 1
+    for i in range(1, n + 1):
+        dp[i][0] = 1
+        for j in range(1, k + 1):
+            # nCk = n - 1Ck - 1 + n - 1Ck
+            dp[i][j] = (dp[i - 1][j - 1] + dp[i - 1][j]) % mod
 
-print(bellman(edges, N)[-1])
+    return dp[n][k]
+
+print(cmb_compose(10, 3, 50))
