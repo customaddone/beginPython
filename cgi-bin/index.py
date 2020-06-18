@@ -51,38 +51,74 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 4
-query = [
-[0, 1, 1],
-[1, 2, 2],
-[2, 3, 4]
-]
+class LCA(object):
+    def __init__(self, G, root=0):
+        self.G = G
+        self.root = root
+        self.n = len(G)
+        self.logn = (self.n - 1).bit_length()
+        self.depth = [-1 if i != root else 0 for i in range(self.n)]
+        self.parent = [[-1] * self.n for _ in range(self.logn)]
+        self.dfs()
+        self.doubling()
 
-G = [[] for i in range(N)]
-for i in range(N - 1):
-    s, t, w = query[i]
-    G[s].append((t, w))
-    G[t].append((s, w))
+    def dfs(self):
+        que = [self.root]
+        while que:
+            u = que.pop()
+            for v in self.G[u]:
+                if self.depth[v] == -1:
+                    self.depth[v] = self.depth[u] + 1
+                    self.parent[0][v] = u
+                    que += [v]
 
+    def doubling(self):
+        for i in range(1, self.logn):
+            for v in range(self.n):
+                if self.parent[i - 1][v] != -1:
+                    self.parent[i][v] = self.parent[i - 1][self.parent[i - 1][v]]
 
-def bfs(s):
-    dist = [-1] * N
-    que = deque([s])
-    dist[s] = 0
+    def get(self, u, v):
+        if self.depth[v] < self.depth[u]:
+            u, v = v, u
+        du = self.depth[u]
+        dv = self.depth[v]
 
-    while que:
-        v = que.popleft()
-        d = dist[v]
-        for w, c in G[v]:
-            if dist[w] >= 0:
-                continue
-            dist[w] = d + c
-            que.append(w)
-    d = max(dist)
-    # 全部並べて一番値がでかいやつ
-    return dist.index(d), d
+        for i in range(self.logn):  # depthの差分だけuを遡らせる
+            if (dv - du) >> i & 1:
+                v = self.parent[i][v]
+        if u == v: return u  # 高さ揃えた時点で一致してたら終わり
 
-u, _ = bfs(0)
-v, d = bfs(u)
+        for i in range(self.logn - 1, -1, -1):  # そうでなければ上から二分探索
+            pu, pv = self.parent[i][u], self.parent[i][v]
+            if pu != pv:
+                u, v = pu, pv
+        return self.parent[0][u]
 
-print(d)
+"""
+5
+1 2
+1 3
+1 4
+4 5
+3
+2 3
+2 5
+2 4
+"""
+
+n = getN()
+G = [[] for _ in range(n)]
+for x, y in [getNM() for i in range(n - 1)]:
+    G[x - 1] += [y - 1]
+    G[y - 1] += [x - 1]
+
+lca = LCA(G)
+q = getN()
+ans = []
+for a, b in [getNM() for i in range(q)]:
+    # 根からのaの深さ + 根からのbの深さ - 2 * ダブった部分
+    # lca.get(a - 1, b - 1):aとbのlca
+    ans += [lca.depth[a - 1] + lca.depth[b - 1] - 2 * lca.depth[lca.get(a - 1, b - 1)] + 1]
+
+print(*ans, sep='\n')
