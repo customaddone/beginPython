@@ -51,72 +51,38 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# https://qiita.com/Morifolium/items/6c8f0a188af2f9620db2
-N = 8
-
-ab = [
-[1, 6],
-[2, 5],
-[3, 1],
-[3, 2],
-[4, 1],
-[4, 6],
-[5, 1],
-[6, 7],
-[7, 8]
-]
-"""
-for _ in range(N + M - 1):
-    ab.append(tuple(map(int, input().split())))
-"""
-
-def topological(n, dist):
-    in_cnt = defaultdict(int)
-    outs = defaultdict(list)
-
-    for a, b in ab:
-        in_cnt[b - 1] += 1
-        outs[a - 1].append(b - 1)
-
-    res = []
-    queue = deque([i for i in range(n) if in_cnt[i] == 0])
-
-    while len(queue) != 0:
-        v = queue.popleft()
-        res.append(v)
-        for v2 in outs[v]:
-            in_cnt[v2] -= 1
-            if in_cnt[v2] == 0:
-                queue.append(v2)
-
-    return res
-
-# [2, 3, 1, 4, 0, 5, 6, 7]
-# queryに閉路ができる道を追加するとバグってlen = 8未満の配列を返す
-print(topological(N, ab))
-
-# トポロジカルソートの種類の数
-N, M = 3, 2
+N = 4
 query = [
-[2, 1],
-[2, 3]
+[0, 1, 1],
+[1, 2, 2],
+[2, 3, 4]
 ]
 
-X = [0] * N
-for i in range(M):
-    x, y = query[i]
-    # xにある矢印を集計
-    X[x - 1] |= 1 << (y - 1)
+G = [[] for i in range(N)]
+for i in range(N - 1):
+    s, t, w = query[i]
+    G[s].append((t, w))
+    G[t].append((s, w))
 
-DP = [0] * (1 << N)
-DP[0] = 1
 
-# jの左に置くものとしてどのような組み合わせがあるか
-for bit in range(1, 1 << N):
-    for j in range(N):
-        # j番目が含まれる場合において
-        if bit & (1 << j):
-            if not (X[j] & (bit ^ (1 << j))):
-                # 上のbitまで運送してってdp[-1]で集計
-                DP[bit] += DP[bit ^ (1 << j)]
-print(DP)
+def bfs(s):
+    dist = [-1] * N
+    que = deque([s])
+    dist[s] = 0
+
+    while que:
+        v = que.popleft()
+        d = dist[v]
+        for w, c in G[v]:
+            if dist[w] >= 0:
+                continue
+            dist[w] = d + c
+            que.append(w)
+    d = max(dist)
+    # 全部並べて一番値がでかいやつ
+    return dist.index(d), d
+
+u, _ = bfs(0)
+v, d = bfs(u)
+
+print(d)
