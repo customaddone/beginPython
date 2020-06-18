@@ -51,63 +51,72 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# mod不使用ver
-def cmb_1(n, r):
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+# https://qiita.com/Morifolium/items/6c8f0a188af2f9620db2
+N = 8
 
-# 10
-print(cmb_1(5, 3))
+ab = [
+[1, 6],
+[2, 5],
+[3, 1],
+[3, 2],
+[4, 1],
+[4, 6],
+[5, 1],
+[6, 7],
+[7, 8]
+]
+"""
+for _ in range(N + M - 1):
+    ab.append(tuple(map(int, input().split())))
+"""
 
-# mod使用ver
-# nが大きい場合に
-def cmb_2(x,y):
-    r = 1
-    for i in range(1, y + 1):
-        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
-    return r
+def topological(n, dist):
+    in_cnt = defaultdict(int)
+    outs = defaultdict(list)
 
-# 10
-print(cmb_2(5, 3))
+    for a, b in ab:
+        in_cnt[b - 1] += 1
+        outs[a - 1].append(b - 1)
 
-# 逆元事前処理ver
-# nが小さい場合に
-N = 10
+    res = []
+    queue = deque([i for i in range(n) if in_cnt[i] == 0])
 
-fact =[1] #階乗
-for i in range(1, N + 1):
-    fact.append(fact[i - 1] * i % mod)
+    while len(queue) != 0:
+        v = queue.popleft()
+        res.append(v)
+        for v2 in outs[v]:
+            in_cnt[v2] -= 1
+            if in_cnt[v2] == 0:
+                queue.append(v2)
 
-facv = [0] * (N + 1) #階乗の逆元
-facv[-1] = pow(fact[-1], mod - 2 , mod)
+    return res
 
-for i in range(N - 1, -1, -1):
-    facv[i] = facv[i + 1] * (i + 1) % mod
+# [2, 3, 1, 4, 0, 5, 6, 7]
+# queryに閉路ができる道を追加するとバグってlen = 8未満の配列を返す
+print(topological(N, ab))
 
-def cmb(n, r):
-    if n < r:
-        return 0
-    return fact[n] * facv[r] * facv[n - r] % mod
-# 120
-print(cmb(10, 3))
+# トポロジカルソートの種類の数
+N, M = 3, 2
+query = [
+[2, 1],
+[2, 3]
+]
 
-# 重複組み合わせ
-# 10個のものから重複を許して3つとる
-print(cmb_1(10 + 3 - 1, 3))
+X = [0] * N
+for i in range(M):
+    x, y = query[i]
+    # xにある矢印を集計
+    X[x - 1] |= 1 << (y - 1)
 
-# modが素数じゃない時
-def cmb_compose(n, k, mod):
-    dp = [[0] * (k + 1) for i in range(n + 1)]
-    dp[0][0] = 1
-    for i in range(1, n + 1):
-        dp[i][0] = 1
-        for j in range(1, k + 1):
-            # nCk = n - 1Ck - 1 + n - 1Ck
-            dp[i][j] = (dp[i - 1][j - 1] + dp[i - 1][j]) % mod
+DP = [0] * (1 << N)
+DP[0] = 1
 
-    return dp[n][k]
-
-print(cmb_compose(10, 3, 50))
+# jの左に置くものとしてどのような組み合わせがあるか
+for bit in range(1, 1 << N):
+    for j in range(N):
+        # j番目が含まれる場合において
+        if bit & (1 << j):
+            if not (X[j] & (bit ^ (1 << j))):
+                # 上のbitまで運送してってdp[-1]で集計
+                DP[bit] += DP[bit ^ (1 << j)]
+print(DP)
