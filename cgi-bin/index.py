@@ -54,20 +54,18 @@ mod = 10 ** 9 + 7
 # https://qiita.com/keymoon/items/2a52f1b0fb7ef67fb89e
 # 頂点がN個の木構造が与えられます。各頂点について、
 # その頂点から最も遠い頂点の距離(通過する辺数)を求めてください。
-N = 12
+N = 9
+# スターグラフだと木dpでも追いつかない(O(n2))
 dist = [
-[1, 4, 6],
-[0, 2, 3],
-[1],
-[1],
-[0, 5],
-[4],
-[0, 7, 10, 11],
-[6, 8, 9],
-[7],
-[7],
-[6],
-[6]
+[1, 2, 3, 4, 5, 6, 7, 8],
+[0],
+[0],
+[0],
+[0],
+[0],
+[0],
+[0],
+[0]
 ]
 
 # dp[now][parent]:今nowで一つ上の親がparentの場合
@@ -75,12 +73,12 @@ dp_root = [[-1] * N for i in range(N)]
 dp = [[-1] * N for i in range(N)]
 num = defaultdict(list)
 ans_depth = [0] * N
-sta = 7
+sta = 0
 
 # まず一つの頂点について部分木を全て求める
 # 今0で親がiのものは後で出す
 def dfs(now, parent):
-    res = 1
+    res = 0
     cnt = 0
 
     for i in dist[now]:
@@ -107,7 +105,11 @@ for i in range(N):
         dp_down[i][j + 1] = max(dp_down[i][j + 1], dp_down[i][j])
         dp_up[i][num_n - j - 2] = max(dp_up[i][num_n - j - 2], dp_up[i][num_n - j - 1])
 
-# 逆順のdp_rootを記入　遡っていく
+# 逆順のdp_rootを記入する関数　遡っていく
+# 候補は３つ
+# dp_root[parent][now]（逆向きのもの）
+# dp_down[now][index - 1]（累積下のものの上の方）
+# dp_up[now][index + 1]（累積下のものの下の方）
 def plus_root(now, parent):
     for i in dist[now]:
         if i == parent:
