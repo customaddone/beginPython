@@ -51,74 +51,93 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class LCA(object):
-    def __init__(self, G, root=0):
-        self.G = G
-        self.root = root
-        self.n = len(G)
-        self.logn = (self.n - 1).bit_length()
-        self.depth = [-1 if i != root else 0 for i in range(self.n)]
-        self.parent = [[-1] * self.n for _ in range(self.logn)]
-        self.dfs()
-        self.doubling()
+# https://qiita.com/keymoon/items/2a52f1b0fb7ef67fb89e
+# 頂点がN個の木構造が与えられます。各頂点について、
+# その頂点から最も遠い頂点の距離(通過する辺数)を求めてください。
+N = 12
+dist = [
+[1, 4, 6],
+[0, 2, 3],
+[1],
+[1],
+[0, 5],
+[4],
+[0, 7, 10, 11],
+[6, 8, 9],
+[7],
+[7],
+[6],
+[6]
+]
 
-    def dfs(self):
-        que = [self.root]
-        while que:
-            u = que.pop()
-            for v in self.G[u]:
-                if self.depth[v] == -1:
-                    self.depth[v] = self.depth[u] + 1
-                    self.parent[0][v] = u
-                    que += [v]
+# dp[now][parent]:今nowで一つ上の親がparentの場合
+dp_root = [[-1] * N for i in range(N)]
+dp = [[-1] * N for i in range(N)]
+num = defaultdict(list)
+ans_depth = [0] * N
+sta = 7
 
-    def doubling(self):
-        for i in range(1, self.logn):
-            for v in range(self.n):
-                if self.parent[i - 1][v] != -1:
-                    self.parent[i][v] = self.parent[i - 1][self.parent[i - 1][v]]
+# まず一つの頂点について部分木を全て求める
+# 今0で親がiのものは後で出す
+def dfs(now, parent):
+    res = 1
+    cnt = 0
 
-    def get(self, u, v):
-        if self.depth[v] < self.depth[u]:
-            u, v = v, u
-        du = self.depth[u]
-        dv = self.depth[v]
+    for i in dist[now]:
+        if i == parent:
+            continue
+        num[now].append(i)
+        dp[now][cnt] = dfs(i, now)
+        res = max(res, dp[now][cnt] + 1)
+        cnt += 1
 
-        for i in range(self.logn):  # depthの差分だけuを遡らせる
-            if (dv - du) >> i & 1:
-                v = self.parent[i][v]
-        if u == v: return u  # 高さ揃えた時点で一致してたら終わり
+    if parent != -1:
+        dp_root[now][parent] = res
+    return res
 
-        for i in range(self.logn - 1, -1, -1):  # そうでなければ上から二分探索
-            pu, pv = self.parent[i][u], self.parent[i][v]
-            if pu != pv:
-                u, v = pu, pv
-        return self.parent[0][u]
+# dfs実行
+ans_depth[sta] = dfs(sta, -1)
 
-"""
-5
-1 2
-1 3
-1 4
-4 5
-3
-2 3
-2 5
-2 4
-"""
+# 累積和
+dp_down = copy.deepcopy(dp)
+dp_up = copy.deepcopy(dp)
+for i in range(N):
+    num_n = len(num[i])
+    for j in range(num_n - 1):
+        dp_down[i][j + 1] = max(dp_down[i][j + 1], dp_down[i][j])
+        dp_up[i][num_n - j - 2] = max(dp_up[i][num_n - j - 2], dp_up[i][num_n - j - 1])
 
-n = getN()
-G = [[] for _ in range(n)]
-for x, y in [getNM() for i in range(n - 1)]:
-    G[x - 1] += [y - 1]
-    G[y - 1] += [x - 1]
+# 逆順のdp_rootを記入　遡っていく
+def plus_root(now, parent):
+    for i in dist[now]:
+        if i == parent:
+            continue
+        index = num[now].index(i)
+        if index != 0 and index != len(num[now]) - 1:
+            dp_root[now][i] = max(dp_down[now][index - 1], dp_up[now][index + 1]) + 1
+        elif index == 0:
+            dp_root[now][i] = dp_up[now][index + 1] + 1
+        else:
+            dp_root[now][i] = dp_down[now][index - 1] + 1
 
-lca = LCA(G)
-q = getN()
-ans = []
-for a, b in [getNM() for i in range(q)]:
-    # 根からのaの深さ + 根からのbの深さ - 2 * ダブった部分
-    # lca.get(a - 1, b - 1):aとbのlca
-    ans += [lca.depth[a - 1] + lca.depth[b - 1] - 2 * lca.depth[lca.get(a - 1, b - 1)] + 1]
+        dp_root[now][i] = max(dp_root[now][i], dp_root[parent][now] + 1)
 
-print(*ans, sep='\n')
+
+    if len(dist[now]) == 1:
+        dp_root[now][now] = dp_root[parent][now] + 1
+
+# 答えとなる距離を記入していく
+pos = deque([[sta, -1]])
+
+while len(pos) > 0:
+    now, parent = pos.popleft()
+    plus_root(now, parent)
+    for i in dist[now]:
+        if i == parent:
+            continue
+        pos.append([i, now])
+
+    if now != sta:
+        ans_depth[now] = max(dp_root[now])
+
+print(*ans_depth)
