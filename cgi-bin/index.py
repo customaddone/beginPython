@@ -51,36 +51,26 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 5
-#es = [[1,2,3],[0,2],[0,1],[0,4],[3]] # False
-dist = [
-[1, 3],
-[0, 2],
-[1, 3],
-[0, 2, 4],
-[3]
-] # True
+N, K = 6, 727202214173249351
+A = [6, 5, 2, 5, 3, 2]
+A = [i - 1 for i in A]
 
-#n個の頂点の色を初期化。0:未着色、1:黒、-1:白
-colors = [0] * N
+logk = K.bit_length()
+doubling = [[-1] * N for _ in range(logk)]
 
-#頂点vをcolor(1 or -1)で塗り、再帰的に矛盾がないか調べる。矛盾があればFalse
-def dfs(v, color):
-    #今いる点を着色
-    colors[v] = color
-    #今の頂点から行けるところをチェック
-    for to in dist[v]:
-        #同じ色が隣接してしまったらFalse
-        if colors[to] == color:
-            return False
-        #未着色の頂点があったら反転した色を指定し、再帰的に調べる
-        if colors[to] == 0 and not dfs(to, -color):
-            return False
-    #調べ終わったら矛盾がないのでTrue
-    return True
+# ダブリング
+# 2 ** 0は１つ後の行き先
+for i in range(N):
+    doubling[0][i] = A[i]
+for i in range(1, logk):
+    for j in range(N):
+        # doubling[i]はdoubling[i - 1]を２回行えばいい
+        # doubling[i - 1][j]移動してその座標からまたdoubling[i - 1]移動
+        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
 
-#2部グラフならTrue, そうでなければFalse
-def is_bipartite():
-    return dfs(0,1) # 頂点0を黒(1)で塗ってDFS開始
-
-print(is_bipartite())
+index = 0
+# 各bitごとに移動を行う
+for i in range(logk):
+    if K & (1 << i):
+        index = doubling[i][index]
+print(index + 1)
