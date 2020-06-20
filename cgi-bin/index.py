@@ -51,95 +51,85 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# https://qiita.com/keymoon/items/2a52f1b0fb7ef67fb89e
-# 頂点がN個の木構造が与えられます。各頂点について、
-# その頂点から最も遠い頂点の距離(通過する辺数)を求めてください。
-N = 9
-# スターグラフだと木dpでも追いつかない(O(n2))
-dist = [
-[1, 2, 3, 4, 5, 6, 7, 8],
-[0],
-[0],
-[0],
-[0],
-[0],
-[0],
-[0],
-[0]
+N, M = 6, 8
+query = [
+[0, 1, 3],
+[0, 2, 3],
+[1, 2, 2],
+[1, 3, 3],
+[2, 4, 2],
+[3, 4, 4],
+[3, 5, 2],
+[4, 5, 3]
 ]
 
-# dp[now][parent]:今nowで一つ上の親がparentの場合
-dp_root = [[-1] * N for i in range(N)]
-dp = [[-1] * N for i in range(N)]
-num = defaultdict(list)
-ans_depth = [0] * N
-sta = 0
+ans = 0
+lines = defaultdict(set)
+cost = [[0] * N for i in range(N)]
+for i in range(M):
+    a, b, c = query[i]
+    if c != 0:
+        lines[a].add(b)
+        cost[a][b] += c
 
-# まず一つの頂点について部分木を全て求める
-# 今0で親がiのものは後で出す
-def dfs(now, parent):
-    res = 0
-    cnt = 0
+# sからスタート
+def Ford_Fulkerson(sta, end):
+    global ans
+    queue = deque()
+    queue.append([sta, float('inf')])
 
-    for i in dist[now]:
-        if i == parent:
-            continue
-        num[now].append(i)
-        dp[now][cnt] = dfs(i, now)
-        res = max(res, dp[now][cnt] + 1)
-        cnt += 1
+    ignore = [1] * N
+    ignore[sta] = 0
 
-    if parent != -1:
-        dp_root[now][parent] = res
-    return res
+    route = [0] * N
+    route[sta] = -1
 
-# dfs実行
-ans_depth[sta] = dfs(sta, -1)
-
-# 累積和
-dp_down = copy.deepcopy(dp)
-dp_up = copy.deepcopy(dp)
-for i in range(N):
-    num_n = len(num[i])
-    for j in range(num_n - 1):
-        dp_down[i][j + 1] = max(dp_down[i][j + 1], dp_down[i][j])
-        dp_up[i][num_n - j - 2] = max(dp_up[i][num_n - j - 2], dp_up[i][num_n - j - 1])
-
-# 逆順のdp_rootを記入する関数　遡っていく
-# 候補は３つ
-# dp_root[parent][now]（逆向きのもの）
-# dp_down[now][index - 1]（累積下のものの上の方）
-# dp_up[now][index + 1]（累積下のものの下の方）
-def plus_root(now, parent):
-    for i in dist[now]:
-        if i == parent:
-            continue
-        index = num[now].index(i)
-        if index != 0 and index != len(num[now]) - 1:
-            dp_root[now][i] = max(dp_down[now][index - 1], dp_up[now][index + 1]) + 1
-        elif index == 0:
-            dp_root[now][i] = dp_up[now][index + 1] + 1
+    while queue:
+        s, flow = queue.pop()
+        for t in lines[s]:  #s->t
+            if ignore[t]: #未到達
+                # flowは入ってくる量、出る量のうち小さい方
+                flow = min(cost[s][t], flow)
+                route[t] = s
+                queue.append([t, flow])
+                ignore[t] = 0
+                if t == end: #ゴール到達
+                    ans += flow
+                    break
         else:
-            dp_root[now][i] = dp_down[now][index - 1] + 1
+            continue #breakされなければWhile節の先頭に戻る
+        # Falseはされない
+        break
+    else:
+        return False
 
-        dp_root[now][i] = max(dp_root[now][i], dp_root[parent][now] + 1)
+    t = end
+    s = route[t]
+    # goalまで流れた量はflow
+    # 逆向きの辺を貼る
+    while s != -1:
+        #s->tのコスト減少，ゼロになるなら辺を削除
+        cost[s][t] -= flow
+        if cost[s][t] == 0:
+            lines[s].remove(t)
+            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
+        if cost[t][s] == 0:
+            lines[t].add(s)
 
+        cost[t][s] += flow
 
-    if len(dist[now]) == 1:
-        dp_root[now][now] = dp_root[parent][now] + 1
+        # 一つ上の辺をたどる
+        t = s
+        s = route[t]
 
-# 答えとなる距離を記入していく
-pos = deque([[sta, -1]])
+    return True
 
-while len(pos) > 0:
-    now, parent = pos.popleft()
-    plus_root(now, parent)
-    for i in dist[now]:
-        if i == parent:
-            continue
-        pos.append([i, now])
+while True:
+    # ちょびちょび流して行ってゴールまで流れなくなったら終了
+    if Ford_Fulkerson(0, N - 1):
+        continue
+    else:
+        break
 
-    if now != sta:
-        ans_depth[now] = max(dp_root[now])
-
-print(*ans_depth)
+# 5(3 → 5の2と4 → 5の3)
+print(ans)
