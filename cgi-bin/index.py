@@ -51,57 +51,49 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# https://qiita.com/takayg1/items/c811bd07c21923d7ec69
-# 最小値、最大値、区間和、区間積、最大公約数ができる
-def segfunc(x, y):
-    return min(x, y)
+N = 2
+L = [1, 1]
+root = 4
 
-ide_ele = float('inf')
+# root ** Nでループ
+def four_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    for j in range(root):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+four_pow(0, [])
 
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+# 組み合わせ
+def comb_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
 
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
+    for j in range(last + 1, root):
+        new_array = array + [j]
+        comb_pow(i + 1, new_array)
+comb_pow(0, [])
 
-    def query(self, l, r):
-        res = self.ide_ele
+# 重複組み合わせ
+def rep_comb_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
 
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-
-a = [14, 5, 9, 13, 7, 12, 11, 1, 7, 8]
-seg = SegTree(a, segfunc, ide_ele)
-
-# [0, 8)の最小値を表示
-print(seg.query(0, 8)) # 1
-
-# 5番目を0に変更
-seg.update(5, 0)
-
-# [0, 8)の最小値を表示
-print(seg.query(0, 8)) # 0
+    for j in range(last, root):
+        new_array = array + [j]
+        rep_comb_pow(i + 1, new_array)
+rep_comb_pow(0, [])
