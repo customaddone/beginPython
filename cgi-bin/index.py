@@ -51,25 +51,57 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-S = 'RRLLLLRLRRLL'
-N = len(S)
-logk = (10 ** 5).bit_length()
+# https://qiita.com/takayg1/items/c811bd07c21923d7ec69
+# 最小値、最大値、区間和、区間積、最大公約数ができる
+def segfunc(x, y):
+    return min(x, y)
 
-doubling = [[-1] * N for _ in range(logk)]
+ide_ele = float('inf')
 
-# １回目の移動
-for i in range(N):
-    doubling[0][i] = i + 1 if S[i] == "R" else i - 1
+class SegTree:
+    def __init__(self, init_val, segfunc, ide_ele):
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
 
-# 2 ** k回目の移動
-for i in range(1, logk):
-    for j in range(N):
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+    def update(self, k, x):
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
 
-ans = [0] * N
+    def query(self, l, r):
+        res = self.ide_ele
 
-# 10 ** 5回ぐらい回せば十分
-for i in range(N):
-    ans[doubling[logk - 1][i]] += 1
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
 
-print(*ans)
+a = [14, 5, 9, 13, 7, 12, 11, 1, 7, 8]
+seg = SegTree(a, segfunc, ide_ele)
+
+# [0, 8)の最小値を表示
+print(seg.query(0, 8)) # 1
+
+# 5番目を0に変更
+seg.update(5, 0)
+
+# [0, 8)の最小値を表示
+print(seg.query(0, 8)) # 0
