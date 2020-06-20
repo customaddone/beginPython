@@ -51,26 +51,25 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = 6, 727202214173249351
-A = [6, 5, 2, 5, 3, 2]
-A = [i - 1 for i in A]
+S = 'RRLLLLRLRRLL'
+N = len(S)
+logk = (10 ** 5).bit_length()
 
-logk = K.bit_length()
 doubling = [[-1] * N for _ in range(logk)]
 
-# ダブリング
-# 2 ** 0は１つ後の行き先
+# １回目の移動
 for i in range(N):
-    doubling[0][i] = A[i]
+    doubling[0][i] = i + 1 if S[i] == "R" else i - 1
+
+# 2 ** k回目の移動
 for i in range(1, logk):
     for j in range(N):
-        # doubling[i]はdoubling[i - 1]を２回行えばいい
-        # doubling[i - 1][j]移動してその座標からまたdoubling[i - 1]移動
         doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
 
-index = 0
-# 各bitごとに移動を行う
-for i in range(logk):
-    if K & (1 << i):
-        index = doubling[i][index]
-print(index + 1)
+ans = [0] * N
+
+# 10 ** 5回ぐらい回せば十分
+for i in range(N):
+    ans[doubling[logk - 1][i]] += 1
+
+print(*ans)
