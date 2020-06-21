@@ -51,80 +51,33 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def rand_dist(ransize, rantime):
-    dist_alta = []
-    dist_alta_2 = set()
-    while len(dist_alta) < min(rantime, ransize * (ransize - 1) // 2):
-        a, b = rand_ints_nodup(1, ransize, 2)
-        c = rand_N(1, 10)
-        if not (a, b) in dist_alta_2:
-            dist_alta.append([a, b, c])
-            dist_alta_2.add((a, b))
-    return sorted(dist_alta)
+N = 6
+query = [
+[1, 2],
+[2, 3],
+[2, 6],
+[6, 4],
+[1, 5]
+]
 
-N, M = getNM()
-S, T = getNM()
-S -= 1
-T -= 1
-query = [getList() for i in range(M)]
-"""
-N, M = getNM()
-S, T = rand_List(1, N, 2)
-print(S, T)
-S -= 1
-T -= 1
-query = rand_dist(N, M)
-print(query)
-"""
+pos = [0]
+heapq.heapify(pos)
+ignore = [0] * N
 
-def build_tree_dis(N, edge_list):
+dist = [[] for i in range(N)]
+for i in range(len(query)):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-    G = [[] for i in range(N)]
-
-    for i in range(len(edge_list)):
-        a, b, c = edge_list[i]
-        G[a - 1].append([b - 1, c])
-        G[b - 1].append([a - 1, c])
-
-    # 葉（末端の数）
-    leaves = []
-    for i in range(N):
-        if len(G[i]) == 1:
-            leaves.append(i)
-
-    return G
-
-edges = build_tree_dis(N, query)
-
-def dij(start):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-
-    # pqの先頭がgoal行きのものなら最短距離を返す
-    while len(pq) > 0:
-        d, now = heapq.heappop(pq)
-        if (d > dist[now]):
+ans = []
+while pos:
+    u = heapq.heappop(pos)
+    if ignore[u] == 0:
+        ans.append(u + 1)
+    ignore[u] = 1
+    for i in dist[u]:
+        if ignore[i] == 1:
             continue
-        for i in edges[now]:
-            if dist[i[0]] > dist[now] + i[1]:
-                dist[i[0]] = dist[now] + i[1]
-                heapq.heappush(pq, (dist[i[0]], i[0]))
-    return dist
-
-list_1 = dij(S)
-list_2 = dij(T)
-
-ans = float('inf')
-for i in range(N):
-    if i == S or i == T:
-        continue
-    if list_1[T] + list_2[i] == list_1[i] or list_2[S] + list_1[i] == list_2[i]:
-        continue
-    if list_1[i] == list_2[i]:
-        ans = i
-        break
-if ans < mod:
-    print(i + 1)
-else:
-    print(-1)
+        heapq.heappush(pos, i)
+print(ans)
