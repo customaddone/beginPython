@@ -51,19 +51,18 @@ mod = 998244353
 # Main Code #
 #############
 
-N, C = getNM()
-A = getList()
+N = 10
+A = [0, 6, 9, 9, 2, 3, 4, 5, 10, 3]
 
-lista = [[] for i in range(C)]
-
-for i in range(N):
-    lista[A[i] - 1].append(i)
-
-for i in lista:
-    ans = 0
-    for j in range(len(i)):
-        if j == 0:
-            ans += (i[j] + 1) * (N - i[j])
-        else:
-            ans += (i[j] - i[j - 1]) * (N - i[j])
-    print(ans)
+ans = deque([A[0]])
+for i in range(1, N):
+    # ans[index] A[i]が挟みこめる場所
+    # A[0] <= A[i]なら0になる
+    # ans[index - 1]: A[i]未満で一番大きい数字
+    index = bisect_left(ans, A[i])
+    if index == 0:
+        ans.appendleft(A[i])
+    else:
+        # 同じ数が複数ある場合は一番最後の数字が更新される
+        ans[index - 1] = A[i]
+print(len(ans))
