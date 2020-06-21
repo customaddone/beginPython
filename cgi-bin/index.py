@@ -44,50 +44,48 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
-mod = 10 ** 9 + 7
+mod = 998244353
 
 
 #############
 # Main Code #
 #############
 
-def rand_letter(size):
-    ascii_original='ATCG'
-    digits_original='01'
+# N:ブロック
+# M:色（バリエーション）
+# K:隣合う組み
+# N, M, K = 6, 2, 3のとき
+# K = 0 のとき
+# 121212, 212121
+# K = 1のとき,
+# 12121 のどこかに同じ数字を挟み込めば
+# 112121, 122121という風にできる
+# K = 2のとき
+# 1212 のどこかに同じ数字を挟む　を２回行う
+# 112212, 112122もできるし
+# 111212, 122212もできる
+N, M, K = getNM()
 
-    digits='0123456789'
-    ascii_lowercase='abcdefghijklmnopqrstuvwxyz'
-    ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+# 重複組み合わせのため
+# 繰り返し使うのでこのタイプ
+Y = N + K + 1
+fact =[1] #階乗
+for i in range(1, Y + 1):
+    fact.append(fact[i - 1] * i % mod)
 
-    # 好きなものを使ってね
-    psuedo = ascii_original
+facv = [0] * (Y + 1) #階乗の逆元
+facv[-1] = pow(fact[-1], mod - 2 , mod)
 
-    return ''.join([random.choice(psuedo) for i in range(size)])
-# print(rand_letter(12))
+for i in range(Y - 1, -1, -1):
+    facv[i] = facv[i + 1] * (i + 1) % mod
 
-N = 26
-S = 'codefestivaltwozeroonefive'
+def cmb(n, r):
+    if n < r:
+        return 0
+    return fact[n] * facv[r] * facv[n - r] % mod
 
-if len(S) == 0:
-    print(0)
-    exit()
-
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(ts)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == ts[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-
-ans = float('inf')
-for i in range(N):
-    opt = N - 2 * dfs(S[:i], S[i:])
-    ans = min(ans, opt)
-print(ans)
+ans = 0
+for i in range(K + 1):
+    opt = M * pow(M - 1, N - i - 1, mod) * cmb(N - i + i - 1, i)
+    ans += opt % mod
+print(ans % mod)
