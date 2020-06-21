@@ -51,33 +51,43 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 6
-query = [
-[1, 2],
-[2, 3],
-[2, 6],
-[6, 4],
-[1, 5]
-]
+def rand_letter(size):
+    ascii_original='ATCG'
+    digits_original='01'
 
-pos = [0]
-heapq.heapify(pos)
-ignore = [0] * N
+    digits='0123456789'
+    ascii_lowercase='abcdefghijklmnopqrstuvwxyz'
+    ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-dist = [[] for i in range(N)]
-for i in range(len(query)):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+    # 好きなものを使ってね
+    psuedo = ascii_original
 
-ans = []
-while pos:
-    u = heapq.heappop(pos)
-    if ignore[u] == 0:
-        ans.append(u + 1)
-    ignore[u] = 1
-    for i in dist[u]:
-        if ignore[i] == 1:
-            continue
-        heapq.heappush(pos, i)
+    return ''.join([random.choice(psuedo) for i in range(size)])
+# print(rand_letter(12))
+
+N = 26
+S = 'codefestivaltwozeroonefive'
+
+if len(S) == 0:
+    print(0)
+    exit()
+
+def dfs(s, ts):
+    lens = len(s)
+    lent = len(ts)
+    dp = [[0] * (lent + 1) for i in range(lens + 1)]
+    dp[0][0] = 0
+
+    for i in range(lens):
+        for j in range(lent):
+            if s[i] == ts[j]:
+                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
+            else:
+                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
+    return dp[lens][lent]
+
+ans = float('inf')
+for i in range(N):
+    opt = N - 2 * dfs(S[:i], S[i:])
+    ans = min(ans, opt)
 print(ans)
