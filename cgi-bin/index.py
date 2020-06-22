@@ -51,37 +51,28 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 26
+def square(x1, y1, x2, y2):
+    nx_1 = x1 - (y1 - y2)
+    ny_1 = y1 + (x1 - x2)
+    nx_2 = x2 - (y1 - y2)
+    ny_2 = y2 + (x1 - x2)
 
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
-    else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
+    return [nx_1, ny_1, nx_2, ny_2]
 
-# z
-print(num2alpha(N))
-
-n = N
+N = getN()
 lista = []
-digit = 26
-i = 0
+ans = 0
+for i in range(N):
+    x, y = getNM()
+    lista.append((x, y))
+listb = set(lista)
 
-while n != 0:
-    opt = n % digit
-    lista.insert(0, opt)
-    if n % digit == 0:
-        n = n // digit - 1
-    else:
-        n = n // digit
-    i += 1
-
-str_list = 'abcdefghijklmnopqrstuvwxyz'
-ans = ''
-for i in range(len(lista)):
-    ans += str_list[lista[i] - 1]
-
-# z
+for i in range(N):
+    for j in range(i + 1, N):
+        x1, y1 = lista[i]
+        x2, y2 = lista[j]
+        nx_1, ny_1, nx_2, ny_2 = square(x1, y1, x2, y2)
+        if (nx_1, ny_1) in listb and (nx_2, ny_2) in listb:
+            matl = (nx_1 - nx_2) ** 2 + (ny_1 - ny_2) ** 2
+            ans = max(ans, matl)
 print(ans)
