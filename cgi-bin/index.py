@@ -44,25 +44,44 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
-mod = 998244353
+mod = 10 ** 9 + 7
 
 
 #############
 # Main Code #
 #############
 
-N = 10
-A = [0, 6, 9, 9, 2, 3, 4, 5, 10, 3]
+N = 26
 
-ans = deque([A[0]])
-for i in range(1, N):
-    # ans[index] A[i]が挟みこめる場所
-    # A[0] <= A[i]なら0になる
-    # ans[index - 1]: A[i]未満で一番大きい数字
-    index = bisect_left(ans, A[i])
-    if index == 0:
-        ans.appendleft(A[i])
+def num2alpha(num):
+    if num <= 26:
+        return chr(96 + num)
+    elif num % 26 == 0:
+        return num2alpha(num // 26 - 1) + chr(122)
     else:
-        # 同じ数が複数ある場合は一番最後の数字が更新される
-        ans[index - 1] = A[i]
-print(len(ans))
+        return num2alpha(num // 26) + chr(96 + num % 26)
+
+# z
+print(num2alpha(N))
+
+n = N
+lista = []
+digit = 26
+i = 0
+
+while n != 0:
+    opt = n % digit
+    lista.insert(0, opt)
+    if n % digit == 0:
+        n = n // digit - 1
+    else:
+        n = n // digit
+    i += 1
+
+str_list = 'abcdefghijklmnopqrstuvwxyz'
+ans = ''
+for i in range(len(lista)):
+    ans += str_list[lista[i] - 1]
+
+# z
+print(ans)

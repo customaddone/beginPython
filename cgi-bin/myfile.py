@@ -17,25 +17,20 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 文字列操作
-ABC029 C - Brute-force Attack
-ABC049 C - 白昼夢
+"""
+N = 4
+A = [20, 11, 9, 24]
 
-N, A, B, C = getNM()
-l = getArray(N)
+lista = [[0, 0] for i in range(61)]
+# bitの各桁が１か０かをlistaに収納
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            lista[i][0] += 1
+        else:
+            lista[i][1] += 1
 
-ans = 9999
-for i in range(4 ** N):
-    d = [[] for i in range(4)]
-    j = i
-    for k in range(N):
-        d[j % 4].append(k)
-        j //= 4
-    mp = 0
-    for j in range(3):
-        if len(d[j]) == 0:
-            break
-        mp += abs(sum([l[k] for k in d[j]]) - A[j]) + 10 * (len(d[j]) - 1)
-    else:
-        ans = min(ans, mp)
-print(ans)
+for i in range(N):
+    splitbit(A[i])
+print(lista)
+"""
