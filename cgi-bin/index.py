@@ -51,31 +51,55 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = 4, 6
-weight = [67786, 3497, 44908, 2156, 26230, 86918]
-value = [[1, 3, 4], [2], [2, 3, 4], [2, 3, 4], [2], [3]]
+n = 14
+w = [8, 7, 1, 4, 3, 5, 4, 1, 6, 8, 10, 4, 6, 5]
+# 未開発の部分は-1
+dp = [[-1] * (n + 1) for i in range(n + 1)]
 
-# N個のものを全て手に入れるのに必要なコストの最小値
-# コストを1にすれば最小個数がわかる
-# Nの数が十分に小さいと使用可能
-# Mの数が十分小さければMをbitdpする
-def get_everything(n, weight, value):
-    m = len(weight)
-    dp = [float("inf")] * (1 << n)
-    dp[0] = 0
+# ここに条件を入力
+def judge(a, b):
+    return abs(w[a] - w[b]) <= 1
 
-    for i in range(m):
-        bit = 0
-        for item in value[i]:
-            bit |= (1 << (item - 1))
+def rec(l, r):
+    if dp[l][r] != -1:
+        return dp[l][r]
 
-        for j in range(1 << n):
-            dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
+    if abs(l - r) <= 1:
+        return 0
 
-    return dp[(1 << N) - 1]
+    res = 0
 
-ans = get_everything(N, weight, value)
-if ans == float("inf"):
-    print(-1)
-else:
-    print(ans)
+    # 端っこの２つについて条件が成立する & 間の全てについて条件が成立する
+    if judge(l, r - 1) and rec(l + 1,r - 1) == r - l - 2:
+        res = r - l
+
+    for i in range(l + 1, r):
+        res = max(res, rec(l, i) + rec(i, r))
+    dp[l][r] = res
+    return res
+
+print(rec(0, n))
+
+S = '11011001'
+N = len(S)
+
+dp = [[-1] * (N + 1) for i in range(N + 1)]
+
+def judge_2(a, b):
+    return S[a] != S[b]
+
+def rec_2(l, r):
+    if dp[l][r] != -1:
+        return dp[l][r]
+    if abs(l - r) <= 1:
+        return 0
+
+    res = 0
+    if judge_2(l, r - 1) and rec_2(l + 1, r - 1) == r - l - 2:
+        res = r - l
+    for i in range(l + 1, r):
+        res = max(res, rec_2(l, i) + rec_2(i, r))
+    dp[l][r] = res
+    return res
+
+print(rec_2(0, N))
