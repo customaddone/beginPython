@@ -51,20 +51,31 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-l = getList()
+N, M = 4, 6
+weight = [67786, 3497, 44908, 2156, 26230, 86918]
+value = [[1, 3, 4], [2], [2, 3, 4], [2, 3, 4], [2], [3]]
 
-dp = [[0] * 21 for _ in range(N)]
-# 最初の１個が入った状態でスタート
-dp[0][l[0]] = 1
-# 一つ目飛ばして二つ目からループさせていく
-for i in range(1, N - 1):
-    for j in range(21):
-        if j - l[i] >= 0:
-            # dp[i + 1][j]に合流させていく
-            # 例 i = 1, j = 11のとこへi = 0, j = 8のとこから追加させる
-            dp[i][j] += dp[i - 1][j - l[i]]
-        if j + l[i] <= 20:
-            dp[i][j] += dp[i - 1][j + l[i]]
-#　最後の１個は使わないので(N - 1) - 1
-print(dp[N - 2][l[-1]])
+# N個のものを全て手に入れるのに必要なコストの最小値
+# コストを1にすれば最小個数がわかる
+# Nの数が十分に小さいと使用可能
+# Mの数が十分小さければMをbitdpする
+def get_everything(n, weight, value):
+    m = len(weight)
+    dp = [float("inf")] * (1 << n)
+    dp[0] = 0
+
+    for i in range(m):
+        bit = 0
+        for item in value[i]:
+            bit |= (1 << (item - 1))
+
+        for j in range(1 << n):
+            dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
+
+    return dp[(1 << N) - 1]
+
+ans = get_everything(N, weight, value)
+if ans == float("inf"):
+    print(-1)
+else:
+    print(ans)
