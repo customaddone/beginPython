@@ -51,55 +51,34 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-n = 14
-w = [8, 7, 1, 4, 3, 5, 4, 1, 6, 8, 10, 4, 6, 5]
-# 未開発の部分は-1
-dp = [[-1] * (n + 1) for i in range(n + 1)]
+N = input()
+K = getN()
+L = len(N)
 
-# ここに条件を入力
-def judge(a, b):
-    return abs(w[a] - w[b]) <= 1
+def judge(a):
+    return a != 0
 
-def rec(l, r):
-    if dp[l][r] != -1:
-        return dp[l][r]
+# N以下の数字で条件を満たす桁がk個のもの
+def digit_dp(n, k):
+    l = len(n)
 
-    if abs(l - r) <= 1:
-        return 0
+    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
 
-    res = 0
+    for i in range(l):
+        d = int(n[i])
 
-    # 端っこの２つについて条件が成立する & 間の全てについて条件が成立する
-    if judge(l, r - 1) and rec(l + 1,r - 1) == r - l - 2:
-        res = r - l
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                for k_j in range(k + 1):
+                    # 0じゃない数字が混じっていれば数字は進む
+                    if judge(d_j):
+                        # 求めたい個数以下なら
+                        if k_j + 1 <= k:
+                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
 
-    for i in range(l + 1, r):
-        res = max(res, rec(l, i) + rec(i, r))
-    dp[l][r] = res
-    return res
+    return dp[l][0][k] + dp[l][1][k]
 
-print(rec(0, n))
-
-S = '11011001'
-N = len(S)
-
-dp = [[-1] * (N + 1) for i in range(N + 1)]
-
-def judge_2(a, b):
-    return S[a] != S[b]
-
-def rec_2(l, r):
-    if dp[l][r] != -1:
-        return dp[l][r]
-    if abs(l - r) <= 1:
-        return 0
-
-    res = 0
-    if judge_2(l, r - 1) and rec_2(l + 1, r - 1) == r - l - 2:
-        res = r - l
-    for i in range(l + 1, r):
-        res = max(res, rec_2(l, i) + rec_2(i, r))
-    dp[l][r] = res
-    return res
-
-print(rec_2(0, N))
+print(digit_dp(N, K))
