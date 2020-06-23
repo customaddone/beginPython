@@ -51,45 +51,20 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M, Q = 3, 4, 3
-query = [
-[1, 3, 3, 100],
-[1, 2, 2, 10],
-[2, 3, 2, 10]
-]
+N = getN()
+l = getList()
 
-# 数列Aについて得点計算
-def counter(array):
-    cnt = 0
-    for i in range(Q):
-        A_b = array[query[i][1] - 1]
-        A_a = array[query[i][0] - 1]
-        c = query[i][2]
-        point = query[i][3]
-
-        if A_b - A_a == c:
-            cnt += point
-    return cnt
-
-ans = 0
-# 重複組み合わせを生成
-def rep_comb_pow_2(i, array):
-    global ans
-    if i == N:
-        opt = counter(array)
-        ans = max(ans, opt)
-        return
-
-    # 1スタート
-    last = 1
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last, M + 1):
-        new_array = array + [j]
-        rep_comb_pow_2(i + 1, new_array)
-
-# 実行
-rep_comb_pow_2(0, [])
-
-print(ans)
+dp = [[0] * 21 for _ in range(N)]
+# 最初の１個が入った状態でスタート
+dp[0][l[0]] = 1
+# 一つ目飛ばして二つ目からループさせていく
+for i in range(1, N - 1):
+    for j in range(21):
+        if j - l[i] >= 0:
+            # dp[i + 1][j]に合流させていく
+            # 例 i = 1, j = 11のとこへi = 0, j = 8のとこから追加させる
+            dp[i][j] += dp[i - 1][j - l[i]]
+        if j + l[i] <= 20:
+            dp[i][j] += dp[i - 1][j + l[i]]
+#　最後の１個は使わないので(N - 1) - 1
+print(dp[N - 2][l[-1]])
