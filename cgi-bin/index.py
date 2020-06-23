@@ -51,8 +51,9 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = input()
-K = getN()
+# ABC154 E - Almost Everywhere Zero
+N = '9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999'
+K = 3
 L = len(N)
 
 def judge(a):
@@ -71,14 +72,50 @@ def digit_dp(n, k):
         for j in range(2):
             for d_j in range(10 if j else d + 1):
                 for k_j in range(k + 1):
-                    # 0じゃない数字が混じっていれば数字は進む
                     if judge(d_j):
-                        # 求めたい個数以下なら
                         if k_j + 1 <= k:
                             dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
                     else:
                         dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
 
-    return dp[l][0][k] + dp[l][1][k]
+    return dp
 
-print(digit_dp(N, K))
+dp = digit_dp(N, K)
+print(dp[L][0][K] + dp[L][1][K])
+
+# ABC029 D - 1
+N = '999999999'
+L = len(N)
+
+def judge_2(a):
+    return a == 1
+
+# N以下の数字の中で「1が書いてある桁がk個ある数字」がいくつあるか
+# 上のものと関数の中身自体は変えていない
+def digit_dp_2(n, k):
+    l = len(n)
+
+    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                for k_j in range(k + 1):
+                    if judge_2(d_j):
+                        if k_j + 1 <= k:
+                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+
+    return dp
+
+dp = digit_dp_2(N, L)
+
+ans = 0
+for j in range(L + 1):
+    # dp[l]について各j(1のカウント)の通りの数 * j
+    ans += (dp[L][0][j] + dp[L][1][j]) * j
+print(ans)
