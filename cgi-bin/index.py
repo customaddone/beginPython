@@ -51,42 +51,30 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 6
-Q = [
-[30, 35],
-[35, 15],
-[15, 5],
-[5, 10],
-[10, 20],
-[20, 25]
-]
+N, K = 4, 10
+S = [6, 1, 2, 7]
 
-dp = [[float('inf')] * N for i in range(N)]
+def judge(total):
+    # 和が10と同じかそれ以上
+    return total > K
 
-def judge(a1, a2, a3):
-    # [先頭][0] * [中間地点の一つ後][0] + [終点][1]
-    return Q[a1][0] * Q[a2 + 1][0] * Q[a3][1]
+def incre(total, n, bool):
+    if bool:
+        return total + n
+    else:
+        return total - n
 
-def rec(r, c):
-    minint = float('inf')
-    for k in range(r, c):
-        # 各中間地点kについてr, k, cを用いたdpであれやこれやする
-        minint = min(minint, dp[r][k] + dp[k + 1][c] + judge(r, k, c))
-    return minint
+def counter(r, l, ans):
+    return max(ans, r - l + 1)
 
-def matrix_chain(n):
-    for i in range(n):
-        dp[i][i] = 0
+def two_pointer(n, s):
+    l, ans, total = 0, 0, 0
+    for r in range(n):
+        total = incre(total, s[r], 1)
+        while judge(total) and l <= r:
+            total = incre(total, s[l], 0)
+            l += 1
+    ans = max(ans, r - l + 1)
+    return ans
 
-    for i in range(n):
-        if i != n - 1:
-            dp[i][i + 1] = dp[i][i] + dp[i + 1][i + 1] + judge(i, i, i + 1)
-
-    for i in range(2, n):
-        for j in range(0, n - i):
-            # 例dp[0][3]についてrec(0, 3)
-            dp[j][j + i] = rec(j, j + i)
-
-    return dp
-
-print(matrix_chain(N))
+print(two_pointer(N, S))
