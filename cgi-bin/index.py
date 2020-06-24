@@ -51,71 +51,42 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC154 E - Almost Everywhere Zero
-N = '9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999'
-K = 3
-L = len(N)
+N = 6
+Q = [
+[30, 35],
+[35, 15],
+[15, 5],
+[5, 10],
+[10, 20],
+[20, 25]
+]
 
-def judge(a):
-    return a != 0
+dp = [[float('inf')] * N for i in range(N)]
 
-# N以下の数字で条件を満たす桁がk個のもの
-def digit_dp(n, k):
-    l = len(n)
+def judge(a1, a2, a3):
+    # [先頭][0] * [中間地点の一つ後][0] + [終点][1]
+    return Q[a1][0] * Q[a2 + 1][0] * Q[a3][1]
 
-    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
+def rec(r, c):
+    minint = float('inf')
+    for k in range(r, c):
+        # 各中間地点kについてr, k, cを用いたdpであれやこれやする
+        minint = min(minint, dp[r][k] + dp[k + 1][c] + judge(r, k, c))
+    return minint
 
-    for i in range(l):
-        d = int(n[i])
+def matrix_chain(n):
+    for i in range(n):
+        dp[i][i] = 0
 
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                for k_j in range(k + 1):
-                    if judge(d_j):
-                        if k_j + 1 <= k:
-                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+    for i in range(n):
+        if i != n - 1:
+            dp[i][i + 1] = dp[i][i] + dp[i + 1][i + 1] + judge(i, i, i + 1)
 
-    return dp
-
-dp = digit_dp(N, K)
-print(dp[L][0][K] + dp[L][1][K])
-
-# ABC029 D - 1
-N = '999999999'
-L = len(N)
-
-def judge_2(a):
-    return a == 1
-
-# N以下の数字の中で「1が書いてある桁がk個ある数字」がいくつあるか
-# 上のものと関数の中身自体は変えていない
-def digit_dp_2(n, k):
-    l = len(n)
-
-    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
-
-    for i in range(l):
-        d = int(n[i])
-
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                for k_j in range(k + 1):
-                    if judge_2(d_j):
-                        if k_j + 1 <= k:
-                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+    for i in range(2, n):
+        for j in range(0, n - i):
+            # 例dp[0][3]についてrec(0, 3)
+            dp[j][j + i] = rec(j, j + i)
 
     return dp
 
-dp = digit_dp_2(N, L)
-
-ans = 0
-for j in range(L + 1):
-    # dp[l]について各j(1のカウント)の通りの数 * j
-    ans += (dp[L][0][j] + dp[L][1][j]) * j
-print(ans)
+print(matrix_chain(N))
