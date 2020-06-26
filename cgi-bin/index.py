@@ -51,28 +51,49 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = 3, 2
+N, M = 5, 7
 query = [
-[100, 15],
-[200, 20],
-[200, 30]
+[1, 2, 2],
+[1, 4, 1],
+[2, 3, 7],
+[1, 5, 12],
+[3, 5, 2],
+[2, 5, 3],
+[3, 4, 5]
 ]
 
-def judge(target):
-    alta = []
-    for i in range(N):
-        salt = query[i][0] * (query[i][1] - target)
-        alta.append(salt)
-    alta.sort(reverse = True)
-    return sum(alta[:K]) >= 0
+dist = [[float('inf')] * N for i in range(N)]
+sec_list = []
 
-left = -1
-right = 101
+for i in range(M):
+    a, b, c = query[i]
+    if a == 1:
+        sec_list.append([b - 1, c])
+    elif b == 1:
+        sec_list.appedn([a - 1, c])
+    if a != 1 and b != 1:
+        dist[a - 1][b - 1] = c
+        dist[b - 1][a - 1] = c
 
-for i in range(100):
-    mid = left + (right - left) / 2
-    if judge(mid):
-        left = mid
-    else:
-        right = mid
-print(left)
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
+
+warshall_floyd(dist)
+
+ans = float('inf')
+for i in range(len(sec_list)):
+    for j in range(i + 1, len(sec_list)):
+        x1 = sec_list[i]
+        x2 = sec_list[j]
+        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
+        ans = min(ans, opt)
+
+if ans == float('inf'):
+    print(-1)
+else:
+    print(ans)
