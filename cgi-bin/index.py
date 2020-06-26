@@ -51,81 +51,74 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 12
+N, M, T = 8, 15, 120
+A = [1, 2, 6, 16, 1, 3, 11, 9]
 query = [
-[1, 3],
-[2, 3],
-[3, 4],
-[3, 5],
-[5, 11],
-[6, 12],
-[7, 9],
-[8, 9],
-[9, 10],
-[9, 11],
-[11, 12]
+[1, 8, 1],
+[7, 3, 14],
+[8, 2, 13],
+[3, 5, 4],
+[5, 7, 5],
+[6, 4, 1],
+[6, 8, 17],
+[7, 8, 5],
+[1, 4, 2],
+[4, 7, 1],
+[6, 1, 3],
+[3, 1, 10],
+[2, 6, 5],
+[2, 4, 12],
+[5, 1, 30]
 ]
+dist_1 = []
+dist_2 = []
+for i in range(M):
+    a, b, c = query[i]
+    dist_1.append([a, b, c])
+    # 帰りがけの最短経路については全ての道を逆順にすればいい
+    dist_2.append([b, a, c])
 
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+def build_tree_dis(N, edge_list):
 
-# nowからNまでのルート
-def router(n, sta, end):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    path[sta] = -1
+    G = [[] for i in range(N)]
 
-    while pos[0] != end:
-        u = pos.popleft()
-        ignore[u] = 1
+    for i in range(len(edge_list)):
+        a, b, c = edge_list[i]
+        G[a - 1].append([b - 1, c])
 
-        for i in dist[u]:
-            if ignore[i] != 1:
-                path[i] = u
-                pos.append(i)
+    # 葉（末端の数）
+    leaves = []
+    for i in range(N):
+        if len(G[i]) == 1:
+            leaves.append(i)
 
-    route = deque([end])
-    while True:
-        next = path[route[0]]
-        route.appendleft(next)
-        if route[0] == sta:
-            break
+    return G
 
-    return list(route)
+edges_1 = build_tree_dis(N, dist_1)
+edges_2 = build_tree_dis(N, dist_2)
 
-route = router(N, 0, N - 1)
-print(route)
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
 
-# NG以外のところで辿れるところの数
-def dfs_ter(sta, ng):
-    pos = deque([sta])
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        d, now = heapq.heappop(pq)
+        if (d > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i[0]] > dist[now] + i[1]:
+                dist[i[0]] = dist[now] + i[1]
+                heapq.heappush(pq, (dist[i[0]], i[0]))
+    return dist
 
-    ignore = [0] * N
-    for i in ng:
-        ignore[i] = 1
+dij_to = dij(0, edges_1)
+dij_from = dij(0, edges_2)
+ans = 0
 
-    cnt = 0
-    while len(pos) > 0:
-        u = pos.popleft()
-        ignore[u] = 1
-        cnt += 1
-        for i in dist[u]:
-            if ignore[i] != 1:
-                pos.append(i)
-
-    return cnt
-
-L = len(route)
-fen_ter = route[:(L + 2 - 1) // 2]
-snu_ter = route[(L + 2 - 1) // 2:]
-
-fen_ans = dfs_ter(0, snu_ter)
-
-if fen_ans > N - fen_ans:
-    print('Fennec')
-else:
-    print('Snuke')
+for i in range(N):
+    time = dij_to[i] + dij_from[i]
+    opt = (T - time) * A[i]
+    ans = max(ans, opt)
+print(ans)
