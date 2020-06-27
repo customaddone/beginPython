@@ -51,18 +51,40 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, A = getNM()
-Q = getList()
+N, M = 3, 3
+query = [
+[1, 2, 1],
+[1, 3, 1],
+[2, 3, 3]
+]
+
+dist = [[float('inf')] * N for i in range(N)]
 for i in range(N):
-    Q[i] -= A
+    dist[i][i] = 0
+for i in range(M):
+    a, b, c = query[i]
+    dist[a - 1][b - 1] = c
+    dist[b - 1][a - 1] = c
 
-dp = [[0] * 5002 for i in range(N + 1)]
-dp[0][2501] = 1
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
 
-for i in range(1, N + 1):
-    for j in range(5002):
-        dp[i][j] += dp[i - 1][j]
-        if 0 <= j - Q[i - 1] <= 5001:
-            dp[i][j] += dp[i - 1][j - Q[i - 1]]
+warshall_floyd(dist)
+ng_dist = [0] * M
 
-print(dp[-1][2501] - 1)
+for i in range(N):
+    for j in range(M):
+        s, t, c = query[j]
+        if dist[i][s - 1] + c == dist[i][t - 1]:
+            ng_dist[j] = 1
+
+cnt = 0
+for i in ng_dist:
+    if i == 0:
+        cnt += 1
+print(cnt)
