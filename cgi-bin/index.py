@@ -51,72 +51,44 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def rand_letter(size):
-    ascii_original='ox'
-    digits_original='01'
-
-    digits='0123456789'
-    ascii_lowercase='abcdefghijklmnopqrstuvwxyz'
-    ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
-    # 好きなものを使ってね
-    psuedo = ascii_original
-
-    return ''.join([random.choice(psuedo) for i in range(size)])
-
 N = getN()
-S = input()
-lista = ['SS', 'SW', 'WS', 'WW']
+A = getList()
+num = copy.deepcopy(A)
 
-def judge(string):
-    alta = copy.deepcopy(string)
-    for i in range(1, N - 1):
-        if alta[-1] == "S" and alta[-2] == "S":
-            if S[i] == "o":
-                alta.append('S')
-            else:
-                alta.append("W")
-        elif alta[-1] == "S" and alta[-2] == "W":
-            if S[i] == "o":
-                alta.append('W')
-            else:
-                alta.append("S")
-        elif alta[-1] == "W" and alta[-2] == "S":
-            if S[i] == "o":
-                alta.append('W')
-            else:
-                alta.append("S")
-        else:
-            if S[i] == "o":
-                alta.append('S')
-            else:
-                alta.append("W")
+for i in range(1, N):
+    num[i] += num[i - 1]
 
-    return alta
-
-def judge_2(before, now, after, j):
-    if now == "S":
-        if j == "o":
-            if before == after:
-                return True
-
-        else:
-            if before != after:
-                return True
-
+# + - + -
+margin_1 = 0
+num_1 = copy.deepcopy(num)
+cnt_1 = 0
+for i in range(N):
+    num_1[i] += margin_1
+    if i % 2 == 0:
+        plus = max(1 - num_1[i], 0)
+        num_1[i] += plus
+        margin_1 += plus
+        cnt_1 += plus
     else:
-        if j == "o":
-            if before != after:
-                return True
+        minus = max(num_1[i] - (-1), 0)
+        num_1[i] -= minus
+        margin_1 -= minus
+        cnt_1 += minus
 
-        else:
-            if before == after:
-                return True
-    return False
+margin_2 = 0
+num_2 = copy.deepcopy(num)
+cnt_2 = 0
+for i in range(N):
+    num_2[i] += margin_2
+    if i % 2 != 0:
+        plus = max(1 - num_2[i], 0)
+        num_2[i] += plus
+        margin_2 += plus
+        cnt_2 += plus
+    else:
+        minus = max(num_2[i] - (-1), 0)
+        num_2[i] -= minus
+        margin_2 -= minus
+        cnt_2 += minus
 
-for i in lista:
-    opt = judge(list(i))
-    if judge_2(opt[-2], opt[-1], opt[0], S[-1]) and judge_2(opt[-1], opt[0], opt[1], S[0]):
-        print(''.join(opt))
-        exit()
-print(-1)
+print(min(cnt_1, cnt_2))
