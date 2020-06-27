@@ -1,62 +1,85 @@
+def getN():
+    return int(input())
+def getNM():
+    return map(int, input().split())
+def getList():
+    return list(map(int, input().split()))
+def getArray(intn):
+    return [int(input()) for i in range(intn)]
+def input():
+    return sys.stdin.readline().rstrip()
+def rand_N(ran1, ran2):
+    return random.randint(ran1, ran2)
+def rand_List(ran1, ran2, rantime):
+    return [random.randint(ran1, ran2) for i in range(rantime)]
+def rand_ints_nodup(ran1, ran2, rantime):
+  ns = []
+  while len(ns) < rantime:
+    n = random.randint(ran1, ran2)
+    if not n in ns:
+      ns.append(n)
+  return sorted(ns)
+
+def rand_query(ran1, ran2, rantime):
+  r_query = []
+  while len(r_query) < rantime:
+    n_q = rand_ints_nodup(ran1, ran2, 2)
+    if not n_q in r_query:
+      r_query.append(n_q)
+  return sorted(r_query)
+
+from collections import defaultdict, deque, Counter
+from sys import exit
+from decimal import *
+import heapq
+import math
+from fractions import gcd
+import random
+import string
+import copy
+from itertools import combinations, permutations, product
+from operator import mul
+from functools import reduce
+from bisect import bisect_left, bisect_right
+
+import sys
+sys.setrecursionlimit(1000000000)
+mod = 10 ** 9 + 7
+
+
 #############
 # Main Code #
 #############
 
-A, B = map(int, input().split())
-num = [-10, -5, -1, 1, 5, 10]
-
-# 解法1
-dp = [[0] * 41 for i in range(41)]
-dp[0][A] = 1
-
-if A == B:
-    print(0)
-    exit()
-
-for i in range(1, 41):
-    for j in range(41):
-        for l in range(len(num)):
-            if 0 <= j - num[l] <= 40:
-                dp[i][j] = max(dp[i][j], dp[i - 1][j - num[l]])
-        if dp[i][B] >= 1:
-            print(i)
-            exit()
-
-'''
-解法2
-pos = deque([[A, 0]])
-
-while pos[0][0] != B:
-    u, cnt = pos.popleft()
-    for i in num:
-        if 0 <= u + i <= 40:
-            pos.append([u + i, cnt + 1])
-
-print(pos[0][1])
-
-解法3
-dist = [[] for i in range(41)]
-for i in range(41):
-    for j in num:
-        if 0 <= i + j <= 40:
-            dist[i].append([i + j, 1])
-
-N = 41
-def dij(start, edges):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-
-    # pqの先頭がgoal行きのものなら最短距離を返す
-    while len(pq) > 0:
-        d, now = heapq.heappop(pq)
-        if (d > dist[now]):
-            continue
-        for i in edges[now]:
-            if dist[i[0]] > dist[now] + i[1]:
-                dist[i[0]] = dist[now] + i[1]
-                heapq.heappush(pq, (dist[i[0]], i[0]))
-    return dist
-
-print(dij(A, dist)[B])
-'''
+N = getN()
+k = N
+depth = 0
+while k > 1:
+    k //= 2
+    depth += 1
+x = 1
+cnt = 1
+if depth % 2:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
+        else:
+            x *= 2
+            x += 1
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
+    else:
+        print("Aoki")
+else:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
+            x += 1
+        else:
+            x *= 2
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
+    else:
+        print("Aoki")
