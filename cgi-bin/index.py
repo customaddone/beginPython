@@ -51,48 +51,65 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 10
-query = [
-[7, 9],
-[8, 1],
-[9, 6],
-[10, 8],
-[8, 6],
-[10, 3],
-[5, 8],
-[4, 8],
-[2, 5]
-]
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-dp = [[0, 0] for i in range(N)]
-sta = 0
-for i in range(N):
-    if len(dist[i]) == 1:
-        sta = i
-        break
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-for i in range(N):
-    if len(dist[i]) == 1 and i != sta:
-        dp[i] = [1, 1]
+        if x == y:
+            return
 
-ignore = [0] * N
-ignore[sta] = 1
-def dfs(now):
-    white = 1
-    black = 1
-    for i in dist[now]:
-        if ignore[i] != 1:
-            ignore[i] = 1
-            w_cnt, b_cnt = dfs(i)
-            white = (white * (w_cnt + b_cnt)) % mod
-            black = (black * w_cnt) % mod
-    dp[now] = [white % mod, black % mod]
-    return dp[now]
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
 
-print(sum(dfs(sta)) % mod)
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def size(self, x):
+        return -self.parents[self.find(x)]
+
+N, M = getNM()
+bridge = [getList() for i in range(M)]
+Q = getN()
+resident = []
+for i in range(Q):
+    a, b = getNM()
+    resident.append([a, b, i])
+
+bridge.sort(reverse = True, key = lambda i:i[2])
+resident.sort(reverse = True, key = lambda i:i[1])
+
+U = UnionFind(N)
+
+ans = []
+index = 0
+for i in range(Q):
+    # 建築年が新しい順に橋をかけていく
+    for j in range(index, M):
+        if bridge[j][2] > resident[i][1]:
+            a, b, c = bridge[j]
+            U.union(a - 1, b - 1)
+        else:
+            index = j
+            break
+    # U.sizeで判定
+    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
+
+# 国民を登場順にソート
+ans.sort(key = lambda i: i[0])
+for i in ans:
+    print(i[1])
