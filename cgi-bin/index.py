@@ -51,40 +51,72 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = 3, 3
-query = [
-[1, 2, 1],
-[1, 3, 1],
-[2, 3, 3]
-]
+def rand_letter(size):
+    ascii_original='ox'
+    digits_original='01'
 
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-for i in range(M):
-    a, b, c = query[i]
-    dist[a - 1][b - 1] = c
-    dist[b - 1][a - 1] = c
+    digits='0123456789'
+    ascii_lowercase='abcdefghijklmnopqrstuvwxyz'
+    ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
+    # 好きなものを使ってね
+    psuedo = ascii_original
 
-warshall_floyd(dist)
-ng_dist = [0] * M
+    return ''.join([random.choice(psuedo) for i in range(size)])
 
-for i in range(N):
-    for j in range(M):
-        s, t, c = query[j]
-        if dist[i][s - 1] + c == dist[i][t - 1]:
-            ng_dist[j] = 1
+N = getN()
+S = input()
+lista = ['SS', 'SW', 'WS', 'WW']
 
-cnt = 0
-for i in ng_dist:
-    if i == 0:
-        cnt += 1
-print(cnt)
+def judge(string):
+    alta = copy.deepcopy(string)
+    for i in range(1, N - 1):
+        if alta[-1] == "S" and alta[-2] == "S":
+            if S[i] == "o":
+                alta.append('S')
+            else:
+                alta.append("W")
+        elif alta[-1] == "S" and alta[-2] == "W":
+            if S[i] == "o":
+                alta.append('W')
+            else:
+                alta.append("S")
+        elif alta[-1] == "W" and alta[-2] == "S":
+            if S[i] == "o":
+                alta.append('W')
+            else:
+                alta.append("S")
+        else:
+            if S[i] == "o":
+                alta.append('S')
+            else:
+                alta.append("W")
+
+    return alta
+
+def judge_2(before, now, after, j):
+    if now == "S":
+        if j == "o":
+            if before == after:
+                return True
+
+        else:
+            if before != after:
+                return True
+
+    else:
+        if j == "o":
+            if before != after:
+                return True
+
+        else:
+            if before == after:
+                return True
+    return False
+
+for i in lista:
+    opt = judge(list(i))
+    if judge_2(opt[-2], opt[-1], opt[0], S[-1]) and judge_2(opt[-1], opt[0], opt[1], S[0]):
+        print(''.join(opt))
+        exit()
+print(-1)
