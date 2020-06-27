@@ -51,35 +51,48 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-k = N
-depth = 0
-while k > 1:
-    k //= 2
-    depth += 1
-x = 1
-cnt = 1
-if depth % 2:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-        else:
-            x *= 2
-            x += 1
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
-else:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-            x += 1
-        else:
-            x *= 2
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
+N = 10
+query = [
+[7, 9],
+[8, 1],
+[9, 6],
+[10, 8],
+[8, 6],
+[10, 3],
+[5, 8],
+[4, 8],
+[2, 5]
+]
+
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+dp = [[0, 0] for i in range(N)]
+sta = 0
+for i in range(N):
+    if len(dist[i]) == 1:
+        sta = i
+        break
+
+for i in range(N):
+    if len(dist[i]) == 1 and i != sta:
+        dp[i] = [1, 1]
+
+ignore = [0] * N
+ignore[sta] = 1
+def dfs(now):
+    white = 1
+    black = 1
+    for i in dist[now]:
+        if ignore[i] != 1:
+            ignore[i] = 1
+            w_cnt, b_cnt = dfs(i)
+            white = (white * (w_cnt + b_cnt)) % mod
+            black = (black * w_cnt) % mod
+    dp[now] = [white % mod, black % mod]
+    return dp[now]
+
+print(sum(dfs(sta)) % mod)
