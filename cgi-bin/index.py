@@ -51,65 +51,18 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
+N, A = getNM()
+Q = getList()
+for i in range(N):
+    Q[i] -= A
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+dp = [[0] * 5002 for i in range(N + 1)]
+dp[0][2501] = 1
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
+for i in range(1, N + 1):
+    for j in range(5002):
+        dp[i][j] += dp[i - 1][j]
+        if 0 <= j - Q[i - 1] <= 5001:
+            dp[i][j] += dp[i - 1][j - Q[i - 1]]
 
-        if x == y:
-            return
-
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
-
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-    def size(self, x):
-        return -self.parents[self.find(x)]
-
-N, M = getNM()
-bridge = [getList() for i in range(M)]
-Q = getN()
-resident = []
-for i in range(Q):
-    a, b = getNM()
-    resident.append([a, b, i])
-
-bridge.sort(reverse = True, key = lambda i:i[2])
-resident.sort(reverse = True, key = lambda i:i[1])
-
-U = UnionFind(N)
-
-ans = []
-index = 0
-for i in range(Q):
-    # 建築年が新しい順に橋をかけていく
-    for j in range(index, M):
-        if bridge[j][2] > resident[i][1]:
-            a, b, c = bridge[j]
-            U.union(a - 1, b - 1)
-        else:
-            index = j
-            break
-    # U.sizeで判定
-    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
-
-# 国民を登場順にソート
-ans.sort(key = lambda i: i[0])
-for i in ans:
-    print(i[1])
+print(dp[-1][2501] - 1)
