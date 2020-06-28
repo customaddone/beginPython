@@ -51,43 +51,31 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, great_W = 4, 6
-query = [
-[2, 1],
-[3, 4],
-[4, 10],
-[3, 4]
-]
-wei = []
-val = []
-for i in range(N):
-    w, v = query[i]
-    wei.append(w)
-    val.append(v)
+N, A, B = 4, 5, 3
+H = [8, 7, 4, 2]
 
-# 下限の数字て引く（あとで足し合わせた数 * wei_minを使う）
-wei_min = min(wei)
-for i in range(N):
-    wei[i] -= wei_min
+def judge(time, main, sub, hp):
+    diff = main - sub
+    cnt = 0
+    for i in range(len(hp)):
+        left = hp[i] - time * sub
+        if left > 0:
+            cnt += (left + diff - 1) // diff
 
-# ナップサック+部分和
-def part_sum_5(n, k, limit, wei, val):
-    dp = [[[0] * (limit + 1) for i in range(k + 1)] for i in range(n + 1)]
+    return cnt
 
-    # 足し合わせN個でvalができる
-    for i in range(1, n + 1):
-        for j in range(1, k + 1):
-            for l in range(limit + 1):
-                dp[i][j][l] = dp[i - 1][j][l]
-                if l - wei[i - 1] >= 0:
-                    dp[i][j][l] = max(dp[i - 1][j][l], dp[i - 1][j - 1][l - wei[i - 1]] + val[i - 1])
+ok = 10 ** 12 + 1
+ng = -1
 
-    res = 0
-    for i in range(n + 1):
-        for j in range(limit + 1):
-            if i * wei_min <= (great_W - j):
-                res = max(res, dp[N][i][j])
+while ok - ng > 1:
+    mid = (ok + ng) // 2
+    opt = judge(mid, A, B, H)
 
-    return res
-
-print(part_sum_5(N, N, 301, wei, val))
+    # mid:仮のの回数
+    # opt:midを定めた時必要な爆発の回数
+    # 仮の回数が必要な回数より多ければokを緩和
+    if mid >= opt:
+        ok = mid
+    else:
+        ng = mid
+print(ok)
