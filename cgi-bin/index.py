@@ -51,44 +51,43 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-A = getList()
-num = copy.deepcopy(A)
-
-for i in range(1, N):
-    num[i] += num[i - 1]
-
-# + - + -
-margin_1 = 0
-num_1 = copy.deepcopy(num)
-cnt_1 = 0
+N, great_W = 4, 6
+query = [
+[2, 1],
+[3, 4],
+[4, 10],
+[3, 4]
+]
+wei = []
+val = []
 for i in range(N):
-    num_1[i] += margin_1
-    if i % 2 == 0:
-        plus = max(1 - num_1[i], 0)
-        num_1[i] += plus
-        margin_1 += plus
-        cnt_1 += plus
-    else:
-        minus = max(num_1[i] - (-1), 0)
-        num_1[i] -= minus
-        margin_1 -= minus
-        cnt_1 += minus
+    w, v = query[i]
+    wei.append(w)
+    val.append(v)
 
-margin_2 = 0
-num_2 = copy.deepcopy(num)
-cnt_2 = 0
+# 下限の数字て引く（あとで足し合わせた数 * wei_minを使う）
+wei_min = min(wei)
 for i in range(N):
-    num_2[i] += margin_2
-    if i % 2 != 0:
-        plus = max(1 - num_2[i], 0)
-        num_2[i] += plus
-        margin_2 += plus
-        cnt_2 += plus
-    else:
-        minus = max(num_2[i] - (-1), 0)
-        num_2[i] -= minus
-        margin_2 -= minus
-        cnt_2 += minus
+    wei[i] -= wei_min
 
-print(min(cnt_1, cnt_2))
+# ナップサック+部分和
+def part_sum_5(n, k, limit, wei, val):
+    dp = [[[0] * (limit + 1) for i in range(k + 1)] for i in range(n + 1)]
+
+    # 足し合わせN個でvalができる
+    for i in range(1, n + 1):
+        for j in range(1, k + 1):
+            for l in range(limit + 1):
+                dp[i][j][l] = dp[i - 1][j][l]
+                if l - wei[i - 1] >= 0:
+                    dp[i][j][l] = max(dp[i - 1][j][l], dp[i - 1][j - 1][l - wei[i - 1]] + val[i - 1])
+
+    res = 0
+    for i in range(n + 1):
+        for j in range(limit + 1):
+            if i * wei_min <= (great_W - j):
+                res = max(res, dp[N][i][j])
+
+    return res
+
+print(part_sum_5(N, N, 301, wei, val))
