@@ -51,31 +51,41 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, A, B = 4, 5, 3
-H = [8, 7, 4, 2]
+N = 3
+query = [
+[0, 1, 3],
+[1, 0, 2],
+[3, 2, 0]
+]
+query_before = copy.deepcopy(query)
 
-def judge(time, main, sub, hp):
-    diff = main - sub
-    cnt = 0
-    for i in range(len(hp)):
-        left = hp[i] - time * sub
-        if left > 0:
-            cnt += (left + diff - 1) // diff
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
 
-    return cnt
+warshall_floyd(query)
 
-ok = 10 ** 12 + 1
-ng = -1
+if query != query_before:
+    print(-1)
+    exit()
 
-while ok - ng > 1:
-    mid = (ok + ng) // 2
-    opt = judge(mid, A, B, H)
+edges = []
+for i in range(N):
+    for j in range(i + 1, N):
+        edges.append([query[i][j], i, j])
 
-    # mid:仮のの回数
-    # opt:midを定めた時必要な爆発の回数
-    # 仮の回数が必要な回数より多ければokを緩和
-    if mid >= opt:
-        ok = mid
-    else:
-        ng = mid
-print(ok)
+cnt = 0
+for i in edges:
+    flag = True
+    w, s, t = i
+    for k in range(N):
+        if k != s and k != t and w >= query[s][k] + query[k][t]:
+            flag = False
+            break
+    if flag:
+        cnt += w
+print(cnt)
