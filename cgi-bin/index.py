@@ -51,101 +51,32 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N_s = 5
-A = [
-[0, 0],
-[1, 1],
-[5, 5],
-[6, 6],
-[7, 7]
-]
-B = [
-[2, 2],
-[3, 3],
-[4, 4],
-[8, 8],
-[9, 9]
+N,M = [3, 3]
+dist = [
+[1, 2, 1],
+[2, 3, 1],
+[1, 3, 2]
 ]
 
-query = []
-# 適当に始点を2 * N_sに、終点を2 * N_s + 1に設定
-for i in range(N_s):
-    query.append([2 * N_s, i, 1])
-    query.append([N_s + i, 2 * N_s + 1, 1])
-for i in range(N_s):
-    for j in range(N_s):
-        if A[i][0] < B[j][0] and A[i][1] < B[j][1]:
-            query.append([i, N_s + j, 1])
+for i in range(M):
+    a, b, c = getNM()
+    dist[a - 1].append((b - 1, c))
+    dist[b - 1].append((a - 1, -c))
 
-N = 2 * N_s + 2
+pos = deque([i for i in range(N)])
+point = [float('inf')] * N
 
-ans = 0
-lines = defaultdict(set)
-cost = [[0] * N for i in range(N)]
-for i in range(len(query)):
-    a, b, c = query[i]
-    lines[a].add(b)
-    cost[a][b] += c
+while len(pos) > 0:
+    now = pos.popleft()
+    if point[now] == float('inf'):
+        point[now] = 0
+    for next, dis in dist[now]:
+        if point[next] == float('inf'):
+            point[next] = point[now] + dis
+            pos.appendleft(next)
+            continue
+        if point[next] != point[now] + dis:
+            print("No")
+            exit()
 
-# 二部マッチング問題なので最大流
-# 最大流　staからスタート
-def Ford_Fulkerson(sta, end):
-    global ans
-    queue = deque()
-    queue.append([sta, float('inf')])
-
-    ignore = [1] * N
-    ignore[sta] = 0
-
-    route = [0] * N
-    route[sta] = -1
-
-    while queue:
-        s, flow = queue.pop()
-        for t in lines[s]:  #s->t
-            if ignore[t]: #未到達
-                # flowは入ってくる量、出る量のうち小さい方
-                flow = min(cost[s][t], flow)
-                route[t] = s
-                queue.append([t, flow])
-                ignore[t] = 0
-                if t == end: #ゴール到達
-                    ans += flow
-                    break
-        else:
-            continue #breakされなければWhile節の先頭に戻る
-        # Falseはされない
-        break
-    else:
-        return False
-
-    t = end
-    s = route[t]
-    # goalまで流れた量はflow
-    # 逆向きの辺を貼る
-    while s != -1:
-        #s->tのコスト減少，ゼロになるなら辺を削除
-        cost[s][t] -= flow
-        if cost[s][t] == 0:
-            lines[s].remove(t)
-            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
-        if cost[t][s] == 0:
-            lines[t].add(s)
-
-        cost[t][s] += flow
-
-        # 一つ上の辺をたどる
-        t = s
-        s = route[t]
-
-    return True
-
-while True:
-    # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(N - 2, N - 1):
-        continue
-    else:
-        break
-
-# 5(3 → 5の2と4 → 5の3)
-print(ans)
+print("Yes")
