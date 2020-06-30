@@ -51,32 +51,29 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N,M = [3, 3]
-dist = [
-[1, 2, 1],
-[2, 3, 1],
-[1, 3, 2]
-]
+A, B = getNM()
+A -= 1
+B -= 1
 
-for i in range(M):
-    a, b, c = getNM()
-    dist[a - 1].append((b - 1, c))
-    dist[b - 1].append((a - 1, -c))
+maze = [['#'] * 100 for i in range(100)]
 
-pos = deque([i for i in range(N)])
-point = [float('inf')] * N
+# 右半分を黒で塗る
+for i in range(100):
+    for j in range(50, 100):
+        maze[i][j] = "."
 
-while len(pos) > 0:
-    now = pos.popleft()
-    if point[now] == float('inf'):
-        point[now] = 0
-    for next, dis in dist[now]:
-        if point[next] == float('inf'):
-            point[next] = point[now] + dis
-            pos.appendleft(next)
-            continue
-        if point[next] != point[now] + dis:
-            print("No")
-            exit()
+for i in range((A + 25 - 1) // 25):
+    for j in range(25):
+        maze[2 * i][2 * j] = '.'
+        if i == ((A + 25 - 1) // 25) - 1 and j == (A % 25) - 1:
+            break
 
-print("Yes")
+for i in range((B + 25 - 1) // 25):
+    for j in range(25):
+        maze[2 * i][2 * j + 51] = '#'
+        if i == ((B + 25 - 1) // 25) - 1 and j == (B % 25) - 1:
+            break
+
+print(len(maze), len(maze[0]))
+for i in maze:
+    print(''.join(i))
