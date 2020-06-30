@@ -51,29 +51,41 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-A, B = getNM()
-A -= 1
-B -= 1
+N, C = getNM()
+query = [getList() for i in range(N)]
 
-maze = [['#'] * 100 for i in range(100)]
+query_alta = copy.deepcopy(query)
+query_alta.sort(reverse = True)
 
-# 右半分を黒で塗る
-for i in range(100):
-    for j in range(50, 100):
-        maze[i][j] = "."
+imos_fore = [0]
+imos_back = [0]
+for i in range(N):
+    # 右回り
+    imos_fore.append(imos_fore[i] + query[i][1])
+    # 左周り
+    imos_back.append(imos_back[i] + query_alta[i][1])
 
-for i in range((A + 25 - 1) // 25):
-    for j in range(25):
-        maze[2 * i][2 * j] = '.'
-        if i == ((A + 25 - 1) // 25) - 1 and j == (A % 25) - 1:
-            break
+imos_fore_back = copy.deepcopy(imos_back)
+imos_back_back = copy.deepcopy(imos_fore)
 
-for i in range((B + 25 - 1) // 25):
-    for j in range(25):
-        maze[2 * i][2 * j + 51] = '#'
-        if i == ((B + 25 - 1) // 25) - 1 and j == (B % 25) - 1:
-            break
+for i in range(1, N + 1):
+    imos_fore[i] -= query[i - 1][0]
+    imos_back_back[i] -= 2 * query[i - 1][0]
+    imos_back[i] -= (C - query_alta[i - 1][0])
+    imos_fore_back[i] -= 2 * (C - query_alta[i - 1][0])
 
-print(len(maze), len(maze[0]))
-for i in maze:
-    print(''.join(i))
+for i in range(1, N + 1):
+    imos_fore_back[i] = max(imos_fore_back[i], imos_fore_back[i - 1])
+    imos_back_back[i] = max(imos_back_back[i], imos_back_back[i - 1])
+
+fore_ans = 0
+for i in range(N + 1):
+    opt = imos_fore[i] + imos_fore_back[N - i]
+    fore_ans = max(fore_ans, opt)
+
+back_ans = 0
+for i in range(N + 1):
+    opt = imos_back[i] + imos_back_back[N - i]
+    back_ans = max(back_ans, opt)
+
+print(max(fore_ans, back_ans))
