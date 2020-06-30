@@ -52,40 +52,22 @@ mod = 10 ** 9 + 7
 #############
 
 N, C = getNM()
-query = [getList() for i in range(N)]
+D = [getList() for i in range(C)]
+maze = [getList() for i in range(N)]
 
-query_alta = copy.deepcopy(query)
-query_alta.sort(reverse = True)
+lis = [[0] * C for i in range(3)]
 
-imos_fore = [0]
-imos_back = [0]
 for i in range(N):
-    # 右回り
-    imos_fore.append(imos_fore[i] + query[i][1])
-    # 左周り
-    imos_back.append(imos_back[i] + query_alta[i][1])
+    for j in range(N):
+        lis[(i + j) % 3][maze[i][j] - 1] += 1
 
-imos_fore_back = copy.deepcopy(imos_back)
-imos_back_back = copy.deepcopy(imos_fore)
-
-for i in range(1, N + 1):
-    imos_fore[i] -= query[i - 1][0]
-    imos_back_back[i] -= 2 * query[i - 1][0]
-    imos_back[i] -= (C - query_alta[i - 1][0])
-    imos_fore_back[i] -= 2 * (C - query_alta[i - 1][0])
-
-for i in range(1, N + 1):
-    imos_fore_back[i] = max(imos_fore_back[i], imos_fore_back[i - 1])
-    imos_back_back[i] = max(imos_back_back[i], imos_back_back[i - 1])
-
-fore_ans = 0
-for i in range(N + 1):
-    opt = imos_fore[i] + imos_fore_back[N - i]
-    fore_ans = max(fore_ans, opt)
-
-back_ans = 0
-for i in range(N + 1):
-    opt = imos_back[i] + imos_back_back[N - i]
-    back_ans = max(back_ans, opt)
-
-print(max(fore_ans, back_ans))
+ans = float('inf')
+for vi in permutations([i for i in range(C)], 3):
+    opt_0, opt_1, opt_2 = vi
+    cnt = 0
+    for i in range(C):
+        cnt += lis[0][i] * D[i][opt_0]
+        cnt += lis[1][i] * D[i][opt_1]
+        cnt += lis[2][i] * D[i][opt_2]
+    ans = min(ans, cnt)
+print(ans)
