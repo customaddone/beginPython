@@ -51,23 +51,21 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, C = getNM()
-D = [getList() for i in range(C)]
-maze = [getList() for i in range(N)]
+N,M = getNM()
+data = [[] for i in range(8)]
+for _ in range(N):
+    x,y,z = getNM()
+    data[0].append(x + y + z)
+    data[1].append(x + y - z)
+    data[2].append(x - y + z)
+    data[3].append(x - y - z)
+    data[4].append(- x + y + z)
+    data[5].append(- x + y - z)
+    data[6].append(- x - y + z)
+    data[7].append(- x - y - z)
 
-lis = [[0] * C for i in range(3)]
-
-for i in range(N):
-    for j in range(N):
-        lis[(i + j) % 3][maze[i][j] - 1] += 1
-
-ans = float('inf')
-for vi in permutations([i for i in range(C)], 3):
-    opt_0, opt_1, opt_2 = vi
-    cnt = 0
-    for i in range(C):
-        cnt += lis[0][i] * D[i][opt_0]
-        cnt += lis[1][i] * D[i][opt_1]
-        cnt += lis[2][i] * D[i][opt_2]
-    ans = min(ans, cnt)
+ans = -mod
+for i in range(8):
+    data[i].sort(reverse = True)
+    ans = max(ans,sum(data[i][:M]))
 print(ans)
