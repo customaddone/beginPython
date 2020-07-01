@@ -51,24 +51,18 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-memo = [{} for i in range(N + 1)]
-def ok(last4):
-    for i in range(4):
-        t = list(last4)
-        if i >= 1:
-            t[i - 1],t[i] = t[i], t[i - 1]
-        if ''.join(t).count('AGC') >= 1:
-            return False
-    return True
-def dfs(cur, last3):
-    if last3 in memo[cur]:
-        return memo[cur][last3]
-    if cur == N: return 1
-    res = 0
-    for c in 'ACGT':
-        if ok(last3 + c):
-            res  = (res + dfs(cur + 1, last3[1:] + c)) % mod
-    memo[cur][last3] = res
-    return res
-print(dfs(0,'TTT'))
+N, K = getNM()
+V = getList()
+
+V = 2 * V
+
+ans = 0
+for i in range(1, min(K + 1, N + 1)):
+    slow = K - i
+    for j in range(N - i, N + 1):
+        opt = sorted(V[j: j + i])
+        for l in range(min(len(opt), slow)):
+            if opt[l] < 0:
+                opt[l] -= opt[l]
+        ans = max(ans, sum(opt))
+print(ans)
