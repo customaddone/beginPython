@@ -51,34 +51,82 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-A, B, Q = getNM()
-# 神社
-S = getArray(A)
-# 寺
-T = getArray(B)
-query = getArray(Q)
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-S.insert(0, -float('inf'))
-T.insert(0, -float('inf'))
-S.append(float('inf'))
-T.append(float('inf'))
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-def close(data, point):
-    west = data[bisect_left(data, point) - 1]
-    east = data[bisect_left(data, point)]
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-    return west, east
+        if x == y:
+            return
 
-for i in range(Q):
-    now = query[i]
-    shrine_west, shrine_east = close(S, now)
-    temple_west, temple_east = close(T, now)
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
 
-    ww = now - min(shrine_west, temple_west)
-    we_1 = (now - shrine_west) * 2 + (temple_east - now)
-    we_2 = (now - temple_west) * 2 + (shrine_east - now)
-    ee = max(shrine_east, temple_east) - now
-    ew_1 = (shrine_east - now) * 2 + (now - temple_west)
-    ew_2 = (temple_east - now) * 2 + (now - shrine_west)
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
 
-    print(min(ww, we_1, we_2, ee, ew_1, ew_2))
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
+
+    def size(self, x):
+        return -self.parents[self.find(x)]
+
+def cmb_1(n, r):
+    if n < r:
+        return 0
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
+
+cmb_list = [0] * (10 ** 5 + 1)
+for i in range(10 ** 5 + 1):
+    cmb_list[i] = cmb_1(i, 2)
+
+N, M = getNM()
+query = [getNM() for i in range(M)]
+
+U = UnionFind(N)
+now = cmb_list[N]
+ans = [now]
+
+for i in range(M - 1, 0, -1):
+    a, b = query[i]
+    size_a = 0
+    size_b = 0
+    if not U.same(a - 1, b - 1):
+        size_a = U.size(a - 1)
+        size_b = U.size(b - 1)
+
+        U.union(a - 1, b - 1)
+        size_after = U.size(a - 1)
+
+        now -= (cmb_list[size_after] - cmb_list[size_a] - cmb_list[size_b])
+    else:
+        U.union(a - 1, b - 1)
+    ans.append(now)
+
+for i in range(M - 1, -1, -1):
+    print(ans[i])
