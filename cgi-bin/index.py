@@ -51,21 +51,58 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N,M = getNM()
-data = [[] for i in range(8)]
-for _ in range(N):
-    x,y,z = getNM()
-    data[0].append(x + y + z)
-    data[1].append(x + y - z)
-    data[2].append(x - y + z)
-    data[3].append(x - y - z)
-    data[4].append(- x + y + z)
-    data[5].append(- x + y - z)
-    data[6].append(- x - y + z)
-    data[7].append(- x - y - z)
+H, W, K = getNM()
 
-ans = -mod
-for i in range(8):
-    data[i].sort(reverse = True)
-    ans = max(ans,sum(data[i][:M]))
-print(ans)
+if W == 1:
+    print(1)
+    exit()
+
+# 左からi本目の右、左に橋がかかっている通り、両方に通ってない通り
+bridge_right = [0] * W
+bridge_left = [0] * W
+not_bridge = [0] * W
+
+for bit in range(1 << (W - 1)):
+    flag = True
+    for i in range(1, (W - 1)):
+        if bit & (1 << i) and bit & (1 << (i - 1)):
+            flag = False
+    if flag:
+        for i in range(W):
+            if i == 0:
+                if bit & (1 << i):
+                    bridge_right[i] += 1
+                else:
+                    not_bridge[i] += 1
+            elif i == W - 1:
+                if bit & (1 << (i - 1)):
+                    bridge_left[i] += 1
+                else:
+                    not_bridge[i] += 1
+            else:
+                if bit & (1 << i):
+                    bridge_right[i] += 1
+                elif bit & (1 << (i - 1)):
+                    bridge_left[i] += 1
+                else:
+                    not_bridge[i] += 1
+
+dp = [[0] * W for i in range(H + 1)]
+
+dp[0][0] = 1
+for i in range(1, W):
+    dp[0][i] = 0
+
+# まっすぐ降りて来た場合、右から降りてきた場合、左から降りてきた場合
+for i in range(1, H + 1):
+    for j in range(W):
+        dp[i][j] += dp[i - 1][j] * not_bridge[j]
+        if j == 0:
+            dp[i][j + 1] += dp[i - 1][j] * bridge_right[j]
+        elif j == W - 1:
+            dp[i][j - 1] += dp[i - 1][j] * bridge_left[j]
+        else:
+            dp[i][j + 1] += dp[i - 1][j] * bridge_right[j]
+            dp[i][j - 1] += dp[i - 1][j] * bridge_left[j]
+
+print(dp[-1][K - 1] % mod)
