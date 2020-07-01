@@ -51,82 +51,24 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
-
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
-
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
-
-        if x == y:
-            return
-
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
-
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-    def members(self, x):
-        root = self.find(x)
-        return [i for i in range(self.n) if self.find(i) == root]
-
-    def roots(self):
-        return [i for i, x in enumerate(self.parents) if x < 0]
-
-    def all_group_members(self):
-        return {r: self.members(r) for r in self.roots()}
-
-    def size(self, x):
-        return -self.parents[self.find(x)]
-
-def cmb_1(n, r):
-    if n < r:
-        return 0
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
-
-cmb_list = [0] * (10 ** 5 + 1)
-for i in range(10 ** 5 + 1):
-    cmb_list[i] = cmb_1(i, 2)
-
-N, M = getNM()
-query = [getNM() for i in range(M)]
-
-U = UnionFind(N)
-now = cmb_list[N]
-ans = [now]
-
-for i in range(M - 1, 0, -1):
-    a, b = query[i]
-    size_a = 0
-    size_b = 0
-    if not U.same(a - 1, b - 1):
-        size_a = U.size(a - 1)
-        size_b = U.size(b - 1)
-
-        U.union(a - 1, b - 1)
-        size_after = U.size(a - 1)
-
-        now -= (cmb_list[size_after] - cmb_list[size_a] - cmb_list[size_b])
-    else:
-        U.union(a - 1, b - 1)
-    ans.append(now)
-
-for i in range(M - 1, -1, -1):
-    print(ans[i])
+N = getN()
+memo = [{} for i in range(N + 1)]
+def ok(last4):
+    for i in range(4):
+        t = list(last4)
+        if i >= 1:
+            t[i - 1],t[i] = t[i], t[i - 1]
+        if ''.join(t).count('AGC') >= 1:
+            return False
+    return True
+def dfs(cur, last3):
+    if last3 in memo[cur]:
+        return memo[cur][last3]
+    if cur == N: return 1
+    res = 0
+    for c in 'ACGT':
+        if ok(last3 + c):
+            res  = (res + dfs(cur + 1, last3[1:] + c)) % mod
+    memo[cur][last3] = res
+    return res
+print(dfs(0,'TTT'))
