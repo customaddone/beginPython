@@ -51,58 +51,34 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-H, W, K = getNM()
+A, B, Q = getNM()
+# 神社
+S = getArray(A)
+# 寺
+T = getArray(B)
+query = getArray(Q)
 
-if W == 1:
-    print(1)
-    exit()
+S.insert(0, -float('inf'))
+T.insert(0, -float('inf'))
+S.append(float('inf'))
+T.append(float('inf'))
 
-# 左からi本目の右、左に橋がかかっている通り、両方に通ってない通り
-bridge_right = [0] * W
-bridge_left = [0] * W
-not_bridge = [0] * W
+def close(data, point):
+    west = data[bisect_left(data, point) - 1]
+    east = data[bisect_left(data, point)]
 
-for bit in range(1 << (W - 1)):
-    flag = True
-    for i in range(1, (W - 1)):
-        if bit & (1 << i) and bit & (1 << (i - 1)):
-            flag = False
-    if flag:
-        for i in range(W):
-            if i == 0:
-                if bit & (1 << i):
-                    bridge_right[i] += 1
-                else:
-                    not_bridge[i] += 1
-            elif i == W - 1:
-                if bit & (1 << (i - 1)):
-                    bridge_left[i] += 1
-                else:
-                    not_bridge[i] += 1
-            else:
-                if bit & (1 << i):
-                    bridge_right[i] += 1
-                elif bit & (1 << (i - 1)):
-                    bridge_left[i] += 1
-                else:
-                    not_bridge[i] += 1
+    return west, east
 
-dp = [[0] * W for i in range(H + 1)]
+for i in range(Q):
+    now = query[i]
+    shrine_west, shrine_east = close(S, now)
+    temple_west, temple_east = close(T, now)
 
-dp[0][0] = 1
-for i in range(1, W):
-    dp[0][i] = 0
+    ww = now - min(shrine_west, temple_west)
+    we_1 = (now - shrine_west) * 2 + (temple_east - now)
+    we_2 = (now - temple_west) * 2 + (shrine_east - now)
+    ee = max(shrine_east, temple_east) - now
+    ew_1 = (shrine_east - now) * 2 + (now - temple_west)
+    ew_2 = (temple_east - now) * 2 + (now - shrine_west)
 
-# まっすぐ降りて来た場合、右から降りてきた場合、左から降りてきた場合
-for i in range(1, H + 1):
-    for j in range(W):
-        dp[i][j] += dp[i - 1][j] * not_bridge[j]
-        if j == 0:
-            dp[i][j + 1] += dp[i - 1][j] * bridge_right[j]
-        elif j == W - 1:
-            dp[i][j - 1] += dp[i - 1][j] * bridge_left[j]
-        else:
-            dp[i][j + 1] += dp[i - 1][j] * bridge_right[j]
-            dp[i][j - 1] += dp[i - 1][j] * bridge_left[j]
-
-print(dp[-1][K - 1] % mod)
+    print(min(ww, we_1, we_2, ee, ew_1, ew_2))
