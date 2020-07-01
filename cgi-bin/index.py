@@ -51,18 +51,27 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = getNM()
-V = getList()
+N, M = 5, 3
+query = [
+[1, 2],
+[1, 3],
+[1, 4],
+[2, 1],
+[2, 3]
+]
 
-V = 2 * V
+A_list = [[] for i in range(10 ** 5 + 1)]
+for a, b in query:
+    A_list[a].append(b)
+
+job = []
+heapq.heapify(job)
 
 ans = 0
-for i in range(1, min(K + 1, N + 1)):
-    slow = K - i
-    for j in range(N - i, N + 1):
-        opt = sorted(V[j: j + i])
-        for l in range(min(len(opt), slow)):
-            if opt[l] < 0:
-                opt[l] -= opt[l]
-        ans = max(ans, sum(opt))
+for i in range(1, M + 1):
+    for j in A_list[i]:
+        heapq.heappush(job, -j)
+    if len(job) > 0:
+        u = heapq.heappop(job)
+        ans += -u
 print(ans)
