@@ -51,100 +51,53 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC154 E - Almost Everywhere Zero
-N = '9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999'
-K = 3
-L = len(N)
+N, K = getNM()
 
-def judge(a):
-    return a != 0
+def cmb_1(n, r):
+    if n < r:
+        return 0
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-# N以下の数字で条件を満たす桁がk個のもの
-def digit_dp(n, k):
-    l = len(n)
+cnt = cmb_1(N - 1, 2) - K
 
-    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
+if cnt < 0:
+    print(-1)
+    exit()
 
-    for i in range(l):
-        d = int(n[i])
+dist = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    dist[i][i] = 0
+query = [[1, i] for i in range(2, N + 1)]
 
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                for k_j in range(k + 1):
-                    if judge(d_j):
-                        if k_j + 1 <= k:
-                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+for a, b in combinations([i for i in range(2, N + 1)], 2):
+    if cnt == 0:
+        break
+    query.append([a, b])
+    cnt -= 1
 
-    return dp
+print(len(query))
+for i in query:
+    print(*i)
 
-dp = digit_dp(N, K)
-print(dp[L][0][K] + dp[L][1][K])
+"""
+for a,b in query:
+    dist[a - 1][b - 1] = 1
+    dist[b - 1][a - 1] = 1
 
-# ABC029 D - 1
-N = '999999999'
-L = len(N)
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
 
-def judge_2(a):
-    return a == 1
+warshall_floyd(dist)
 
-# N以下の数字の中で「1が書いてある桁がk個ある数字」がいくつあるか
-# 上のものと関数の中身自体は変えていない
-def digit_dp_2(n, k):
-    l = len(n)
-
-    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
-
-    for i in range(l):
-        d = int(n[i])
-
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                for k_j in range(k + 1):
-                    if judge_2(d_j):
-                        if k_j + 1 <= k:
-                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
-
-    return dp
-
-dp = digit_dp_2(N, L)
-
-ans = 0
-for j in range(L + 1):
-    # dp[l]について各j(1のカウント)の通りの数 * j
-    ans += (dp[L][0][j] + dp[L][1][j]) * j
-print(ans)
-
-# ABC129 E - Sum Equals Xor
-# 通りの数を求める
-
-L = '1111111111111111111'
-
-def digit_dp_3(n):
-    l = len(n)
-
-    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
-
-    for i in range(l):
-        d = int(n[i])
-
-        # Lになる可能性があるかないか
-        for j in range(2):
-            # 次の桁が0か1か
-            for d_j in range(2 if j else d + 1):
-                if d_j == 0:
-                    dp[i + 1][j | (d_j < d)][d_j] += (dp[i][j][0] + dp[i][j][1])
-                    dp[i + 1][j | (d_j < d)][d_j] %= mod
-                else:
-                    dp[i + 1][j | (d_j < d)][d_j] += 2 * (dp[i][j][0] + dp[i][j][1])
-                    dp[i + 1][j | (d_j < d)][d_j] %= mod
-
-    return sum(dp[-1][0]) + sum(dp[-1][1])
-
-print(digit_dp_3(L) % mod)
+for i in dist:
+    print(i)
+"""
