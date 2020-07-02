@@ -51,53 +51,53 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = getNM()
+N, M = 6, 8
+query = [
+[1, 2],
+[2, 3],
+[3, 4],
+[4, 5],
+[5, 1],
+[1, 4],
+[1, 5],
+[4, 6],
+]
+S, T = 1, 6
 
-def cmb_1(n, r):
-    if n < r:
-        return 0
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+def build_tree_dis(N, edge_list):
 
-cnt = cmb_1(N - 1, 2) - K
+    G = [[] for i in range(N)]
 
-if cnt < 0:
-    print(-1)
+    for i in range(len(edge_list)):
+        a, b = edge_list[i]
+        G[a - 1].append(b - 1)
+
+    # 葉（末端の数）
+    leaves = []
+    for i in range(N):
+        if len(G[i]) == 1:
+            leaves.append(i)
+
+    return G
+
+edges = build_tree_dis(N, query)
+
+ignore = [[-1] * 3 for i in range(N)]
+ignore[S - 1][0] = 0
+
+pos = deque([[S - 1, 0]])
+
+while len(pos) > 0:
+    u, t = pos.popleft()
+    t += 1
+    j = t % 3
+    for i in edges[u]:
+        if ignore[i][j] == -1:
+            ignore[i][j] = t
+            pos.append([i, t])
+
+if ignore[T - 1][0] % 3 == 0:
+    print(ignore[T - 1][0] // 3)
     exit()
-
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-query = [[1, i] for i in range(2, N + 1)]
-
-for a, b in combinations([i for i in range(2, N + 1)], 2):
-    if cnt == 0:
-        break
-    query.append([a, b])
-    cnt -= 1
-
-print(len(query))
-for i in query:
-    print(*i)
-
-"""
-for a,b in query:
-    dist[a - 1][b - 1] = 1
-    dist[b - 1][a - 1] = 1
-
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
-
-warshall_floyd(dist)
-
-for i in dist:
-    print(i)
-"""
+else:
+    print(-1)
