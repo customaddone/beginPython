@@ -17,20 +17,26 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-"""
-N = 4
-A = [20, 11, 9, 24]
+def knapsack_6(N, upper, weight, value):
+    dp = [[[0] * (upper + 1) for i in range(2)] for j in range(N + 1)]
 
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][0] += 1
-        else:
-            lista[i][1] += 1
+    for i in range(N):
+        # ボーナスでコスト１にするのを使ったか
+        for j in range(2):
+            for l in range(upper + 1):
+                if j == 0:
+                    if l >= weight[i]:
+                        dp[i + 1][j][l] = max(dp[i][j][l], dp[i][j][l - weight[i]] + value[i])
+                        dp[i + 1][j + 1][l] = max(dp[i][j + 1][l], dp[i][j][l - 1] + value[i])
+                    elif l >= 1:
+                        dp[i + 1][j + 1][l] = max(dp[i][j + 1][l], dp[i][j][l - 1] + value[i])
+                    else:
+                        dp[i + 1][j][l] = dp[i][j][l]
+                else:
+                    if l >= weight[i]:
+                        dp[i + 1][j][l] = max(dp[i + 1][j][l], dp[i][j][l - weight[i]] + value[i])
+                    else:
+                        dp[i + 1][j][l] = dp[i + 1][j][l]
+    return dp[N][0]
 
-for i in range(N):
-    splitbit(A[i])
-print(lista)
-"""
+print(knapsack_6(N, A, w, v))
