@@ -51,53 +51,51 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = 6, 8
-query = [
-[1, 2],
-[2, 3],
-[3, 4],
-[4, 5],
-[5, 1],
-[1, 4],
-[1, 5],
-[4, 6],
-]
-S, T = 1, 6
+N, K = getNM()
+query = [getList() for i in range(N - 1)]
 
-def build_tree_dis(N, edge_list):
+dist = [[] for i in range(N)]
+for a, b in query:
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-    G = [[] for i in range(N)]
+fact =[1] #階乗
+for i in range(1, K + 1):
+    fact.append(fact[i - 1] * i % mod)
 
-    for i in range(len(edge_list)):
-        a, b = edge_list[i]
-        G[a - 1].append(b - 1)
+facv = [0] * (K + 1) #階乗の逆元
+facv[-1] = pow(fact[-1], mod - 2 , mod)
 
-    # 葉（末端の数）
-    leaves = []
-    for i in range(N):
-        if len(G[i]) == 1:
-            leaves.append(i)
+for i in range(K - 1, -1, -1):
+    facv[i] = facv[i + 1] * (i + 1) % mod
 
-    return G
+def cmb(n, r):
+    if n < r:
+        return 0
+    return fact[n] * facv[r] * facv[n - r] % mod
 
-edges = build_tree_dis(N, query)
+max_root = 0
+max_root_index = 0
+for i in range(N):
+    if len(dist[i]) >= max_root:
+        max_root = len(dist[i])
+        max_root_index = i
 
-ignore = [[-1] * 3 for i in range(N)]
-ignore[S - 1][0] = 0
+pos = deque([max_root_index])
 
-pos = deque([[S - 1, 0]])
+ans = 1
+ignore = [-1] * N
+ignore[max_root_index] = 1
+ans *= cmb(K, max_root + 1) * math.factorial(max_root + 1)
 
 while len(pos) > 0:
-    u, t = pos.popleft()
-    t += 1
-    j = t % 3
-    for i in edges[u]:
-        if ignore[i][j] == -1:
-            ignore[i][j] = t
-            pos.append([i, t])
+    u = pos.popleft()
+    for i in dist[u]:
+        if ignore[i] == -1:
+            ignore[i] = 1
+            if len(dist[i]) >= 2:
+                ans *= cmb(K - 2, len(dist[i]) - 1) * math.factorial(len(dist[i]) - 1)
+                ans %= mod
+            pos.append(i)
 
-if ignore[T - 1][0] % 3 == 0:
-    print(ignore[T - 1][0] // 3)
-    exit()
-else:
-    print(-1)
+print(ans % mod)
