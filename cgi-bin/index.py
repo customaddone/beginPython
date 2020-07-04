@@ -119,10 +119,17 @@ class SegTree:
             r >>= 1
         return res
 
-N = getN()
-s = input()
-Q = getN()
-query = [input().split() for i in range(Q)]
+N = 7
+s = 'abcdbbd'
+Q = 6
+query = [
+[2, 3, 6],
+[1, 5, 'z'],
+[2, 1, 1],
+[1, 4, 'a'],
+[1, 7, 'd'],
+[2, 1, 7]
+]
 
 S = []
 for i in s:
@@ -136,22 +143,21 @@ for i in range(N):
 	seg[S[i]].update(i, 0)
 
 for i in range(Q):
-	a, b, c = query[i]
+    a, b, c = query[i]
     if int(a) == 1:
-        # 何番目
         b = int(b) - 1
-        # もともと１番目にあったものを1（消滅）させる
-		seg[S[b]].update(b, 1)
-		t = ord(c) - ord("a")
-		seg[t].update(b, 0)
-		S[b] = t
+        # Sのb番目にある文字をupdate
+        seg[S[b]].update(b, 1)
+        t = ord(c) - ord("a")
+        seg[t].update(b, 0)
+        S[b] = t
     else:
-		b = int(b) - 1
-		c = int(c)
-		cnt = 0
-		for se in seg:
+        b = int(b) - 1
+        c = int(c)
+        cnt = 0
+        for se in seg:
             # 1 * 1 * 0 * 1 *...
             # 区間内に一つでも0があれば0
-			if se.query(b, c) == 0:
-				cnt += 1
-		print(cnt)
+            if se.query(b, c) == 0:
+                cnt += 1
+        print(cnt)
