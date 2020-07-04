@@ -51,29 +51,107 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
+#####segfunc#####
+def segfunc(x, y):
+    return x * y
+#################
 
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
+#####ide_ele#####
+ide_ele = 1
+#################
 
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
+class SegTree:
+    """
+    init(init_val, ide_ele): 配列init_valで初期化 O(N)
+    update(k, x): k番目の値をxに更新 O(logN)
+    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
+    """
+    def __init__(self, init_val, segfunc, ide_ele):
+        """
+        init_val: 配列の初期値
+        segfunc: 区間にしたい操作
+        ide_ele: 単位元
+        n: 要素数
+        num: n以上の最小の2のべき乗
+        tree: セグメント木(1-index)
+        """
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
 
-N, K = getNM()
+    def update(self, k, x):
+        """
+        k番目の値をxに更新
+        k: index(0-index)
+        x: update value
+        """
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
 
-ans = 0
-for i in range(min(K + 1, N)):
-    # 0の場所を選ぶ通り * 重複組み合わせ
-    cnt = cmb(N, i) * cmb(N - i + i - 1, i)
-    ans += cnt
-    ans %= mod
-print(ans % mod)
+    def query(self, l, r):
+        """
+        [l, r)のsegfuncしたものを得る
+        l: index(0-index)
+        r: index(0-index)
+        """
+        res = self.ide_ele
+
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
+
+N = getN()
+s = input()
+Q = getN()
+query = [input().split() for i in range(Q)]
+
+S = []
+for i in s:
+    # 面倒なので文字を数値化
+	S.append(ord(i) - ord("a"))
+
+seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
+
+# 入力
+for i in range(N):
+	seg[S[i]].update(i, 0)
+
+for i in range(Q):
+	a, b, c = query[i]
+    if int(a) == 1:
+        # 何番目
+        b = int(b) - 1
+        # もともと１番目にあったものを1（消滅）させる
+		seg[S[b]].update(b, 1)
+		t = ord(c) - ord("a")
+		seg[t].update(b, 0)
+		S[b] = t
+    else:
+		b = int(b) - 1
+		c = int(c)
+		cnt = 0
+		for se in seg:
+            # 1 * 1 * 0 * 1 *...
+            # 区間内に一つでも0があれば0
+			if se.query(b, c) == 0:
+				cnt += 1
+		print(cnt)
