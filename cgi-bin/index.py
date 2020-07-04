@@ -51,87 +51,29 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-"""
-Z algorithm
-def Z(s):
-    n = len(s)
-    z = [0] * n
-    z[0] = n
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
 
-    L, R = 0, 0
-    for i in range(1, n):
-        if i >= R:
-            L = R = i
-            # 一致が続く限り伸ばす
-            while(R < n and s[R - L] == s[R]):
-                R += 1
-            # LCAを書き込む
-            # 頭から一致しない場合はR - L = i - i = 0
-            z[i] = R - L
-        # 全て利用できる場合
-        elif z[i - L] < R - i:
-            z[i] = z[i - L]
-        # 一部利用できる場合
-        else:
-            L = i
-            while(R < n and s[R - L] == s[R]):
-                R += 1
-            z[i] = R - L
-    return z
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
 
-# [5, 0, 3, 0, 1]
-#print(Z('ababa'))
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
 
-N = getN()
-S = input()
+N, K = getNM()
+
 ans = 0
-for i in range(N):
-    z = Z(S[i:])
-    k = len(z)
-    for j in range(k):
-        # '' と 'ababa'
-        # 'a' と 'baba'
-        # 'ab' と 'aba'
-        # ans は j('', 'a', 'ab')の長さ以上にならない（ダブらないため）
-        ans = max(ans, min(j, z[j]))
-print(ans)
-"""
-
-# Rolling hash
-N = getN()
-S = list(map(ord, list(input())))
-# 適当
-base = 1234
-power = [1] * (N + 1)
-# 部分文字列を数字に
-for i in range(1, N + 1):
-    power[i] = power[i - 1] * base % mod
-
-def check(m):
-    if N - m < m:
-        return False
-    res = 0
-    for i in range(m):
-        res += S[i] * power[m - i - 1]
-        res %= mod
-    dic = {res: 0}
-    for i in range(N - m):
-        res = ((res - S[i] * power[m - 1]) * base + S[i + m]) % mod
-        if res in dic.keys():
-            index = dic[res]
-            if index + m <= i + 1:
-                return True
-        else:
-            dic[res] = i + 1
-    return False
-
-ok = 0
-ng = N + 1
-while ng - ok > 1:
-    mid = (ok + ng) // 2
-
-    if check(mid):
-        ok = mid
-    else:
-        ng = mid
-print(ok)
+for i in range(min(K + 1, N)):
+    # 0の場所を選ぶ通り * 重複組み合わせ
+    cnt = cmb(N, i) * cmb(N - i + i - 1, i)
+    ans += cnt
+    ans %= mod
+print(ans % mod)
