@@ -51,51 +51,87 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+"""
+Z algorithm
+def Z(s):
+    n = len(s)
+    z = [0] * n
+    z[0] = n
+
+    L, R = 0, 0
+    for i in range(1, n):
+        if i >= R:
+            L = R = i
+            # 一致が続く限り伸ばす
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            # LCAを書き込む
+            # 頭から一致しない場合はR - L = i - i = 0
+            z[i] = R - L
+        # 全て利用できる場合
+        elif z[i - L] < R - i:
+            z[i] = z[i - L]
+        # 一部利用できる場合
+        else:
+            L = i
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            z[i] = R - L
+    return z
+
+# [5, 0, 3, 0, 1]
+#print(Z('ababa'))
+
 N = getN()
-A = getList()
-prime_list = defaultdict(int)
-
-def prime_factorize(n):
-    divisors = []
-    # 27(2 * 2 * 7)の7を出すためにtemp使う
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == []:
-        divisors.append([n, 1])
-
-    return divisors
-
-for i in range(N):
-    prime = prime_factorize(A[i])
-    for j in prime:
-        prime_list[j[0]] = max(prime_list[j[0]], j[1])
-
-num = 1
-for key, value in prime_list.items():
-    num *= key ** value
-    num %= mod
-
-# 1/A[i]のmod
-lim = 10 ** 6 + 1
-fact = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-
+S = input()
 ans = 0
-for i in A:
-    opt = (num * inv[i]) % mod
-    ans += opt
-    ans %= mod
-print(ans % mod)
+for i in range(N):
+    z = Z(S[i:])
+    k = len(z)
+    for j in range(k):
+        # '' と 'ababa'
+        # 'a' と 'baba'
+        # 'ab' と 'aba'
+        # ans は j('', 'a', 'ab')の長さ以上にならない（ダブらないため）
+        ans = max(ans, min(j, z[j]))
+print(ans)
+"""
+
+# Rolling hash
+N = getN()
+S = list(map(ord, list(input())))
+# 適当
+base = 1234
+power = [1] * (N + 1)
+# 部分文字列を数字に
+for i in range(1, N + 1):
+    power[i] = power[i - 1] * base % mod
+
+def check(m):
+    if N - m < m:
+        return False
+    res = 0
+    for i in range(m):
+        res += S[i] * power[m - i - 1]
+        res %= mod
+    dic = {res: 0}
+    for i in range(N - m):
+        res = ((res - S[i] * power[m - 1]) * base + S[i + m]) % mod
+        if res in dic.keys():
+            index = dic[res]
+            if index + m <= i + 1:
+                return True
+        else:
+            dic[res] = i + 1
+    return False
+
+ok = 0
+ng = N + 1
+while ng - ok > 1:
+    mid = (ok + ng) // 2
+
+    if check(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
