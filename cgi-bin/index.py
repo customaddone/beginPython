@@ -51,113 +51,67 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-#####segfunc#####
-def segfunc(x, y):
-    return x * y
-#################
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-#####ide_ele#####
-ide_ele = 1
-#################
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-class SegTree:
-    """
-    init(init_val, ide_ele): 配列init_valで初期化 O(N)
-    update(k, x): k番目の値をxに更新 O(logN)
-    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
-    """
-    def __init__(self, init_val, segfunc, ide_ele):
-        """
-        init_val: 配列の初期値
-        segfunc: 区間にしたい操作
-        ide_ele: 単位元
-        n: 要素数
-        num: n以上の最小の2のべき乗
-        tree: セグメント木(1-index)
-        """
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-    def update(self, k, x):
-        """
-        k番目の値をxに更新
-        k: index(0-index)
-        x: update value
-        """
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
+        if x == y:
+            return
 
-    def query(self, l, r):
-        """
-        [l, r)のsegfuncしたものを得る
-        l: index(0-index)
-        r: index(0-index)
-        """
-        res = self.ide_ele
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
 
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
 
-N = 7
-s = 'abcdbbd'
-Q = 6
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def size(self, x):
+        return -self.parents[self.find(x)]
+
+N = 3
 query = [
-[2, 3, 6],
-[1, 5, 'z'],
-[2, 1, 1],
-[1, 4, 'a'],
-[1, 7, 'd'],
-[2, 1, 7]
+[1, 5, 0],
+[3, 9, 1],
+[7, 8, 2]
 ]
 
-S = []
-for i in s:
-    # 面倒なので文字を数値化
-	S.append(ord(i) - ord("a"))
+q_a = sorted(query, key = lambda i: i[0])
+q_b = sorted(query, key = lambda i: i[1])
+edges = []
 
-seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
+a1 = q_a[0]
+b1 = q_b[0]
+for i in range(1, N):
+    a2 = q_a[i]
+    b2 = q_b[i]
+    edges.append([abs(a1[0] - a2[0]), a1[2], a2[2]])
+    edges.append([abs(b1[1] - b2[1]), b1[2], b2[2]])
+    a1, b1 = a2, b2
+edges.sort()
 
-# 入力
-for i in range(N):
-	seg[S[i]].update(i, 0)
-
-for i in range(Q):
-    a, b, c = query[i]
-    if int(a) == 1:
-        b = int(b) - 1
-        # Sのb番目にある文字をupdate
-        seg[S[b]].update(b, 1)
-        t = ord(c) - ord("a")
-        seg[t].update(b, 0)
-        S[b] = t
-    else:
-        b = int(b) - 1
-        c = int(c)
-        cnt = 0
-        for se in seg:
-            # 1 * 1 * 0 * 1 *...
-            # 区間内に一つでも0があれば0
-            if se.query(b, c) == 0:
-                cnt += 1
-        print(cnt)
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+        if U.size(0) == N:
+            break
+    return res
+print(kruskal(N, edges))
