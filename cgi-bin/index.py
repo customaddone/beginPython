@@ -51,250 +51,84 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-num = [1, 3, 5, 7, 9]
-limit = 10
-
-# 個数制限あり重複なし部分和
-# 合計でlimitになる通りの数が出てくる
-# numは数字のリスト、limitは部分和
-def part_sum_1(num, limit):
-    N = len(num)
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 1
-
-    for i in range(N):
-        for j in range(limit + 1):
-            if num[i] <= j:
-                dp[i + 1][j] = dp[i][j - num[i]] + dp[i][j]
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][limit]
-# print(part_sum_1(num, limit))
-
-# 個数制限なし重複あり部分和
-# 合計でlimitになる通りの数が出てくる
-# 1 + 3 と3 + 1 と1 + 1 + 1 + 1は違う通りになる
-def part_sum_2(num, limit):
-    N = len(num)
-
-    dp = [0] * (limit + 1)
-    dp[0] = 1
-
-    for i in range(1, limit + 1):
-        for j in range(N):
-            if i >= num[j]:
-                dp[i] += dp[i - num[j]]
-    return dp[limit]
-# print(part_sum_2(num, limit))
-
-num = [i for i in range(1, 11)]
-L = len(num)
-
-# 個数を考慮
-# 重複あり
-def part_sum_4(limit, k):
-    # dp[k][limit] k個足してlimitになった
-    dp = [[0] * (limit + 1) for i in range(k + 1)]
-    dp[0][0] = 1
-
-    for i in range(k):
-        for j in range(limit + 1):
-            for l in range(L):
-                if j - num[l] >= 0:
-                    dp[i + 1][j] += dp[i][j - num[l]]
-    return dp
-
-# print(part_sum_4(5, 5))
-
-# 重複なし
-def part_sum_5(n, k, limit):
-    dp = [[[0] * (limit + 1) for i in range(k + 1)] for i in range(n + 1)]
-    dp[0][0][0] = 1
-
-    for i in range(1, n + 1):
-        for j in range(1, k + 1):
-            for l in range(limit + 1):
-                if l - num[i - 1] >= 0:
-                    dp[i][j][l] += dp[i - 1][j - 1][l - num[i - 1]]
-                dp[i][j][l] += dp[i - 1][j][l]
-
-    return dp[n][k][limit]
-
-print(part_sum_5(L, 3, 10))
-
-# -付き部分和
 N = 4
-A = [-1, 1, 0, 1]
+A = [
+[2, 3, 4],
+[1, 3, 4],
+[4, 1, 2],
+[3, 1, 2]
+]
 
-def part_sum_minus(n, A, limit):
-    dp = [[0] * (limit * 2 + 1) for i in range(N + 1)]
-    dp[0][limit] = 1
+# 各試合に割り振るコード番号
+def code(l, r, of):
+    if l > r:
+        l, r = r, l
+    return of[l] + r - l - 1
 
-    for i in range(1, N + 1):
-        for j in range(limit * 2 + 1):
-            # 何も足さない場合
-            dp[i][j] += dp[i - 1][j]
-            if 0 <= j - A[i - 1] <= limit * 2:
-                dp[i][j] += dp[i - 1][j - A[i - 1]]
-            # if 0 <= j + A[i - 1] <= limit * 2:
-                # dp[i][j] += dp[i - 1][j + A[i - 1]]
-    return dp[-1][limit]
+of = [0] * (N + 1)
+# i番目の選手は試合of[i - 1] + 1からof[i]番目の試合に参加する
+for i in range(N):
+    of[i + 1] = of[i] + N - i - 1
+g = [[] for i in range(N * (N - 1) // 2)]
 
-# 何も足さない場合も含まれる
-print(part_sum_minus(N, A, 10))
+# 選手iが戦う試合について
+for i in range(N):
+    for j in range(N - 2):
+        # 試合
+        fcode = code(i, A[i][j] - 1, of)
+        # fcodeの次にくる試合
+        tcode = code(i, A[i][j + 1] - 1, of)
+        # 試合tcodeは試合fcodeより後にくる
+        g[fcode].append(tcode)
 
-# 個数制限あり重複なしナップサックdp
-# weightがW以内でのvalueの合計の最大値
-N = 4
-w = [2, 1, 3, 2]
-v = [3, 2, 4, 2]
-A = 5
-
-def knapsack_1(N, limit, weight, value):
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
+# トポソする
+def sort_topologically(g):
+    N = len(g)
+    ec = [0] * N
+    for i in range(N):
+        # それぞれの試合の後に来る試合について
+        for e in g[i]:
+            # eの前に来る試合を数える
+            ec[e] += 1
+    ret = [0] * N
+    q = 0
 
     for i in range(N):
-        for j in range(limit + 1):
-            if weight[i] <= j:
-                dp[i + 1][j] = max(dp[i][j], dp[i][j - weight[i]] + value[i])
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][limit]
-# 7
-# print(knapsack_1(N, A, w, v))
+        # 後に来る試合がなければ
+        if ec[i] == 0:
+            # 先頭はret[0] = a1, ret[1] = a2...
+            ret[q] = i
+            q += 1
 
-# 個数制限あり重複ありナップサックdp
-# N = 4個まで足せる
-def knapsack_2(N, limit, weight, value):
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
+    p = 0
+    # p == q　全て並び終えるまで続く
+    while p < q:
+        # 先頭に来る試合ret[0], ret[1]...のそれより後に行われる試合について
+        for to in g[ret[p]]:
+            # 前に来る試合を一つ減らす
+            ec[to] -= 1
+            # もしそれで先頭になれたなら
+            if ec[to] == 0:
+                # 記録する
+                ret[q] = to
+                q += 1
+        p += 1
 
+    # 全ての前に来る試合を消せなかったら
     for i in range(N):
-        for j in range(limit + 1):
-            dp[i + 1][j] = dp[i][j]
-            for r in range(N):
-                if weight[r] <= j:
-                    dp[i + 1][j] = max(dp[i + 1][j], dp[i][j - weight[r]] + value[r])
-    return dp[N][limit]
+        if ec[i] > 0:
+            return None
+    return ret
 
-# 9
-# print(knapsack_2(N, A, w, v))
+od = sort_topologically(g)
 
-# 個数制限なし重複ありナップサックdp
-# 最大は当然w = 1, v = 2を5回
-def knapsack_3(N, limit, weight, value):
-    dp = [0] * (limit + 1)
-    dp[0] = 0
-
-    for j in range(limit + 1):
-        for r in range(N):
-            if weight[r] <= j:
-                dp[j] = max(dp[j], dp[j - weight[r]] + value[r])
-    return dp[limit]
-
-# 10
-# print(knapsack_3(N, A, w, v))
-
-N = 10
-w = [7550, 9680, 9790, 7150, 5818, 7712, 8227, 8671, 8228, 2461]
-v = [540, 691, 700, 510, 415, 551, 587, 619, 588, 176]
-A = 9999
-
-# ABC153 E - Crested Ibis vs Monster
-# Aをvalueで引き切るための最小weightを求める
-def knapsack_4(N, limit, weight, value):
-    dp = [float('inf')] * (limit + 1)
-    dp[0] = 0
-
-    for i in range(1, limit + 1):
-        for j in range(N):
-            if i < value[j]:
-                dp[i] = min(dp[i], weight[j])
-            else:
-                dp[i] = min(dp[i], dp[i - value[j]] + weight[j])
-    return dp[-1]
-
-# 139815
-# print(knapsack_4(N, A, w, v))
-
-A = 999
-# 重複なしver
-def knapsack_5(N, limit, weight, value):
-    dp = [[float('inf')] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(1, limit + 1):
-            if i == 0:
-                if j < value[i]:
-                    dp[i][j] = weight[i]
-            elif j < value[i]:
-                dp[i + 1][j] = min(dp[i][j], weight[i])
-            else:
-                dp[i + 1][j] = min(dp[i][j], dp[i][j - value[i]] + weight[i])
-    return dp[N][limit]
-
-# 14045
-# print(knapsack_5(N, A, w, v))
-
-W = 22
-N = 5
-K = 3
-w = [5, 8, 3, 4, 6]
-v = [40, 50, 60, 70, 80]
-
-# ナップサックdp個数
-# N個の選択肢、weightの上限upper, 足し合わせlimit個以内
-def knapsack_6(N, upper, limit, weight, value):
-    dp = [[[0] * (upper + 1) for i in range(limit + 1)] for j in range(N + 1)]
-
-    for i in range(N):
-        for j in range(limit + 1):
-            for l in range(upper + 1):
-                # もし残りweightがl以上でjが１以上（後ろがある）なら
-                if l >= weight[i] and j >= 1:
-                    dp[i + 1][j][l] = max(dp[i][j][l],dp[i][j - 1][l - weight[i]] + value[i])
-                else:
-                    dp[i + 1][j][l] = dp[i][j][l]
-    return dp[N][limit][upper]
-
-print(knapsack_6(N, W, K, w, v))
-
-# 最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
-
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
-
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
+if not od:
+    print(-1)
+else:
+    dp = [1] * (N * (N - 1) // 2)
+    # 全ての試合について
+    for i in range(N * (N - 1) // 2):
+        for e in g[od[i]]:
+            # もしod[i]（eより前にあるもの）がでかければ更新
+            dp[e] = max(dp[e], dp[od[i]] + 1)
+    print(max(dp))
