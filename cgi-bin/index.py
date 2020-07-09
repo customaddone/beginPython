@@ -50,33 +50,53 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-H, W = getNM()
-maze = [list(input()) for i in range(H)]
+N, X = getNM()
+X -= 1
+H = getList()
+H_list = []
+for i in range(N):
+    if H[i] == 1:
+        H_list.append(i)
 
-dp = [[-1] * W for i in range(H)]
-# (0, 0)に置けば勝ち
-dp[H - 1][W - 1] = 0
+query = [getList() for i in range(N - 1)]
 
-dx = [1, 0, 1]
-dy = [0, 1, 1]
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-def dfs(x, y):
-    if maze[y][x] == "#":
-        return 1
+# 親を記録する
+def router(n, sta):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    path[sta] = -1
 
-    if dp[y][x] != -1:
-        return dp[y][x]
+    while pos:
+        u = pos.popleft()
+        ignore[u] = 1
 
-    result = 0
-    for i in range(3):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] == "." and dfs(nx, ny) == 0:
-            result = 1
-    dp[y][x] = result
-    return result
+        for i in dist[u]:
+            if ignore[i] != 1:
+                path[i] = u
+                pos.append(i)
 
-if dfs(0, 0):
-    print('First')
-else:
-    print('Second')
+    return path
+
+route = router(N, X)
+ign_par = [0] * N
+ign_par[X] = 1
+
+cnt = 0
+
+for i in H_list:
+    now = i
+    while True:
+        if ign_par[now] == 1:
+            break
+        ign_par[now] = 1
+        now = route[now]
+        cnt += 1
+
+print(cnt * 2)
