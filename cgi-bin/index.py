@@ -50,53 +50,118 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, X = getNM()
-X -= 1
-H = getList()
-H_list = []
+"""
+eye lid
+4
+lie
+die
+did
+dye
+"""
+
+s1, s2 = input().split(' ')
+N = getN()
+S = set()
+
+S.add(s1)
+S.add(s2)
+
 for i in range(N):
-    if H[i] == 1:
-        H_list.append(i)
+    S.add(input())
 
-query = [getList() for i in range(N - 1)]
+if s1 == s2:
+    print(0)
+    print(s1)
+    print(s2)
+    exit()
 
+S = list(S)
+N = len(S)
+
+def judge(s1, s2):
+    cnt = 0
+    n = len(s1)
+    for i in range(n):
+        if s1[i] != s2[i]:
+            cnt += 1
+    if cnt <= 1:
+        return True
+    else:
+        return False
+
+# 行き先と距離記録
 dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+d = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    for j in range(i + 1, N):
+        if judge(S[i], S[j]):
+            dist[i].append(j)
+            dist[j].append(i)
+            d[i][j] = 1
+            d[j][i] = 1
 
-# 親を記録する
+# start goal位置探索
+sta = 0
+end = 0
+for i in range(N):
+    if S[i] == s1:
+        sta = i
+        break
+for i in range(N):
+    if S[i] == s2:
+        end = i
+        break
+
+# ダイクストラ
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        di, now = heapq.heappop(pq)
+        if (di > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i] > dist[now] + d[i][now]:
+                dist[i] = dist[now] + d[i][now]
+                heapq.heappush(pq, (dist[i], i))
+    return dist
+
+distance = dij(sta, dist)
+if distance[end] == float('inf'):
+    print(-1)
+    exit()
+
+# sta起点の最短経路を通る木生成
 def router(n, sta):
     pos = deque([sta])
     ignore = [0] * n
     path = [0] * n
+    ignore[sta] = 0
     path[sta] = -1
 
     while pos:
         u = pos.popleft()
-        ignore[u] = 1
 
         for i in dist[u]:
-            if ignore[i] != 1:
+            if ignore[i] != 1 and distance[i] == ignore[u] + d[i][u]:
                 path[i] = u
+                ignore[i] = ignore[u] + d[i][u]
                 pos.append(i)
 
     return path
 
-route = router(N, X)
-ign_par = [0] * N
-ign_par[X] = 1
+path = router(N, sta)
+ans = [S[end]]
+now = end
+while True:
+    now = path[now]
+    ans.append(S[now])
+    if now == sta:
+        break
 
-cnt = 0
-
-for i in H_list:
-    now = i
-    while True:
-        if ign_par[now] == 1:
-            break
-        ign_par[now] = 1
-        now = route[now]
-        cnt += 1
-
-print(cnt * 2)
+print(len(ans) - 2)
+for i in range(len(ans)):
+    print(ans[-i - 1])
