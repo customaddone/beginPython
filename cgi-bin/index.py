@@ -50,40 +50,156 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M, D = getNM()
-A = getList()
-A = [x - 1 for x in A]
+# mod不使用ver
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-# 1回阿弥陀を試してみる
-amida = [i for i in range(N)]
-for i in range(M):
-    a1 = amida[A[i]]
-    a2 = amida[A[i] + 1]
-    amida[A[i]] = a2
-    amida[A[i] + 1] = a1
+# 10
+print(cmb_1(5, 3))
 
-# 逆にする
-amida_alta = [0] * N
-for i in range(N):
-    amida_alta[amida[i]] = i
+# mod使用ver
+# nが大きい場合に
+def cmb_2(x,y):
+    r = 1
+    for i in range(1, y + 1):
+        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
+    return r
 
-# ダブリング
-logk = D.bit_length()
+# 10
+print(cmb_2(5, 3))
 
-doubling = [[-1] * N for _ in range(logk)]
+# 逆元事前処理ver
+# nが小さい場合に
+N = 10
 
-for i in range(N):
-    doubling[0][i] = amida_alta[i]
+fact =[1] #階乗
+for i in range(1, N + 1):
+    fact.append(fact[i - 1] * i % mod)
 
-for i in range(1, logk):
-    for j in range(N):
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+facv = [0] * (N + 1) #階乗の逆元
+facv[-1] = pow(fact[-1], mod - 2 , mod)
 
-ans = [i for i in range(N)]
-for i in range(logk):
-    for j in range(N):
-        if D & (1 << i):
-            ans[j] = doubling[i][ans[j]]
+for i in range(N - 1, -1, -1):
+    facv[i] = facv[i + 1] * (i + 1) % mod
 
-for i in range(N):
-    print(ans[i] + 1)
+def cmb(n, r):
+    if n < r:
+        return 0
+    return fact[n] * facv[r] * facv[n - r] % mod
+# 120
+print(cmb(10, 3))
+
+# 重複組み合わせ
+# 10個のものから重複を許して3つとる
+print(cmb_1(10 + 3 - 1, 3))
+
+# modが素数じゃない時
+def cmb_compose(n, k, mod):
+    dp = [[0] * (k + 1) for i in range(n + 1)]
+    dp[0][0] = 1
+    for i in range(1, n + 1):
+        dp[i][0] = 1
+        for j in range(1, k + 1):
+            # nCk = n - 1Ck - 1 + n - 1Ck
+            dp[i][j] = (dp[i - 1][j - 1] + dp[i - 1][j]) % mod
+
+    return dp[n][k]
+
+print(cmb_compose(10, 3, 50))
+
+# 再帰で組み合わせ
+N_a = 4
+L = [1, 1]
+root = 5
+
+# root ** Nでループ
+def four_pow(i, array):
+    global cnt
+    if i == N_a:
+        print(array)
+        return
+    for j in range(root):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+# four_pow(0, [])
+
+# # 組み合わせ
+# [0, 1, 2, 3]
+# [0, 1, 2, 4]
+# [0, 1, 3, 4]
+# [0, 2, 3, 4]
+# [1, 2, 3, 4]
+def comb_pow(i, array):
+    global cnt
+    if i == N_a:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = -1
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root):
+        new_array = array + [j]
+        comb_pow(i + 1, new_array)
+comb_pow(0, [])
+
+# 1スタート
+# [1, 2, 3, 4]
+# [1, 2, 3, 5]
+# [1, 2, 4, 5]
+# [1, 3, 4, 5]
+# [2, 3, 4, 5]
+def comb_pow_2(i, array):
+    global cnt
+    if i == N_a:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root + 1):
+        new_array = array + [j]
+        comb_pow_2(i + 1, new_array)
+comb_pow_2(0, [])
+
+# 重複組み合わせ
+def rep_comb_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last, root):
+        new_array = array + [j]
+        rep_comb_pow(i + 1, new_array)
+# rep_comb_pow(0, [])
+
+N = 2
+root = 5
+
+# 1スタート
+def rep_comb_pow_2(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+
+    last = 1
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last, root + 1):
+        new_array = array + [j]
+        rep_comb_pow_2(i + 1, new_array)
+rep_comb_pow_2(0, [])
