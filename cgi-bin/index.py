@@ -50,28 +50,28 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-R, G, B = 267, 294, 165
+N, K = getNM()
+S = input()
+C = sorted(list(S))
+T = ""
 
-dp = [[float('inf')] * (R + G + B + 1) for i in range(2001)]
-dp[0][R + G + B] = 0
-
-# 残り個数により置くボールの色が変化する
-# ボールを置くコストも変化する
-def judge(point, ball):
-    if ball > G + B:
-        return abs(point - (-100))
-    elif G + B >= ball > B:
-        return abs(point)
-    else:
-        return abs(100 - point)
-
-print()
-
-for i in range(1, 2001):
-    for j in range(R + G + B, -1, -1):
-        if j == R + G + B:
-            dp[i][j] = dp[i - 1][j]
+def check(S, C):
+    k = 0
+    for s in S:
+        if s in C:
+            # 削除
+            del C[C.index(s)]
+        # 構成要素になければ
         else:
-            # i - 1000の地点にj + 1ボールを置き,残りはj個
-            dp[i][j] = min(dp[i - 1][j], dp[i - 1][j + 1] + judge(i - 1000, j + 1))
-print(dp[2000][0])
+            k += 1
+    return k
+
+for p in range(N):
+    print(C)
+    for i in range(len(C)):
+        d = int(S[p] != C[i])
+        if check(S[p + 1:], C[:i] + C[i + 1:]) <= K - d:
+            T += C[i]
+            K -= d
+            del C[i]
+            break
