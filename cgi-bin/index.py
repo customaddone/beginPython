@@ -50,28 +50,34 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = getNM()
-S = input()
-C = sorted(list(S))
-T = ""
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-def check(S, C):
-    k = 0
-    for s in S:
-        if s in C:
-            # 削除
-            del C[C.index(s)]
-        # 構成要素になければ
-        else:
-            k += 1
-    return k
+N, D = getNM()
+X, Y = getNM()
+X = abs(X)
+Y = abs(Y)
 
-for p in range(N):
-    print(C)
-    for i in range(len(C)):
-        d = int(S[p] != C[i])
-        if check(S[p + 1:], C[:i] + C[i + 1:]) <= K - d:
-            T += C[i]
-            K -= d
-            del C[i]
-            break
+# X軸に平行に正の向きに飛ぶ回数はx_time + α回
+# X軸に平行に負の向きに飛ぶ回数はα回
+x_time = X // D
+y_time = Y // D
+
+if X % D != 0 or Y % D != 0 or N < x_time + y_time:
+    print(0)
+    exit()
+
+N_a = N - (x_time + y_time)
+if N_a % 2 != 0:
+    print(0)
+    exit()
+N_a //= 2
+
+ans = 0
+for i in range(N_a + 1):
+    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
+print(ans / (4 ** N))
