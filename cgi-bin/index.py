@@ -62,7 +62,7 @@ ide_ele = 2**31 - 1
 class LazySegmentTree:
     """
     init(init_val, ide_ele): 配列init_valで初期化 O(N)
-    update(l, r, x): 区間[l, r)をxに更新 O(logN)
+    add(l, r, x): 区間[l, r)にxを加算 O(logN)
     query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
     """
     def __init__(self, init_val, segfunc, ide_ele):
@@ -79,7 +79,7 @@ class LazySegmentTree:
         self.ide_ele = ide_ele
         self.num = 1 << (n - 1).bit_length()
         self.data = [ide_ele] * 2 * self.num
-        self.lazy = [None] * 2 * self.num
+        self.lazy = [0] * 2 * self.num
         # 配列の値を葉にセット
         for i in range(n):
             self.data[self.num + i] = init_val[i]
@@ -116,36 +116,35 @@ class LazySegmentTree:
         """
         for i in reversed(ids):
             v = self.lazy[i]
-            if v is None:
+            if not v:
                 continue
-            self.lazy[2 * i] = v
-            self.lazy[2 * i + 1] = v
-            self.data[2 * i] = v
-            self.data[2 * i + 1] = v
-            self.lazy[i] = None
+            self.lazy[2 * i] += v
+            self.lazy[2 * i + 1] += v
+            self.data[2 * i] += v
+            self.data[2 * i + 1] += v
+            self.lazy[i] = 0
 
-    def update(self, l, r, x):
+    def add(self, l, r, x):
         """
-        区間[l, r)の値をxに更新
+        区間[l, r)の値にxを加算
         l, r: index(0-index)
-        x: update value
+        x: additional value
         """
         *ids, = self.gindex(l, r)
-        self.propagates(*ids)
         l += self.num
         r += self.num
         while l < r:
             if l & 1:
-                self.lazy[l] = x
-                self.data[l] = x
+                self.lazy[l] += x
+                self.data[l] += x
                 l += 1
             if r & 1:
-                self.lazy[r - 1] = x
-                self.data[r - 1] = x
+                self.lazy[r - 1] += x
+                self.data[r - 1] += x
             r >>= 1
             l >>= 1
         for i in ids:
-            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1]) + self.lazy[i]
 
 
     def query(self, l, r):
@@ -170,8 +169,3 @@ class LazySegmentTree:
             l >>= 1
             r >>= 1
         return res
-
-a = [1, 2, 3, 4, 5]
-seg = LazySegmentTree(a, segfunc, ide_ele)
-seg.update(0, 3, 2)
-print(seg.query(0, 3))
