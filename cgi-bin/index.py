@@ -50,127 +50,128 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC154 E - Almost Everywhere Zero
-N = '9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999'
-K = 3
-L = len(N)
+#####segfunc#####
+def segfunc(x, y):
+    return min(x, y)
+#################
 
-def judge(a):
-    return a != 0
+#####ide_ele#####
+ide_ele = 2**31 - 1
+#################
 
-# N以下の数字で条件を満たす桁がk個のもの
-def digit_dp(n, k):
-    l = len(n)
+class LazySegmentTree:
+    """
+    init(init_val, ide_ele): 配列init_valで初期化 O(N)
+    update(l, r, x): 区間[l, r)をxに更新 O(logN)
+    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
+    """
+    def __init__(self, init_val, segfunc, ide_ele):
+        """
+        init_val: 配列の初期値
+        segfunc: 区間にしたい操作
+        ide_ele: 単位元
+        num: n以上の最小の2のべき乗
+        data: 値配列(1-index)
+        lazy: 遅延配列(1-index)
+        """
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.data = [ide_ele] * 2 * self.num
+        self.lazy = [None] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.data[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
 
-    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
+    def gindex(self, l, r):
+            """
+            伝搬する対象の区間を求める
+            lm: 伝搬する必要のある最大の左閉区間
+            rm: 伝搬する必要のある最大の右開区間
+            """
+            l += self.num
+            r += self.num
+            lm = l >> (l & -l).bit_length()
+            rm = r >> (r & -r).bit_length()
 
-    for i in range(l):
-        d = int(n[i])
+            while r > l:
+                if l <= lm:
+                    yield l
+                if r <= rm:
+                    yield r
+                r >>= 1
+                l >>= 1
+            while l:
+                yield l
+                l >>= 1
 
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                for k_j in range(k + 1):
-                    if judge(d_j):
-                        if k_j + 1 <= k:
-                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+    def propagates(self, *ids):
+        """
+        遅延伝搬処理
+        ids: 伝搬する対象の区間
+        """
+        for i in reversed(ids):
+            v = self.lazy[i]
+            if v is None:
+                continue
+            self.lazy[2 * i] = v
+            self.lazy[2 * i + 1] = v
+            self.data[2 * i] = v
+            self.data[2 * i + 1] = v
+            self.lazy[i] = None
 
-    return dp
+    def update(self, l, r, x):
+        """
+        区間[l, r)の値をxに更新
+        l, r: index(0-index)
+        x: update value
+        """
+        *ids, = self.gindex(l, r)
+        self.propagates(*ids)
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                self.lazy[l] = x
+                self.data[l] = x
+                l += 1
+            if r & 1:
+                self.lazy[r - 1] = x
+                self.data[r - 1] = x
+            r >>= 1
+            l >>= 1
+        for i in ids:
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
 
-dp = digit_dp(N, K)
-print(dp[L][0][K] + dp[L][1][K])
 
-# ABC029 D - 1
-N = '999999999'
-L = len(N)
+    def query(self, l, r):
+        """
+        [l, r)のsegfuncしたものを得る
+        l: index(0-index)
+        r: index(0-index)
+        """
+        *ids, = self.gindex(l, r)
+        self.propagates(*ids)
 
-def judge_2(a):
-    return a == 1
+        res = self.ide_ele
 
-# N以下の数字の中で「1が書いてある桁がk個ある数字」がいくつあるか
-# 上のものと関数の中身自体は変えていない
-def digit_dp_2(n, k):
-    l = len(n)
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.data[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.data[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
 
-    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
-
-    for i in range(l):
-        d = int(n[i])
-
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                for k_j in range(k + 1):
-                    if judge_2(d_j):
-                        if k_j + 1 <= k:
-                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
-
-    return dp
-
-dp = digit_dp_2(N, L)
-
-ans = 0
-for j in range(L + 1):
-    # dp[l]について各j(1のカウント)の通りの数 * j
-    ans += (dp[L][0][j] + dp[L][1][j]) * j
-print(ans)
-
-A, B = 1, 1000000000000000000
-
-# 4, 9の個数については求めない簡易版
-def judge_3(a):
-    return a in [4, 9]
-
-def digit_dp(n):
-    l = len(n)
-
-    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
-
-    for i in range(l):
-        d = int(n[i])
-
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                # 0:4,9が含まれない　1:4,9が含まれる
-                for k_j in range(2):
-                    if k_j == 0 and judge_3(d_j):
-                        dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
-    return dp[l][0][1] + dp[l][1][1]
-
-print(digit_dp(str(B)) - digit_dp(str(A - 1)))
-
-# ABC129 E - Sum Equals Xor
-# 通りの数を求める
-
-L = '1111111111111111111'
-
-def digit_dp_3(n):
-    l = len(n)
-
-    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
-
-    for i in range(l):
-        d = int(n[i])
-
-        # Lになる可能性があるかないか
-        for j in range(2):
-            # 次の桁が0か1か
-            for d_j in range(2 if j else d + 1):
-                if d_j == 0:
-                    dp[i + 1][j | (d_j < d)][d_j] += (dp[i][j][0] + dp[i][j][1])
-                    dp[i + 1][j | (d_j < d)][d_j] %= mod
-                else:
-                    dp[i + 1][j | (d_j < d)][d_j] += 2 * (dp[i][j][0] + dp[i][j][1])
-                    dp[i + 1][j | (d_j < d)][d_j] %= mod
-
-    return sum(dp[-1][0]) + sum(dp[-1][1])
-
-print(digit_dp_3(L) % mod)
+a = [1, 2, 3, 4, 5]
+seg = LazySegmentTree(a, segfunc, ide_ele)
+seg.update(0, 3, 2)
+print(seg.query(0, 3))
