@@ -50,75 +50,127 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-num = [i for i in range(0, 10, 2)]
-A = [2, 4, 5]
-B = [2, 3]
+# ABC154 E - Almost Everywhere Zero
+N = '9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999'
+K = 3
+L = len(N)
 
-for i in A:
-    index = bisect_right(num, i)
-    print(num[index - 1])
+def judge(a):
+    return a != 0
 
-# numの中でのi未満の数字の最大値を求める
-for i in A:
-    index = bisect_left(num, i)
-    print(num[index - 1])
+# N以下の数字で条件を満たす桁がk個のもの
+def digit_dp(n, k):
+    l = len(n)
 
-# numの中でのiより大きい数字の最小値を求める
-for i in B:
-    index = bisect_right(num, i)
-    print(num[index])
+    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
 
-# numの中でのi以上の数字の最小値を求める
-for i in B:
-    index = bisect_left(num, i)
-    print(num[index])
+    for i in range(l):
+        d = int(n[i])
 
-A = [1, 2, 4, 8, 16, 32]
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                for k_j in range(k + 1):
+                    if judge(d_j):
+                        if k_j + 1 <= k:
+                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
 
-def or_less(array, x):
-    # arrayの中のx以下のものの個数
-    # arrayの中のx以下のもののうちの最大値
-    index = bisect_right(array, x)
-    if index == 0:
-        or_less_int = -float('inf')
-    else:
-        or_less_int = array[index - 1]
-    return [index, or_less_int]
+    return dp
 
-def less_than(array, x):
-    # arrayの中のx未満のものの個数
-    # arrayの中のx未満のもののうちの最大値
-    index = bisect_left(array, x)
-    if index == 0:
-        less_than_int = -float('inf')
-    else:
-        less_than_int = array[index - 1]
-    return [index, less_than_int]
+dp = digit_dp(N, K)
+print(dp[L][0][K] + dp[L][1][K])
 
-print(or_less(A, 8))
-print(less_than(A, 1))
+# ABC029 D - 1
+N = '999999999'
+L = len(N)
 
-def or_more(array, x):
-    # arrayの中のx以上のものの個数
-    # arrayの中のx以上のもののうちの最小値
-    n = len(array)
-    index = bisect_left(array, x)
-    if index == n:
-        or_more_int = float('inf')
-    else:
-        or_more_int = array[index]
-    return [n - index, or_more_int]
+def judge_2(a):
+    return a == 1
 
-def more_than(array, x):
-    # arrayの中のxより大きいものの個数
-    # arrayの中のxより大きいのもののうちの最小値
-    n = len(array)
-    index = bisect_right(array, x)
-    if index == n:
-        more_than_int = float('inf')
-    else:
-        more_than_int = array[index]
-    return [n - index, more_than_int]
+# N以下の数字の中で「1が書いてある桁がk個ある数字」がいくつあるか
+# 上のものと関数の中身自体は変えていない
+def digit_dp_2(n, k):
+    l = len(n)
 
-print(or_more(A, 32))
-print(more_than(A, 1))
+    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                for k_j in range(k + 1):
+                    if judge_2(d_j):
+                        if k_j + 1 <= k:
+                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+
+    return dp
+
+dp = digit_dp_2(N, L)
+
+ans = 0
+for j in range(L + 1):
+    # dp[l]について各j(1のカウント)の通りの数 * j
+    ans += (dp[L][0][j] + dp[L][1][j]) * j
+print(ans)
+
+A, B = 1, 1000000000000000000
+
+# 4, 9の個数については求めない簡易版
+def judge_3(a):
+    return a in [4, 9]
+
+def digit_dp(n):
+    l = len(n)
+
+    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                # 0:4,9が含まれない　1:4,9が含まれる
+                for k_j in range(2):
+                    if k_j == 0 and judge_3(d_j):
+                        dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+    return dp[l][0][1] + dp[l][1][1]
+
+print(digit_dp(str(B)) - digit_dp(str(A - 1)))
+
+# ABC129 E - Sum Equals Xor
+# 通りの数を求める
+
+L = '1111111111111111111'
+
+def digit_dp_3(n):
+    l = len(n)
+
+    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        # Lになる可能性があるかないか
+        for j in range(2):
+            # 次の桁が0か1か
+            for d_j in range(2 if j else d + 1):
+                if d_j == 0:
+                    dp[i + 1][j | (d_j < d)][d_j] += (dp[i][j][0] + dp[i][j][1])
+                    dp[i + 1][j | (d_j < d)][d_j] %= mod
+                else:
+                    dp[i + 1][j | (d_j < d)][d_j] += 2 * (dp[i][j][0] + dp[i][j][1])
+                    dp[i + 1][j | (d_j < d)][d_j] %= mod
+
+    return sum(dp[-1][0]) + sum(dp[-1][1])
+
+print(digit_dp_3(L) % mod)
