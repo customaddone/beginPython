@@ -50,54 +50,52 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = getNM()
-A = getList()
-minus = [-x for x in A if x < 0]
-plus = [x for x in A if x >= 0]
+N, M = 11, 11
+query = [
+[1, 2],
+[1, 3],
+[2, 4],
+[3, 5],
+[4, 6],
+[5, 7],
+[6, 8],
+[7, 9],
+[8, 10],
+[9, 11],
+[10, 11]
+]
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = query[i]
+    a -= 1
+    b -= 1
+    dist[a].append(b)
+    dist[b].append(a)
 
-minus.sort()
-plus.sort()
+ignore = [0] * N
+ans = 0
+# 閉路検出
+def search(x, dist):
+    global ans
+    # 現在の位置とparent
+    pos = deque([[x, -1]])
+    ignore[x] = 1
+    flag = True
 
-def cnt(x):
-    ans = 0
-    if x < 0:
-        x = -x
-        r = 0
-        # - * +
-        for num in minus[::-1]:
-            while r < len(plus) and plus[r] * num < x:
-                r += 1
-            ans += len(plus) - r
-        return ans
+    while pos:
+        u, parent = pos.popleft()
+        for i in dist[u]:
+            if i != parent:
+                if ignore[i] == 1:
+                    flag = False
+                    continue
+                ignore[i] = 1
+                pos.append([i, u])
+    if flag:
+        ans += 1
 
-    r = 0
-    for num in minus[::-1]:
-        if num * num <= x:
-            ans -= 1
-        while r < len(minus) and minus[r] * num <= x:
-            r += 1
-        ans += r
-    r = 0
-    for num in plus[::-1]:
-        if num * num <= x:
-            ans -= 1
-        while r < len(plus) and plus[r] * num <= x:
-            r += 1
-        ans += r
-    ans //= 2
-    # -になるものはまとめて計算
-    ans += len(minus) * len(plus)
-    return ans
-
-bottom = 0
-top = 2 * (10 ** 18) + 2
-
-
-while top - bottom > 1:
-    mid = (top + bottom) // 2
-    if cnt(mid - 10 ** 18 - 1) < K:
-        bottom = mid
-    else:
-        top = mid
-
-print(int(top - 10 ** 18 - 1))
+# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+for i in range(N):
+    if ignore[i] == 0:
+        search(i, dist)
+print(ans)
