@@ -50,52 +50,26 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = 11, 11
-query = [
-[1, 2],
-[1, 3],
-[2, 4],
-[3, 5],
-[4, 6],
-[5, 7],
-[6, 8],
-[7, 9],
-[8, 10],
-[9, 11],
-[10, 11]
-]
-dist = [[] for i in range(N)]
-for i in range(M):
-    a, b = query[i]
-    a -= 1
-    b -= 1
-    dist[a].append(b)
-    dist[b].append(a)
+N, M = getNM()
+F = getArray(N)
 
-ignore = [0] * N
-ans = 0
-# 閉路検出
-def search(x, dist):
-    global ans
-    # 現在の位置とparent
-    pos = deque([[x, -1]])
-    ignore[x] = 1
-    flag = True
-
-    while pos:
-        u, parent = pos.popleft()
-        for i in dist[u]:
-            if i != parent:
-                if ignore[i] == 1:
-                    flag = False
-                    continue
-                ignore[i] = 1
-                pos.append([i, u])
-    if flag:
-        ans += 1
-
-# 一つの木の頂点は全て一回のsearchで塗りつぶされる
-for i in range(N):
-    if ignore[i] == 0:
-        search(i, dist)
-print(ans)
+dp = [0] * (N + 1)
+dp[0] = 1
+ignore = [0] * (M + 1)
+r, l = 0, 0
+now = dp[0]
+for r in range(N):
+    # 左をずらす
+    # iまで食べる日の前日までにjまで食べた場合、その通りがdp[j]通りある
+    # なので影響する範囲は１日で食べられるところまで
+    while ignore[F[r]]:
+        ignore[F[l]] = 0
+        now -= dp[l]
+        now %= mod
+        l += 1
+    dp[r + 1] = now
+    now += dp[r + 1]
+    now %= mod
+    ignore[F[r]] = 1
+    r += 1
+print(dp[N])
