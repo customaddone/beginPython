@@ -50,26 +50,20 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = getNM()
-F = getArray(N)
+N = getN()
+A = getArray(N)
+A = [i for i in A[::-1]]
 
-dp = [0] * (N + 1)
-dp[0] = 1
-ignore = [0] * (M + 1)
-r, l = 0, 0
-now = dp[0]
-for r in range(N):
-    # 左をずらす
-    # iまで食べる日の前日までにjまで食べた場合、その通りがdp[j]通りある
-    # なので影響する範囲は１日で食べられるところまで
-    while ignore[F[r]]:
-        ignore[F[l]] = 0
-        now -= dp[l]
-        now %= mod
-        l += 1
-    dp[r + 1] = now
-    now += dp[r + 1]
-    now %= mod
-    ignore[F[r]] = 1
-    r += 1
-print(dp[N])
+ans = deque([A[0]])
+# 土台の数を更新していく
+for i in range(1, N):
+    # ans[index] A[i]が挟みこめる場所
+    # A[0] <= A[i]なら0になる
+    # ans[index - 1]: A[i]以下で一番大きい数字
+    index = bisect_right(ans, A[i])
+    if index == 0:
+        ans.appendleft(A[i])
+    else:
+        # 同じ数が複数ある場合は一番最後の数字が更新される
+        ans[index - 1] = A[i]
+print(len(ans))
