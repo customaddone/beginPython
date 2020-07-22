@@ -50,20 +50,61 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-A = getArray(N)
-A = [i for i in A[::-1]]
+b1 = getList()
+b2 = getList()
+c1 = getList() + [0]
+c2 = getList() + [0]
+c3 = getList() + [0]
+b = b1 + b2
+c = c1 + c2 + c3
+S = sum(b) + sum(c)
 
-ans = deque([A[0]])
-# 土台の数を更新していく
-for i in range(1, N):
-    # ans[index] A[i]が挟みこめる場所
-    # A[0] <= A[i]なら0になる
-    # ans[index - 1]: A[i]以下で一番大きい数字
-    index = bisect_right(ans, A[i])
-    if index == 0:
-        ans.appendleft(A[i])
+def counter(array):
+    male = 0
+    for i in range(9):
+        # bの得点
+        if i <= 5:
+            if array[i] == array[i + 3]:
+                male += b[i]
+        # cの得点
+        if i % 3 == 0 or i % 3 == 1:
+            if array[i] == array[i + 1]:
+                male += c[i]
+    return male
+
+memo = {}
+
+def solve(array):
+    # メモ呼び出し
+    if str(array) in memo:
+        return memo[str(array)]
+    # ターンの計算
+    turn = 1
+    for i in array:
+        if i == 0 or i == 1:
+            turn += 1
+    if turn == 10:
+        return counter(array)
+
+    if turn % 2 == 0:
+        point = S
     else:
-        # 同じ数が複数ある場合は一番最後の数字が更新される
-        ans[index - 1] = A[i]
-print(len(ans))
+        point = -S
+
+    # i番目に駒を置いた時の全通りを探索して最善の手を呼び出す
+    for i in range(9):
+        if array[i] == -1:
+            new = copy.deepcopy(array)
+            if turn % 2 == 0:
+                new[i] = 1
+                point = min(point, solve(new))
+            else:
+                new[i] = 0
+                point = max(point, solve(new))
+    memo[str(array)] = point
+    return point
+
+opt = [-1] * 9
+ans = solve(opt)
+print(ans)
+print(S - ans)
