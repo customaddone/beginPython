@@ -50,65 +50,164 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-que = [getList() for i in range(N)]
+# mod不使用ver
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if (r < 0) or (n < r):
+        return 0
 
-# もしwが同じならhが大きい順に（大→小へ更新していく）
-que.sort(key = lambda i: i[1], reverse = True)
-# wが小さい順に並ぶ
-que.sort(key = lambda i: i[0])
+    if r == 0:
+        return 1
 
-h_list = []
-for i in range(N):
-    h_list.append(que[i][1])
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        # Lの末尾よりaが大きければ増加部分を拡張できる
-        if a > L[-1]:
-            # 前から順にLに追加していく
-            L.append(a)
-        else:
-            L[bisect_left(L, a)] = a
+# 10
+print(cmb_1(5, 3))
 
-    # Lの配列の長さは求まる
-    # Lの中身はデタラメ
-    return len(L)
-print(lis(h_list))
+# mod使用ver
+# nが大きい場合に
+def cmb_2(x,y):
+    r = 1
+    for i in range(1, y + 1):
+        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
+    return r
 
-"""
-# 最初から i 番目までの最大値を求めるだけで良いならBITを使える
-class BIT:
-    def __init__(self, n):
-        self.n = n
-        self.data = [0] * (n + 1)
+# 10
+print(cmb_2(5, 3))
 
-    def ope(self, x, y):
-        return max(x, y)
+# 逆元事前処理ver
+# nが小さい場合に
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
 
-    def update(self, i, v):
-        j = i
-        while j <= self.n:
-            self.data[j] = self.ope(self.data[j], v)
-            j += j & -j
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
 
-    def query(self, i):
-        ret = 0
-        j = i
-        while 0 < j:
-            ret = self.ope(self.data[j], ret)
-            j &= (j - 1)
-        return ret
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+# 120
+print(cmb(10, 3))
 
-bit = BIT(10 ** 5)
+# 重複組み合わせ
+# 10個のものから重複を許して3つとる
+print(cmb_1(10 + 3 - 1, 3))
 
-for w, h in que:
-    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
-    # 最初は0個
-    q = bit.query(h - 1)
-    # 高さhの時の箱の数を更新
-    # 箱の数がq + 1のものは高さがどんどん小さく更新されていく
-    bit.update(h, q + 1)
-print(bit.query(10 ** 5))
-"""
+# modが素数じゃない時
+def cmb_compose(n, k, mod):
+    dp = [[0] * (k + 1) for i in range(n + 1)]
+    dp[0][0] = 1
+    for i in range(1, n + 1):
+        dp[i][0] = 1
+        for j in range(1, k + 1):
+            # nCk = n - 1Ck - 1 + n - 1Ck
+            dp[i][j] = (dp[i - 1][j - 1] + dp[i - 1][j]) % mod
+
+    return dp[n][k]
+
+print(cmb_compose(10, 3, 50))
+
+A, B, C = 144949225, 545897619, 393065978
+
+# kCc / k+1Cc = k - c + 1 / k + 1
+# k+1Cc+1 / kCc = k + 1 / c + 1
+# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
+x = (C * pow(A, mod - 2, mod)) % mod
+y = (B * pow(A, mod - 2, mod)) % mod
+
+n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
+k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
+print((n - k) % mod, k % mod)
+
+
+# 再帰で組み合わせ
+N = 4
+L = [1, 1]
+root = 5
+
+# root ** Nでループ
+def four_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    for j in range(root):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+# four_pow(0, [])
+
+# 組み合わせ
+def comb_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = -1
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root):
+        new_array = array + [j]
+        comb_pow(i + 1, new_array)
+#comb_pow(0, [])
+
+# 1スタート
+def comb_pow_2(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root + 1):
+        new_array = array + [j]
+        comb_pow_2(i + 1, new_array)
+# comb_pow_2(0, [])
+
+# 重複組み合わせ
+def rep_comb_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last, root):
+        new_array = array + [j]
+        rep_comb_pow(i + 1, new_array)
+# rep_comb_pow(0, [])
+
+N = 2
+root = 5
+
+# 1スタート
+def rep_comb_pow_2(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root + 1):
+        new_array = array + [j]
+        rep_comb_pow_2(i + 1, new_array)
+# rep_comb_pow_2(0, [])
