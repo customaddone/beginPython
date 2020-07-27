@@ -50,32 +50,19 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 条件
-# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
-# (i, j)がqueryに含まれる
+# 動画を見る順にA1, A2, A3...Anとすると
+# 得点は(An + (An - 1 + (... (A2 + A1) / 2 ) / 2) / 2
+# = 1 / 2An / 4An - 1 + 1 / 8...
+# これを最大にする
 
-# この人数nの最大値を求める
+# An, An - 1は大きい数の方がいい
+# A1, A2...は小さい数の方がいい
+N, K = getNM()
+R = sorted(getList())
+R = R[-K:]
 
-# 集合Aの取り方は？
-# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
-N, M = getNM()
-mem = set()
-for i in range(M):
-    a, b = getNM()
-    mem.add((a - 1, b - 1))
-
-ans = 0
-for bit in range(1 << N):
-    # 任意のi, jについてqueryに含まれているか判定
-    flag = True
-    for i in range(N):
-        for j in range(i + 1, N):
-            # 適当に選んだ２人がbitの中に含まれていれば
-            if bit & (1 << i) and bit & (1 << j):
-                if not (i, j) in mem:
-                    flag = False
-    # もし集合bitが条件を満たすなら人数を調べる
-    if flag:
-        opt = bin(bit).count('1')
-        ans = max(ans, opt)
-print(ans)
+now = 0
+for i in range(K):
+    # 2で割っていくので丸め誤差は出ない
+    now = (now + R[i]) / 2
+print(now)
