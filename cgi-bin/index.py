@@ -50,29 +50,25 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 5
-C = [2, 3, 2, 6, 12]
+N,K = getNM()
+S = list(input())
+T = sorted(S)
+diff = 0
+ans = ""
 
-# 期待値　全ての通りについて考える
-# C[i]について考えると、C[i]の倍数であるC[j]のみが作用の対象になる
-# C[j]が表になる　↔︎　C[j]の左側にC[j]の約数が偶数個ある
-
-# 期待値の求め方
-# 並べ方S{a1, a2, a3...an}について左側の約数が偶数であるものの数を求める その数をf(S)とする
-# 全ての{S1, S2...Sn}についてf(S)を求めて足し合わせ / N!
-
-# 全ての状態{S1, S2... Sn}について{f(S1), f(S2)...}の総和を求めるみたいな問題は
-# f(n)の構成要素について分解してそれぞれ総和して求めることができたりする → ABC170 D - Not Divisible
-# f(S) = S[0]が表か裏か + S[1]が表か裏か + ....　
-# 求めたい答え = C[0]が表である確率 + C[1]が表になる確率 + ...
-
-# 必ずしも通りの数を求める必要はない
-# 期待値　→　それぞれについて確率を求める問題
-# C[i] + その約数のグループD内で何番目に来るか　→ 1番目、3番目...なら表
-ans = 0
-
-for i in C:
-    lista = [j for j in C if i % j == 0]
-    count = len(lista)
-    ans += math.ceil(count / 2) / count
+for i in range(N):
+    s = S[i]
+    # 残りの文字を全ループさせる
+    for t in T:
+        # tを追加して良いか確かめる
+        diff1 = diff + (s! = t)
+        count = Counter(T)
+        count[t] -= 1
+        diff2 = sum((Counter(S[i + 1:]) - count).values())
+        # 追加していいなら
+        if diff1 + diff2 <= K:
+            diff = diff1
+            ans += t
+            T.remove(t)
+            break
 print(ans)
