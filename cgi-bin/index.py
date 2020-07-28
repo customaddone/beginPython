@@ -50,25 +50,90 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N,K = getNM()
-S = list(input())
-T = sorted(S)
-diff = 0
-ans = ""
+# 友人関係を解消することで、0 ~ 複数人を消せる
+# パスワードを変更することで、1人を消せる
 
-for i in range(N):
-    s = S[i]
-    # 残りの文字を全ループさせる
-    for t in T:
-        # tを追加して良いか確かめる
-        diff1 = diff + (s! = t)
-        count = Counter(T)
-        count[t] -= 1
-        diff2 = sum((Counter(S[i + 1:]) - count).values())
-        # 追加していいなら
-        if diff1 + diff2 <= K:
-            diff = diff1
-            ans += t
-            T.remove(t)
-            break
+# 各枝からrootに何本が到達できるか　→ 最小カット問題
+
+N, G, E = getNM()
+P = getList()
+query = []
+for i in range(E):
+    a, b = getNM()
+    query.append([a, b, 1])
+    query.append([b, a, 1])
+# goalへのquery増築
+N += 1
+for i in range(G):
+    query.append([N - 1, P[i], 1])
+    query.append([P[i], N - 1, 1])
+
+ans = 0
+lines = defaultdict(set)
+cost = [[0] * N for i in range(N)]
+for i in range(len(query)):
+    a, b, c = query[i]
+    if c != 0:
+        lines[a].add(b)
+        cost[a][b] += c
+
+# sからスタート
+def Ford_Fulkerson(sta, end):
+    global ans
+    queue = deque()
+    queue.append([sta, float('inf')])
+
+    ignore = [1] * N
+    ignore[sta] = 0
+
+    route = [0] * N
+    route[sta] = -1
+
+    while queue:
+        s, flow = queue.pop()
+        for t in lines[s]:  #s->t
+            if ignore[t]: #未到達
+                # flowは入ってくる量、出る量のうち小さい方
+                flow = min(cost[s][t], flow)
+                route[t] = s
+                queue.append([t, flow])
+                ignore[t] = 0
+                if t == end: #ゴール到達
+                    ans += flow
+                    break
+        else:
+            continue #breakされなければWhile節の先頭に戻る
+        # Falseはされない
+        break
+    else:
+        return False
+
+    t = end
+    s = route[t]
+    # goalまで流れた量はflow
+    # 逆向きの辺を貼る
+    while s != -1:
+        #s->tのコスト減少，ゼロになるなら辺を削除
+        cost[s][t] -= flow
+        if cost[s][t] == 0:
+            lines[s].remove(t)
+            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
+        if cost[t][s] == 0:
+            lines[t].add(s)
+
+        cost[t][s] += flow
+
+        # 一つ上の辺をたどる
+        t = s
+        s = route[t]
+
+    return True
+
+while True:
+    # ちょびちょび流して行ってゴールまで流れなくなったら終了
+    if Ford_Fulkerson(0, N - 1):
+        continue
+    else:
+        break
+
 print(ans)
