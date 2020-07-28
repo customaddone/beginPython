@@ -32,7 +32,7 @@ from collections import defaultdict, deque, Counter
 from sys import exit
 from decimal import *
 import heapq
-from math import sqrt, pi
+import math
 from fractions import gcd
 import random
 import string
@@ -50,34 +50,29 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 条件
-# 並び終えた後の山札の集合をD{d1, d2, d3... dn}とすると
-# d1 < d2 < d3... dnであること
+N = 5
+C = [2, 3, 2, 6, 12]
 
-# c1, c2, c3...の任意のci, cjについて
-# i < j の時 ci < cjなら何もしなくていい
-# ci > cjの時並び変える必要がある（操作回数 + 1）
+# 期待値　全ての通りについて考える
+# C[i]について考えると、C[i]の倍数であるC[j]のみが作用の対象になる
+# C[j]が表になる　↔︎　C[j]の左側にC[j]の約数が偶数個ある
 
-# 集合Cから条件を満たす{d1, d2, d3...}をとる中で、長さが最大値になるものを求める
+# 期待値の求め方
+# 並べ方S{a1, a2, a3...an}について左側の約数が偶数であるものの数を求める その数をf(S)とする
+# 全ての{S1, S2...Sn}についてf(S)を求めて足し合わせ / N!
 
-# 類題 AGC024 B - Backfront
+# 全ての状態{S1, S2... Sn}について{f(S1), f(S2)...}の総和を求めるみたいな問題は
+# f(n)の構成要素について分解してそれぞれ総和して求めることができたりする → ABC170 D - Not Divisible
+# f(S) = S[0]が表か裏か + S[1]が表か裏か + ....　
+# 求めたい答え = C[0]が表である確率 + C[1]が表になる確率 + ...
 
-# 何もしなくてもいいのはc1 == c2 + 1の時
-# 条件
-# 並び終えた後の山札の集合をD{d1, d2, d3... dn}とすると
-# d1, d1 + 1, d1 + 2...という風に並ぶ集合の長さの最大値を求める
+# 必ずしも通りの数を求める必要はない
+# 期待値　→　それぞれについて確率を求める問題
+# C[i] + その約数のグループD内で何番目に来るか　→ 1番目、3番目...なら表
+ans = 0
 
-n = getN()
-lista = getArray(n)
-
-# 最長増加部分列問題 (LIS)の問題
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-print(n - lis(lista))
+for i in C:
+    lista = [j for j in C if i % j == 0]
+    count = len(lista)
+    ans += math.ceil(count / 2) / count
+print(ans)
