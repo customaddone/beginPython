@@ -50,60 +50,34 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# N <= 2500のqueryに答える問題
+# 条件
+# 並び終えた後の山札の集合をD{d1, d2, d3... dn}とすると
+# d1 < d2 < d3... dnであること
 
-# 面積kで焼くことができるたこ焼きの美味しさの最大値をf(k)とする時
-# g(n) = max(f(1), f(2)... f(q))を求める問題
+# c1, c2, c3...の任意のci, cjについて
+# i < j の時 ci < cjなら何もしなくていい
+# ci > cjの時並び変える必要がある（操作回数 + 1）
 
-# f(n - 1) <= f(n)なので累積してg(n)を求めリストの形で持っておく
+# 集合Cから条件を満たす{d1, d2, d3...}をとる中で、長さが最大値になるものを求める
 
-N = getN()
-maze = [getList() for i in range(N)]
-Q = getN()
-query = getArray(Q)
+# 類題 AGC024 B - Backfront
 
-# 二次元累積和
-dp = [[0] * N for i in range(N)]
-# 縦１行目、横１行目
-for i in range(N):
-    dp[i][0] = maze[i][0]
-for i in range(N):
-    for j in range(1, N):
-        dp[i][j] = dp[i][j - 1] + maze[i][j]
-# 全て
-for i in range(1, N):
-    for j in range(N):
-        dp[i][j] += dp[i - 1][j]
+# 何もしなくてもいいのはc1 == c2 + 1の時
+# 条件
+# 並び終えた後の山札の集合をD{d1, d2, d3... dn}とすると
+# d1, d1 + 1, d1 + 2...という風に並ぶ集合の長さの最大値を求める
 
-# 採点マシーン
-def judge(sx, sy, ex, ey):
-    mother = dp[ey][ex]
-    minus1 = 0
-    minus2 = 0
-    plus = 0
-    if sx > 0:
-        minus1 = dp[ey][sx - 1]
-    if sy > 0:
-        minus2 = dp[sy - 1][ex]
-    if sx > 0 and sy > 0:
-        plus = dp[sy - 1][sx - 1]
-    return mother - minus1 - minus2 + plus
+n = getN()
+lista = getArray(n)
 
-# 「大きさNの時の美味しさ」のリスト
-anslist = [0] * (N ** 2 + 1)
-for nsx in range(N):
-    for nex in range(nsx, N):
-        for nsy in range(N):
-            for ney in range(nsy, N):
-                opt = judge(nsx, nsy, nex, ney)
-                #print(opt, [nsx, nsy, nex, ney])
-                index = (nex - nsx + 1) * (ney - nsy + 1)
-                anslist[index] = max(anslist[index], opt)
-
-# 「大きさN以下の時の美味しさ」のリスト
-ans_alta = [0] * (N ** 2 + 1)
-for i in range(1, len(ans_alta)):
-    ans_alta[i] = max(ans_alta[i - 1], anslist[i])
-
-for i in query:
-    print(ans_alta[i])
+# 最長増加部分列問題 (LIS)の問題
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        if a > L[-1]:
+            L.append(a)
+        # このelseに引っかかった時にトランプのソートが必要
+        else:
+            L[bisect_left(L, a)] = a
+    return len(L)
+print(n - lis(lista))
