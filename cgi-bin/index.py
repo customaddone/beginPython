@@ -50,103 +50,60 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 全てのボールを全て違う箱に入れる
-# 地点からi離れたところに置くためにはi回試行が必要
+# N <= 2500のqueryに答える問題
 
-# 原点pのボールを(s, e)に一列に置くときの試行回数
-def counter(s, e, p):
-    sp = abs(s - p)
-    ep = abs(e - p)
-    if e < p:
-        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
-    elif s <= p <= e:
-        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
-    else:
-        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
+# 面積kで焼くことができるたこ焼きの美味しさの最大値をf(k)とする時
+# g(n) = max(f(1), f(2)... f(q))を求める問題
 
-# 全範囲を探索すると微妙に間に合わない
-# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
-# 緑がこの位置にある時、赤の最適な置き方は...
-# 緑がこの位置にある時、青の最適な置き方は...
-# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
+# f(n - 1) <= f(n)なので累積してg(n)を求めリストの形で持っておく
 
-class MinCostFlow:
-    """ 最小費用流(ベルマンフォード版、負コストに対応可) """
+N = getN()
+maze = [getList() for i in range(N)]
+Q = getN()
+query = getArray(Q)
 
-    INF = 10 ** 18
+# 二次元累積和
+dp = [[0] * N for i in range(N)]
+# 縦１行目、横１行目
+for i in range(N):
+    dp[i][0] = maze[i][0]
+for i in range(N):
+    for j in range(1, N):
+        dp[i][j] = dp[i][j - 1] + maze[i][j]
+# 全て
+for i in range(1, N):
+    for j in range(N):
+        dp[i][j] += dp[i - 1][j]
 
-    def __init__(self, N):
-        self.N = N
-        self.G = [[] for i in range(N)]
+# 採点マシーン
+def judge(sx, sy, ex, ey):
+    mother = dp[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
 
-    def add_edge(self, fr, to, cap, cost):
-        G = self.G
-        G[fr].append([to, cap, cost, len(G[to])])
-        G[to].append([fr, 0, -cost, len(G[fr])-1])
+# 「大きさNの時の美味しさ」のリスト
+anslist = [0] * (N ** 2 + 1)
+for nsx in range(N):
+    for nex in range(nsx, N):
+        for nsy in range(N):
+            for ney in range(nsy, N):
+                opt = judge(nsx, nsy, nex, ney)
+                #print(opt, [nsx, nsy, nex, ney])
+                index = (nex - nsx + 1) * (ney - nsy + 1)
+                anslist[index] = max(anslist[index], opt)
 
-    def flow(self, s, t, f):
+# 「大きさN以下の時の美味しさ」のリスト
+ans_alta = [0] * (N ** 2 + 1)
+for i in range(1, len(ans_alta)):
+    ans_alta[i] = max(ans_alta[i - 1], anslist[i])
 
-        N = self.N; G = self.G
-        INF = MinCostFlow.INF
-
-        res = 0
-        prv_v = [0] * N
-        prv_e = [0] * N
-
-        while f:
-            dist = [INF] * N
-            dist[s] = 0
-            update = True
-
-            while update:
-                update = False
-                for v in range(N):
-                    if dist[v] == INF:
-                        continue
-                    for i, (to, cap, cost, _) in enumerate(G[v]):
-                        if cap > 0 and dist[to] > dist[v] + cost:
-                            dist[to] = dist[v] + cost
-                            prv_v[to] = v; prv_e[to] = i
-                            update = True
-            if dist[t] == INF:
-                return -1
-
-            d = f; v = t
-            while v != s:
-                d = min(d, G[prv_v[v]][prv_e[v]][1])
-                v = prv_v[v]
-            f -= d
-            res += d * dist[t]
-            v = t
-            while v != s:
-                e = G[prv_v[v]][prv_e[v]]
-                e[1] -= d
-                G[v][e[3]][1] += d
-                v = prv_v[v]
-        return res
-
-R, G, B = getNM()
-N = R + G + B
-
-# 最小費用流
-mcf = MinCostFlow(1006)
-# 始点からRGBの移動前
-# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
-mcf.add_edge(1001, 1002, R, 0)
-mcf.add_edge(1001, 1003, G, 0)
-mcf.add_edge(1001, 1004, B, 0)
-
-# 0~1000の頂点番号は座標位置と一致させてある
-# 各頂点1個まで通れる
-for v in range(1001):
-    # R => 各座標
-    mcf.add_edge(1002, v, 1, abs(400-v))
-    # G => 各座標
-    mcf.add_edge(1003, v, 1, abs(500-v))
-    # B => 各座標
-    mcf.add_edge(1004, v, 1, abs(600-v))
-    # 各座標 => 終点(1005)
-    mcf.add_edge(v, 1005, 1, 0)
-
-# N個のボールを送るための最小費用
-print(mcf.flow(1001, 1005, N))
+for i in query:
+    print(ans_alta[i])

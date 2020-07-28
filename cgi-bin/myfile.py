@@ -70,33 +70,7 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-S = input()
-N = len(S)
-# dp[i][j]: i番目にjまで丸をつけ終えている通り
-dp = [[0] * 4 for _ in range(N + 1)]
-dp[0][0] = 1
-
-for i in range(1, N + 1):
-    for j in range(4):
-        # i番目の文字が?でなければ
-        if S[i] != '?':
-            # 一つ前のものを引き継ぐ
-            dp[i + 1][j] += dp[i][j]
-            dp[i + 1][j] %= mod
-        # ?なら
-        else:
-            # A, B, C３つ分引き継ぐ
-            dp[i + 1][j] += 3 * dp[i][j]
-            dp[i + 1][j] %= mod
-    # もしS[i]がAか?ならj == 0の場合カウントを一つ増やせる
-    # これでABC○A○B○Cと○A○B○CABCは区別される
-    if S[i] == 'A' or S[i] == '?':
-        dp[i + 1][1] += dp[i][0]
-        dp[i + 1][1] %= mod
-    if S[i] == 'B' or S[i] == '?':
-        dp[i + 1][2] += dp[i][1]
-        dp[i + 1][2] %= mod
-    if S[i] == 'C' or S[i] == '?':
-        dp[i + 1][3] += dp[i][2]
-        dp[i + 1][3] %= mod
-print(dp[N][3])
+# 条件
+# それぞれのお客さんに対し対応するたこ焼きがある　→
+# 任意のBiについて、対応するAj(Bi <= Aj <= Bi + T)が必ず１つ存在する
+# 
