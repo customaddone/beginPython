@@ -50,90 +50,43 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 友人関係を解消することで、0 ~ 複数人を消せる
-# パスワードを変更することで、1人を消せる
+# N日間耐える　初期体力はH
+N, H = getNM()
+A, B, C, D, E = getNM()
 
-# 各枝からrootに何本が到達できるか　→ 最小カット問題
+# 普通の食事をn回、質素な食事をm回とり、食事抜きの期間をN - n - m回とした時の
+# n, mの値をうまく操って
+# An + Cmの最小値を求める
+# C < Aなので、制限がなければAn + Cmの最小値は全て質素な食事にした時　
+# 最低何回普通の食事nをする必要があるか
 
-N, G, E = getNM()
-P = getList()
-query = []
-for i in range(E):
-    a, b = getNM()
-    query.append([a, b, 1])
-    query.append([b, a, 1])
-# goalへのquery増築
-N += 1
-for i in range(G):
-    query.append([N - 1, P[i], 1])
-    query.append([P[i], N - 1, 1])
+# ただし満腹度が0以下になってはいけないので
+# H + Bn + Dm - E(N - n - m) >= 1でなければいけない
 
-ans = 0
-lines = defaultdict(set)
-cost = [[0] * N for i in range(N)]
-for i in range(len(query)):
-    a, b, c = query[i]
-    if c != 0:
-        lines[a].add(b)
-        cost[a][b] += c
+# 普通の食事の回数n + 質素な食事の回数m(0回からN回まで)を固定してみる
+# n + m = k　(0 <= k <= N)
+# m = k - n
+# H + Bn + D(k - n) - E(N - k)
+# H + (B - D)n + Dk - E(N - k) >= 1
+# (B - D)n >= 1 - H - Dk + E(N - k)
 
-# sからスタート
-def Ford_Fulkerson(sta, end):
-    global ans
-    queue = deque()
-    queue.append([sta, float('inf')])
+# numer = 1 - H - Dk + E(N - k)
+# denomi = B - D とすると
+# n = [numer / denomi]となるnを求める　→ m = k - nなのでmも求まる
 
-    ignore = [1] * N
-    ignore[sta] = 0
-
-    route = [0] * N
-    route[sta] = -1
-
-    while queue:
-        s, flow = queue.pop()
-        for t in lines[s]:  #s->t
-            if ignore[t]: #未到達
-                # flowは入ってくる量、出る量のうち小さい方
-                flow = min(cost[s][t], flow)
-                route[t] = s
-                queue.append([t, flow])
-                ignore[t] = 0
-                if t == end: #ゴール到達
-                    ans += flow
-                    break
-        else:
-            continue #breakされなければWhile節の先頭に戻る
-        # Falseはされない
-        break
+ans = float('inf')
+for i in range(N + 1):
+    n = 0
+    m = 0
+    # numerがマイナスならどんなn, mでも必ず条件を達成できる
+    numer = 1 - H - (D * i) + (E * (N - i))
+    denomi = B - D
+    if numer <= 0:
+        m = i
     else:
-        return False
-
-    t = end
-    s = route[t]
-    # goalまで流れた量はflow
-    # 逆向きの辺を貼る
-    while s != -1:
-        #s->tのコスト減少，ゼロになるなら辺を削除
-        cost[s][t] -= flow
-        if cost[s][t] == 0:
-            lines[s].remove(t)
-            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
-        if cost[t][s] == 0:
-            lines[t].add(s)
-
-        cost[t][s] += flow
-
-        # 一つ上の辺をたどる
-        t = s
-        s = route[t]
-
-    return True
-
-while True:
-    # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(0, N - 1):
+        n = (numer + denomi - 1) // denomi
+        m = i - n
+    if m < 0:
         continue
-    else:
-        break
-
+    ans = min(ans, A * n + C * m)
 print(ans)
