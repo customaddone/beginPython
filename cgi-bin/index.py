@@ -50,43 +50,29 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# N日間耐える　初期体力はH
-N, H = getNM()
-A, B, C, D, E = getNM()
+N, M = getNM()
+F = getArray(N)
 
-# 普通の食事をn回、質素な食事をm回とり、食事抜きの期間をN - n - m回とした時の
-# n, mの値をうまく操って
-# An + Cmの最小値を求める
-# C < Aなので、制限がなければAn + Cmの最小値は全て質素な食事にした時　
-# 最低何回普通の食事nをする必要があるか
-
-# ただし満腹度が0以下になってはいけないので
-# H + Bn + Dm - E(N - n - m) >= 1でなければいけない
-
-# 普通の食事の回数n + 質素な食事の回数m(0回からN回まで)を固定してみる
-# n + m = k　(0 <= k <= N)
-# m = k - n
-# H + Bn + D(k - n) - E(N - k)
-# H + (B - D)n + Dk - E(N - k) >= 1
-# (B - D)n >= 1 - H - Dk + E(N - k)
-
-# numer = 1 - H - Dk + E(N - k)
-# denomi = B - D とすると
-# n = [numer / denomi]となるnを求める　→ m = k - nなのでmも求まる
-
-ans = float('inf')
-for i in range(N + 1):
-    n = 0
-    m = 0
-    # numerがマイナスならどんなn, mでも必ず条件を達成できる
-    numer = 1 - H - (D * i) + (E * (N - i))
-    denomi = B - D
-    if numer <= 0:
-        m = i
-    else:
-        n = (numer + denomi - 1) // denomi
-        m = i - n
-    if m < 0:
-        continue
-    ans = min(ans, A * n + C * m)
-print(ans)
+dp = [0] * (N + 1)
+dp[0] = 1
+ignore = [0] * (M + 1)
+r, l = 0, 0
+now = dp[0]
+for r in range(N):
+    # ④ignore[F[r]]フラグが立っていた場合（前回以前に③で立てたフラグが残っている場合）
+    # = F[r] = F[r - i]である場合、それが消えるまで列を縮める
+    while ignore[F[r]]:
+        ignore[F[l]] = 0
+        # nowを更新する
+        now -= dp[l]
+        now %= mod
+        l += 1
+    # ①次のdpを書き込む
+    dp[r + 1] = now
+    # ②nowを更新する
+    now += dp[r + 1]
+    now %= mod
+    # ③現在のrについてignoreフラグを立てる
+    ignore[F[r]] = 1
+    r += 1
+print(dp[N])
