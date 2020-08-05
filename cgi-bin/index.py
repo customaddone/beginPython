@@ -32,7 +32,7 @@ from collections import defaultdict, deque, Counter
 from sys import exit
 from decimal import *
 import heapq
-import math
+from math import sqrt
 from fractions import gcd
 import random
 import string
@@ -50,29 +50,180 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = getNM()
-F = getArray(N)
+# 後でよく見る
+# 構築は O(1)、挿入・削除・検索は O(log L)
 
-dp = [0] * (N + 1)
-dp[0] = 1
-ignore = [0] * (M + 1)
-r, l = 0, 0
-now = dp[0]
-for r in range(N):
-    # ④ignore[F[r]]フラグが立っていた場合（前回以前に③で立てたフラグが残っている場合）
-    # = F[r] = F[r - i]である場合、それが消えるまで列を縮める
-    while ignore[F[r]]:
-        ignore[F[l]] = 0
-        # nowを更新する
-        now -= dp[l]
-        now %= mod
-        l += 1
-    # ①次のdpを書き込む
-    dp[r + 1] = now
-    # ②nowを更新する
-    now += dp[r + 1]
-    now %= mod
-    # ③現在のrについてignoreフラグを立てる
-    ignore[F[r]] = 1
-    r += 1
-print(dp[N])
+class BalancingTree:
+    def __init__(self, n):
+        self.N = n
+        self.root = self.node(1 << n, 1 << n)
+
+    def debug(self):
+        def debug_info(nd_):
+            return (nd_.value - 1, nd_.pivot - 1, nd_.left.value - 1 if nd_.left else -1, nd_.right.value - 1 if nd_.right else -1)
+
+        def debug_node(nd):
+            re = []
+            if nd.left:
+                re += debug_node(nd.left)
+            if nd.value: re.append(debug_info(nd))
+            if nd.right:
+                re += debug_node(nd.right)
+            return re
+        print("Debug - root =", self.root.value - 1, debug_node(self.root)[:50])
+
+    def append(self, v):# v を追加（その時点で v はない前提）
+        v += 1
+        nd = self.root
+        while True:
+            if v == nd.value:
+                # v がすでに存在する場合に何か処理が必要ならここに書く
+                return 0
+            else:
+                mi, ma = min(v, nd.value), max(v, nd.value)
+                if mi < nd.pivot:
+                    nd.value = ma
+                    if nd.left:
+                        nd = nd.left
+                        v = mi
+                    else:
+                        p = nd.pivot
+                        nd.left = self.node(mi, p - (p&-p)//2)
+                        break
+                else:
+                    nd.value = mi
+                    if nd.right:
+                        nd = nd.right
+                        v = ma
+                    else:
+                        p = nd.pivot
+                        nd.right = self.node(ma, p + (p&-p)//2)
+                        break
+
+    def leftmost(self, nd):
+        if nd.left: return self.leftmost(nd.left)
+        return nd
+
+    def rightmost(self, nd):
+        if nd.right: return self.rightmost(nd.right)
+        return nd
+
+    def find_l(self, v): # vより真に小さいやつの中での最大値（なければ-1）
+        v += 1
+        nd = self.root
+        prev = 0
+        if nd.value < v: prev = nd.value
+        while True:
+            if v <= nd.value:
+                if nd.left:
+                    nd = nd.left
+                else:
+                    return prev - 1
+            else:
+                prev = nd.value
+                if nd.right:
+                    nd = nd.right
+                else:
+                    return prev - 1
+
+    def find_r(self, v): # vより真に大きいやつの中での最小値（なければRoot）
+        v += 1
+        nd = self.root
+        prev = 0
+        if nd.value > v: prev = nd.value
+        while True:
+            if v < nd.value:
+                prev = nd.value
+                if nd.left:
+                    nd = nd.left
+                else:
+                    if prev == 2**17:
+                        return N
+                    else:
+                        return prev - 1
+            else:
+                if nd.right:
+                    nd = nd.right
+                else:
+                    if prev == 2**17:
+                        return N
+                    else:
+                        return prev - 1
+
+    @property
+    def max(self):
+        return self.find_l((1<<self.N)-1)
+
+    @property
+    def min(self):
+        return self.find_r(-1)
+
+    def delete(self, v, nd = None, prev = None): # 値がvのノードがあれば削除（なければ何もしない）
+        v += 1
+        if not nd: nd = self.root
+        if not prev: prev = nd
+        while v != nd.value:
+            prev = nd
+            if v <= nd.value:
+                if nd.left:
+                    nd = nd.left
+                else:
+                    return
+            else:
+                if nd.right:
+                    nd = nd.right
+                else:
+                    return
+        if (not nd.left) and (not nd.right):
+            if nd.value < prev.value:
+                prev.left = None
+            else:
+                prev.right = None
+        elif not nd.left:
+            if nd.value < prev.value:
+                prev.left = nd.right
+            else:
+                prev.right = nd.right
+        elif not nd.right:
+            if nd.value < prev.value:
+                prev.left = nd.left
+            else:
+                prev.right = nd.left
+        else:
+            nd.value = self.leftmost(nd.right).value
+            self.delete(nd.value - 1, nd.right, nd)
+
+    def __contains__(self, v: int) -> bool:
+        return self.find_r(v - 1) == v
+
+    class node:
+        def __init__(self, v, p):
+            self.value = v
+            self.pivot = p
+            self.left = None
+            self.right = None
+
+N = getN()
+P = getList()
+
+A = []
+for i in range(N):
+    A.append((P[i],i))
+
+A.sort(reverse = True)
+
+# 10 ** 5ならだいたい2 ** 17ぐらい用意
+BT = BalancingTree(17)
+
+ans = 0
+for i in range(N):
+    # xは8, 7... yは8, 7...のインデックス
+    x, y = A[i]
+    BT.append(y)
+    a = BT.find_l(y)
+    b = BT.find_l(a)
+    c = BT.find_r(y)
+    d = BT.find_r(c)
+    ans += ((a - b) * (c - y) + (d - c) * (y - a)) * x
+
+print(ans)
