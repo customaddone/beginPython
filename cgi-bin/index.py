@@ -50,36 +50,30 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 牛舎
-N = 5
-# 牛の数
-M = 3
-# 牛舎の位置
-# Mi >= Mi-1 + d　でXからM個取れるか
-# O(nlogn)
-X = [1, 2, 8, 4, 9]
-X.sort()
+# 類題 ABC134 D - 食塩水
+N = 3
+K = 2
+que = [(2, 2), (5, 3), (2, 1)]
 
-def f(dis):
-    now = X[0]
-    for i in range(M - 1):
-        index = bisect_left(X, now + dis)
-        if index == N:
-            return False
-        now = X[index]
-        print(now)
-    return True
 
-ok = -1
+def f(target):
+    opt = []
+    for w, v in que:
+        opt.append(v - target * w)
+    opt.sort(reverse = True)
+    return sum(opt[:K]) >= 0
+
+ok = 0
 ng = 10 ** 9 + 1
-
-while abs(ok - ng) > 1:
-    mid = (ok + ng) // 2
+for i in range(100):
+    mid = (ng + ok) / 2
     if f(mid):
         ok = mid
     else:
         ng = mid
+
 print(ok)
+
 
 
 
