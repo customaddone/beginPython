@@ -50,32 +50,37 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-M, P, X = input().split()
-M = int(M)
-X = int(X)
-P = float(P)
+# 牛舎
+N = 5
+# 牛の数
+M = 3
+# 牛舎の位置
+# Mi >= Mi-1 + d　でXからM個取れるか
+# O(nlogn)
+X = [1, 2, 8, 4, 9]
+X.sort()
 
-# dp[i][j]: 残りラウンドiの時所持金jに到達できる確率
-dp = [[0] * ((1 << M) + 1) for i in range(M + 1)]
-dp[0][1 << M] = 1
+def f(dis):
+    now = X[0]
+    for i in range(M - 1):
+        index = bisect_left(X, now + dis)
+        if index == N:
+            return False
+        now = X[index]
+        print(now)
+    return True
 
-for i in range(1, M + 1):
-    for j in range((1 << M) + 1):
-        # dp[i][j]にするものの中で最も確率が高いものを探す
-        k = min(j, (1 << M) - j)
-        ans = 0
-        # 残りラウンドi - 1で所持金がj + l, j - lになるもので確率を求めてみる
-        for l in range(k + 1):
-            # P * dp[i - 1][j + l]: このラウンドで勝って次所持金j + lになる
-            # (1 - P) * dp[i - 1][j - l]: このラウンドで負けて次所持金j - lになる
-            # これら調べたもののうちの最大値
-            ans = max(ans, P * dp[i - 1][j + l] + (1 - P) * dp[i - 1][j - l])
-        # レコード
-        dp[i][j] = ans
+ok = -1
+ng = 10 ** 9 + 1
 
-# 1000000 を 2 ** Mで区分けしたグループのうちどれに含まれるが
-money_group = int(X / (1000000 / 2 ** M))
-print(dp[M][money_group])
+while abs(ok - ng) > 1:
+    mid = (ok + ng) // 2
+    if f(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
+
 
 
     #
