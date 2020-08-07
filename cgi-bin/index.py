@@ -50,31 +50,22 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 類題 ABC134 D - 食塩水
-N = 3
-K = 2
-que = [(2, 2), (5, 3), (2, 1)]
+N = 10
+S = 15
+A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
 
+right = 0
+total = 0
+ans = 0
 
-def f(target):
-    opt = []
-    for w, v in que:
-        opt.append(v - target * w)
-    opt.sort(reverse = True)
-    return sum(opt[:K]) >= 0
+for left in range(N):
+    while right < N and total < S:
+        total += A[right]
+        right += 1
+    if total < S:
+        break
+    print(left, right - 1)
 
-ok = 0
-ng = 10 ** 9 + 1
-for i in range(100):
-    mid = (ng + ok) / 2
-    if f(mid):
-        ok = mid
-    else:
-        ng = mid
-
-print(ok)
-
-
-
-
-    #
+    if left == right:
+        right += 1
+    total -= A[left]
