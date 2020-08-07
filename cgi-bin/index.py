@@ -50,61 +50,39 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-"""
-N = 10
-S = 15
-A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
+N = 7
+S = 'BBFBFBB'
 
-right = 0
-total = 0
-ans = 0
+def judge(k):
+    imos = [0] * N
+    if S[0] == 'B':
+        imos[0] = 1
+    # ひっくり返していく
+    for i in range(1, N - k + 1):
+        if i < k:
+            rev = imos[i - 1]
+        else:
+            rev = imos[i - 1] - imos[i - k]
+        if (S[i] == 'B') ^ (rev % 2):
+            imos[i] += 1
+        imos[i] += imos[i - 1]
 
-# S以上を求める場合にはこの形で
-for left in range(N):
-    while right < N and total < S:
-        total += A[right]
-        right += 1
-    if total < S:
-        break
-    print(left, right - 1)
+    # 残りのものが合っているか調べる
+    for i in range(N - k + 1, N):
+        if i < k:
+            rev = imos[N - k]
+        else:
+            rev = imos[N - k] - imos[i - k]
+        if (S[i] == 'B') ^ (rev % 2):
+            return float('inf')
 
-    if left == right:
-        right += 1
-    total -= A[left]
-"""
+    return imos[N - k]
 
-P = 5
-A = [1, 8, 8, 8, 1]
-dict = {}
-for i in A:
-    dict[i] = 0
-# 要素の種類数
-V = len(dict.items())
-
-# 事象の数をカウント
-cnt = 0
-right = 0
-# １つ目から全ての事象をカバーするまでrightを進める
-while right < P:
-    if dict[A[right]] == 0:
-        cnt += 1
-    dict[A[right]] += 1
-
-    if cnt == len(dict.items()):
-        break
-
-    right += 1
-print(l, r)
-
-l = 0
-# 右を一つ進めて左をできる限り進める
-for r in range(right + 1, P):
-    # 新しく一つ加える
-    dict[A[r]] += 1
-    while True:
-        # もし要素が一つしか無かったら削れない
-        if dict[A[l]] == 1:
-            break
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
+K = 0
+M = float('inf')
+for i in range(1, N + 1):
+    opt = judge(i)
+    if opt < M:
+        M = opt
+        K = i
+print(K, M)
