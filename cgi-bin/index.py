@@ -50,42 +50,48 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def binary_search_loop(data, target):
-    imin = 0
-    imax = len(data) - 1
-    while imin <= imax:
-        imid = imin + (imax - imin) // 2
-        if target == data[imid]:
-            return imid
-        elif target < data[imid]:
-            imax = imid - 1
-        else:
-            imin = imid + 1
-    return False
+W, H, N = 10, 10, 5
+# (x1, y1)から(x2, y2)まで線を引く
+X1 = [i - 1 for i in [1, 1, 4, 9, 10]]
+X2 = [i - 1 for i in [6, 10, 4, 9, 10]]
+Y1 = [i - 1 for i in [4, 8, 1, 1, 6]]
+Y2 = [i - 1 for i in [4, 8, 10, 5, 10]]
 
-N = 6
-A = [-45, -41, -36, -36, 26, -32]
-B = [22, -27, 53, 30, -38, -54]
-C = [42, 56, -37, 75, -10, -6]
-D = [-16, 30, 77, -46, 62, 45]
+# 縦
+row = set()
+r_index = {}
+# 横
+col = set()
+c_index = {}
+# 変換
+for x, y in zip(X1 + X2, Y1 + Y2):
+    # どの横列が必要か
+    row.add(y)
+    if y > 0:
+        row.add(y - 1)
+    if y < H:
+        row.add(y + 1)
 
-re_A = []
-re_C = []
-for i in range(N):
-    for j in range(N):
-        re_A.append(A[i] + B[j])
-re_A.sort()
+    # どの縦列が必要か
+    col.add(x)
+    if x > 0:
+        col.add(x - 1)
+    if x < W:
+        col.add(x + 1)
 
-for i in range(N):
-    for j in range(N):
-        re_C.append(C[i] + D[j])
-re_C.sort()
+# 圧縮後のどの座標になるか
+row = sorted(list(row))
+for i in range(len(row)):
+    r_index[row[i]] = i
 
-ans = 0
-for i in re_A:
-    # 該当する数字があった場合の左端
-    ind1 = bisect_left(re_C, 0 - i)
-    # 右端
-    ind2 = bisect_left(re_C, 0 - i + 1)
-    ans += ind2 - ind1
-print(ans)
+col = sorted(list(col))
+for i in range(len(col)):
+    c_index[col[i]] = i
+
+X1 = [c_index[i] for i in X1]
+X2 = [c_index[i] for i in X2]
+Y1 = [r_index[i] for i in Y1]
+Y2 = [r_index[i] for i in Y2]
+
+#  以下省略
+dp = [[0] * len(col) for i in range(len(row))]
