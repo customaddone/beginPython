@@ -50,39 +50,52 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 7
-S = 'BBFBFBB'
+M = 4
+N = 5
+maze = [
+[1, 0, 0, 1],
+[0, 1, 1, 0],
+[0, 1, 1, 0],
+[1, 0, 0, 1]
+]
 
-def judge(k):
-    imos = [0] * N
-    if S[0] == 'B':
-        imos[0] = 1
-    # ひっくり返していく
-    for i in range(1, N - k + 1):
-        if i < k:
-            rev = imos[i - 1]
-        else:
-            rev = imos[i - 1] - imos[i - k]
-        if (S[i] == 'B') ^ (rev % 2):
-            imos[i] += 1
-        imos[i] += imos[i - 1]
+def changer(o, f):
+    for i in range(1, M):
+        for j in range(N):
+            # 一つ上のmazeとflipを調べる
+            # mazeが黒 and flipが偶数回ひっくりかえる or mazeが白 and flipが奇数回ひっくりかえるなら
+            if (maze[i - 1][j] == 1) ^ (f[i - 1][j] % 2):
+                o[i][j] += 1
+                f[i][j] += 1
+                f[i - 1][j] += 1
+                if j >= 1:
+                    f[i][j - 1] += 1
+                if j < N - 1:
+                    f[i][j + 1] += 1
+                if i < M - 1:
+                    f[i + 1][j] += 1
 
-    # 残りのものが合っているか調べる
-    for i in range(N - k + 1, N):
-        if i < k:
-            rev = imos[N - k]
-        else:
-            rev = imos[N - k] - imos[i - k]
-        if (S[i] == 'B') ^ (rev % 2):
-            return float('inf')
+    return o, f
 
-    return imos[N - k]
+# １行目について全探索
+for bit in range(1 << N):
+    opt = [[0] * N for i in range(M)]
+    flip = [[0] * N for i in range(M)]
+    for i in range(N):
+        if bit & (1 << i):
+            opt[0][i] += 1
+            flip[0][i] += 1
+            if i >= 1:
+                flip[0][i - 1] += 1
+            if i < N - 1:
+                flip[0][i + 1] += 1
 
-K = 0
-M = float('inf')
-for i in range(1, N + 1):
-    opt = judge(i)
-    if opt < M:
-        M = opt
-        K = i
-print(K, M)
+    opt, flip = changer(opt, flip)
+
+    # 最後の列について判定
+    for j in range(N):
+        # 違うなら
+        if (maze[M - 1][j] == 1) ^ (flip[M - 1][j] % 2):
+            break
+    else:
+        print(opt)
