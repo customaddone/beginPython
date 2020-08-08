@@ -50,48 +50,64 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-W, H, N = 10, 10, 5
-# (x1, y1)から(x2, y2)まで線を引く
-X1 = [i - 1 for i in [1, 1, 4, 9, 10]]
-X2 = [i - 1 for i in [6, 10, 4, 9, 10]]
-Y1 = [i - 1 for i in [4, 8, 1, 1, 6]]
-Y2 = [i - 1 for i in [4, 8, 10, 5, 10]]
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-# 縦
-row = set()
-r_index = {}
-# 横
-col = set()
-c_index = {}
-# 変換
-for x, y in zip(X1 + X2, Y1 + Y2):
-    # どの横列が必要か
-    row.add(y)
-    if y > 0:
-        row.add(y - 1)
-    if y < H:
-        row.add(y + 1)
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-    # どの縦列が必要か
-    col.add(x)
-    if x > 0:
-        col.add(x - 1)
-    if x < W:
-        col.add(x + 1)
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-# 圧縮後のどの座標になるか
-row = sorted(list(row))
-for i in range(len(row)):
-    r_index[row[i]] = i
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-col = sorted(list(col))
-for i in range(len(col)):
-    c_index[col[i]] = i
+    def lowerbound(self,w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
-X1 = [c_index[i] for i in X1]
-X2 = [c_index[i] for i in X2]
-Y1 = [r_index[i] for i in Y1]
-Y2 = [r_index[i] for i in Y2]
+# i < j, ai > ajとなるものの数は何個あるか
+# 1, 2, 3...を順に置いていく
+# 3個目を置こうとする時、盤面には１が２個置かれている
+# 3が置かれている場所より前にi個置かれている場合、求めるものは2 - i個である
 
-#  以下省略
-dp = [[0] * len(col) for i in range(len(row))]
+N = 4
+A = [3, 1, 4, 2]
+bit = BIT(N)
+
+turn = [0] * N
+# bitに１を置く時、その場所は1-indexになるので注意
+for i in range(N):
+    turn[A[i] - 1] = i + 1
+
+ans = 0
+for i in range(N):
+    ans += i - bit.get(turn[i])
+    bit.add(turn[i], 1)
+    # 1を置く
+    # [ , 1, , ]
+    # 2を置く
+    # [ , 1, , 2] 1は正常な位置にある
+    # 3を置く
+    # [3, 1, , 2] 1, 2が3より後ろにあるのでans += 2
+    # 4を置く
+    # [3, 1, 4, 2] 2が4より後ろにあるのでans += 1
+print(ans)
