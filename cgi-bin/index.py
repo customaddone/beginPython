@@ -50,27 +50,42 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, H, R, T = 2, 10, 10, 100
-g = 10
+def binary_search_loop(data, target):
+    imin = 0
+    imax = len(data) - 1
+    while imin <= imax:
+        imid = imin + (imax - imin) // 2
+        if target == data[imid]:
+            return imid
+        elif target < data[imid]:
+            imax = imid - 1
+        else:
+            imin = imid + 1
+    return False
 
-def judge(time):
-    if time < 0:
-        return H
-    t = sqrt(2 * H / 10)
-    k = int(time / t)
-    if k % 2 == 0:
-        d = time - k * t
-        return H - g * d * d / 2
-    else:
-        d = k * t + t - time
-        return H - g * d * d / 2
+N = 6
+A = [-45, -41, -36, -36, 26, -32]
+B = [22, -27, 53, 30, -38, -54]
+C = [42, 56, -37, 75, -10, -6]
+D = [-16, 30, 77, -46, 62, 45]
 
-ans = []
+re_A = []
+re_C = []
 for i in range(N):
-    # 一秒ごとにボールを落下させる
-    ans.append(judge(T - i))
-# ボールは互いにすり抜けるものと考えて良い
-ans.sort()
+    for j in range(N):
+        re_A.append(A[i] + B[j])
+re_A.sort()
+
 for i in range(N):
-    # RはセンチメートルだがHはメートル
-    print(ans[i] + (2 * R * i / 100))
+    for j in range(N):
+        re_C.append(C[i] + D[j])
+re_C.sort()
+
+ans = 0
+for i in re_A:
+    # 該当する数字があった場合の左端
+    ind1 = bisect_left(re_C, 0 - i)
+    # 右端
+    ind2 = bisect_left(re_C, 0 - i + 1)
+    ans += ind2 - ind1
+print(ans)
