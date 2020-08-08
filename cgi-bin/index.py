@@ -50,52 +50,27 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-M = 4
-N = 5
-maze = [
-[1, 0, 0, 1],
-[0, 1, 1, 0],
-[0, 1, 1, 0],
-[1, 0, 0, 1]
-]
+N, H, R, T = 2, 10, 10, 100
+g = 10
 
-def changer(o, f):
-    for i in range(1, M):
-        for j in range(N):
-            # 一つ上のmazeとflipを調べる
-            # mazeが黒 and flipが偶数回ひっくりかえる or mazeが白 and flipが奇数回ひっくりかえるなら
-            if (maze[i - 1][j] == 1) ^ (f[i - 1][j] % 2):
-                o[i][j] += 1
-                f[i][j] += 1
-                f[i - 1][j] += 1
-                if j >= 1:
-                    f[i][j - 1] += 1
-                if j < N - 1:
-                    f[i][j + 1] += 1
-                if i < M - 1:
-                    f[i + 1][j] += 1
-
-    return o, f
-
-# １行目について全探索
-for bit in range(1 << N):
-    opt = [[0] * N for i in range(M)]
-    flip = [[0] * N for i in range(M)]
-    for i in range(N):
-        if bit & (1 << i):
-            opt[0][i] += 1
-            flip[0][i] += 1
-            if i >= 1:
-                flip[0][i - 1] += 1
-            if i < N - 1:
-                flip[0][i + 1] += 1
-
-    opt, flip = changer(opt, flip)
-
-    # 最後の列について判定
-    for j in range(N):
-        # 違うなら
-        if (maze[M - 1][j] == 1) ^ (flip[M - 1][j] % 2):
-            break
+def judge(time):
+    if time < 0:
+        return H
+    t = sqrt(2 * H / 10)
+    k = int(time / t)
+    if k % 2 == 0:
+        d = time - k * t
+        return H - g * d * d / 2
     else:
-        print(opt)
+        d = k * t + t - time
+        return H - g * d * d / 2
+
+ans = []
+for i in range(N):
+    # 一秒ごとにボールを落下させる
+    ans.append(judge(T - i))
+# ボールは互いにすり抜けるものと考えて良い
+ans.sort()
+for i in range(N):
+    # RはセンチメートルだがHはメートル
+    print(ans[i] + (2 * R * i / 100))
