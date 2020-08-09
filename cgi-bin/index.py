@@ -50,64 +50,75 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
+#####func#####
+def func(x, y):
+    return bisect_left(x, y + 1) # y以下のものの個数を答える
+#################
 
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
+class SRD:
+    def __init__(self, array, func):
+        self.func = func
+        self.n = len(array)
+        self.num = array
+        self.sN = int(self.n ** 0.5) + 1
+        self.index = [i * self.sN - 1 for i in range(self.sN + 1)]
+        self.bucket = [sorted(self.num[i * self.sN: min(self.n, (i + 1) * self.sN)]) for i in range(self.sN)]
 
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
-
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self,w):
-        if w <= 0:
+    # 区間[left, right)についてtarget以上/以下のものの個数を求める
+    def query(self, left, right, target):
+        if left == right:
             return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
 
-# i < j, ai > ajとなるものの数は何個あるか
-# 1, 2, 3...を順に置いていく
-# 3個目を置こうとする時、盤面には１が２個置かれている
-# 3が置かれている場所より前にi個置かれている場合、求めるものは2 - i個である
+        if left > right:
+            left, right = right, left
+        # leftとrightはどのバケットにある？
+        left_border = bisect_left(self.index, left)
+        right_border = bisect_left(self.index, right - 1)
 
-N = 4
-A = [3, 1, 4, 2]
-bit = BIT(N)
+        res = 0
+        # left_borderとright_borderが同じ区間内にいる場合は
+        if left_border == right_border:
+            for i in range(left, right):
+                res += func([self.num[i]], target)
+            return res
+        # left_borderとright_borderが同じ区間内にいない場合は
+        # はみ出した部分について
+        for i in range(left, min(self.n, self.index[left_border] + 1)):
+            res += func([self.num[i]], target)
+        # print(res)
+        for i in range(self.index[right_border - 1] + 1, right):
+            res += func([self.num[i]], target)
+        # print(res)
+        # バケット部分について
+        for i in range(left_border, right_border - 1):
+            res += func(self.bucket[i], target)
+        # print(res)
 
-turn = [0] * N
-# bitに１を置く時、その場所は1-indexになるので注意
-for i in range(N):
-    turn[A[i] - 1] = i + 1
+        return res
 
-ans = 0
-for i in range(N):
-    ans += i - bit.get(turn[i])
-    bit.add(turn[i], 1)
-    # 1を置く
-    # [ , 1, , ]
-    # 2を置く
-    # [ , 1, , 2] 1は正常な位置にある
-    # 3を置く
-    # [3, 1, , 2] 1, 2が3より後ろにあるのでans += 2
-    # 4を置く
-    # [3, 1, 4, 2] 2が4より後ろにあるのでans += 1
-print(ans)
+# 計算量はO(nlogn + m√log1.5n)らしい
+N, M = 7, 3
+A = [1, 5, 2, 6, 3, 7, 4]
+max_A = max(A)
+que = [[2, 5, 3], [4, 4, 1], [1, 7, 3]]
+
+sr = SRD(A, func)
+
+for l, r, k in que:
+    ng = 0
+    ok = max_A + 1
+
+    while ok - ng > 1:
+        mid = (ng + ok) // 2
+        # 少なすぎる場合は
+        if sr.query(l - 1, r, mid) < k:
+            # midを上げる
+            ng = mid
+        else:
+            ok = mid
+    # i - 1以下の数がL個、i以下の数がR個あり,
+    # L < k <= Rなら
+    # L-1  L  | L+1..k...R
+    # i-1 i-1 |  i   i   i
+    # となるのでokが答え
+    print(ok)
