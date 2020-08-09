@@ -112,8 +112,10 @@ for i in range(N):
 
     # queryに答える
     if len(que_d[i + 1]) > 0:
+        # 終点rがi + 1であるqueryに答える
         for l, j in que_d[i + 1]:
-            # cum(l, r):区間[l, r - 2]についての合計を求める
+            # cum(l, r):区間[l - 1, r - 2](0-index)についての合計を求める
+            # lは1-indexだがi(r - 1)は0 - index
             ans[j] = bit.cum(l, i + 2)
 
 for i in ans:
