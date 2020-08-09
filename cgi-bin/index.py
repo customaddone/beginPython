@@ -50,75 +50,37 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-#####func#####
-def func(x, y):
-    return bisect_left(x, y + 1) # y以下のものの個数を答える
-#################
+N, M = 2, 4
+A, B = 2, 1
+A -= 1
+B -= 1
+T = [3, 1]
+D = [[1, 3, 3], [1, 4, 2], [2, 3, 3], [2, 4, 5]]
+#d[i][j]:i→jへの距離
+d = [[float("inf")] * M for i in range(M)]
+for x, y, z in D:
+   d[x - 1][y - 1] = z
+   d[y - 1][x - 1] = z
 
-class SRD:
-    def __init__(self, array, func):
-        self.func = func
-        self.n = len(array)
-        self.num = array
-        self.sN = int(self.n ** 0.5) + 1
-        self.index = [i * self.sN - 1 for i in range(self.sN + 1)]
-        self.bucket = [sorted(self.num[i * self.sN: min(self.n, (i + 1) * self.sN)]) for i in range(self.sN)]
+# dp[i][j][l]: #訪れた集合がs、使ったチケットがj, 今いる点がvの時０に戻る最短経路
+dp = [[[-1] * M for i in range(1 << N)] for i in range(1 << M)]
 
-    # 区間[left, right)についてtarget以上/以下のものの個数を求める
-    def query(self, left, right, target):
-        if left == right:
-            return 0
-
-        if left > right:
-            left, right = right, left
-        # leftとrightはどのバケットにある？
-        left_border = bisect_left(self.index, left)
-        right_border = bisect_left(self.index, right - 1)
-
-        res = 0
-        # left_borderとright_borderが同じ区間内にいる場合は
-        if left_border == right_border:
-            for i in range(left, right):
-                res += func([self.num[i]], target)
-            return res
-        # left_borderとright_borderが同じ区間内にいない場合は
-        # はみ出した部分について
-        for i in range(left, min(self.n, self.index[left_border] + 1)):
-            res += func([self.num[i]], target)
-        # print(res)
-        for i in range(self.index[right_border - 1] + 1, right):
-            res += func([self.num[i]], target)
-        # print(res)
-        # バケット部分について
-        for i in range(left_border, right_border - 1):
-            res += func(self.bucket[i], target)
-        # print(res)
-
-        return res
-
-# 計算量はO(nlogn + m√log1.5n)らしい
-N, M = 7, 3
-A = [1, 5, 2, 6, 3, 7, 4]
-max_A = max(A)
-que = [[2, 5, 3], [4, 4, 1], [1, 7, 3]]
-
-sr = SRD(A, func)
-
-for l, r, k in que:
-    ng = 0
-    ok = max_A + 1
-
-    while ok - ng > 1:
-        mid = (ng + ok) // 2
-        # 少なすぎる場合は
-        if sr.query(l - 1, r, mid) < k:
-            # midを上げる
-            ng = mid
-        else:
-            ok = mid
-    # i - 1以下の数がL個、i以下の数がR個あり,
-    # L < k <= Rなら
-    # L-1  L  | L+1..k...R
-    # i-1 i-1 |  i   i   i
-    # となるのでokが答え
-    print(ok)
+def rec(s, t, v, dp):
+    if dp[s][t][v] >= 0:
+        return dp[s][t][v]
+     #全ての頂点を訪れた(s = 11...11 and v = 0)
+    if v == B:
+        dp[s][t][v] = 0
+        return 0
+    res = float('inf')
+    for u in range(M):
+        for j in range(N):
+            # まだ未到達で、チケットが残っている場合
+            if not s & (1 << u) and not t & (1 << j):
+                # 道が無い場合はfloat('inf')
+                # v → u1, u2...と探していく
+                res = min(res, rec(s|(1 << u), t|(1 << j), u, dp) + d[v][u] / T[j])
+    dp[s][t][v] = res
+    return res
+# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
+print(rec(1 << A, 0, A, dp))
