@@ -50,37 +50,71 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = 2, 4
-A, B = 2, 1
-A -= 1
-B -= 1
-T = [3, 1]
-D = [[1, 3, 3], [1, 4, 2], [2, 3, 3], [2, 4, 5]]
-#d[i][j]:i→jへの距離
-d = [[float("inf")] * M for i in range(M)]
-for x, y, z in D:
-   d[x - 1][y - 1] = z
-   d[y - 1][x - 1] = z
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-# dp[i][j][l]: #訪れた集合がs、使ったチケットがj, 今いる点がvの時０に戻る最短経路
-dp = [[[-1] * M for i in range(1 << N)] for i in range(1 << M)]
+    # a - 1の場所にwを追加する
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-def rec(s, t, v, dp):
-    if dp[s][t][v] >= 0:
-        return dp[s][t][v]
-     #全ての頂点を訪れた(s = 11...11 and v = 0)
-    if v == B:
-        dp[s][t][v] = 0
-        return 0
-    res = float('inf')
-    for u in range(M):
-        for j in range(N):
-            # まだ未到達で、チケットが残っている場合
-            if not s & (1 << u) and not t & (1 << j):
-                # 道が無い場合はfloat('inf')
-                # v → u1, u2...と探していく
-                res = min(res, rec(s|(1 << u), t|(1 << j), u, dp) + d[v][u] / T[j])
-    dp[s][t][v] = res
-    return res
-# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
-print(rec(1 << A, 0, A, dp))
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
+
+    # 区間[l, r - 2]についての合計を求める
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
+
+    def lowerbound(self,w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
+
+# BITは前から置いていく
+# そのためのクエリソート
+N, Q = getNM()
+C = getList()
+que = [getList() for i in range(Q)]
+
+# que[r]に[l(始点), i(queでのインデックス)]をappend
+que_d = defaultdict(list)
+for i in range(Q):
+    que_d[que[i][1]].append([que[i][0], i])
+ans = [0] * Q
+# 色iのうち最も右側にあるものはどこにあるか
+dic = defaultdict(lambda: -float('inf'))
+bit = BIT(N)
+
+for i in range(N):
+    # 既に場所が登録されているならそれを削除する
+    if dic[C[i]] >= 1:
+        bit.add(dic[C[i]], -1)
+    # 新しい「良い球」の場所を登録
+    # 1-indexで!!
+    dic[C[i]] = i + 1
+    bit.add(dic[C[i]], 1)
+
+    # queryに答える
+    if len(que_d[i + 1]) > 0:
+        for l, j in que_d[i + 1]:
+            # cum(l, r):区間[l, r - 2]についての合計を求める
+            ans[j] = bit.cum(l, i + 2)
+
+for i in ans:
+    print(i)
