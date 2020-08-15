@@ -75,14 +75,52 @@ N = 2
 # dp[i][3] 赤:奇数 緑:奇数
 
 # 漸化式なので行列累乗で解ける
-dp = [[0] * 4 for i in range(N)]
-dp[0][0] = 2
-dp[0][1] = 1
-dp[0][2] = 1
 
+N = 27
+logk = N.bit_length()
+
+# 行列式にすると
+# [dp[i][0], dp[i][1], dp[i][2], dp[i][3]] =
+# [[2, 1, 1, 0], [1, 2, 0, 1], [1, 0, 2, 1], [0, 1, 1, 2]][dp[i - 1][0], dp[i - 1][1], dp[i - 1][2], dp[i - 1][3]]
+dp = [[[0, 0, 0, 0] for i in range(4)] for i in range(logk)]
+dp[0] = [[2, 1, 1, 0], [1, 2, 0, 1], [1, 0, 2, 1], [0, 1, 1, 2]]
+
+# 行列掛け算 O(n3)かかる
+def array_cnt(ar1, ar2):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
+
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j]):
+                cnt += x * y
+            res[i][j] = cnt
+    return res
+
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
+
+ans = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+for i in range(logk):
+    if N & (1 << i):
+        ans = array_cnt(ans, dp[i])
+
+print(array_cnt(ans, [[1, 0, 0, 0]])[0][0])
+
+"""
 for i in range(1, N):
     dp[i][0] += (2 * dp[i - 1][0] + dp[i - 1][1] + dp[i - 1][2])
-    dp[i][1] += (2 * dp[i - 1][1] + dp[i - 1][0] + dp[i - 1][3])
-    dp[i][2] += (2 * dp[i - 1][2] + dp[i - 1][0] + dp[i - 1][3])
-    dp[i][3] += (2 * dp[i - 1][3] + dp[i - 1][1] + dp[i - 1][2])
+    dp[i][1] += (dp[i - 1][0] + 2 * dp[i - 1][1] + dp[i - 1][3])
+    dp[i][2] += (dp[i - 1][0] + 2 * dp[i - 1][2] + dp[i - 1][3])
+    dp[i][3] += (dp[i - 1][1] + dp[i - 1][2] + 2 * dp[i - 1][3])
 print(dp[-1])
+"""
