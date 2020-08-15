@@ -50,87 +50,45 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = 3, 3
-# 1 x 2のブロックを重ならないようにおく
-maze = [
-'...',
-'.x.',
-'...'
-]
-# 二次元dp
-dp = [[0] * M for i in range(N)]
-for i in range(N):
-    for j in range(M):
-        if maze[i][j] == 'x':
-            dp[i][j] = 1
+N = 10
+logk = N.bit_length()
 
-ans = 0
-def dfs(array, i):
-    global ans
-    # 一番下が全て埋まって現在の列が上からN + 1番目になったら
-    if i == N:
-        ans += 1
-        return
+# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]
+# 一般項が出ない漸化式は行列の形に落とし込める
+dp = [[[0, 0] for i in range(2)] for i in range(logk)]
+dp[0] = [[1, 1], [1, 0]]
 
-    # 調べるのは今現在の列だけで良い
-    for j in range(M):
-        flag = False
-        if i + 1 < N and array[i][j] == 0 and array[i + 1][j] == 0:
-            alta = copy.deepcopy(array)
-            alta[i][j] = 1
-            alta[i + 1][j] = 1
-            # 現在の列が全て埋まったら
-            if alta[i][-1] == 1:
-                dfs(alta, i + 1)
-            else:
-                dfs(alta, i)
-            flag = True
-        if j + 1 < M and array[i][j] == 0 and array[i][j + 1] == 0:
-            alta = copy.deepcopy(array)
-            alta[i][j] = 1
-            alta[i][j + 1] = 1
-            if alta[i][-1] == 1:
-                dfs(alta, i + 1)
-            else:
-                dfs(alta, i)
-            flag = True
-        # 置いたならbreak
-        if flag:
-            break
-dfs(dp, 0)
-print(ans)
+# 行列掛け算 O(n3)かかる
+def array_cnt(ar1, ar2):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(h):
+            opt.append(ar2[i][j])
+        col.append(opt)
 
-"""
-計算量かかりすぎ
-ans = 0
-def dfs(array):
-    global ans
-    cnt = 0
-    for i in range(N):
-        cnt += sum(array[i])
-    if cnt == N * M:
-        ans += 1
-    for i in range(N):
-        for j in range(M):
-            flag = False
-            if i + 1 < N and array[i][j] == 0 and array[i + 1][j] == 0:
-                alta = copy.deepcopy(array)
-                alta[i][j] = 1
-                alta[i + 1][j] = 1
-                dfs(alta)
-                flag = True
-            if j + 1 < M and array[i][j] == 0 and array[i][j + 1] == 0:
-                alta = copy.deepcopy(array)
-                alta[i][j] = 1
-                alta[i][j + 1] = 1
-                dfs(alta)
-                flag = True
-            # 置いたならbreak
-            if flag:
-                break
-        else:
-            continue
-        break
-dfs(dp)
-print(ans)
-"""
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j]):
+                cnt += x * y
+            res[i][j] = cnt
+    return res
+
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
+
+# 行列の単位元
+ans = [[1, 0], [0, 1]]
+for i in range(logk):
+    if N & (1 << i):
+        ans = array_cnt(ans, dp[i])
+
+# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]より
+# [Fn+1, Fn] = A ** n[F1, F0] = A ** n[1, 0]
+# Fn = ans[1][0] * 1 + ans[1][1] * 0
+print(array_cnt(ans, [[1], [0]])[1][0])
