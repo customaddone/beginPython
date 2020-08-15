@@ -50,45 +50,18 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 10
-logk = N.bit_length()
+N, K = getNM()
+A = getArray(N)
 
-# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]
-# 一般項が出ない漸化式は行列の形に落とし込める
-dp = [[[0, 0] for i in range(2)] for i in range(logk)]
-dp[0] = [[1, 1], [1, 0]]
-
-# 行列掛け算 O(n3)かかる
-def array_cnt(ar1, ar2):
-    h = len(ar1)
-    w = len(ar2[0])
-    row = ar1
-    col = []
-    for j in range(w):
-        opt = []
-        for i in range(len(ar2)):
-            opt.append(ar2[i][j])
-        col.append(opt)
-
-    res = [[[0, 0] for i in range(w)] for i in range(h)]
-    for i in range(h):
-        for j in range(w):
-            cnt = 0
-            for x, y in zip(row[i], col[j]):
-                cnt += x * y
-            res[i][j] = cnt
-    return res
-
-for i in range(1, logk):
-    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
-
-# 行列の単位元
-ans = [[1, 0], [0, 1]]
-for i in range(logk):
-    if N & (1 << i):
-        ans = array_cnt(ans, dp[i])
-
-# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]より
-# [Fn+1, Fn] = A ** n[F1, F0] = A ** n[1, 0]
-# Fn = ans[1][0] * 1 + ans[1][1] * 0
-print(array_cnt(ans, [[1], [0]])[1][0])
+right, ans = 0, 0
+for left in range(N):
+    # 単調増加するとこまでもしくは長さKになるまで
+    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
+        right += 1
+    # もし長さKまで伸ばせたらans += 1
+    if right - left == K - 1:
+        ans += 1
+    # 前に進めないならright += 1
+    if left == right and right < N:
+        right += 1
+print(ans)
