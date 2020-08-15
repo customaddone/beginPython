@@ -50,77 +50,66 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 2
-# N個のブロックが並んでいます
-# 赤、青、緑、黄色の４色ある
-# 赤色で塗られたものと緑色で塗られたブロックが共に偶数個になる通りは?
-# dp数え上げorグルーピング掛け算
+def segfunc(x, y):
+    return min(x, y)
 
-# 小さいものからやって行こう
-# N = 1の時
-# 全通りは4 ** 1通り(赤、青、緑、黄色)
-# ansは青、黄色の時の２通り
-# N = 2のとき
-# 全通りは4 ** 2通り
-# 赤赤、赤青、赤緑、赤黄 1つ
-# 青赤、青青、青緑、青黄 2つ
-# 緑赤、緑青、緑緑、緑黄 2つ
-# 黄赤、黄青、黄緑、黄黄 1つ
-# N = 3のとき
-# 赤、青、緑、黄について上のもの + ３つ目の色でそれぞれ16通りずつある
+ide_ele = float('inf')
 
-# dp[i][0] 赤:偶数 緑:偶数
-# dp[i][1] 赤:奇数 緑:偶数
-# dp[i][2] 赤:偶数 緑:奇数
-# dp[i][3] 赤:奇数 緑:奇数
+class SegTree:
+    def __init__(self, init_val, segfunc, ide_ele):
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
 
-# 漸化式なので行列累乗で解ける
+    def update(self, k, x):
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
 
-N = 27
-logk = N.bit_length()
+    def query(self, l, r):
+        res = self.ide_ele
 
-# 行列式にすると
-# [dp[i][0], dp[i][1], dp[i][2], dp[i][3]] =
-# [[2, 1, 1, 0], [1, 2, 0, 1], [1, 0, 2, 1], [0, 1, 1, 2]][dp[i - 1][0], dp[i - 1][1], dp[i - 1][2], dp[i - 1][3]]
-dp = [[[0, 0, 0, 0] for i in range(4)] for i in range(logk)]
-dp[0] = [[2, 1, 1, 0], [1, 2, 0, 1], [1, 0, 2, 1], [0, 1, 1, 2]]
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
 
-# 行列掛け算 O(n3)かかる
-def array_cnt(ar1, ar2):
-    h = len(ar1)
-    w = len(ar2[0])
-    row = ar1
-    col = []
-    for j in range(w):
-        opt = []
-        for i in range(len(ar2)):
-            opt.append(ar2[i][j])
-        col.append(opt)
+N, M = 40, 6
+que = [
+[20, 30],
+[1, 10],
+[10, 20],
+[20, 30],
+[15, 25],
+[30, 40]
+]
 
-    res = [[[0, 0] for i in range(w)] for i in range(h)]
-    for i in range(h):
-        for j in range(w):
-            cnt = 0
-            for x, y in zip(row[i], col[j]):
-                cnt += x * y
-            res[i][j] = cnt
-    return res
+dp = [float('inf')] * (N + 1)
+dp[1] = 0
+seg =  SegTree([ide_ele] * (N + 1), segfunc, ide_ele)
+seg.update(1, 0)
 
-for i in range(1, logk):
-    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
-
-ans = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
-for i in range(logk):
-    if N & (1 << i):
-        ans = array_cnt(ans, dp[i])
-
-print(array_cnt(ans, [[1, 0, 0, 0]])[0][0])
-
-"""
-for i in range(1, N):
-    dp[i][0] += (2 * dp[i - 1][0] + dp[i - 1][1] + dp[i - 1][2])
-    dp[i][1] += (dp[i - 1][0] + 2 * dp[i - 1][1] + dp[i - 1][3])
-    dp[i][2] += (dp[i - 1][0] + 2 * dp[i - 1][2] + dp[i - 1][3])
-    dp[i][3] += (dp[i - 1][1] + dp[i - 1][2] + 2 * dp[i - 1][3])
-print(dp[-1])
-"""
+for l, r in que:
+    # 終点rについてのレコードとl ~ r間の最小値を比べる
+    opt = min(dp[r], seg.query(l, r + 1) + 1)
+    # dpとセグ木とを更新
+    dp[r] = opt
+    seg.update(r + 1, opt)
+print(dp[N])
