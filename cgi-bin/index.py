@@ -50,73 +50,87 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
-
-    # a - 1の場所にwを追加する
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
-
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
-
-    # 区間[l, r - 2]についての合計を求める
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self,w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
-# BITは前から置いていく
-# そのためのクエリソート
-N, Q = getNM()
-C = getList()
-que = [getList() for i in range(Q)]
-
-# que[r]に[l(始点), i(queでのインデックス)]をappend
-que_d = defaultdict(list)
-for i in range(Q):
-    que_d[que[i][1]].append([que[i][0], i])
-ans = [0] * Q
-# 色iのうち最も右側にあるものはどこにあるか
-dic = defaultdict(lambda: -float('inf'))
-bit = BIT(N)
-
+N, M = 3, 3
+# 1 x 2のブロックを重ならないようにおく
+maze = [
+'...',
+'.x.',
+'...'
+]
+# 二次元dp
+dp = [[0] * M for i in range(N)]
 for i in range(N):
-    # 既に場所が登録されているならそれを削除する
-    if dic[C[i]] >= 1:
-        bit.add(dic[C[i]], -1)
-    # 新しい「良い球」の場所を登録
-    # 1-indexで!!
-    dic[C[i]] = i + 1
-    bit.add(dic[C[i]], 1)
+    for j in range(M):
+        if maze[i][j] == 'x':
+            dp[i][j] = 1
 
-    # queryに答える
-    if len(que_d[i + 1]) > 0:
-        # 終点rがi + 1であるqueryに答える
-        for l, j in que_d[i + 1]:
-            # cum(l, r):区間[l - 1, r - 2](0-index)についての合計を求める
-            # lは1-indexだがi(r - 1)は0 - index
-            ans[j] = bit.cum(l, i + 2)
+ans = 0
+def dfs(array, i):
+    global ans
+    # 一番下が全て埋まって現在の列が上からN + 1番目になったら
+    if i == N:
+        ans += 1
+        return
 
-for i in ans:
-    print(i)
+    # 調べるのは今現在の列だけで良い
+    for j in range(M):
+        flag = False
+        if i + 1 < N and array[i][j] == 0 and array[i + 1][j] == 0:
+            alta = copy.deepcopy(array)
+            alta[i][j] = 1
+            alta[i + 1][j] = 1
+            # 現在の列が全て埋まったら
+            if alta[i][-1] == 1:
+                dfs(alta, i + 1)
+            else:
+                dfs(alta, i)
+            flag = True
+        if j + 1 < M and array[i][j] == 0 and array[i][j + 1] == 0:
+            alta = copy.deepcopy(array)
+            alta[i][j] = 1
+            alta[i][j + 1] = 1
+            if alta[i][-1] == 1:
+                dfs(alta, i + 1)
+            else:
+                dfs(alta, i)
+            flag = True
+        # 置いたならbreak
+        if flag:
+            break
+dfs(dp, 0)
+print(ans)
+
+"""
+計算量かかりすぎ
+ans = 0
+def dfs(array):
+    global ans
+    cnt = 0
+    for i in range(N):
+        cnt += sum(array[i])
+    if cnt == N * M:
+        ans += 1
+    for i in range(N):
+        for j in range(M):
+            flag = False
+            if i + 1 < N and array[i][j] == 0 and array[i + 1][j] == 0:
+                alta = copy.deepcopy(array)
+                alta[i][j] = 1
+                alta[i + 1][j] = 1
+                dfs(alta)
+                flag = True
+            if j + 1 < M and array[i][j] == 0 and array[i][j + 1] == 0:
+                alta = copy.deepcopy(array)
+                alta[i][j] = 1
+                alta[i][j + 1] = 1
+                dfs(alta)
+                flag = True
+            # 置いたならbreak
+            if flag:
+                break
+        else:
+            continue
+        break
+dfs(dp)
+print(ans)
+"""
