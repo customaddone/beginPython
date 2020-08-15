@@ -66,7 +66,7 @@ def array_cnt(ar1, ar2):
     col = []
     for j in range(w):
         opt = []
-        for i in range(h):
+        for i in range(len(ar2)):
             opt.append(ar2[i][j])
         col.append(opt)
 
