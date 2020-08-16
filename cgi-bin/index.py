@@ -31,7 +31,7 @@ def rand_query(ran1, ran2, rantime):
 from collections import defaultdict, deque, Counter
 from sys import exit
 from decimal import *
-import heapq
+from heapq import heappop, heappush
 from math import sqrt
 from fractions import gcd
 import random
@@ -50,66 +50,56 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def segfunc(x, y):
-    return min(x, y)
+# 基本の二分探索
+lista = [i for i in range(10)]
 
-ide_ele = float('inf')
+def binary_search_loop(data, target):
+    imin = 0
+    imax = len(data) - 1
+    while imin <= imax:
+        imid = imin + (imax - imin) // 2
+        if target == data[imid]:
+            return imid
+        elif target < data[imid]:
+            imax = imid - 1
+        else:
+            imin = imid + 1
+    return False
+print(binary_search_loop(lista, 4))
 
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+# 三分探索
+def f(x):
+    return x + p / pow(2, 2 * x / 3)
 
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
+p = float(input())
+left, right = 0, 100
 
-    def query(self, l, r):
-        res = self.ide_ele
+while right > left + 10 ** -10:
+    # mid二つ
+    mid1 = (right * 2 + left) / 3
+    mid2 = (right + left * 2) / 3
+    if f(mid1) >= f(mid2):
+        right = mid1
+    else:
+        left = mid2
+print(f(right))
 
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+# 三分探索整数ver
+num = []
+for i in range(100):
+    if i < 50:
+        num.append(i)
+    else:
+        num.append(100 - i)
 
-N, M = 40, 6
-que = [
-[20, 30],
-[1, 10],
-[10, 20],
-[20, 30],
-[15, 25],
-[30, 40]
-]
-
-dp = [float('inf')] * (N + 1)
-dp[1] = 0
-seg =  SegTree([ide_ele] * (N + 1), segfunc, ide_ele)
-seg.update(1, 0)
-
-for l, r in que:
-    # 終点rについてのレコードとl ~ r間の最小値を比べる
-    opt = min(dp[r], seg.query(l, r + 1) + 1)
-    # dpとセグ木とを更新
-    dp[r] = opt
-    seg.update(r + 1, opt)
-print(dp[N])
+left, right = 0, len(num) - 1
+while abs(right - left) > 3:
+    mid1 = (right * 2 + left) // 3 + 1
+    mid2 = (right + left * 2) // 3
+    # 最小値を求める場合は矢印逆になる
+    if num[mid1] <= num[mid2]:
+        right = mid1
+    else:
+        left = mid2
+print(right)
+print(left)
