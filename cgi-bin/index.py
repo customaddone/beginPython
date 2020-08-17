@@ -82,7 +82,8 @@ class Roop:
                     # 作成してないならループ作成
                     for j in range(self.opt_dic[to], len(opt)):
                         self.roop_dict[opt[j]] = cnt
-                    self.roops.append(opt[self.opt_dic[to]:])
+                    if len(opt[self.opt_dic[to]:]) > 0:
+                        self.roops.append(opt[self.opt_dic[to]:])
                     # 次のループはcnt + 1番
                     cnt += 1
                     break
@@ -101,7 +102,7 @@ class Roop:
     def inspect(self, x):
         if self.roop_n(x) == -1:
             return False
-        return self.roops[self.roop_n(x)]
+        return self.roops[self.roop_dict(x)]
 
     # ループの大きさ
     def roop_len(self, x):
@@ -109,8 +110,6 @@ class Roop:
 
     # xからk回移動してどの場所に行けるか
     def move(self, x, k):
-        if k == 1:
-            return x + 1
         cnt = k
         to = x
         # ループに入る前にどのルートを通ったか
@@ -144,8 +143,47 @@ class Roop:
         # to, head, tail, time = (1, [5], [1], 242400738057749783)
         return to
 
+# ABC167 D - Teleporter
 N, K = getNM()
 N -= 1
 A = [i - 1 for i in getList()]
 roop = Roop(A)
+print(roop.roops)
 print(roop.move(0, K) + 1)
+
+
+"""
+# ABC175 D - Moving Piece
+N, K = getNM()
+P = [i - 1 for i in getList()]
+C = getList()
+# ループ検出
+roop = Roop(P)
+
+# 各ループごと調べる
+ans = -float('inf')
+for r in roop.roops:
+    n = len(r)
+    # ループに対応するスコアリストを用意
+    alta = []
+    for i in range(n):
+        alta.append(C[r[i]])
+    # １回ループすると何点getできるか
+    one_roop = sum(alta)
+    alta += alta
+    imos = [0]
+    for i in range(len(alta)):
+        imos.append(imos[i] + alta[i])
+
+    t = min(n, K)
+    for i in range(n):
+        # 長さ1からtまでの区間の総和の最大値を探索
+        for j in range(1, t + 1):
+            if one_roop >= 0:
+                opt = (imos[i + j] - imos[i]) + ((K - j) // n) * one_roop
+            else:
+                opt = imos[i + j] - imos[i]
+            ans = max(ans, opt)
+
+print(ans)
+"""
