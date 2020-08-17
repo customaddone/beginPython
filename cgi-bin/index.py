@@ -50,56 +50,102 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 基本の二分探索
-lista = [i for i in range(10)]
+class Roop:
+    def __init__(self, array):
+        self.n = len(array)
+        self.array = array
+        # ループ検出
+        self.roops = []
+        # iはどのループのものか
+        self.roop_dict = [-1] * self.n
+        # ループ内の何番目にあるか
+        self.opt_dic = {}
+        ignore = [-1] * self.n
+        cnt = 0
+        for i in range(self.n):
+            if ignore[i] >= 0:
+                continue
+            opt = [i]
+            # opt内の何番目にあるか
+            self.opt_dic[i] = 0
+            c = 1
+            # 探索したらフラグを立てる
+            ignore[i] = 1
+            # i → array[i]
+            to = array[i]
+            # ループが詰まるまで回す
+            while True:
+                if ignore[to] >= 0:
+                    # 既にループ作成済なら
+                    if self.roop_dict[to] >= 0:
+                        break
+                    # 作成してないならループ作成
+                    for j in range(self.opt_dic[to], len(opt)):
+                        self.roop_dict[opt[j]] = cnt
+                    self.roops.append(opt[self.opt_dic[to]:])
+                    # 次のループはcnt + 1番
+                    cnt += 1
+                    break
+                opt.append(to)
+                ignore[to] = 1
+                self.opt_dic[to] = c
+                c += 1
+                to = array[to]
 
-def binary_search_loop(data, target):
-    imin = 0
-    imax = len(data) - 1
-    while imin <= imax:
-        imid = imin + (imax - imin) // 2
-        if target == data[imid]:
-            return imid
-        elif target < data[imid]:
-            imax = imid - 1
-        else:
-            imin = imid + 1
-    return False
-print(binary_search_loop(lista, 4))
+    # xがどの番号のループにあるか
+    def roop_n(self, x):
+        return self.roop_dict[x]
 
-# 三分探索
-def f(x):
-    return x + p / pow(2, 2 * x / 3)
+    # xが入っているループは何か
+    # ループ内になければFalse
+    def inspect(self, x):
+        if self.roop_n(x) == -1:
+            return False
+        return self.roops[self.roop_n(x)]
 
-p = float(input())
-left, right = 0, 100
+    # ループの大きさ
+    def roop_len(self, x):
+        return len(self.roops[self.roop_n(x)])
 
-while right > left + 10 ** -10:
-    # mid二つ
-    mid1 = (right * 2 + left) / 3
-    mid2 = (right + left * 2) / 3
-    if f(mid1) >= f(mid2):
-        right = mid1
-    else:
-        left = mid2
-print(f(right))
+    # xからk回移動してどの場所に行けるか
+    def move(self, x, k):
+        if k == 1:
+            return x + 1
+        cnt = k
+        to = x
+        # ループに入る前にどのルートを通ったか
+        # スタート地点から既にループに入っていた場合、headは空になる
+        head = []
+        # ループ脱出後どのルートを通るか
+        tail = []
+        # 何回ループしたか
+        time = -1
+        res = 0
+        while cnt > 0:
+            to = self.array[to]
+            cnt -= 1
+            # まだループしておらず、踏んだ場所がループ内にある場合
+            if time == -1 and self.roop_n(to) >= 0:
+                r = self.roops[self.roop_n(to)]
+                time = (cnt // len(r))
+                cnt -= time * len(r)
+            # ループ前なら
+            if time == -1:
+                head.append(to)
+            # ループ後なら
+            else:
+                tail.append(to)
+        # 例: N, K = 6 727202214173249351
+        # A = [6, 5, 2, 5, 3, 2]の時
+        # 1回目の移動 1 → 6
+        # 2回目の移動 6 → ### ここからループが始まる ### → 2
+        # ... 242400738057749783回ループ
+        # 727202214173249351回目の移動 3 → 2
+        # to, head, tail, time = (1, [5], [1], 242400738057749783)
+        return to
 
-# 三分探索整数ver
-num = []
-for i in range(100):
-    if i < 50:
-        num.append(i)
-    else:
-        num.append(100 - i)
-
-left, right = 0, len(num) - 1
-while abs(right - left) > 3:
-    mid1 = (right * 2 + left) // 3 + 1
-    mid2 = (right + left * 2) // 3
-    # 最小値を求める場合は矢印逆になる
-    if num[mid1] <= num[mid2]:
-        right = mid1
-    else:
-        left = mid2
-print(right)
-print(left)
+N, K = getNM()
+N -= 1
+A = [i - 1 for i in getList()]
+roop = Roop(A)
+print(roop.move(0, K) + 1)
