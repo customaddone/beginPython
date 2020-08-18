@@ -50,149 +50,130 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class Roop:
-    def __init__(self, array):
-        self.n = len(array)
-        self.array = array
-        # ループ検出
-        self.roops = []
-        # iはどのループのものか
-        self.roop_dict = [-1] * self.n
-        # ループ内の何番目にあるか
-        self.opt_dic = [-1] * self.n
-        ignore = [-1] * self.n
-        cnt = 0
-        for i in range(self.n):
-            if ignore[i] >= 0:
-                continue
-            opt = [i]
-            # opt内の何番目にあるか
-            self.opt_dic[i] = 0
-            c = 1
-            # 探索したらフラグを立てる
-            ignore[i] = cnt
-            # i → array[i]
-            to = array[i]
-            # ループが詰まるまで回す
-            while True:
-                if ignore[to] >= 0:
-                    # 既に探索していたら
-                    if ignore[to] < cnt:
-                        break
-                    # 作成してないならループ作成
-                    for j in range(self.opt_dic[to], len(opt)):
-                        self.roop_dict[opt[j]] = cnt
-                    self.roops.append(opt[self.opt_dic[to]:])
-                    # 次のループはcnt + 1番
-                    cnt += 1
-                    break
-                opt.append(to)
-                ignore[to] = cnt
-                self.opt_dic[to] = c
-                c += 1
-                to = array[to]
+N, K = 7, 6
+S = [4, 3, 1, 1, 2, 10, 2]
 
-    # xがどの番号のループにあるか
-    def roop_n(self, x):
-        return self.roop_dict[x]
+# 左を伸ばしていく
+# その部分列に含まれる全ての要素の値の積は「K以下」である。
+# lはrをオーバーすることもある
 
-    # xが入っているループは何か
-    # ループ内になければFalse
-    def inspect(self, x):
-        if self.roop_n(x) == -1:
-            return False
-        return self.roops[self.roop_dict(x)]
-
-    # ループの大きさ
-    def roop_len(self, x):
-        return len(self.roops[self.roop_n(x)])
-
-    # xからk回移動してどの場所に行けるか
-    def move(self, x, k):
-        cnt = k
-        to = x
-        # ループに入る前にどのルートを通ったか
-        # スタート地点から既にループに入っていた場合、headは空になる
-        head = []
-        # ループ脱出後どのルートを通るか
-        tail = []
-        # 何回ループしたか
-        time = -1
-        res = 0
-        while cnt > 0:
-            to = self.array[to]
-            cnt -= 1
-            # まだループしておらず、踏んだ場所がループ内にある場合
-            if time == -1 and self.roop_n(to) >= 0:
-                r = self.roops[self.roop_n(to)]
-                time = (cnt // len(r))
-                cnt -= time * len(r)
-            # ループ前なら
-            if time == -1:
-                head.append(to)
-            # ループ後なら
-            else:
-                tail.append(to)
-        # 例: N, K = 6 727202214173249351
-        # A = [6, 5, 2, 5, 3, 2]の時
-        # 1回目の移動 1 → 6
-        # 2回目の移動 6 → ### ここからループが始まる ### → 2
-        # ... 242400738057749783回ループ
-        # 727202214173249351回目の移動 3 → 2
-        # to, head, tail, time = (1, [5], [1], 242400738057749783)
-        return to
-
-N, A = getNM()
-A -= 1
-K = getN()
-B = [i - 1 for i in getList()]
-roop = Roop(B)
-print(roop.roops)
-print(roop.roop_dict)
-for i in range(N):
-    print(roop.move(i, K) + 1)
-
-"""
-# ABC167 D - Teleporter
-N, K = getNM()
-N -= 1
-A = [i - 1 for i in getList()]
-roop = Roop(A)
-print(roop.move(0, K) + 1)
-"""
-
-"""
-# ABC175 D - Moving Piece
-N, K = getNM()
-P = [i - 1 for i in getList()]
-C = getList()
-# ループ検出
-roop = Roop(P)
-
-# 各ループごと調べる
-ans = -float('inf')
-for r in roop.roops:
-    n = len(r)
-    # ループに対応するスコアリストを用意
-    alta = []
-    for i in range(n):
-        alta.append(C[r[i]])
-    # １回ループすると何点getできるか
-    one_roop = sum(alta)
-    alta += alta
-    imos = [0]
-    for i in range(len(alta)):
-        imos.append(imos[i] + alta[i])
-
-    t = min(n, K)
-    for i in range(n):
-        # 長さ1からtまでの区間の総和の最大値を探索
-        for j in range(1, t + 1):
-            if one_roop >= 0:
-                opt = (imos[i + j] - imos[i]) + ((K - j) // n) * one_roop
-            else:
-                opt = imos[i + j] - imos[i]
-            ans = max(ans, opt)
-
+if 0 in S:
+    print(N)
+    exit()
+else:
+    l, ans, total = 0, 0, 1
+    for r in range(N):
+        total *= S[r]
+        while total > K and l <= r:
+            total //= S[l]
+            l += 1
+        ans = max(ans, r - l + 1)
 print(ans)
-"""
+
+# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
+N, K = 4, 10
+A = [6, 1, 2, 7]
+
+left = 0
+total = 0
+ans = 0
+
+for right in range(0, N):
+    total += A[right]
+    while total >= K:
+        ans += N - right
+        total -= A[left]
+        left += 1
+print(ans)
+
+N = 10
+S = 15
+A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
+right = 0
+total = 0
+ans = 0
+# S以上を求める場合にはこの形で
+for left in range(N):
+    while right < N and total < S:
+        total += A[right]
+        right += 1
+    if total < S:
+        break
+    if left == right:
+        right += 1
+    total -= A[left]
+
+# 要素の種類についての問題
+P = 5
+A = [1, 8, 8, 8, 1]
+dict = {}
+for i in A:
+    dict[i] = 0
+# 要素の種類数
+V = len(dict.items())
+
+# 事象の数をカウント
+cnt = 0
+right = 0
+# １つ目から全ての事象をカバーするまでrightを進める
+while right < P:
+    if dict[A[right]] == 0:
+        cnt += 1
+    dict[A[right]] += 1
+
+    if cnt == len(dict.items()):
+        break
+
+    right += 1
+print(l, r)
+
+l = 0
+# 右を一つ進めて左をできる限り進める
+for r in range(right + 1, P):
+    # 新しく一つ加える
+    dict[A[r]] += 1
+    while True:
+        # もし要素が一つしか無かったら削れない
+        if dict[A[l]] == 1:
+            break
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
+
+N = 4
+A = 2, 5, 4, 6
+
+r, tmp = 0, 0
+# l:左端
+cnt = 0
+# 一つオーバーさせる
+for l in range(N):
+    while r < N and tmp ^ A[r] == tmp + A[r]:
+        # 右端を伸ばす
+        tmp += A[r]
+        r += 1
+    # 計算
+    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
+    # (r - l + 1) - 1
+    cnt += r - l
+
+    if l == r:
+        r += 1
+    tmp -= A[l]
+print(cnt)
+
+N, K = 10, 4
+A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
+
+right, ans = 0, 0
+for left in range(N):
+    # 単調増加するとこまでもしくは長さKになるまで
+    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
+        right += 1
+    # もし長さKまで伸ばせたらans += 1
+    if right - left == K - 1:
+        ans += 1
+    # 前に進めないならright += 1
+    if left == right and right < N:
+        right += 1
+print(ans)
