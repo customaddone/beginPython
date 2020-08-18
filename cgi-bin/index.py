@@ -50,130 +50,50 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = 7, 6
-S = [4, 3, 1, 1, 2, 10, 2]
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-# 左を伸ばしていく
-# その部分列に含まれる全ての要素の値の積は「K以下」である。
-# lはrをオーバーすることもある
+    # a - 1の場所にwを追加する
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-if 0 in S:
-    print(N)
-    exit()
-else:
-    l, ans, total = 0, 0, 1
-    for r in range(N):
-        total *= S[r]
-        while total > K and l <= r:
-            total //= S[l]
-            l += 1
-        ans = max(ans, r - l + 1)
-print(ans)
+    # a未満の数字が何個あるか
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
-N, K = 4, 10
-A = [6, 1, 2, 7]
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-left = 0
-total = 0
-ans = 0
+    def lowerbound(self, w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
-for right in range(0, N):
-    total += A[right]
-    while total >= K:
-        ans += N - right
-        total -= A[left]
-        left += 1
-print(ans)
 
 N = 10
-S = 15
-A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
-right = 0
-total = 0
-ans = 0
-# S以上を求める場合にはこの形で
-for left in range(N):
-    while right < N and total < S:
-        total += A[right]
-        right += 1
-    if total < S:
-        break
-    if left == right:
-        right += 1
-    total -= A[left]
+A = [5, 4, 3, 4, 3, 1, 7, 1, 6, 9]
+limit = max(A) + 1
 
-# 要素の種類についての問題
-P = 5
-A = [1, 8, 8, 8, 1]
-dict = {}
-for i in A:
-    dict[i] = 0
-# 要素の種類数
-V = len(dict.items())
-
-# 事象の数をカウント
-cnt = 0
-right = 0
-# １つ目から全ての事象をカバーするまでrightを進める
-while right < P:
-    if dict[A[right]] == 0:
-        cnt += 1
-    dict[A[right]] += 1
-
-    if cnt == len(dict.items()):
-        break
-
-    right += 1
-print(l, r)
-
-l = 0
-# 右を一つ進めて左をできる限り進める
-for r in range(right + 1, P):
-    # 新しく一つ加える
-    dict[A[r]] += 1
-    while True:
-        # もし要素が一つしか無かったら削れない
-        if dict[A[l]] == 1:
-            break
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
-
-N = 4
-A = 2, 5, 4, 6
-
-r, tmp = 0, 0
-# l:左端
-cnt = 0
-# 一つオーバーさせる
-for l in range(N):
-    while r < N and tmp ^ A[r] == tmp + A[r]:
-        # 右端を伸ばす
-        tmp += A[r]
-        r += 1
-    # 計算
-    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
-    # (r - l + 1) - 1
-    cnt += r - l
-
-    if l == r:
-        r += 1
-    tmp -= A[l]
-print(cnt)
-
-N, K = 10, 4
-A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
-
-right, ans = 0, 0
-for left in range(N):
-    # 単調増加するとこまでもしくは長さKになるまで
-    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
-        right += 1
-    # もし長さKまで伸ばせたらans += 1
-    if right - left == K - 1:
-        ans += 1
-    # 前に進めないならright += 1
-    if left == right and right < N:
-        right += 1
-print(ans)
+bit = BIT(limit)
+for i in range(N):
+    bit.add(A[i], 1)
+    if i >= 1:
+        # 2番目に小さな数字はなに？
+        print(bit.lowerbound(2))
