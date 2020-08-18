@@ -31,14 +31,14 @@ def rand_query(ran1, ran2, rantime):
 from collections import defaultdict, deque, Counter
 from sys import exit
 from decimal import *
-from heapq import heappop, heappush
-from math import sqrt
+import heapq
+import math
 from fractions import gcd
 import random
 import string
 import copy
 from itertools import combinations, permutations, product
-from operator import mul, itemgetter
+from operator import mul
 from functools import reduce
 from bisect import bisect_left, bisect_right
 
@@ -46,54 +46,92 @@ import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
 
+
 #############
 # Main Code #
 #############
 
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
+"""
+Z algorithm
+def Z(s):
+    n = len(s)
+    z = [0] * n
+    z[0] = n
 
-    # a - 1の場所にwを追加する
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
+    L, R = 0, 0
+    for i in range(1, n):
+        if i >= R:
+            L = R = i
+            # 一致が続く限り伸ばす
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            # LCAを書き込む
+            # 頭から一致しない場合はR - L = i - i = 0
+            z[i] = R - L
+        # 全て利用できる場合
+        elif z[i - L] < R - i:
+            z[i] = z[i - L]
+        # 一部利用できる場合
+        else:
+            L = i
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            z[i] = R - L
+    return z
 
-    # a未満の数字が何個あるか
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
+# [5, 0, 3, 0, 1]
+#print(Z('ababa'))
 
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self, w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
-
-N = 10
-A = [5, 4, 3, 4, 3, 1, 7, 1, 6, 9]
-limit = max(A) + 1
-
-bit = BIT(limit)
+N = getN()
+S = input()
+ans = 0
 for i in range(N):
-    bit.add(A[i], 1)
-    if i >= 1:
-        # 2番目に小さな数字はなに？
-        print(bit.lowerbound(2))
+    z = Z(S[i:])
+    k = len(z)
+    for j in range(k):
+        # '' と 'ababa'
+        # 'a' と 'baba'
+        # 'ab' と 'aba'
+        # ans は j('', 'a', 'ab')の長さ以上にならない（ダブらないため）
+        ans = max(ans, min(j, z[j]))
+print(ans)
+"""
+
+# Rolling hash
+N = getN()
+S = list(map(ord, list(input())))
+# 適当
+base = 1234
+power = [1] * (N + 1)
+# 部分文字列を数字に
+for i in range(1, N + 1):
+    power[i] = power[i - 1] * base % mod
+
+def check(m):
+    if N - m < m:
+        return False
+    res = 0
+    for i in range(m):
+        res += S[i] * power[m - i - 1]
+        res %= mod
+    dic = {res: 0}
+    for i in range(N - m):
+        res = ((res - S[i] * power[m - 1]) * base + S[i + m]) % mod
+        if res in dic.keys():
+            index = dic[res]
+            if index + m <= i + 1:
+                return True
+        else:
+            dic[res] = i + 1
+    return False
+
+ok = 0
+ng = N + 1
+while ng - ok > 1:
+    mid = (ok + ng) // 2
+
+    if check(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
