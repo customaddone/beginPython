@@ -59,7 +59,7 @@ class Roop:
         # iはどのループのものか
         self.roop_dict = [-1] * self.n
         # ループ内の何番目にあるか
-        self.opt_dic = {}
+        self.opt_dic = [-1] * self.n
         ignore = [-1] * self.n
         cnt = 0
         for i in range(self.n):
@@ -70,25 +70,24 @@ class Roop:
             self.opt_dic[i] = 0
             c = 1
             # 探索したらフラグを立てる
-            ignore[i] = 1
+            ignore[i] = cnt
             # i → array[i]
             to = array[i]
             # ループが詰まるまで回す
             while True:
                 if ignore[to] >= 0:
-                    # 既にループ作成済なら
-                    if self.roop_dict[to] >= 0:
+                    # 既に探索していたら
+                    if ignore[to] < cnt:
                         break
                     # 作成してないならループ作成
                     for j in range(self.opt_dic[to], len(opt)):
                         self.roop_dict[opt[j]] = cnt
-                    if len(opt[self.opt_dic[to]:]) > 0:
-                        self.roops.append(opt[self.opt_dic[to]:])
+                    self.roops.append(opt[self.opt_dic[to]:])
                     # 次のループはcnt + 1番
                     cnt += 1
                     break
                 opt.append(to)
-                ignore[to] = 1
+                ignore[to] = cnt
                 self.opt_dic[to] = c
                 c += 1
                 to = array[to]
@@ -143,14 +142,24 @@ class Roop:
         # to, head, tail, time = (1, [5], [1], 242400738057749783)
         return to
 
+N, A = getNM()
+A -= 1
+K = getN()
+B = [i - 1 for i in getList()]
+roop = Roop(B)
+print(roop.roops)
+print(roop.roop_dict)
+for i in range(N):
+    print(roop.move(i, K) + 1)
+
+"""
 # ABC167 D - Teleporter
 N, K = getNM()
 N -= 1
 A = [i - 1 for i in getList()]
 roop = Roop(A)
-print(roop.roops)
 print(roop.move(0, K) + 1)
-
+"""
 
 """
 # ABC175 D - Moving Piece
