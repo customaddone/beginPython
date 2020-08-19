@@ -31,8 +31,8 @@ def rand_query(ran1, ran2, rantime):
 from collections import defaultdict, deque, Counter
 from sys import exit
 from decimal import *
-from heapq import heappop, heappush
-from math import sqrt
+import heapq
+import math
 from fractions import gcd
 import random
 import string
@@ -50,27 +50,93 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-A = [3, 4, -8]
-# array内の連続する区間の総和
-def imos_sum(A):
-    n = len(A)
-    imos = [0]
-    for i in range(n):
-        imos.append(imos[i] + A[i])
-    for i in range(n):
-        for j in range(i + 1, n + 1):
-            print(imos[j] - imos[i])
-imos_sum(A)
+N, Q = getNM()
+sec = [getList() for i in range(N)]
+section = []
+for i in range(N):
+    s, t, x = sec[i]
+    section.append([s - x, t - x])
+query = getArray(Q)
 
-# roopする配列の長さk以下の区間和
-def roop_imos(array, k):
-    n = len(array)
-    alta = copy.deepcopy(array)
-    alta += alta
-    imos = [0]
-    for i in range(len(alta)):
-        imos.append(imos[i] + alta[i])
-    for i in range(n):
-        for j in range(1, k + 1):
-            print(imos[i + j] - imos[i])
-# roop_imos(A, 2)
+# 各queryがどのsectionの開区間[s, t)内にあるか
+def event_sort(section, query):
+    s_n = len(section)
+    q_n = len(query)
+    task = []
+    for i in range(s_n):
+        s, t = section[i]
+        task.append((s, 0, i))
+        task.append((t, 1, i))
+    for i in range(q_n):
+        task.append((query[i], 2, i))
+    task.sort()
+
+    se = set()
+    
+    ### この問題専用 ###
+    res = [-1] * q_n # 答え
+    ignore = [-1] * s_n # まだ区間が生きているか
+    se_hp = [] # ignoreを元にまだ生きている区間の中でのxの最小値を求める
+    heapq.heapify(se_hp)
+    ##################
+
+    for a, b, c in task:
+        if b == 1:
+            se.remove(c)
+            ignore[c] = 1 # これは無視していい
+        elif b == 0:
+            se.add(c)
+            heapq.heappush(se_hp, (sec[c][2], c)) # xの値をsecから引っ張る
+        else:
+            # 小さい順から抜け殻を捨てて回る
+            while se_hp and ignore[se_hp[0][1]] == 1:
+                heapq.heappop(se_hp)
+            if se_hp:
+                res[c] = se_hp[0][0]
+            else:
+                res[c] = -1
+    return res
+
+for i in event_sort(section, query):
+    print(i)
+
+"""
+# 各queryがどのsectionの開区間[s, t)内にあるか
+def event_sort(section, query):
+    s = len(section)
+    q = len(query)
+    # イベント生成
+    task = []
+    for i in range(s):
+        s, t = section[i]
+        task.append((s, 0, i))
+        task.append((t, 1, i))
+    for i in range(q):
+        task.append((query[i], 2, i))
+    task.sort()
+
+    # 引っかかってる場所の管理
+    se = set()
+
+    for a, b, c in task:
+        # ゴールが来ると削除
+        if b == 1:
+            se.remove(c)
+        # スタートが来ると追加
+        elif b == 0:
+            se.add(c)
+        # queについてなら
+        else:
+            print(se)
+
+section = [
+[-3, 3],
+[-1, 1],
+[5, 7],
+[1, 2],
+]
+
+query = [0, 1, 2, 3]
+# [{0, 1}, {0, 3}, {0}, set()]
+event_sort(section, query)
+"""
