@@ -31,8 +31,8 @@ def rand_query(ran1, ran2, rantime):
 from collections import defaultdict, deque, Counter
 from sys import exit
 from decimal import *
-import heapq
-import math
+from heapq import heapify, heappop, heappush
+from math import sqrt
 from fractions import gcd
 import random
 import string
@@ -50,93 +50,97 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, Q = getNM()
-sec = [getList() for i in range(N)]
-section = []
-for i in range(N):
-    s, t, x = sec[i]
-    section.append([s - x, t - x])
-query = getArray(Q)
+class Multiset:
+    def __init__(self):
+        self.h = []
+        self.d = dict()
 
-# 各queryがどのsectionの開区間[s, t)内にあるか
-def event_sort(section, query):
-    s_n = len(section)
-    q_n = len(query)
-    task = []
-    for i in range(s_n):
-        s, t = section[i]
-        task.append((s, 0, i))
-        task.append((t, 1, i))
-    for i in range(q_n):
-        task.append((query[i], 2, i))
-    task.sort()
-
-    se = set()
-    
-    ### この問題専用 ###
-    res = [-1] * q_n # 答え
-    ignore = [-1] * s_n # まだ区間が生きているか
-    se_hp = [] # ignoreを元にまだ生きている区間の中でのxの最小値を求める
-    heapq.heapify(se_hp)
-    ##################
-
-    for a, b, c in task:
-        if b == 1:
-            se.remove(c)
-            ignore[c] = 1 # これは無視していい
-        elif b == 0:
-            se.add(c)
-            heapq.heappush(se_hp, (sec[c][2], c)) # xの値をsecから引っ張る
+    def insert(self,x):
+        heappush(self.h,x)
+        if x not in self.d:
+            self.d[x] = 1
         else:
-            # 小さい順から抜け殻を捨てて回る
-            while se_hp and ignore[se_hp[0][1]] == 1:
-                heapq.heappop(se_hp)
-            if se_hp:
-                res[c] = se_hp[0][0]
+            self.d[x] += 1
+
+    def erase(self,x):
+        if x not in self.d or self.d[x] == 0:
+            return 'not found'
+        else:
+            self.d[x] -= 1
+
+        while len(self.h) != 0:
+            if self.d[self.h[0]] == 0:
+                heappop(self.h)
             else:
-                res[c] = -1
-    return res
+                break
 
-for i in event_sort(section, query):
-    print(i)
-
-"""
-# 各queryがどのsectionの開区間[s, t)内にあるか
-def event_sort(section, query):
-    s = len(section)
-    q = len(query)
-    # イベント生成
-    task = []
-    for i in range(s):
-        s, t = section[i]
-        task.append((s, 0, i))
-        task.append((t, 1, i))
-    for i in range(q):
-        task.append((query[i], 2, i))
-    task.sort()
-
-    # 引っかかってる場所の管理
-    se = set()
-
-    for a, b, c in task:
-        # ゴールが来ると削除
-        if b == 1:
-            se.remove(c)
-        # スタートが来ると追加
-        elif b == 0:
-            se.add(c)
-        # queについてなら
+    def erase_all(self,x):
+        if x not in self.d or self.d[x] == 0:
+            return 'not found'
         else:
-            print(se)
+            self.d[x] = 0
 
-section = [
-[-3, 3],
-[-1, 1],
-[5, 7],
-[1, 2],
-]
+        while len(self.h) != 0:
+            if self.d[self.h[0]] == 0:
+                heappop(self.h)
+            else:
+                break
 
-query = [0, 1, 2, 3]
-# [{0, 1}, {0, 3}, {0}, set()]
-event_sort(section, query)
-"""
+    def is_exist(self,x):
+        if x in self.d and self.d[x] != 0:
+            return True
+        else:
+            return False
+
+    def get_min(self):
+        if len(self.h) == 0:
+            return 'enpty'
+        return self.h[0]
+
+
+N, Q = getNM()
+limit = 2 * (10 ** 5) + 1
+
+infants = [getList() for i in range(N)]
+trans = [getList() for i in range(Q)]
+belong = [0] * N
+rate = [0] * N
+
+school = [Multiset() for i in range(limit)]
+purity = Multiset()
+
+# 各学校にいる生徒を記録する
+for i in range(N):
+    a, b = infants[i]
+    b -= 1
+    belong[i] = b
+    rate[i] = -a
+    school[b].insert(-a)
+
+# 各学校の最強園児を求める
+for i in range(limit):
+    if len(school[i].d) > 0:
+        purity.insert(-school[i].get_min())
+
+# 転園させる
+for c, d in trans:
+    c -= 1
+    d -= 1
+    ### 転園前処理 ###
+    prev = belong[c] # 所属変更
+    purity.erase(-1 * school[prev].get_min()) # 最強リストから削除
+    school[prev].erase(rate[c]) # 前の学校から削除
+    if len(school[prev].h) > 0:
+        purity.insert(-1 * school[prev].get_min()) # 最強リストを更新
+    ################
+
+    ### 転園後処理 ###
+    belong[c] = d
+    after = belong[c] # 所属変更
+    if len(school[after].h) > 0:
+        purity.erase(-1 * school[after].get_min()) # 最強リストから削除
+    school[after].insert(rate[c]) # 次の学校に追加
+    purity.insert(-1 * school[after].get_min()) # 最強リストを更新
+    #################
+
+    print(purity.get_min())
