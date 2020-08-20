@@ -50,21 +50,101 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N,K = getNM()
+# ABC149 E - Handshake
+N, K = 9, 14
+A = [1, 3, 5, 110, 24, 21, 34, 5, 3]
+
+A.sort(reverse = True)
+
+# 各ペアを大きい順に並べるのはムリ
+# ただし、合計がx以上/以下になるペアが何個あるかは求められる
+# x以上になるペアが何個あるか
+def cnt(x):
+    r = 0
+    ans = 0
+    list_num = [0] * N
+    for i in range(N - 1, -1, -1):
+        while r < N and A[r] + A[i] >= x:
+            r += 1
+        list_num[i] = r
+        ans += r
+
+    return [ans, list_num]
+
+ng = 0
+ok = 2 * (10 ** 6)
+
+while ok - ng > 1:
+    mid = (ok + ng) // 2
+    if cnt(mid)[0] <= K:
+        ok = mid
+    else:
+        ng = mid
+
+# 境界がわかったら
+imos = [0] + copy.deepcopy(A)
+for i in range(N):
+    imos[i + 1] += imos[i]
+
 ans = 0
-rec = [0] * (K + 1)
+plus = cnt(ok)[1]
 
-"""
-集合A, B, Cについて
-A ⊆ B　かつ B ⊆ Cとすると
-集合が小さい順から数えて行って
-Bを数える時にB -= A
-Cを数える時にC -= Aすればダブらない
-"""
+# cntから得た情報を元に上から順番に足していく
+for i in range(N):
+    ans += (A[i] * plus[i]) + imos[plus[i]]
+# 合計がngになるペアを足りない分K - sum(plus)個足す
+ans += ng * (K - sum(plus))
+print(ans)
 
-for X in range(K, 0, -1):
-    rec[X] = pow(K // X, N, mod)
-    for i in range(2, K // X + 1):
-        rec[X] -= rec[i * X] % mod
-    ans += (X * rec[X]) % mod
-print(ans % mod)
+# ABC155 D - Pairs
+N, K = 10, 40
+A = [5, 4, 3, 2, -1, 0, 0, 0, 0, 0]
+minus = [-x for x in A if x < 0]
+plus = [x for x in A if x >= 0]
+
+minus.sort()
+plus.sort()
+
+def cnt(x):
+    ans = 0
+    if x < 0:
+        x = -x
+        r = 0
+        # - * +
+        for num in minus[::-1]:
+            while r < len(plus) and plus[r] * num < x:
+                r += 1
+            ans += len(plus) - r
+        return ans
+
+    r = 0
+    for num in minus[::-1]:
+        if num * num <= x:
+            ans -= 1
+        while r < len(minus) and minus[r] * num <= x:
+            r += 1
+        ans += r
+    r = 0
+    for num in plus[::-1]:
+        if num * num <= x:
+            ans -= 1
+        while r < len(plus) and plus[r] * num <= x:
+            r += 1
+        ans += r
+    ans //= 2
+    # -になるものはまとめて計算
+    ans += len(minus) * len(plus)
+    return ans
+
+bottom = 0
+top = 2 * (10 ** 18) + 2
+
+
+while top - bottom > 1:
+    mid = (top + bottom) // 2
+    if cnt(mid - 10 ** 18 - 1) < K:
+        bottom = mid
+    else:
+        top = mid
+
+print(int(top - 10 ** 18 - 1))
