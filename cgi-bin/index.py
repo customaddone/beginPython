@@ -50,97 +50,59 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class Multiset:
-    def __init__(self):
-        self.h = []
-        self.d = dict()
+# 集合[a1, a2...an]内で以下２つの条件を満たす部分集合の組(T, U)はいくつあるか問題
+# 1: U ⊆ Tである
+# 2: Uがある条件を満たす
 
-    def insert(self,x):
-        heappush(self.h,x)
-        if x not in self.d:
-            self.d[x] = 1
-        else:
-            self.d[x] += 1
+# Tの中にUがいくつか含まれる
+# ①iが進むごとにTの候補がn倍ずつ増えていく
+# ②その後、Uを組むためのカウントを進める
 
-    def erase(self,x):
-        if x not in self.d or self.d[x] == 0:
-            return 'not found'
-        else:
-            self.d[x] -= 1
+''' ABC104 D - We Love ABC
+S = '????C?????B??????A???????'
+N = len(S)
+# dp[i][j]: i番目にjまで丸をつけ終えている通り
+dp = [[0] * 4 for _ in range(N + 1)]
+dp[0][0] = 1
 
-        while len(self.h) != 0:
-            if self.d[self.h[0]] == 0:
-                heappop(self.h)
-            else:
-                break
-
-    def erase_all(self,x):
-        if x not in self.d or self.d[x] == 0:
-            return 'not found'
-        else:
-            self.d[x] = 0
-
-        while len(self.h) != 0:
-            if self.d[self.h[0]] == 0:
-                heappop(self.h)
-            else:
-                break
-
-    def is_exist(self,x):
-        if x in self.d and self.d[x] != 0:
-            return True
-        else:
-            return False
-
-    def get_min(self):
-        if len(self.h) == 0:
-            return 'enpty'
-        return self.h[0]
-
-
-N, Q = getNM()
-limit = 2 * (10 ** 5) + 1
-
-infants = [getList() for i in range(N)]
-trans = [getList() for i in range(Q)]
-belong = [0] * N
-rate = [0] * N
-
-school = [Multiset() for i in range(limit)]
-purity = Multiset()
-
-# 各学校にいる生徒を記録する
 for i in range(N):
-    a, b = infants[i]
-    b -= 1
-    belong[i] = b
-    rate[i] = -a
-    school[b].insert(-a)
+    # 通りの数を増やす
+    for j in range(4):
+        if S[i] != '?':
+            dp[i + 1][j] += dp[i][j]
+            dp[i + 1][j] %= mod
+        else:
+            dp[i + 1][j] += 3 * dp[i][j]
+            dp[i + 1][j] %= mod
+    # カウントが進むものを加える
+    if S[i] == 'A' or S[i] == '?':
+        dp[i + 1][1] += dp[i][0]
+        dp[i + 1][1] %= mod
+    if S[i] == 'B' or S[i] == '?':
+        dp[i + 1][2] += dp[i][1]
+        dp[i + 1][2] %= mod
+    if S[i] == 'C' or S[i] == '?':
+        dp[i + 1][3] += dp[i][2]
+        dp[i + 1][3] %= mod
+print(dp[N][3] % mod)
+'''
 
-# 各学校の最強園児を求める
-for i in range(limit):
-    if len(school[i].d) > 0:
-        purity.insert(-school[i].get_min())
+# ABC169 F - Knapsack for All Subsets
+N, S = getNM()
+A = getList()
+MOD = 998244353
 
-# 転園させる
-for c, d in trans:
-    c -= 1
-    d -= 1
-    ### 転園前処理 ###
-    prev = belong[c] # 所属変更
-    purity.erase(-1 * school[prev].get_min()) # 最強リストから削除
-    school[prev].erase(rate[c]) # 前の学校から削除
-    if len(school[prev].h) > 0:
-        purity.insert(-1 * school[prev].get_min()) # 最強リストを更新
-    ################
+dp = [[0] * (S + 1) for i in range(N + 1)]
+dp[0][0] = 1
 
-    ### 転園後処理 ###
-    belong[c] = d
-    after = belong[c] # 所属変更
-    if len(school[after].h) > 0:
-        purity.erase(-1 * school[after].get_min()) # 最強リストから削除
-    school[after].insert(rate[c]) # 次の学校に追加
-    purity.insert(-1 * school[after].get_min()) # 最強リストを更新
-    #################
-
-    print(purity.get_min())
+for i in range(N):
+    # 通りの数を増やす
+    for j in range(S + 1):
+        dp[i + 1][j] += dp[i][j] * 2
+        dp[i + 1][j] %= MOD
+    # カウントが進むものを加える
+    for j in range(S + 1):
+        if j - A[i] >= 0:
+            dp[i + 1][j] += dp[i][j - A[i]]
+            dp[i + 1][j] %= MOD
+print(dp[N][S] % MOD)
