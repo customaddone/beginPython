@@ -50,115 +50,39 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+N, M = getNM()
+query = [getList() for i in range(M)]
+K = getN()
+question = [getList() for i in range(K)]
 
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
-
-    # a - 1の場所にwを追加する
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
-
-    # a未満の数字が何個あるか
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
-
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self, w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
-"""
-N = 10
-A = [5, 4, 3, 4, 3, 1, 7, 1, 6, 9]
-limit = max(A) + 1
-bit = BIT(limit)
+dist = [[float('inf')] * N for i in range(N)]
 for i in range(N):
-    bit.add(A[i], 1)
-    if i >= 1:
-        # 2番目に小さな数字はなに？
-        print(bit.lowerbound(2))
-"""
+    dist[i][i] = 0
+for i in range(M):
+    a, b, c = query[i]
+    dist[a - 1][b - 1] = c
+    dist[b - 1][a - 1] = c
 
-"""
-# 座標圧縮
-A = [333, 555, 333, 222, 111, 555, 444, 222, 111, 666]
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
 
-    return alter, rev
+# まず一回回す
+warshall_floyd(dist)
 
-alter, rev = compress(A)
-N = 10
-limit = N + 1
-bit = BIT(limit)
-for i in range(N):
-    # 1-indexなので
-    bit.add(alter[A[i]] + 1, 1)
-    if i >= 1:
-        # 2番目に小さい数字は何？
-        print(rev[bit.lowerbound(2) - 1])
-"""
-
-# ARC033 C - データ構造
-Q = getN()
-que = [getList() for i in range(Q)]
-
-# データに入れる数字を抽出する
-A = []
-for t, x in que:
-    if t == 1:
-        A.append(x)
-# 座標圧縮
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {s[i]: i for i in range(len(s))}
-    rev = {i: s[i] for i in range(len(s))}
-
-    return alter, rev
-
-alter, rev = compress(A)
-
-limit = Q + 1
-bit = BIT(limit)
-for t, x in que:
-    if t == 1:
-        bit.add(alter[x] + 1, 1)
-    else:
-        # xを超えないギリギリの場所が1-indexで与えられる
-        # optがx番目の数字
-        opt = bit.lowerbound(x) - 1
-        # 1-indexなのでそのままprintする
-        print(rev[opt])
-        # xを超えないギリギリの場所の一つ右を-1する
-        bit.add(opt + 1, -1)
+# 距離の方を更新していけばO(K * N ** 2)で済む
+for x, y, z in question:
+    x -= 1
+    y -= 1
+    for i in range(N):
+        for j in range(N):
+            dist[i][j] = min(dist[i][j], dist[i][x] + z + dist[y][j], dist[i][y] + z + dist[x][j])
+    res = 0
+    for i in range(N):
+        for j in range(i + 1, N):
+            res += dist[i][j]
+    print(res)
