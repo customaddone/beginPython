@@ -142,11 +142,8 @@ for t, x in que:
 def compress(array):
     s = set(array)
     s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
+    alter = {s[i]: i for i in range(len(s))}
+    rev = {i: s[i] for i in range(len(s))}
 
     return alter, rev
 
