@@ -50,6 +50,7 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+
 class BIT:
     def __init__(self, N):
         self.N = N
@@ -90,7 +91,6 @@ class BIT:
 N = 10
 A = [5, 4, 3, 4, 3, 1, 7, 1, 6, 9]
 limit = max(A) + 1
-
 bit = BIT(limit)
 for i in range(N):
     bit.add(A[i], 1)
@@ -99,6 +99,7 @@ for i in range(N):
         print(bit.lowerbound(2))
 """
 
+"""
 # 座標圧縮
 A = [333, 555, 333, 222, 111, 555, 444, 222, 111, 666]
 # alter: A[i] → alt_A[i]
@@ -124,3 +125,43 @@ for i in range(N):
     if i >= 1:
         # 2番目に小さい数字は何？
         print(rev[bit.lowerbound(2) - 1])
+"""
+
+# ARC033 C - データ構造
+Q = getN()
+que = [getList() for i in range(Q)]
+
+# データに入れる数字を抽出する
+A = []
+for t, x in que:
+    if t == 1:
+        A.append(x)
+# 座標圧縮
+# alter: A[i] → alt_A[i]
+# rev: alt[i] → A[i]
+def compress(array):
+    s = set(array)
+    s = sorted(list(s))
+    alter = {}
+    rev = {}
+    for i in range(len(s)):
+        alter[s[i]] = i
+        rev[i] = s[i]
+
+    return alter, rev
+
+alter, rev = compress(A)
+
+limit = Q + 1
+bit = BIT(limit)
+for t, x in que:
+    if t == 1:
+        bit.add(alter[x] + 1, 1)
+    else:
+        # xを超えないギリギリの場所が1-indexで与えられる
+        # optがx番目の数字
+        opt = bit.lowerbound(x) - 1
+        # 1-indexなのでそのままprintする
+        print(rev[opt])
+        # xを超えないギリギリの場所の一つ右を-1する
+        bit.add(opt + 1, -1)
