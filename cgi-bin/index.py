@@ -50,10 +50,9 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+# ABC051
 N, M = getNM()
 query = [getList() for i in range(M)]
-K = getN()
-question = [getList() for i in range(K)]
 
 dist = [[float('inf')] * N for i in range(N)]
 for i in range(N):
@@ -71,18 +70,56 @@ def warshall_floyd(dist):
                 dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
     return dist
 
-# まず一回回す
 warshall_floyd(dist)
+ng_dist = [0] * M
 
-# 距離の方を更新していけばO(K * N ** 2)で済む
-for x, y, z in question:
-    x -= 1
-    y -= 1
-    for i in range(N):
-        for j in range(N):
-            dist[i][j] = min(dist[i][j], dist[i][x] + z + dist[y][j], dist[i][y] + z + dist[x][j])
-    res = 0
-    for i in range(N):
-        for j in range(i + 1, N):
-            res += dist[i][j]
-    print(res)
+# エッジを調べてそれが地点間最小距離生成の役にたつか
+for i in range(N):
+    for j in range(M):
+        s, t, c = query[j]
+        if dist[i][s - 1] + c == dist[i][t - 1]:
+            ng_dist[j] = 1
+
+cnt = 0
+for i in ng_dist:
+    if i == 0:
+        cnt += 1
+print(cnt)
+
+# ABC074
+N = getN()
+query = [getList() for i in range(N)]
+query_before = copy.deepcopy(query)
+
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
+
+warshall_floyd(query)
+
+if query != query_before:
+    print(-1)
+    exit()
+
+edges = []
+for i in range(N):
+    for j in range(i + 1, N):
+        edges.append([query[i][j], i, j])
+
+# エッジを調べる
+cnt = 0
+for i in edges:
+    flag = True
+    w, s, t = i
+    for k in range(N):
+        # ここ注意
+        if k != s and k != t and w >= query[s][k] + query[k][t]:
+            flag = False
+            break
+    if flag:
+        cnt += w
+print(cnt)
