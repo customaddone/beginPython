@@ -50,76 +50,35 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC051
-N, M = getNM()
-query = [getList() for i in range(M)]
+mod = 1777777777
 
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-for i in range(M):
-    a, b, c = query[i]
-    dist[a - 1][b - 1] = c
-    dist[b - 1][a - 1] = c
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
 
-warshall_floyd(dist)
-ng_dist = [0] * M
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
 
-# エッジを調べてそれが地点間最小距離生成の役にたつか
-for i in range(N):
-    for j in range(M):
-        s, t, c = query[j]
-        if dist[i][s - 1] + c == dist[i][t - 1]:
-            ng_dist[j] = 1
+N, K = getNM()
 
-cnt = 0
-for i in ng_dist:
-    if i == 0:
-        cnt += 1
-print(cnt)
+c1 = cmb(N, K)
 
-# ABC074
-N = getN()
-query = [getList() for i in range(N)]
-query_before = copy.deepcopy(query)
+# 完全順列（モンモール数）
+dp = [0] * (K + 1)
+dp[2] = 1
+for i in range(3, K + 1):
+    dp[i] = (i - 1) * (dp[i - 1] + dp[i - 2]) % mod
+c2 = dp[K]
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
-
-warshall_floyd(query)
-
-if query != query_before:
-    print(-1)
-    exit()
-
-edges = []
-for i in range(N):
-    for j in range(i + 1, N):
-        edges.append([query[i][j], i, j])
-
-# エッジを調べる
-cnt = 0
-for i in edges:
-    flag = True
-    w, s, t = i
-    for k in range(N):
-        # ここ注意
-        if k != s and k != t and w >= query[s][k] + query[k][t]:
-            flag = False
-            break
-    if flag:
-        cnt += w
-print(cnt)
+ans = c1 * c2 % mod
+print(ans)
