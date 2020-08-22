@@ -73,4 +73,13 @@ mod = 10 ** 9 + 7
 # 条件
 # それぞれのお客さんに対し対応するたこ焼きがある　→
 # 任意のBiについて、対応するAj(Bi <= Aj <= Bi + T)が必ず１つ存在する
-# 
+#
+
+for i in range(-2, 3):
+    for j in range(-2, 3):
+        wy = y + i
+        wx = x + i
+        # 歩いて移動不可能でないと使わない
+        if 0 <= wx < W and 0 <= wy < H and maze[wy][wx] == "." and dp[wy][wx] == -1:
+            pos.append([wy, wx])
+            dp[wy][wx] = dp[y][x] + 1

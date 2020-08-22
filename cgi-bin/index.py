@@ -49,92 +49,46 @@ mod = 10 ** 9 + 7
 #############
 # Main Code #
 #############
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
 
-    # a - 1の場所にwを追加する
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
+H, W = getNM()
+Ch, Cw = getNM()
+Dh, Dw = getNM()
+maze = [input() for i in range(H)]
+Ch -= 1
+Cw -= 1
+Dh -= 1
+Dw -= 1
 
-    # a未満の数字が何個あるか
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
+# ワープを最低で何回使うか
+# 上下左右2つ向こうまでの範囲内でワープできる
+# 隣接する'.'が領域
 
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
-    def lowerbound(self, w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
+pos = deque([[Ch, Cw]])
+dp = [[-1] * W for i in range(H)]
+dp[Ch][Cw] = 0
 
-# i < j, ai > ajとなるものの数は何個あるか
-# 1, 2, 3...を順に置いていく
-# 3個目を置こうとする時、盤面には１が２個置かれている
-# 3が置かれている場所より前にi個置かれている場合、求めるものは2 - i個である
+while len(pos) > 0:
+    y, x = pos.popleft()
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        # 歩いて移動
+        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] == "." and (dp[ny][nx] == -1 or dp[y][x] < dp[ny][nx]):
+            # 0-1 bfs
+            # 先頭に置く（優先的に処理される)
+            pos.appendleft([ny, nx])
+            dp[ny][nx] = dp[y][x]
+    # ワープ
+    for i in range(-2, 3):
+        for j in range(-2, 3):
+            wy = y + i
+            wx = x + j
+            # 歩いて移動不可能でないと使わない
+            if 0 <= wx < W and 0 <= wy < H and maze[wy][wx] == "." and dp[wy][wx] == -1:
+                pos.append([wy, wx])
+                dp[wy][wx] = dp[y][x] + 1
 
-N = 4
-A = [3, 1, 4, 2]
-bit = BIT(N)
-
-turn = [0] * N
-# bitに１を置く時、その場所は1-indexになるので注意
-for i in range(N):
-    turn[A[i] - 1] = i + 1
-
-ans = 0
-for i in range(N):
-    ans += i - bit.get(turn[i])
-    bit.add(turn[i], 1)
-    # 1を置く
-    # [ , 1, , ]
-    # 2を置く
-    # [ , 1, , 2] 1は正常な位置にある
-    # 3を置く
-    # [3, 1, , 2] 1, 2が3より後ろにあるのでans += 2
-    # 4を置く
-    # [3, 1, 4, 2] 2が4より後ろにあるのでans += 1
-print(ans)
-
-# ARC031
-N = 4
-B = [2, 4, 1, 3]
-
-# 各積み木は左か右かを選んで移動させられる
-# BITの小さい方でいい
-place = [0] * (N + 1)
-for i in range(N):
-    place[B[i]] = i
-
-bit = BIT(N + 1)
-# 左にある自分より小さいものではない（大きいもの）の数
-left = [0] * (N + 1)
-# 右にある自分より小さいものではない（大きいもの）の数
-right = [0] * (N + 1)
-for i in range(N, 0, -1):
-    bit.add(place[i] + 1, 1)
-    left[i] = bit.get(place[i] + 1)
-    right[i] = (N - i) - bit.get(place[i] + 1)
-
-ans = 0
-for l, r in zip(left, right):
-    # どちらか小さい方
-    ans += min(l, r)
-print(ans)
+print(dp[Dh][Dw])
