@@ -366,7 +366,6 @@ def half_knapsack_2(N, limit, weight):
 """
 # O(2 ** (n / 2))解法
 # 速いが応用は効かなさそう
-
 def re_list_3(weight):
     fore_list = defaultdict(int)
     for bit in range(1 << len(weight)):
@@ -375,20 +374,15 @@ def re_list_3(weight):
             if bit & (1 << i):
                 wei += weight[i]
         fore_list[wei] += 1
-
     return fore_list
-
 def half_knapsack_3(N, limit, weight):
     fore_w = re_list_3(weight[:N // 2])
     back_w = re_list_3(weight[N // 2:])
-
     ans = 0
     for key, value in fore_w.items():
         if key > limit:
             continue
-
         ans += back_w[limit - key] * value
-
     return ans
 """
 
@@ -456,3 +450,101 @@ def dfs(s, t):
                 dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
     return dp[lens][lent]
 print(dfs(s, t))
+
+N, M = 2, 600
+query = [
+[10, 10],
+[100, 100]
+]
+
+w = []
+v = []
+w_rev = []
+v_rev = []
+for i in range(N):
+    w.append(query[i][0])
+    v.append(query[i][1])
+    w_rev.append(query[N - i - 1][0])
+    v_rev.append(query[N - i - 1][1])
+
+def knapsack_1(N, limit, weight, value):
+    dp = [[0] * (limit + 1) for i in range(N + 1)]
+    dp[0][0] = 0
+
+    for i in range(N):
+        for j in range(limit + 1):
+            if weight[i] <= j:
+                dp[i + 1][j] = max(dp[i][j], dp[i][j - weight[i]] + value[i])
+            else:
+                dp[i + 1][j] = dp[i][j]
+    return dp
+
+dp_1 = knapsack_1(N, M, w, v)
+dp_2 = knapsack_1(N, M, w_rev, v_rev)
+
+# 全ての料理について
+ans = 0
+for i in range(1, N + 1):
+    opt = 0
+    # iの前後で何分ずつ使うか
+    for j in range(M):
+        if i == 1:
+            o = query[i - 1][1] + dp_2[N - i][M - j - 1]
+        elif i == N:
+            o = dp_1[i - 1][j] + query[i - 1][1]
+        else:
+            # dp_1[i - 1][j] A[i]以前のものをj分以内に食べるナップサック
+            # dp_2[N - i][M - j - 1] A[i]以降のものをM - j - 1分以内に食べるナップサック
+            # dpにアクセスするだけなのでO(1)でいける
+            o = dp_1[i - 1][j] + query[i - 1][1] + dp_2[N - i][M - j - 1]
+        opt = max(opt, o)
+    ans = max(ans, opt)
+print(ans)
+
+N, M = 4, 100
+query = [
+[30, 50],
+[40, 40],
+[50, 100],
+[60, 80]
+]
+query.sort()
+
+w = []
+v = []
+w_rev = []
+v_rev = []
+for i in range(N):
+    w.append(query[i][0])
+    v.append(query[i][1])
+    w_rev.append(query[N - i - 1][0])
+    v_rev.append(query[N - i - 1][1])
+
+def knapsack_8(N, limit, weight, value):
+    prev = [0] * (limit + 1)
+    # 最大値をレコード
+    rec = [0] * (N + 1)
+
+    for i in range(N):
+        next = [0] * (limit + 1)
+        for j in range(limit + 1):
+            if weight[i] <= j:
+                next[j] = max(prev[j], prev[j - weight[i]] + value[i])
+            else:
+                next[j] = prev[j]
+        rec[i + 1] = next[M]
+        prev = next
+    return rec
+
+dp_2 = knapsack_8(N, M, w_rev, v_rev)
+
+# 全ての料理について
+ans = 0
+for i in range(1, N + 1):
+    if i == N:
+        opt = v[i - 1]
+    else:
+        opt = v[i - 1] + dp_2[N - i]
+    ans = max(ans, opt)
+
+print(ans)
