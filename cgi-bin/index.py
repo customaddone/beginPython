@@ -324,6 +324,76 @@ else:
     print(knapsack_val(N, A, w, v))
     exit()
 
+# 半分全列挙部分和
+N, X = 5, 5
+W = [1, 1, 2, 3, 4]
+
+# 半分全列挙
+# O(2 ** (n / 2) * n)解法
+# 遅いが応用が効きそう
+# 言うてn <= 32なのでそんなに遅くない
+def re_list_2(weight):
+    fore_list = []
+    # まず全通り組み合わせる
+    for bit in range(1 << len(weight)):
+        wei = 0
+        for i in range(len(weight)):
+            if bit & (1 << i):
+                wei += weight[i]
+        fore_list.append(wei)
+    fore_list.sort()
+
+    return fore_list
+
+def half_knapsack_2(N, limit, weight):
+    # 半分全列挙
+    fore_w = re_list_2(weight[:N // 2])
+    back_w = re_list_2(weight[N // 2:])
+
+    ans = 0
+    for key in fore_w:
+        if key > limit:
+            continue
+        # {1, 2, 3, ○4, 4, 4, 5...}○の部分のインデックスをとる
+        # {1, 2, 3, 4, 4, 4, ○5...}○の部分のインデックスをとる
+        left = bisect_left(back_w, limit - key)
+        right = bisect_left(back_w, limit - key + 1)
+
+        ans += right - left
+
+    return ans
+
+"""
+# O(2 ** (n / 2))解法
+# 速いが応用は効かなさそう
+
+def re_list_3(weight):
+    fore_list = defaultdict(int)
+    for bit in range(1 << len(weight)):
+        wei = 0
+        for i in range(len(weight)):
+            if bit & (1 << i):
+                wei += weight[i]
+        fore_list[wei] += 1
+
+    return fore_list
+
+def half_knapsack_3(N, limit, weight):
+    fore_w = re_list_3(weight[:N // 2])
+    back_w = re_list_3(weight[N // 2:])
+
+    ans = 0
+    for key, value in fore_w.items():
+        if key > limit:
+            continue
+
+        ans += back_w[limit - key] * value
+
+    return ans
+"""
+
+print(half_knapsack_2(N, X, W))
+
 W = 22
 N = 5
 K = 3
