@@ -49,502 +49,92 @@ mod = 10 ** 9 + 7
 #############
 # Main Code #
 #############
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-num = [1, 3, 5, 7, 9]
-limit = 10
+    # a - 1の場所にwを追加する
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-# 個数制限あり重複なし部分和
-# 合計でlimitになる通りの数が出てくる
-# numは数字のリスト、limitは部分和
-def part_sum_1(num, limit):
-    N = len(num)
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 1
+    # a未満の数字が何個あるか
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-    for i in range(N):
-        for j in range(limit + 1):
-            if num[i] <= j:
-                dp[i + 1][j] = dp[i][j - num[i]] + dp[i][j]
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][limit]
-# print(part_sum_1(num, limit))
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-# 個数制限なし重複あり部分和
-# 合計でlimitになる通りの数が出てくる
-# 1 + 3 と3 + 1 と1 + 1 + 1 + 1は違う通りになる
-def part_sum_2(num, limit):
-    N = len(num)
+    def lowerbound(self, w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
-    dp = [0] * (limit + 1)
-    dp[0] = 1
+# i < j, ai > ajとなるものの数は何個あるか
+# 1, 2, 3...を順に置いていく
+# 3個目を置こうとする時、盤面には１が２個置かれている
+# 3が置かれている場所より前にi個置かれている場合、求めるものは2 - i個である
 
-    for i in range(1, limit + 1):
-        for j in range(N):
-            if i >= num[j]:
-                dp[i] += dp[i - num[j]]
-    return dp[limit]
-# print(part_sum_2(num, limit))
-
-num = [i for i in range(1, 11)]
-L = len(num)
-
-# 個数を考慮
-# 重複あり
-def part_sum_4(limit, k):
-    # dp[k][limit] k個足してlimitになった
-    dp = [[0] * (limit + 1) for i in range(k + 1)]
-    dp[0][0] = 1
-
-    for i in range(k):
-        for j in range(limit + 1):
-            for l in range(L):
-                if j - num[l] >= 0:
-                    dp[i + 1][j] += dp[i][j - num[l]]
-    return dp
-
-# print(part_sum_4(5, 5))
-
-# 重複なし
-def part_sum_5(n, k, limit):
-    dp = [[[0] * (limit + 1) for i in range(k + 1)] for i in range(n + 1)]
-    dp[0][0][0] = 1
-
-    for i in range(1, n + 1):
-        for j in range(1, k + 1):
-            for l in range(limit + 1):
-                if l - num[i - 1] >= 0:
-                    dp[i][j][l] += dp[i - 1][j - 1][l - num[i - 1]]
-                dp[i][j][l] += dp[i - 1][j][l]
-
-    return dp[n][k][limit]
-
-print(part_sum_5(L, 3, 10))
-
-# -付き部分和
 N = 4
-A = [-1, 1, 0, 1]
+A = [3, 1, 4, 2]
+bit = BIT(N)
 
-def part_sum_minus(n, A, limit):
-    dp = [[0] * (limit * 2 + 1) for i in range(N + 1)]
-    dp[0][limit] = 1
-
-    for i in range(1, N + 1):
-        for j in range(limit * 2 + 1):
-            # 何も足さない場合
-            dp[i][j] += dp[i - 1][j]
-            if 0 <= j - A[i - 1] <= limit * 2:
-                dp[i][j] += dp[i - 1][j - A[i - 1]]
-            # if 0 <= j + A[i - 1] <= limit * 2:
-                # dp[i][j] += dp[i - 1][j + A[i - 1]]
-    return dp[-1][limit]
-
-# 何も足さない場合も含まれる
-print(part_sum_minus(N, A, 10))
-
-# 個数制限あり重複なしナップサックdp
-# weightがW以内でのvalueの合計の最大値
-N = 4
-w = [2, 1, 3, 2]
-v = [3, 2, 4, 2]
-A = 5
-
-def knapsack_1(N, limit, weight, value):
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(limit + 1):
-            if weight[i] <= j:
-                dp[i + 1][j] = max(dp[i][j], dp[i][j - weight[i]] + value[i])
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][limit]
-# 7
-# print(knapsack_1(N, A, w, v))
-
-# 個数制限あり重複ありナップサックdp
-# N = 4個まで足せる
-def knapsack_2(N, limit, weight, value):
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(limit + 1):
-            dp[i + 1][j] = dp[i][j]
-            for r in range(N):
-                if weight[r] <= j:
-                    dp[i + 1][j] = max(dp[i + 1][j], dp[i][j - weight[r]] + value[r])
-    return dp[N][limit]
-
-# 9
-# print(knapsack_2(N, A, w, v))
-
-# 個数制限なし重複ありナップサックdp
-# 最大は当然w = 1, v = 2を5回
-def knapsack_3(N, limit, weight, value):
-    dp = [0] * (limit + 1)
-    dp[0] = 0
-
-    for j in range(limit + 1):
-        for r in range(N):
-            if weight[r] <= j:
-                dp[j] = max(dp[j], dp[j - weight[r]] + value[r])
-    return dp[limit]
-
-# 10
-# print(knapsack_3(N, A, w, v))
-
-N = 10
-w = [7550, 9680, 9790, 7150, 5818, 7712, 8227, 8671, 8228, 2461]
-v = [540, 691, 700, 510, 415, 551, 587, 619, 588, 176]
-A = 9999
-
-# ABC153 E - Crested Ibis vs Monster
-# Aをvalueで引き切るための最小weightを求める
-def knapsack_4(N, limit, weight, value):
-    dp = [float('inf')] * (limit + 1)
-    dp[0] = 0
-
-    for i in range(1, limit + 1):
-        for j in range(N):
-            if i < value[j]:
-                dp[i] = min(dp[i], weight[j])
-            else:
-                dp[i] = min(dp[i], dp[i - value[j]] + weight[j])
-    return dp[-1]
-
-# 139815
-# print(knapsack_4(N, A, w, v))
-
-A = 999
-# 重複なしver
-def knapsack_5(N, limit, weight, value):
-    dp = [[float('inf')] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(1, limit + 1):
-            if i == 0:
-                if j < value[i]:
-                    dp[i][j] = weight[i]
-            elif j < value[i]:
-                dp[i + 1][j] = min(dp[i][j], weight[i])
-            else:
-                dp[i + 1][j] = min(dp[i][j], dp[i][j - value[i]] + weight[i])
-    return dp[N][limit]
-
-# 14045
-# print(knapsack_5(N, A, w, v))
-
-# ABC032 D - ナップサック問題
-N, A = 10, 936447862
-w = [810169801, 957981784, 687140254, 932608409, 42367415, 727293784, 870916042, 685539955, 243593312, 977358410]
-v = [854, 691, 294, 333, 832, 642, 139, 101, 853, 369]
-
-# 半分全列挙 + 二分探索
-def re_list(weight, value):
-    fore_list = []
-    # まず全通り組み合わせる
-    for bit in range(1 << len(weight)):
-        wei = 0
-        val = 0
-        for i in range(len(weight)):
-            if bit & (1 << i):
-                wei += weight[i]
-                val += value[i]
-        fore_list.append([wei, val])
-    fore_list.sort()
-
-    # リスト再作成
-    alta_w = []
-    alta_v = []
-    now = -1
-    for i in fore_list:
-        if now < i[1]:
-            now = i[1]
-            alta_w.append(i[0])
-            alta_v.append(i[1])
-    return alta_w, alta_v
-
-def half_knapsack(N, limit, weight, value):
-    # 半分全列挙
-    fore_w, fore_v = re_list(weight[:N // 2], value[:N // 2])
-    back_w, back_v = re_list(weight[N // 2:], value[N // 2:])
-
-    ans = 0
-    for b_w, b_v in zip(back_w, back_v):
-        if b_w > limit:
-            continue
-
-        opt = b_v
-        index = bisect_right(fore_w, limit - b_w)
-        if index > 0:
-            opt += fore_v[index - 1]
-        ans = max(ans, opt)
-
-    return ans
-
-# あるweightで獲得できる最大のvalue
-def knapsack_wei(N, limit, weight, value):
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(limit + 1):
-            if weight[i] <= j:
-                dp[i + 1][j] = max(dp[i][j], dp[i][j - weight[i]] + value[i])
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp[N][limit]
-
-# あるvalueを獲得するために必要な最小のweight
-def knapsack_val(N, limit, weight, value):
-    max_v = sum(value)
-    dp = [[float('inf')] * (max_v + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(max_v + 1):
-            if value[i] <= j:
-                dp[i + 1][j] = min(dp[i][j], dp[i][j - value[i]] + weight[i])
-            else:
-                dp[i + 1][j] = dp[i][j]
-    for i in range(max_v - 1, -1, -1):
-        if dp[N][i] <= limit:
-            return i
-
-if N <= 30:
-    print(half_knapsack(N, A, w, v))
-    exit()
-elif max(w) <= 1000:
-    print(knapsack_wei(N, A, w, v))
-    exit()
-else:
-    print(knapsack_val(N, A, w, v))
-    exit()
-
-# 半分全列挙部分和
-N, X = 5, 5
-W = [1, 1, 2, 3, 4]
-
-# 半分全列挙
-# O(2 ** (n / 2) * n)解法
-# 遅いが応用が効きそう
-# 言うてn <= 32なのでそんなに遅くない
-def re_list_2(weight):
-    fore_list = []
-    # まず全通り組み合わせる
-    for bit in range(1 << len(weight)):
-        wei = 0
-        for i in range(len(weight)):
-            if bit & (1 << i):
-                wei += weight[i]
-        fore_list.append(wei)
-    fore_list.sort()
-
-    return fore_list
-
-def half_knapsack_2(N, limit, weight):
-    # 半分全列挙
-    fore_w = re_list_2(weight[:N // 2])
-    back_w = re_list_2(weight[N // 2:])
-
-    ans = 0
-    for key in fore_w:
-        if key > limit:
-            continue
-        # {1, 2, 3, ○4, 4, 4, 5...}○の部分のインデックスをとる
-        # {1, 2, 3, 4, 4, 4, ○5...}○の部分のインデックスをとる
-        left = bisect_left(back_w, limit - key)
-        right = bisect_left(back_w, limit - key + 1)
-
-        ans += right - left
-
-    return ans
-
-"""
-# O(2 ** (n / 2))解法
-# 速いが応用は効かなさそう
-def re_list_3(weight):
-    fore_list = defaultdict(int)
-    for bit in range(1 << len(weight)):
-        wei = 0
-        for i in range(len(weight)):
-            if bit & (1 << i):
-                wei += weight[i]
-        fore_list[wei] += 1
-    return fore_list
-def half_knapsack_3(N, limit, weight):
-    fore_w = re_list_3(weight[:N // 2])
-    back_w = re_list_3(weight[N // 2:])
-    ans = 0
-    for key, value in fore_w.items():
-        if key > limit:
-            continue
-        ans += back_w[limit - key] * value
-    return ans
-"""
-
-print(half_knapsack_2(N, X, W))
-
-W = 22
-N = 5
-K = 3
-w = [5, 8, 3, 4, 6]
-v = [40, 50, 60, 70, 80]
-
-# ナップサックdp個数
-# N個の選択肢、weightの上限upper, 足し合わせlimit個以内
-def knapsack_6(N, upper, limit, weight, value):
-    prev = [[0] * (upper + 1) for i in range(limit + 1)]
-
-    for i in range(N):
-        next = [[0] * (upper + 1) for i in range(limit + 1)]
-        for j in range(limit + 1):
-            for l in range(upper + 1):
-                # もし残りweightがl以上でjが１以上（後ろがある）なら
-                if l >= weight[i] and j >= 1:
-                    next[j][l] = max(prev[j][l], prev[j - 1][l - weight[i]] + value[i])
-                else:
-                    next[j][l] = prev[j][l]
-        prev = next
-    return prev[limit][upper]
-
-print(knapsack_6(N, W, K, w, v))
-
-# 最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
-
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
-
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
-
-N, M = 2, 600
-query = [
-[10, 10],
-[100, 100]
-]
-
-w = []
-v = []
-w_rev = []
-v_rev = []
+turn = [0] * N
+# bitに１を置く時、その場所は1-indexになるので注意
 for i in range(N):
-    w.append(query[i][0])
-    v.append(query[i][1])
-    w_rev.append(query[N - i - 1][0])
-    v_rev.append(query[N - i - 1][1])
+    turn[A[i] - 1] = i + 1
 
-def knapsack_1(N, limit, weight, value):
-    dp = [[0] * (limit + 1) for i in range(N + 1)]
-    dp[0][0] = 0
-
-    for i in range(N):
-        for j in range(limit + 1):
-            if weight[i] <= j:
-                dp[i + 1][j] = max(dp[i][j], dp[i][j - weight[i]] + value[i])
-            else:
-                dp[i + 1][j] = dp[i][j]
-    return dp
-
-dp_1 = knapsack_1(N, M, w, v)
-dp_2 = knapsack_1(N, M, w_rev, v_rev)
-
-# 全ての料理について
 ans = 0
-for i in range(1, N + 1):
-    opt = 0
-    # iの前後で何分ずつ使うか
-    for j in range(M):
-        if i == 1:
-            o = query[i - 1][1] + dp_2[N - i][M - j - 1]
-        elif i == N:
-            o = dp_1[i - 1][j] + query[i - 1][1]
-        else:
-            # dp_1[i - 1][j] A[i]以前のものをj分以内に食べるナップサック
-            # dp_2[N - i][M - j - 1] A[i]以降のものをM - j - 1分以内に食べるナップサック
-            # dpにアクセスするだけなのでO(1)でいける
-            o = dp_1[i - 1][j] + query[i - 1][1] + dp_2[N - i][M - j - 1]
-        opt = max(opt, o)
-    ans = max(ans, opt)
+for i in range(N):
+    ans += i - bit.get(turn[i])
+    bit.add(turn[i], 1)
+    # 1を置く
+    # [ , 1, , ]
+    # 2を置く
+    # [ , 1, , 2] 1は正常な位置にある
+    # 3を置く
+    # [3, 1, , 2] 1, 2が3より後ろにあるのでans += 2
+    # 4を置く
+    # [3, 1, 4, 2] 2が4より後ろにあるのでans += 1
 print(ans)
 
-N, M = 4, 100
-query = [
-[30, 50],
-[40, 40],
-[50, 100],
-[60, 80]
-]
-query.sort()
+# ARC031
+N = 4
+B = [2, 4, 1, 3]
 
-w = []
-v = []
-w_rev = []
-v_rev = []
+# 各積み木は左か右かを選んで移動させられる
+# BITの小さい方でいい
+place = [0] * (N + 1)
 for i in range(N):
-    w.append(query[i][0])
-    v.append(query[i][1])
-    w_rev.append(query[N - i - 1][0])
-    v_rev.append(query[N - i - 1][1])
+    place[B[i]] = i
 
-def knapsack_8(N, limit, weight, value):
-    prev = [0] * (limit + 1)
-    # 最大値をレコード
-    rec = [0] * (N + 1)
+bit = BIT(N + 1)
+# 左にある自分より小さいものではない（大きいもの）の数
+left = [0] * (N + 1)
+# 右にある自分より小さいものではない（大きいもの）の数
+right = [0] * (N + 1)
+for i in range(N, 0, -1):
+    bit.add(place[i] + 1, 1)
+    left[i] = bit.get(place[i] + 1)
+    right[i] = (N - i) - bit.get(place[i] + 1)
 
-    for i in range(N):
-        next = [0] * (limit + 1)
-        for j in range(limit + 1):
-            if weight[i] <= j:
-                next[j] = max(prev[j], prev[j - weight[i]] + value[i])
-            else:
-                next[j] = prev[j]
-        rec[i + 1] = next[M]
-        prev = next
-    return rec
-
-dp_2 = knapsack_8(N, M, w_rev, v_rev)
-
-# 全ての料理について
 ans = 0
-for i in range(1, N + 1):
-    if i == N:
-        opt = v[i - 1]
-    else:
-        opt = v[i - 1] + dp_2[N - i]
-    ans = max(ans, opt)
-
+for l, r in zip(left, right):
+    # どちらか小さい方
+    ans += min(l, r)
 print(ans)
