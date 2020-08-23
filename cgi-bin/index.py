@@ -50,6 +50,66 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+# ARC005
+H, W = getNM()
+maze = [input() for i in range(H)]
+
+start = [0, 0]
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == 's':
+            start = [i, j]
+            break
+
+goal = [0, 0]
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == 'g':
+            goal = [i, j]
+            break
+
+def dijkstra(start, goal, size, d):
+    sy, sx = start
+    gy, gx = goal
+
+    dist = [[float('inf')] * W for i in range(H)]
+    dx = [1, 0, -1, 0]
+    dy = [0, 1, 0, -1]
+    pos = [(0, sy, sx)]
+    heapify(pos)
+    dist[sy][sx] = 0
+
+    while len(pos):
+        cost, y, x = heappop(pos)
+
+        if y == gy and x == gx:
+            return cost
+        if dist[y][x] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for i in range(4):
+            ny = y + dy[i]
+            nx = x + dx[i]
+            if 0 <= ny < H and 0 <= nx < W:
+                # '.'
+                if (maze[ny][nx] == '.' or maze[ny][nx] == 'g') and dist[ny][nx] > cost:
+                    dist[ny][nx] = cost
+                    heappush(pos, (cost, ny, nx))
+                # '#'
+                if maze[ny][nx] == "#" and  dist[ny][nx] > cost + d:
+                    dist[ny][nx] = cost + d
+                    heappush(pos, (cost + d, ny, nx))
+
+    return dist[gy][gx]
+
+ans = dijkstra(start, goal, H * W, 1)
+if ans <= 2:
+    print('YES')
+else:
+    print('NO')
+
+"""
+# ABC176
 H, W = getNM()
 Ch, Cw = getNM()
 Dh, Dw = getNM()
@@ -63,7 +123,7 @@ dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
 
 # 二次元ダイクストラ
-def Dijkstra(start, goal, size):
+def dijkstra(start, goal, size):
     sy, sx = start
     gy, gx = goal
     dist = [[float('inf')] * W for i in range(H)]
@@ -98,11 +158,12 @@ def Dijkstra(start, goal, size):
                         heappush(pos, (cost + 1, wy, wx))
     return dist[gy][gx]
 
-ans = Dijkstra((Ch, Cw), (Dh, Dw), H * W)
+ans = dijkstra((Ch, Cw), (Dh, Dw), H * W)
 if ans == float('inf'):
     print(-1)
 else:
     print(ans)
+"""
 
 """
 pos = deque([[Ch, Cw]])
@@ -131,4 +192,73 @@ while len(pos) > 0:
                 dp[wy][wx] = dp[y][x] + 1
 
 print(dp[Dh][Dw])
+"""
+
+"""
+# ABC020
+H, W, T = getNM()
+maze = [input() for i in range(H)]
+
+start = [0, 0]
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == 'S':
+            start = [i, j]
+            break
+
+goal = [0, 0]
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == 'G':
+            goal = [i, j]
+            break
+
+# 二次元ダイクストラ
+def dijkstra(start, goal, size, d):
+    sy, sx = start
+    gy, gx = goal
+
+    dist = [[float('inf')] * W for i in range(H)]
+    dx = [1, 0, -1, 0]
+    dy = [0, 1, 0, -1]
+    pos = [(0, sy, sx)]
+    heapify(pos)
+    dist[sy][sx] = 0
+
+    while len(pos):
+        cost, y, x = heappop(pos)
+
+        if y == gy and x == gx:
+            return cost
+        if dist[y][x] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for i in range(4):
+            ny = y + dy[i]
+            nx = x + dx[i]
+            if 0 <= ny < H and 0 <= nx < W:
+                # '.'
+                if (maze[ny][nx] == '.' or maze[ny][nx] == 'G') and dist[ny][nx] > cost + 1:
+                    dist[ny][nx] = cost + 1
+                    heappush(pos, (cost + 1, ny, nx))
+                # '#'
+                if maze[ny][nx] == "#" and  dist[ny][nx] > cost + d:
+                    dist[ny][nx] = cost + d
+                    heappush(pos, (cost + d, ny, nx))
+
+    return dist[gy][gx]
+
+# にぶたん
+ok = -1
+ng = 10 ** 9 + 1
+
+while ng - ok > 1:
+    mid = (ok + ng) // 2
+
+    if dijkstra(start, goal, H * W, mid) > T:
+        ng = mid
+    else:
+        ok = mid
+
+print(ok)
 """
