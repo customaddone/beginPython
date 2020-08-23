@@ -59,13 +59,52 @@ Cw -= 1
 Dh -= 1
 Dw -= 1
 
-# ワープを最低で何回使うか
-# 上下左右2つ向こうまでの範囲内でワープできる
-# 隣接する'.'が領域
-
 dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
 
+# 二次元ダイクストラ
+def Dijkstra(start, goal, size):
+    sy, sx = start
+    gy, gx = goal
+    dist = [[float('inf')] * W for i in range(H)]
+    pos = [(0, sy, sx)]
+    heapify(pos)
+    dist[sy][sx] = 0
+
+    while len(pos):
+        cost, y, x = heappop(pos)
+
+        if y == gy and x == gx:
+            return cost
+        if dist[y][x] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        # walking
+        for i in range(4):
+            ny = y + dy[i]
+            nx = x + dx[i]
+            if 0 <= ny < H and 0 <= nx < W and maze[ny][nx] == '.':
+                if dist[ny][nx] > cost:
+                    dist[ny][nx] = cost
+                    heappush(pos, (cost, ny, nx))
+        # warp
+        for w_y in range(-2, 3):
+            for w_x in range(-2, 3):
+                wy = y + w_y
+                wx = x + w_x
+                if 0 <= wy < H and 0 <= wx < W and maze[wy][wx] == '.':
+                    if dist[wy][wx] > cost + 1:
+                        dist[wy][wx] = cost + 1
+                        heappush(pos, (cost + 1, wy, wx))
+    return dist[gy][gx]
+
+ans = Dijkstra((Ch, Cw), (Dh, Dw), H * W)
+if ans == float('inf'):
+    print(-1)
+else:
+    print(ans)
+
+"""
 pos = deque([[Ch, Cw]])
 dp = [[-1] * W for i in range(H)]
 dp[Ch][Cw] = 0
@@ -78,7 +117,7 @@ while len(pos) > 0:
         # 歩いて移動
         if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] == "." and (dp[ny][nx] == -1 or dp[y][x] < dp[ny][nx]):
             # 0-1 bfs
-            # 先頭に置く（優先的に処理される)
+            # 先頭に置く
             pos.appendleft([ny, nx])
             dp[ny][nx] = dp[y][x]
     # ワープ
@@ -92,3 +131,4 @@ while len(pos) > 0:
                 dp[wy][wx] = dp[y][x] + 1
 
 print(dp[Dh][Dw])
+"""
