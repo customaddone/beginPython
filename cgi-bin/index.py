@@ -50,215 +50,62 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ARC005
-H, W = getNM()
-maze = [input() for i in range(H)]
+N, mod = getNM()
+X = [[] for i in range(N)]
+for i in range(N-1):
+    x, y = getNM()
+    X[x - 1].append(y - 1)
+    X[y - 1].append(x - 1)
 
-start = [0, 0]
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == 's':
-            start = [i, j]
-            break
+class Reroot():
+    def __init__(self, graph):
+        self.graph = copy.deepcopy(graph)
+        ##### Settings #####
+        self.unit = 1
+        self.merge = lambda a, b: a * b % mod # マージ
+        self.adj_bu = lambda a, i: a + 1 # マージする時の調整 iに都合のいい値を設定しよう
+        # iの p以外側の頂点数（サイズ）みたいなのでも大丈夫。
+        self.adj_td = lambda a, i, p: a + 1
+        self.adj_fin = lambda a, i: a
+        ####################
+        # トポソ
+        P = [-1] * N # 親
+        Q = deque([0])
+        R = [] # 巡回した順番
+        while Q:
+            i = deque.popleft(Q)
+            R.append(i)
+            for a in self.graph[i]:
+                if a != P[i]:
+                    P[a] = i
+                    # 親への辺を消す
+                    self.graph[a].remove(i)
+                    deque.append(Q, a)
+        # bottom-up
+        # 頂点iからその親 piに向かうもの）
+        ME = [self.unit] * N # mergeを使う
+        XX = [0] * N # dpする
+        for i in R[1:][::-1]: # 巡回を逆順に辿る
+            XX[i] = self.adj_bu(ME[i], i) # レコード
+            p = P[i] # 親を取り出す
+            ME[p] = self.merge(ME[p], XX[i]) # iの親要素とiの値をマージする
+        XX[R[0]] = self.adj_fin(ME[R[0]], R[0]) # 先頭については答えが求められるのでXXにレコード
 
-goal = [0, 0]
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == 'g':
-            goal = [i, j]
-            break
+        TD = [self.unit] * N
+        for i in R: # 巡回した順番に
+            ac = TD[i] # 左からDP（結果はTDに入れている）
+            for j in self.graph[i]: # 各子要素について順番に更新を試みる
+                TD[j] = ac # TDにはjまで累積した分が入っている
+                ac = self.merge(ac, XX[j])  # マージする
+            ac = self.unit # リセット 右からDP（結果はacに入れている）
+            for j in self.graph[i][::-1]: # 各子要素について逆順に
+                # TDに残っている左から累積した分とacにある右から累積した分をTDにマージ
+                TD[j] = self.adj_td(self.merge(TD[j], ac), j, i)
+                ac = self.merge(ac, XX[j]) # acの累積更新
+                # レコード 順向きのものと逆向きのものをマージする
+                XX[j] = self.adj_fin(self.merge(ME[j], TD[j]), j)
+        self.res = XX
 
-def dijkstra(start, goal, size, d):
-    sy, sx = start
-    gy, gx = goal
-
-    dist = [[float('inf')] * W for i in range(H)]
-    dx = [1, 0, -1, 0]
-    dy = [0, 1, 0, -1]
-    pos = [(0, sy, sx)]
-    heapify(pos)
-    dist[sy][sx] = 0
-
-    while len(pos):
-        cost, y, x = heappop(pos)
-
-        if y == gy and x == gx:
-            return cost
-        if dist[y][x] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i in range(4):
-            ny = y + dy[i]
-            nx = x + dx[i]
-            if 0 <= ny < H and 0 <= nx < W:
-                # '.'
-                if (maze[ny][nx] == '.' or maze[ny][nx] == 'g') and dist[ny][nx] > cost:
-                    dist[ny][nx] = cost
-                    heappush(pos, (cost, ny, nx))
-                # '#'
-                if maze[ny][nx] == "#" and  dist[ny][nx] > cost + d:
-                    dist[ny][nx] = cost + d
-                    heappush(pos, (cost + d, ny, nx))
-
-    return dist[gy][gx]
-
-ans = dijkstra(start, goal, H * W, 1)
-if ans <= 2:
-    print('YES')
-else:
-    print('NO')
-
-"""
-# ABC176
-H, W = getNM()
-Ch, Cw = getNM()
-Dh, Dw = getNM()
-maze = [input() for i in range(H)]
-Ch -= 1
-Cw -= 1
-Dh -= 1
-Dw -= 1
-
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-
-# 二次元ダイクストラ
-def dijkstra(start, goal, size):
-    sy, sx = start
-    gy, gx = goal
-    dist = [[float('inf')] * W for i in range(H)]
-    pos = [(0, sy, sx)]
-    heapify(pos)
-    dist[sy][sx] = 0
-
-    while len(pos):
-        cost, y, x = heappop(pos)
-
-        if y == gy and x == gx:
-            return cost
-        if dist[y][x] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        # walking
-        for i in range(4):
-            ny = y + dy[i]
-            nx = x + dx[i]
-            if 0 <= ny < H and 0 <= nx < W and maze[ny][nx] == '.':
-                if dist[ny][nx] > cost:
-                    dist[ny][nx] = cost
-                    heappush(pos, (cost, ny, nx))
-        # warp
-        for w_y in range(-2, 3):
-            for w_x in range(-2, 3):
-                wy = y + w_y
-                wx = x + w_x
-                if 0 <= wy < H and 0 <= wx < W and maze[wy][wx] == '.':
-                    if dist[wy][wx] > cost + 1:
-                        dist[wy][wx] = cost + 1
-                        heappush(pos, (cost + 1, wy, wx))
-    return dist[gy][gx]
-
-ans = dijkstra((Ch, Cw), (Dh, Dw), H * W)
-if ans == float('inf'):
-    print(-1)
-else:
-    print(ans)
-"""
-
-"""
-pos = deque([[Ch, Cw]])
-dp = [[-1] * W for i in range(H)]
-dp[Ch][Cw] = 0
-
-while len(pos) > 0:
-    y, x = pos.popleft()
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        # 歩いて移動
-        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] == "." and (dp[ny][nx] == -1 or dp[y][x] < dp[ny][nx]):
-            # 0-1 bfs
-            # 先頭に置く
-            pos.appendleft([ny, nx])
-            dp[ny][nx] = dp[y][x]
-    # ワープ
-    for i in range(-2, 3):
-        for j in range(-2, 3):
-            wy = y + i
-            wx = x + j
-            # 歩いて移動不可能でないと使わない
-            if 0 <= wx < W and 0 <= wy < H and maze[wy][wx] == "." and dp[wy][wx] == -1:
-                pos.append([wy, wx])
-                dp[wy][wx] = dp[y][x] + 1
-
-print(dp[Dh][Dw])
-"""
-
-"""
-# ABC020
-H, W, T = getNM()
-maze = [input() for i in range(H)]
-
-start = [0, 0]
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == 'S':
-            start = [i, j]
-            break
-
-goal = [0, 0]
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == 'G':
-            goal = [i, j]
-            break
-
-# 二次元ダイクストラ
-def dijkstra(start, goal, size, d):
-    sy, sx = start
-    gy, gx = goal
-
-    dist = [[float('inf')] * W for i in range(H)]
-    dx = [1, 0, -1, 0]
-    dy = [0, 1, 0, -1]
-    pos = [(0, sy, sx)]
-    heapify(pos)
-    dist[sy][sx] = 0
-
-    while len(pos):
-        cost, y, x = heappop(pos)
-
-        if y == gy and x == gx:
-            return cost
-        if dist[y][x] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i in range(4):
-            ny = y + dy[i]
-            nx = x + dx[i]
-            if 0 <= ny < H and 0 <= nx < W:
-                # '.'
-                if (maze[ny][nx] == '.' or maze[ny][nx] == 'G') and dist[ny][nx] > cost + 1:
-                    dist[ny][nx] = cost + 1
-                    heappush(pos, (cost + 1, ny, nx))
-                # '#'
-                if maze[ny][nx] == "#" and  dist[ny][nx] > cost + d:
-                    dist[ny][nx] = cost + d
-                    heappush(pos, (cost + d, ny, nx))
-
-    return dist[gy][gx]
-
-# にぶたん
-ok = -1
-ng = 10 ** 9 + 1
-
-while ng - ok > 1:
-    mid = (ok + ng) // 2
-
-    if dijkstra(start, goal, H * W, mid) > T:
-        ng = mid
-    else:
-        ok = mid
-
-print(ok)
-"""
+tree = Reroot(X)
+# for i in tree.res:
+    # print(i)
