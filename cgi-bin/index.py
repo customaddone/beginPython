@@ -50,24 +50,57 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, mod = getNM()
-X = [[] for i in range(N)]
-for i in range(N-1):
-    x, y = getNM()
-    X[x - 1].append(y - 1)
-    X[y - 1].append(x - 1)
+N = 4
+query = [
+[0, 1, 1],
+[1, 2, 2],
+[2, 3, 4]
+]
 
+G = [[] for i in range(N)]
+for i in range(N - 1):
+    s, t, w = query[i]
+    G[s].append((t, w))
+    G[t].append((s, w))
+
+
+def bfs(s):
+    dist = [-1] * N
+    que = deque([s])
+    dist[s] = 0
+
+    while que:
+        v = que.popleft()
+        d = dist[v]
+        for w, c in G[v]:
+            if dist[w] >= 0:
+                continue
+            dist[w] = d + c
+            que.append(w)
+    d = max(dist)
+    # 全部並べて一番値がでかいやつ
+    return dist.index(d), d
+
+u, _ = bfs(0)
+v, d = bfs(u)
+
+print(d)
+
+# ☦️全方位木dp☦️
+# https://qiita.com/Kiri8128/items/a011c90d25911bdb3ed3
 class Reroot():
-    def __init__(self, graph):
-        self.graph = copy.deepcopy(graph)
-        ##### Settings #####
-        self.unit = 1
-        self.merge = lambda a, b: a * b % mod # マージ
-        self.adj_bu = lambda a, i: a + 1 # マージする時の調整 iに都合のいい値を設定しよう
-        # 頂点iから最も遠い点とかの場合はa + 1（子から親に行く際にエッジを一つ遡る）
-        self.adj_td = lambda a, i, p: a + 1
-        self.adj_fin = lambda a, i: a
-        ####################
+    def __init__(self, query):
+        graph = [[] for i in range(N)]
+        dist = [{} for i in range(N)]
+        # 今回は0-indexなんだ
+        for x, y, z in query:
+            graph[x].append(y)
+            graph[y].append(x)
+            dist[x][y] = z
+            dist[y][x] = z
+
+        self.graph = graph
+        self.dist = dist
         # トポソ
         P = [-1] * N # 親
         Q = deque([0])
@@ -81,6 +114,15 @@ class Reroot():
                     # 親への辺を消す
                     self.graph[a].remove(i)
                     deque.append(Q, a)
+
+        ##### Settings #####
+        self.unit = 0 # 単位元
+        self.merge = lambda a, b: max(a, b)
+        self.adj_bu = lambda a, i: a + dist[i][P[i]] # マージする時の調整 iに都合のいい値を設定しよう
+        # 頂点iから最も遠い点とかの場合はa + 1（子から親に行く際にエッジを一つ遡る）
+        self.adj_td = lambda a, i, p: a + dist[i][P[i]]
+        self.adj_fin = lambda a, i: a
+        ####################
         # bottom-up
         # 頂点iからその親 piに向かうもの）
         ME = [self.unit] * N # mergeを使う
@@ -106,6 +148,8 @@ class Reroot():
                 XX[j] = self.adj_fin(self.merge(ME[j], TD[j]), j)
         self.res = XX
 
-tree = Reroot(X)
-# for i in tree.res:
-    # print(i)
+# main
+N = getN()
+query = [getList() for i in range(N - 1)]
+tree = Reroot(query)
+print(max(tree.res))
