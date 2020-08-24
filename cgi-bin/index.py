@@ -50,17 +50,23 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class Reroot():
-    def __init__(self, n, query):
-        self.n = n
-        graph = [[] for i in range(self.n)]
-        for x, y in query:
+# ☦️全方位木dp☦️
+# https://qiita.com/Kiri8128/items/a011c90d25911bdb3ed3
+class Reroot1():
+    def __init__(self, query):
+        graph = [[] for i in range(N)]
+        dist = [{} for i in range(N)]
+        # 今回は0-indexなんだ
+        for x, y, z in query:
             graph[x - 1].append(y - 1)
             graph[y - 1].append(x - 1)
+            dist[x - 1][y - 1] = z
+            dist[y - 1][x - 1] = z
 
         self.graph = graph
-        # トポソ
-        P = [-1] * self.n
+        self.dist = dist
+
+        P = [-1] * N
         Q = deque([0])
         R = []
         while Q:
@@ -75,20 +81,19 @@ class Reroot():
         ##### Settings #####
         self.unit = 0
         self.merge = lambda a, b: max(a, b)
-        self.adj_bu = lambda a, i: a + 1
-        self.adj_td = lambda a, i, p: a + 1
+        self.adj_bu = lambda a, i: a + dist[i][P[i]]
+        self.adj_td = lambda a, i, p: a + dist[i][P[i]]
         self.adj_fin = lambda a, i: a
         ####################
 
-        ME = [self.unit] * self.n
-        XX = [0] * self.n
+        ME = [self.unit] * N
+        XX = [0] * N
         for i in R[1:][::-1]:
             XX[i] = self.adj_bu(ME[i], i)
             p = P[i]
             ME[p] = self.merge(ME[p], XX[i])
         XX[R[0]] = self.adj_fin(ME[R[0]], R[0])
-
-        TD = [self.unit] * self.n
+        TD = [self.unit] * N
         for i in R:
             ac = TD[i]
             for j in self.graph[i]:
@@ -99,14 +104,79 @@ class Reroot():
                 TD[j] = self.adj_td(self.merge(TD[j], ac), j, i)
                 ac = self.merge(ac, XX[j])
                 XX[j] = self.adj_fin(self.merge(ME[j], TD[j]), j)
-
         self.res = XX
 
-N = getN()
-que = [getList() for i in range(N - 1)]
-tree = Reroot(N, que)
-# 最後に最長経路に潜りこむ(行きのみ)
-# それ以外の経路については行き帰り2回通るので
-# 答えは2(N - 1) - d
-for i in tree.res:
-    print(2 * (N - 1) - i)
+N, D = getNM()
+query = [getList() for i in range(N - 1)]
+curse = [set() for i in range(N)]
+for a, b, c in query:
+    curse[a - 1].add(b - 1)
+tree1 = Reroot1(query)
+dis = tree1.res
+
+class Reroot2():
+    def __init__(self, query):
+        graph = [[] for i in range(N)]
+        dist = [{} for i in range(N)]
+        # 今回は0-indexなんだ
+        for x, y, z in query:
+            graph[x - 1].append(y - 1)
+            graph[y - 1].append(x - 1)
+            dist[x - 1][y - 1] = z
+            dist[y - 1][x - 1] = z
+
+        self.graph = graph
+        self.dist = dist
+
+        P = [-1] * N
+        Q = deque([0])
+        R = []
+        while Q:
+            i = deque.popleft(Q)
+            R.append(i)
+            for a in self.graph[i]:
+                if a != P[i]:
+                    P[a] = i
+                    self.graph[a].remove(i)
+                    deque.append(Q, a)
+
+        ##### Settings #####
+        self.unit = 0
+        self.merge = lambda a, b: a + b
+        # p(親)とi(子)でなんかあったら+1
+        self.adj_bu = lambda a, i, p: a + 1 if p in curse[i] else a
+        self.adj_td = lambda a, i, p: a + 1 if p in curse[i] else a
+        self.adj_fin = lambda a, i: a
+        ####################
+
+        ME = [self.unit] * N
+        XX = [0] * N
+        for i in R[1:][::-1]:
+            p = P[i]
+            XX[i] = self.adj_bu(ME[i], p, i)
+            ME[p] = self.merge(ME[p], XX[i])
+
+        XX[R[0]] = self.adj_fin(ME[R[0]], R[0])
+        TD = [self.unit] * N
+        for i in R:
+            ac = TD[i]
+            for j in self.graph[i]:
+                TD[j] = ac
+                ac = self.merge(ac, XX[j])
+            ac = self.unit
+            for j in self.graph[i][::-1]:
+                TD[j] = self.adj_td(self.merge(TD[j], ac), j, i)
+                ac = self.merge(ac, XX[j])
+                XX[j] = self.adj_fin(self.merge(ME[j], TD[j]), j)
+        self.res = XX
+
+tree2 = Reroot2(query)
+limit = tree2.res
+ans = float('inf')
+for i in range(N):
+    if dis[i] <= D:
+        ans = min(ans, limit[i])
+if ans == float('inf'):
+    print(-1)
+else:
+    print(ans)
