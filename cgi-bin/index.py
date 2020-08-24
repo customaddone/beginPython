@@ -50,74 +50,63 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 5
-# 木グラフ
-que = [
-[1, 2],
-[1, 4],
-[2, 3],
-[2, 5]
-]
-# 重みつき
-que_dis = [
-[1, 2, 2],
-[1, 4, 1],
-[2, 3, 2],
-[2, 5, 1]
-]
+class Reroot():
+    def __init__(self, n, query):
+        self.n = n
+        graph = [[] for i in range(self.n)]
+        for x, y in query:
+            graph[x - 1].append(y - 1)
+            graph[y - 1].append(x - 1)
 
-def build_tree(n, edge_list):
+        self.graph = graph
+        # トポソ
+        P = [-1] * self.n
+        Q = deque([0])
+        R = []
+        while Q:
+            i = deque.popleft(Q)
+            R.append(i)
+            for a in self.graph[i]:
+                if a != P[i]:
+                    P[a] = i
+                    self.graph[a].remove(i)
+                    deque.append(Q, a)
 
-    G = [[] for i in range(n)]
+        ##### Settings #####
+        self.unit = 0
+        self.merge = lambda a, b: max(a, b)
+        self.adj_bu = lambda a, i: a + 1
+        self.adj_td = lambda a, i, p: a + 1
+        self.adj_fin = lambda a, i: a
+        ####################
 
-    for a, b in edge_list:
-        G[a - 1].append(b - 1)
-        G[b - 1].append(a - 1)
+        ME = [self.unit] * self.n
+        XX = [0] * self.n
+        for i in R[1:][::-1]:
+            XX[i] = self.adj_bu(ME[i], i)
+            p = P[i]
+            ME[p] = self.merge(ME[p], XX[i])
+        XX[R[0]] = self.adj_fin(ME[R[0]], R[0])
 
-    return G
+        TD = [self.unit] * self.n
+        for i in R:
+            ac = TD[i]
+            for j in self.graph[i]:
+                TD[j] = ac
+                ac = self.merge(ac, XX[j])
+            ac = self.unit
+            for j in self.graph[i][::-1]:
+                TD[j] = self.adj_td(self.merge(TD[j], ac), j, i)
+                ac = self.merge(ac, XX[j])
+                XX[j] = self.adj_fin(self.merge(ME[j], TD[j]), j)
 
-def build_tree_dis(n, edge_list):
+        self.res = XX
 
-    G = [[] for i in range(n)]
-
-    for a, b, c in edge_list:
-        G[a - 1].append([b - 1, c])
-        G[b - 1].append([a - 1, c])
-
-    return G
-
-# 木の建設
-G1 = build_tree(N, que)
-G2 = build_tree_dis(N, que_dis)
-
-# 木を探索
-def search(n, edges, sta):
-    ignore = [0] * N
-    ignore[sta] = 1
-    pos = deque([sta])
-    # 探索
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i] == 0:
-                ignore[i] = 1
-                pos.append(i)
-# [0, 1, 3, 2, 4]
-search(N, G1, 0)
-
-# staからの距離
-def distance(n, edges, sta):
-    # 木をKから順にたどる（戻るの禁止）
-    ignore = [-1] * N
-    ignore[sta] = 0
-    pos = deque([sta])
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
-    return ignore
-# [0, 2, 4, 1, 3]
-print(distance(N, G2, 0))
+N = getN()
+que = [getList() for i in range(N - 1)]
+tree = Reroot(N, que)
+# 最後に最長経路に潜りこむ(行きのみ)
+# それ以外の経路については行き帰り2回通るので
+# 答えは2(N - 1) - d
+for i in tree.res:
+    print(2 * (N - 1) - i)
