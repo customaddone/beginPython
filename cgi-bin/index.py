@@ -50,41 +50,58 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = getNM()
+N, M, T = getNM()
+A = getList()
 query = [getList() for i in range(M)]
-
-dist = [[float('inf')] * N for i in range(N)]
-sec_list = []
-
+dist_1 = []
+dist_2 = []
 for i in range(M):
     a, b, c = query[i]
-    if a == 1:
-        sec_list.append([b - 1, c])
-    elif b == 1:
-        sec_list.appedn([a - 1, c])
-    if a != 1 and b != 1:
-        dist[a - 1][b - 1] = c
-        dist[b - 1][a - 1] = c
+    dist_1.append([a, b, c])
+    # 帰りがけの最短経路については全ての道を逆順にすればいい
+    dist_2.append([b, a, c])
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+def build_tree_dis(N, edge_list):
+
+    G = [[] for i in range(N)]
+
+    for i in range(len(edge_list)):
+        a, b, c = edge_list[i]
+        G[a - 1].append([b - 1, c])
+
+    # 葉（末端の数）
+    leaves = []
+    for i in range(N):
+        if len(G[i]) == 1:
+            leaves.append(i)
+
+    return G
+
+edges_1 = build_tree_dis(N, dist_1)
+edges_2 = build_tree_dis(N, dist_2)
+
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        d, now = heapq.heappop(pq)
+        if (d > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i[0]] > dist[now] + i[1]:
+                dist[i[0]] = dist[now] + i[1]
+                heapq.heappush(pq, (dist[i[0]], i[0]))
     return dist
 
-warshall_floyd(dist)
+dij_to = dij(0, edges_1)
+dij_from = dij(0, edges_2)
+ans = 0
 
-ans = float('inf')
-for i in range(len(sec_list)):
-    for j in range(i + 1, len(sec_list)):
-        x1 = sec_list[i]
-        x2 = sec_list[j]
-        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
-        ans = min(ans, opt)
-
-if ans == float('inf'):
-    print(-1)
-else:
-    print(ans)
+for i in range(N):
+    time = dij_to[i] + dij_from[i]
+    opt = (T - time) * A[i]
+    ans = max(ans, opt)
+print(ans)
