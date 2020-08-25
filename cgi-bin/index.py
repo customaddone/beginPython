@@ -50,58 +50,37 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M, T = getNM()
-A = getList()
-query = [getList() for i in range(M)]
-dist_1 = []
-dist_2 = []
-for i in range(M):
-    a, b, c = query[i]
-    dist_1.append([a, b, c])
-    # 帰りがけの最短経路については全ての道を逆順にすればいい
-    dist_2.append([b, a, c])
+H, W = getNM()
+maze = []
+for i in range(H):
+    m = getList()
+    maze.append(m)
 
-def build_tree_dis(N, edge_list):
+memo = [[-1] * W for i in range(H)]
 
-    G = [[] for i in range(N)]
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
-    for i in range(len(edge_list)):
-        a, b, c = edge_list[i]
-        G[a - 1].append([b - 1, c])
+# ぐるぐる回るやつはdfs
+def dfs(x, y):
+    if memo[y][x] != -1:
+        return memo[y][x]
 
-    # 葉（末端の数）
-    leaves = []
-    for i in range(N):
-        if len(G[i]) == 1:
-            leaves.append(i)
+    res = 1
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] > maze[y][x]:
+            res += dfs(nx, ny)
+            res %= mod
 
-    return G
+    memo[y][x] = res
+    return res
 
-edges_1 = build_tree_dis(N, dist_1)
-edges_2 = build_tree_dis(N, dist_2)
-
-def dij(start, edges):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-
-    # pqの先頭がgoal行きのものなら最短距離を返す
-    while len(pq) > 0:
-        d, now = heapq.heappop(pq)
-        if (d > dist[now]):
-            continue
-        for i in edges[now]:
-            if dist[i[0]] > dist[now] + i[1]:
-                dist[i[0]] = dist[now] + i[1]
-                heapq.heappush(pq, (dist[i[0]], i[0]))
-    return dist
-
-dij_to = dij(0, edges_1)
-dij_from = dij(0, edges_2)
 ans = 0
+for i in range(H):
+    for j in range(W):
+        ans += dfs(j, i)
+        ans %= mod
 
-for i in range(N):
-    time = dij_to[i] + dij_from[i]
-    opt = (T - time) * A[i]
-    ans = max(ans, opt)
-print(ans)
+print(ans % mod)
