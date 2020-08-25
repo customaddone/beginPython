@@ -50,59 +50,41 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 7
-a, b = 1, 7
-M = 8
-que = [
-[1, 2],
-[1, 3],
-[4, 2],
-[4, 3],
-[4, 5],
-[4, 6],
-[7, 5],
-[7, 6]
-]
-dist = [[] for i in range(N)]
-for x, y in que:
-    dist[x - 1].append(y - 1)
-    dist[y - 1].append(x - 1)
+N, M = getNM()
+query = [getList() for i in range(M)]
 
-# スタートからの最短距離測定
-def distance(sta):
-    # 木をstaから順にたどる（戻るの禁止）
-    pos = deque([sta])
-    ignore = [-1] * N
-    ignore[sta] = 0
+dist = [[float('inf')] * N for i in range(N)]
+sec_list = []
 
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in dist[u]:
-            if ignore[i] == -1:
-                ignore[i] = ignore[u] + 1
-                pos.append(i)
+for i in range(M):
+    a, b, c = query[i]
+    if a == 1:
+        sec_list.append([b - 1, c])
+    elif b == 1:
+        sec_list.appedn([a - 1, c])
+    if a != 1 and b != 1:
+        dist[a - 1][b - 1] = c
+        dist[b - 1][a - 1] = c
 
-    return ignore
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
 
-d = distance(a - 1)
+warshall_floyd(dist)
 
-# スタートから特定の点まで最短距離で行く通りの数
-def counter(sta):
-    pos = deque([sta])
-    ignore = [0] * N
-    cnt = [0] * N
-    cnt[sta] = 1
+ans = float('inf')
+for i in range(len(sec_list)):
+    for j in range(i + 1, len(sec_list)):
+        x1 = sec_list[i]
+        x2 = sec_list[j]
+        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
+        ans = min(ans, opt)
 
-    while len(pos) > 0:
-        u = pos.popleft()
-        if ignore[u] == 0:
-            ignore[u] = 1
-            # d[i] == d[u] + 1を満たすuの子ノード全てに
-            # 「スタートからuまでの通りの数」をプラス（他のルートからも来る）
-            for i in dist[u]:
-                if d[i] == d[u] + 1:
-                    cnt[i] += cnt[u]
-                    pos.append(i)
-    return cnt
-
-print(counter(a - 1)[b - 1] % mod)
+if ans == float('inf'):
+    print(-1)
+else:
+    print(ans)
