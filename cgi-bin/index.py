@@ -50,37 +50,65 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-H, W = getNM()
-maze = []
-for i in range(H):
-    m = getList()
-    maze.append(m)
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-memo = [[-1] * W for i in range(H)]
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-# ぐるぐる回るやつはdfs
-def dfs(x, y):
-    if memo[y][x] != -1:
-        return memo[y][x]
+        if x == y:
+            return
 
-    res = 1
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] > maze[y][x]:
-            res += dfs(nx, ny)
-            res %= mod
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
 
-    memo[y][x] = res
-    return res
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
 
-ans = 0
-for i in range(H):
-    for j in range(W):
-        ans += dfs(j, i)
-        ans %= mod
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
 
-print(ans % mod)
+    def size(self, x):
+        return -self.parents[self.find(x)]
+
+N, M = getNM()
+bridge = [getList() for i in range(M)]
+Q = getN()
+resident = []
+for i in range(Q):
+    a, b = getNM()
+    resident.append([a, b, i])
+
+bridge.sort(reverse = True, key = lambda i:i[2])
+resident.sort(reverse = True, key = lambda i:i[1])
+
+U = UnionFind(N)
+
+ans = []
+index = 0
+for i in range(Q):
+    # 建築年が新しい順に橋をかけていく
+    for j in range(index, M):
+        if bridge[j][2] > resident[i][1]:
+            a, b, c = bridge[j]
+            U.union(a - 1, b - 1)
+        else:
+            index = j
+            break
+    # U.sizeで判定
+    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
+
+# 国民を登場順にソート
+ans.sort(key = lambda i: i[0])
+for i in ans:
+    print(i[1])
