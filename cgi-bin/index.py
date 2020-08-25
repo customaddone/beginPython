@@ -50,71 +50,59 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class Reroot():
-    def __init__(self, n, query):
-        self.n = n
-        graph = [[] for i in range(self.n)]
-        for x, y in query:
-            graph[x].append(y)
-            graph[y].append(x)
+N = 7
+a, b = 1, 7
+M = 8
+que = [
+[1, 2],
+[1, 3],
+[4, 2],
+[4, 3],
+[4, 5],
+[4, 6],
+[7, 5],
+[7, 6]
+]
+dist = [[] for i in range(N)]
+for x, y in que:
+    dist[x - 1].append(y - 1)
+    dist[y - 1].append(x - 1)
 
-        self.graph = graph
-        # トポソ
-        P = [-1] * self.n
-        Q = deque([0])
-        R = []
-        while Q:
-            i = deque.popleft(Q)
-            R.append(i)
-            for a in self.graph[i]:
-                if a != P[i]:
-                    P[a] = i
-                    self.graph[a].remove(i)
-                    deque.append(Q, a)
+# スタートからの最短距離測定
+def distance(sta):
+    # 木をstaから順にたどる（戻るの禁止）
+    pos = deque([sta])
+    ignore = [-1] * N
+    ignore[sta] = 0
 
-        ##### Settings #####
-        self.unit = 0
-        self.merge = lambda a, b: a + b
-        self.adj_bu = lambda a, i: a + 1
-        self.adj_td = lambda a, i, p: a + 1
-        self.adj_fin = lambda a, i: a
-        ####################
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in dist[u]:
+            if ignore[i] == -1:
+                ignore[i] = ignore[u] + 1
+                pos.append(i)
 
-        ME = [self.unit] * self.n
-        XX = [0] * self.n
-        for i in R[1:][::-1]:
-            XX[i] = self.adj_bu(ME[i], i)
-            p = P[i]
-            ME[p] = self.merge(ME[p], XX[i])
-        XX[R[0]] = self.adj_fin(ME[R[0]], R[0])
-        res = [0] * N
-        # 子向きの部分木のサイズ
-        for i in range(N):
-            for j in self.graph[i]:
-                res[i] = max(res[i], XX[j])
+    return ignore
 
-        TD = [self.unit] * self.n
-        for i in R:
-            ac = TD[i]
-            for j in self.graph[i]:
-                TD[j] = ac
-                ac = self.merge(ac, XX[j])
-            ac = self.unit
-            for j in self.graph[i][::-1]:
-                TD[j] = self.adj_td(self.merge(TD[j], ac), j, i)
-                ac = self.merge(ac, XX[j])
-                XX[j] = self.adj_fin(self.merge(ME[j], TD[j]), j)
-        # 親向き部分木のサイズ
-        for i in range(N):
-            if P[i] >= 0:
-                res[i] = max(res[i], TD[i])
+d = distance(a - 1)
 
-        self.res = res
+# スタートから特定の点まで最短距離で行く通りの数
+def counter(sta):
+    pos = deque([sta])
+    ignore = [0] * N
+    cnt = [0] * N
+    cnt[sta] = 1
 
-N = getN()
-que = getArray(N - 1)
-que = [[i + 1, que[i]] for i in range(N - 1)]
+    while len(pos) > 0:
+        u = pos.popleft()
+        if ignore[u] == 0:
+            ignore[u] = 1
+            # d[i] == d[u] + 1を満たすuの子ノード全てに
+            # 「スタートからuまでの通りの数」をプラス（他のルートからも来る）
+            for i in dist[u]:
+                if d[i] == d[u] + 1:
+                    cnt[i] += cnt[u]
+                    pos.append(i)
+    return cnt
 
-tree = Reroot(N, que)
-for i in tree.res:
-    print(i)
+print(counter(a - 1)[b - 1] % mod)
