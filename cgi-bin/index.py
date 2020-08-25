@@ -50,7 +50,7 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC037 D - 経路 
+# ABC037 D - 経路
 H, W = getNM()
 maze = []
 for i in range(H):
@@ -92,6 +92,7 @@ maze = [input() for i in range(H)]
 
 dp_row = [[-1] * W for i in range(H)]
 dp_col = [[-1] * W for i in range(H)]
+
 
 # 横
 def dfs_row(y, x):
