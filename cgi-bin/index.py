@@ -50,65 +50,99 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
+# ABC037 D - 経路 
+H, W = getNM()
+maze = []
+for i in range(H):
+    m = getList()
+    maze.append(m)
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+memo = [[-1] * W for i in range(H)]
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
-        if x == y:
-            return
+# ぐるぐる回るやつはdfs
+def dfs(x, y):
+    if memo[y][x] != -1:
+        return memo[y][x]
 
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
+    res = 1
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] > maze[y][x]:
+            res += dfs(nx, ny)
+            res %= mod
 
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
+    memo[y][x] = res
+    return res
 
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
+ans = 0
+for i in range(H):
+    for j in range(W):
+        ans += dfs(j, i)
+        ans %= mod
 
-    def size(self, x):
-        return -self.parents[self.find(x)]
+print(ans % mod)
 
-N, M = getNM()
-bridge = [getList() for i in range(M)]
-Q = getN()
-resident = []
-for i in range(Q):
-    a, b = getNM()
-    resident.append([a, b, i])
+# ABC129 D - Lamp
+H, W = getNM()
+maze = [input() for i in range(H)]
 
-bridge.sort(reverse = True, key = lambda i:i[2])
-resident.sort(reverse = True, key = lambda i:i[1])
+dp_row = [[-1] * W for i in range(H)]
+dp_col = [[-1] * W for i in range(H)]
 
-U = UnionFind(N)
+# 横
+def dfs_row(y, x):
+    if dp_row[y][x] >= 0:
+        return dp_row[y][x]
 
-ans = []
-index = 0
-for i in range(Q):
-    # 建築年が新しい順に橋をかけていく
-    for j in range(index, M):
-        if bridge[j][2] > resident[i][1]:
-            a, b, c = bridge[j]
-            U.union(a - 1, b - 1)
-        else:
-            index = j
-            break
-    # U.sizeで判定
-    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
+    if maze[y][x] == '#':
+        return 0
 
-# 国民を登場順にソート
-ans.sort(key = lambda i: i[0])
-for i in ans:
-    print(i[1])
+    res = 1
+    nx = x + 1
+    if 0 <= nx < W and maze[y][nx] == '.':
+        res += dfs_row(y, nx)
+    dp_row[y][x] = res
+    return res
+
+for i in range(H):
+    for j in range(W):
+        dfs_row(i, j)
+    cnt = 0
+    for j in range(1, W):
+        if dp_row[i][j] >= 0 and dp_row[i][j - 1] >= 0:
+            dp_row[i][j] = dp_row[i][j - 1]
+
+# 縦
+def dfs_col(y, x):
+    if dp_col[y][x] >= 0:
+        return dp_col[y][x]
+
+    if maze[y][x] == '#':
+        return 0
+
+    res = 1
+    ny = y + 1
+    if 0 <= ny < H and maze[ny][x] == '.':
+        res += dfs_col(ny, x)
+    dp_col[y][x] = res
+    return res
+
+for i in range(H):
+    for j in range(W):
+        dfs_col(i, j)
+
+for i in range(1, H):
+    for j in range(W):
+        if dp_col[i][j] >= 0 and dp_col[i - 1][j] >= 0:
+            dp_col[i][j] = dp_col[i - 1][j]
+# 集計
+ans = 0
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == '.':
+            ans = max(ans, dp_row[i][j] + dp_col[i][j] - 1)
+print(ans)
