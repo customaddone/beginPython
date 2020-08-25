@@ -50,100 +50,57 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC037 D - 経路
-H, W = getNM()
-maze = []
-for i in range(H):
-    m = getList()
-    maze.append(m)
+N, M, P = getNM()
+que = [getList() for i in range(M)]
 
-memo = [[-1] * W for i in range(H)]
+edges = []
+for a, b, c in que:
+    # 次の点に行った時に獲得できる点 - 支払うコインP
+    # 重みが負になることもある　→　ベルマンフォード
+    edges.append([a - 1, b - 1, c - P])
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-
-# ぐるぐる回るやつはdfs
-def dfs(x, y):
-    if memo[y][x] != -1:
-        return memo[y][x]
-
-    res = 1
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] > maze[y][x]:
-            res += dfs(nx, ny)
-            res %= mod
-
-    memo[y][x] = res
-    return res
-
-ans = 0
-for i in range(H):
-    for j in range(W):
-        ans += dfs(j, i)
-        ans %= mod
-
-print(ans % mod)
-
-# ABC129 D - Lamp
-H, W = getNM()
-maze = [input() for i in range(H)]
-
-dp_row = [[-1] * W for i in range(H)]
-dp_col = [[-1] * W for i in range(H)]
+# どのようにNに到達すればいいか
+# 最長距離を求める
 
 
-# 横
-def dfs_row(y, x):
-    if dp_row[y][x] >= 0:
-        return dp_row[y][x]
+# after contest
+# 1 → 2 1
+# 2 → 3 1
+# 3 → 2 1
+# 3 → 4 1
+# 1 → 4 100000の場合
+# 2 ~ 3間でループがあるため値を無限に増やせるが、N - 1のループでは検出できない
+# 1 → 4 100000 が十分大きいため
+def bellman(edges, num_v):
+    dist = [-float('inf') for i in range(num_v)]
+    dist[0] = 0
 
-    if maze[y][x] == '#':
-        return 0
+    # 一回目のループ
+    for i in range(N - 1):
+        for edge in edges:
+            if dist[edge[1]] < dist[edge[0]] + edge[2]:
+                dist[edge[1]] = dist[edge[0]] + edge[2]
 
-    res = 1
-    nx = x + 1
-    if 0 <= nx < W and maze[y][nx] == '.':
-        res += dfs_row(y, nx)
-    dp_row[y][x] = res
-    return res
+    # 負閉路検出
+    nega = [0] * N
+    for i in range(N):
+        for edge in edges:
+            # rootの頂点が既に更新されている（ループ検出）されていたなら
+            # 行先にも無条件で「更新される」フラグを立てる
+            if nega[edge[0]] == 1:
+                nega[edge[1]] = 1
+            if dist[edge[1]] < dist[edge[0]] + edge[2]:
+                dist[edge[1]] = dist[edge[0]] + edge[2]
+                nega[edge[1]] = 1
 
-for i in range(H):
-    for j in range(W):
-        dfs_row(i, j)
-    cnt = 0
-    for j in range(1, W):
-        if dp_row[i][j] >= 0 and dp_row[i][j - 1] >= 0:
-            dp_row[i][j] = dp_row[i][j - 1]
+    if nega[N - 1]:
+        print('-1')
+        exit()
 
-# 縦
-def dfs_col(y, x):
-    if dp_col[y][x] >= 0:
-        return dp_col[y][x]
+    return dist
 
-    if maze[y][x] == '#':
-        return 0
-
-    res = 1
-    ny = y + 1
-    if 0 <= ny < H and maze[ny][x] == '.':
-        res += dfs_col(ny, x)
-    dp_col[y][x] = res
-    return res
-
-for i in range(H):
-    for j in range(W):
-        dfs_col(i, j)
-
-for i in range(1, H):
-    for j in range(W):
-        if dp_col[i][j] >= 0 and dp_col[i - 1][j] >= 0:
-            dp_col[i][j] = dp_col[i - 1][j]
-# 集計
-ans = 0
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == '.':
-            ans = max(ans, dp_row[i][j] + dp_col[i][j] - 1)
-print(ans)
+ans = bellman(edges, N)[N - 1]
+if ans <= 0:
+    print(0)
+else:
+    print(ans)
