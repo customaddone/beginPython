@@ -51,6 +51,24 @@ mod = 10 ** 9 + 7
 #############
 
 """
+# ABC161 D - Lunlun Number
+K = 13
+que = []
+heapify(que)
+for i in range(1, 10):
+    que.append(i)
+
+for i in range(K):
+    u = heappop(que)
+    if u % 10 != 0:
+        heappush(que, 10 * u + (u % 10) - 1)
+    heappush(que, 10 * u + (u % 10))
+    if u % 10 != 9:
+        heappush(que, 10 * u + (u % 10) + 1)
+print(u)
+"""
+
+"""
 N, M = getNM()
 weight = []
 key = []
