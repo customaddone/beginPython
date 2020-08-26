@@ -50,57 +50,17 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M, P = getNM()
-que = [getList() for i in range(M)]
+K = 13
+que = []
+heapify(que)
+for i in range(1, 10):
+    que.append(i)
 
-edges = []
-for a, b, c in que:
-    # 次の点に行った時に獲得できる点 - 支払うコインP
-    # 重みが負になることもある　→　ベルマンフォード
-    edges.append([a - 1, b - 1, c - P])
-
-# どのようにNに到達すればいいか
-# 最長距離を求める
-
-
-# after contest
-# 1 → 2 1
-# 2 → 3 1
-# 3 → 2 1
-# 3 → 4 1
-# 1 → 4 100000の場合
-# 2 ~ 3間でループがあるため値を無限に増やせるが、N - 1のループでは検出できない
-# 1 → 4 100000 が十分大きいため
-def bellman(edges, num_v):
-    dist = [-float('inf') for i in range(num_v)]
-    dist[0] = 0
-
-    # 一回目のループ
-    for i in range(N - 1):
-        for edge in edges:
-            if dist[edge[1]] < dist[edge[0]] + edge[2]:
-                dist[edge[1]] = dist[edge[0]] + edge[2]
-
-    # 負閉路検出
-    nega = [0] * N
-    for i in range(N):
-        for edge in edges:
-            # rootの頂点が既に更新されている（ループ検出）されていたなら
-            # 行先にも無条件で「更新される」フラグを立てる
-            if nega[edge[0]] == 1:
-                nega[edge[1]] = 1
-            if dist[edge[1]] < dist[edge[0]] + edge[2]:
-                dist[edge[1]] = dist[edge[0]] + edge[2]
-                nega[edge[1]] = 1
-
-    if nega[N - 1]:
-        print('-1')
-        exit()
-
-    return dist
-
-ans = bellman(edges, N)[N - 1]
-if ans <= 0:
-    print(0)
-else:
-    print(ans)
+for i in range(K):
+    u = heappop(que)
+    if u % 10 != 0:
+        heappush(que, 10 * u + (u % 10) - 1)
+    heappush(que, 10 * u + (u % 10))
+    if u % 10 != 9:
+        heappush(que, 10 * u + (u % 10) + 1)
+print(u)
