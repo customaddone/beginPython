@@ -50,59 +50,50 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def segfunc(x, y):
-    return min(x, y)
+# 完全グラフダイクストラ
+N = 4
+mem = [
+[0, 0, 300, 10],
+[0, 100, 10, 100],
+[0, 200, 10, 200],
+[0, 300, 10, 300]
+]
 
-ide_ele = float('inf')
+dis = [float('inf')] * N
+edges = []
 
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+def calc(x1, y1, x2, y2, speed):
+    distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+    return distance / speed
 
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
+# 完全グラフのダイクストラだろうと0(NlogN)で求まる
+def dijkstra(n, start):
+    dist = [float('inf')] * n
+    pos = [(0, start)]
+    heapify(pos)
+    dist[start] = 0
 
-    def query(self, l, r):
-        res = self.ide_ele
+    while len(pos):
+        cost, u = heappop(pos)
 
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+        if dist[u] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for i in range(N):
+            if i == u:
+                continue
+            opt = calc(mem[i][0], mem[i][1], mem[u][0], mem[u][1], min(mem[u][2], mem[i][3]))
+            if dist[u] + opt < dist[i]:
+                dist[i] = dist[u] + opt
+                heappush(pos, (dist[u] + opt, i))
 
-N, M = getNM()
-seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
-L = [getList() for i in range(N)]
-L.sort()
-seg.update(0, 0)
+    return dist
 
-# [0, 1, 2, 3, 4, 5]
-# seg.query(0, 2): [0, 1]の最小値
-# seg.query(2, 2 + 1): [2]の最小値
-# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
-for l, r, c in L:
-    opt = seg.query(l, r)
-    vs = seg.query(r, r + 1)
-    seg.update(r, min(vs, opt + c))
-print(seg.query(M, M + 1))
+res = dijkstra(N, 0)
+res.sort(reverse = True)
+
+ans = 0
+for i in range(N - 1):
+    ans = max(ans, res[i] + i)
+
+print(ans)
