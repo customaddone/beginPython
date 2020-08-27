@@ -50,50 +50,53 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 完全グラフダイクストラ
-N = 4
-mem = [
-[0, 0, 300, 10],
-[0, 100, 10, 100],
-[0, 200, 10, 200],
-[0, 300, 10, 300]
-]
+# N:ブロックの個数 M;ブロックの色 Y:コンボボーナス Z:全色ボーナス
+# N <= 5000, M <= 10
+N, M, Y, Z = getNM()
+# 色ボーナス
+d = dict()
+for i in range(M):
+    c, p = input().split()
+    d[c] = (i, int(p))
+# 落ちてくるブロックの種類
+B = input()
 
-dis = [float('inf')] * N
-edges = []
+# 全通り出してみよう
+# 2 ** N通り
+# 単色でやってみる?
+# どれを取ればいいか
+# 前から順に＾
+# どの色をコンボしても点数は同じ
 
-def calc(x1, y1, x2, y2, speed):
-    distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-    return distance / speed
+# dp?
 
-# 完全グラフのダイクストラだろうと0(NlogN)で求まる
-def dijkstra(n, start):
-    dist = [float('inf')] * n
-    pos = [(0, start)]
-    heapify(pos)
-    dist[start] = 0
+# dp[i][j]: 直前の色がi, 全部でjの色を使った
+dp = [[-float('inf')] * (1 << M) for _ in range(M + 1)]
+dp[M][0] = 0
 
-    while len(pos):
-        cost, u = heappop(pos)
-
-        if dist[u] < cost:
+# 交換するdpの要領
+for e in B:
+    # B[i]番目の色ポイント
+    i, p = d[e]
+    # 色iを含む状態について調べる
+    # 色が少ないものから順に巻き込んでいく感じ
+    for j in range((1 << M) - 1, -1, -1):
+        if j & (1 << i) == 0:
             continue
-        # エッジは探索のたびに生成していく
-        for i in range(N):
-            if i == u:
-                continue
-            opt = calc(mem[i][0], mem[i][1], mem[u][0], mem[u][1], min(mem[u][2], mem[i][3]))
-            if dist[u] + opt < dist[i]:
-                dist[i] = dist[u] + opt
-                heappush(pos, (dist[u] + opt, i))
 
-    return dist
+        # 候補1: 直前の色が違うものだった and 以前に使った色を使った
+        num1 = max(dp[k][j] for k in range(M + 1) if k != i) + p
+        # 候補2: 直前の色が同じものだった
+        num2 = dp[i][j] + p + Y
+        # 候補3: 直前の色が違うものだった and 以前に使っってない色を使った
+        num3 = max(dp[k][j ^ (1 << i)] for k in range(M + 1) if k != i) + p
+        dp[i][j] = max(dp[i][j], num1, num2, num3)
 
-res = dijkstra(N, 0)
-res.sort(reverse = True)
+# 全色ボーナス
+for i in range(M):
+    dp[i][(1 << M) - 1] += Z
 
 ans = 0
-for i in range(N - 1):
-    ans = max(ans, res[i] + i)
-
+for row in dp:
+    ans = max(ans, max(row))
 print(ans)
