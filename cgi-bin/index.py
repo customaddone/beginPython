@@ -78,24 +78,26 @@ class UnionFind():
     def same(self, x, y):
         return self.find(x) == self.find(y)
 
-# 各1 ~ Nに交易所を立てるのを0~Nにエッジを貼るのに見立てる
-N, M = getNM()
-edges = []
-for i in range(N):
-    c = getN()
-    edges.append((c, 0, i + 1))
+N, M, S = getNM()
+S -= 1
+dist = [[] for i in range(N)]
 for i in range(M):
-    s, t, w = getNM()
-    edges.append((w, s, t))
-edges.sort()
+    v1, v2 = getNM()
+    v1 -= 1
+    v2 -= 1
+    v1, v2 = min(v1, v2), max(v1, v2)
+    dist[v1].append(v2)
 
-def kruskal(n, edges):
-    U = UnionFind(n)
-    res = 0
-    for e in edges:
-        w, s, t = e
-        if not U.same(s, t):
-            res += w
-            U.union(s, t)
-    return res
-print(kruskal(N + 1, edges))
+U = UnionFind(N)
+
+ans = []
+for i in range(N - 1, -1, -1):
+    # 地点iに車を駐める場合、一端がiの道は使えない
+    # → iに車を停める以前であれば,一端がiの道を使える
+    for j in dist[i]:
+        U.union(i, j)
+    if U.same(i, S):
+        ans.append(i + 1)
+ans.sort()
+for i in ans:
+    print(i)
