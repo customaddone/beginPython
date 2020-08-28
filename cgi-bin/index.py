@@ -50,54 +50,139 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
+# ARC008 THE☆たこ焼き祭り2012
+# 完全グラフダイクストラ
+N = 4
+mem = [
+[0, 0, 300, 10],
+[0, 100, 10, 100],
+[0, 200, 10, 200],
+[0, 300, 10, 300]
+]
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+dis = [float('inf')] * N
+edges = []
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
+def calc(x1, y1, x2, y2, speed):
+    distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+    return distance / speed
 
-        if x == y:
-            return
+# 完全グラフのダイクストラだろうと0(NlogN)で求まる
+def dijkstra(n, start):
+    dist = [float('inf')] * n
+    pos = [(0, start)]
+    heapify(pos)
+    dist[start] = 0
 
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
+    while len(pos):
+        cost, u = heappop(pos)
 
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
+        if dist[u] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for i in range(N):
+            if i == u:
+                continue
+            opt = calc(mem[i][0], mem[i][1], mem[u][0], mem[u][1], min(mem[u][2], mem[i][3]))
+            if dist[u] + opt < dist[i]:
+                dist[i] = dist[u] + opt
+                heappush(pos, (dist[u] + opt, i))
 
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
+    return dist
 
-N, M, S = getNM()
-S -= 1
-dist = [[] for i in range(N)]
+res = dijkstra(N, 0)
+res.sort(reverse = True)
+
+ans = 0
+for i in range(N - 1):
+    ans = max(ans, res[i] + i)
+
+print(ans)
+
+# ARC025 C - ウサギとカメ
+# N:地点 M:道 R, T:ウサギ、カメの速さ
+N, M, R, T = getNM()
+edges = [[] for i in range(N)]
 for i in range(M):
-    v1, v2 = getNM()
-    v1 -= 1
-    v2 -= 1
-    v1, v2 = min(v1, v2), max(v1, v2)
-    dist[v1].append(v2)
+    a, b, c = getNM()
+    edges[a - 1].append([b - 1, c])
+    edges[b - 1].append([a - 1, c])
 
-U = UnionFind(N)
+# ダイクストラである地点からの最小距離を求められるが
+# NlogNダイクストラ
+def dijkstra(n, start):
+    dist = [float('inf')] * n
+    pos = [(0, start)]
+    heapify(pos)
+    dist[start] = 0
 
-ans = []
-for i in range(N - 1, -1, -1):
-    # 地点iに車を駐める場合、一端がiの道は使えない
-    # → iに車を停める以前であれば,一端がiの道を使える
-    for j in dist[i]:
-        U.union(i, j)
-    if U.same(i, S):
-        ans.append(i + 1)
-ans.sort()
-for i in ans:
-    print(i)
+    while len(pos):
+        cost, u = heappop(pos)
+
+        if dist[u] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for i, d in edges[u]:
+            if dist[u] + d < dist[i]:
+                dist[i] = dist[u] + d
+                heappush(pos, (dist[u] + d, i))
+
+    return dist
+
+cnt = 0
+for i in range(N):
+    # iを目的地にした時の距離
+    ar = sorted(dijkstra(N, i))[1:]
+    # 小数使いたくない
+    ar_t = [i * R for i in ar]
+    ar_r = [i * T for i in ar]
+
+    for i in range(N - 2, -1, -1):
+        opt = bisect_left(ar_t, ar_r[i])
+        # ウサギが亀より遅い場合のコーナーケース
+        if opt > i:
+            cnt += opt - 1
+        else:
+            cnt += opt
+print(cnt)
+
+# ARC064 E - Cosmic Rays
+x1, y1, x2, y2 = getNM()
+place = [(x1, y1, 0)]
+N = getN()
+for i in range(N):
+    x, y, r = getNM()
+    place.append((x, y, r))
+place.append((x2, y2, 0))
+N += 2
+# 地点~円の中心 - 円の半径が被曝する時間　これを元にエッジを貼る
+# これを最小化したい
+# startからいくつかの円を経由してgoalまで行く時の最小距離
+
+def calc(x1, y1, x2, y2):
+    return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+
+def dijkstra(n, start):
+    dist = [float('inf')] * n
+    pos = [(0, start)]
+    heapify(pos)
+    dist[start] = 0
+
+    while len(pos):
+        cost, u = heappop(pos)
+
+        if dist[u] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for i in range(N):
+            if i == u:
+                continue
+            dis = calc(place[u][0], place[u][1], place[i][0], place[i][1])
+            opt = max(dis - place[u][2] - place[i][2], 0)
+            if dist[u] + opt < dist[i]:
+                dist[i] = dist[u] + opt
+                heappush(pos, (dist[u] + opt, i))
+
+    return dist
+
+print(dijkstra(N, 0)[-1])
