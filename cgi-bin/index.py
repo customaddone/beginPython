@@ -50,98 +50,52 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ARC008 THE☆たこ焼き祭り2012
-# 完全グラフダイクストラ
-N = 4
-mem = [
-[0, 0, 300, 10],
-[0, 100, 10, 100],
-[0, 200, 10, 200],
-[0, 300, 10, 300]
-]
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-dis = [float('inf')] * N
-edges = []
-
-def calc(x1, y1, x2, y2, speed):
-    distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-    return distance / speed
-
-# 完全グラフのダイクストラだろうと0(NlogN)で求まる
-def dijkstra(n, start):
-    dist = [float('inf')] * n
-    pos = [(0, start)]
-    heapify(pos)
-    dist[start] = 0
-
-    while len(pos):
-        cost, u = heappop(pos)
-
-        if dist[u] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i in range(N):
-            if i == u:
-                continue
-            opt = calc(mem[i][0], mem[i][1], mem[u][0], mem[u][1], min(mem[u][2], mem[i][3]))
-            if dist[u] + opt < dist[i]:
-                dist[i] = dist[u] + opt
-                heappush(pos, (dist[u] + opt, i))
-
-    return dist
-
-res = dijkstra(N, 0)
-res.sort(reverse = True)
-
-ans = 0
-for i in range(N - 1):
-    ans = max(ans, res[i] + i)
-
-print(ans)
-
-# ARC025 C - ウサギとカメ
-# N:地点 M:道 R, T:ウサギ、カメの速さ
-N, M, R, T = getNM()
-edges = [[] for i in range(N)]
-for i in range(M):
-    a, b, c = getNM()
-    edges[a - 1].append([b - 1, c])
-    edges[b - 1].append([a - 1, c])
-
-# ダイクストラである地点からの最小距離を求められるが
-# NlogNダイクストラ
-def dijkstra(n, start):
-    dist = [float('inf')] * n
-    pos = [(0, start)]
-    heapify(pos)
-    dist[start] = 0
-
-    while len(pos):
-        cost, u = heappop(pos)
-
-        if dist[u] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i, d in edges[u]:
-            if dist[u] + d < dist[i]:
-                dist[i] = dist[u] + d
-                heappush(pos, (dist[u] + d, i))
-
-    return dist
-
-cnt = 0
-for i in range(N):
-    # iを目的地にした時の距離
-    ar = sorted(dijkstra(N, i))[1:]
-    # 小数使いたくない
-    ar_t = [i * R for i in ar]
-    ar_r = [i * T for i in ar]
-
-    for i in range(N - 2, -1, -1):
-        opt = bisect_left(ar_t, ar_r[i])
-        # ウサギが亀より遅い場合のコーナーケース
-        if opt > i:
-            cnt += opt - 1
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
         else:
-            cnt += opt
-print(cnt)
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
+
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+
+        if x == y:
+            return
+
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+# 各1 ~ Nに交易所を立てるのを0~Nにエッジを貼るのに見立てる
+N, M = getNM()
+edges = []
+for i in range(N):
+    c = getN()
+    edges.append((c, 0, i + 1))
+for i in range(M):
+    s, t, w = getNM()
+    edges.append((w, s, t))
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(N + 1, edges))
