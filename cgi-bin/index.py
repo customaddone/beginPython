@@ -32,11 +32,10 @@ from collections import defaultdict, deque, Counter
 from sys import exit
 from decimal import *
 from heapq import heapify, heappop, heappush
-from math import sqrt
-from fractions import gcd
+import math
 import random
 import string
-import copy
+from copy import deepcopy
 from itertools import combinations, permutations, product
 from operator import mul, itemgetter
 from functools import reduce
@@ -50,139 +49,76 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ARC008 THE☆たこ焼き祭り2012
-# 完全グラフダイクストラ
-N = 4
-mem = [
-[0, 0, 300, 10],
-[0, 100, 10, 100],
-[0, 200, 10, 200],
-[0, 300, 10, 300]
-]
+# 素因数分解
+def prime_factorize(n):
+    divisors = []
+    # 27(2 * 2 * 7)の7を出すためにtemp使う
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
 
-dis = [float('inf')] * N
-edges = []
+    return divisors
 
-def calc(x1, y1, x2, y2, speed):
-    distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-    return distance / speed
+# [[2, 3], [3, 1]]
+print(prime_factorize(12))
 
-# 完全グラフのダイクストラだろうと0(NlogN)で求まる
-def dijkstra(n, start):
-    dist = [float('inf')] * n
-    pos = [(0, start)]
-    heapify(pos)
-    dist[start] = 0
+# エラストテネスの篩
+prime = [2]
+max = 12
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
 
-    while len(pos):
-        cost, u = heappop(pos)
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
 
-        if dist[u] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i in range(N):
-            if i == u:
+# [2, 3, 5, 7, 9, 11]
+print(prime)
+
+class Osa_k():
+    def __init__(self, n):
+        self.sieve = list(range(n + 1))
+        self.sieve[0] = 1 #素数でない
+        self.sieve[1] = 1 #素数でない
+        m = int(math.sqrt(n))
+        for i in range(2, m + 1):
+            if self.sieve[i] < i:
                 continue
-            opt = calc(mem[i][0], mem[i][1], mem[u][0], mem[u][1], min(mem[u][2], mem[i][3]))
-            if dist[u] + opt < dist[i]:
-                dist[i] = dist[u] + opt
-                heappush(pos, (dist[u] + opt, i))
+            for j in range(i * i, n + 1, i):
+                if self.sieve[j] == j:
+                    self.sieve[j] = i
 
-    return dist
+    def factorize(self, n):
+        prime = defaultdict(int)
+        if n == 0 or n == 1:
+            return (n, 1)
+        opt = n
+        while opt > 1:
+            prime[self.sieve[opt]] += 1
+            opt //= self.sieve[opt]
+        return sorted(prime.items())
 
-res = dijkstra(N, 0)
-res.sort(reverse = True)
+N = 1000
+O = Osa_k(10 ** 6 + 1)
 
-ans = 0
-for i in range(N - 1):
-    ans = max(ans, res[i] + i)
+prime = defaultdict(int)
+for i in range(2, N + 1):
+    for j in O.factorize(i):
+        prime[j[0]] += j[1]
 
+ans = 1
+for i in prime.items():
+    ans *= i[1] + 1
+    ans %= mod
 print(ans)
-
-# ARC025 C - ウサギとカメ
-# N:地点 M:道 R, T:ウサギ、カメの速さ
-N, M, R, T = getNM()
-edges = [[] for i in range(N)]
-for i in range(M):
-    a, b, c = getNM()
-    edges[a - 1].append([b - 1, c])
-    edges[b - 1].append([a - 1, c])
-
-# ダイクストラである地点からの最小距離を求められるが
-# NlogNダイクストラ
-def dijkstra(n, start):
-    dist = [float('inf')] * n
-    pos = [(0, start)]
-    heapify(pos)
-    dist[start] = 0
-
-    while len(pos):
-        cost, u = heappop(pos)
-
-        if dist[u] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i, d in edges[u]:
-            if dist[u] + d < dist[i]:
-                dist[i] = dist[u] + d
-                heappush(pos, (dist[u] + d, i))
-
-    return dist
-
-cnt = 0
-for i in range(N):
-    # iを目的地にした時の距離
-    ar = sorted(dijkstra(N, i))[1:]
-    # 小数使いたくない
-    ar_t = [i * R for i in ar]
-    ar_r = [i * T for i in ar]
-
-    for i in range(N - 2, -1, -1):
-        opt = bisect_left(ar_t, ar_r[i])
-        # ウサギが亀より遅い場合のコーナーケース
-        if opt > i:
-            cnt += opt - 1
-        else:
-            cnt += opt
-print(cnt)
-
-# ARC064 E - Cosmic Rays
-x1, y1, x2, y2 = getNM()
-place = [(x1, y1, 0)]
-N = getN()
-for i in range(N):
-    x, y, r = getNM()
-    place.append((x, y, r))
-place.append((x2, y2, 0))
-N += 2
-# 地点~円の中心 - 円の半径が被曝する時間　これを元にエッジを貼る
-# これを最小化したい
-# startからいくつかの円を経由してgoalまで行く時の最小距離
-
-def calc(x1, y1, x2, y2):
-    return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-
-def dijkstra(n, start):
-    dist = [float('inf')] * n
-    pos = [(0, start)]
-    heapify(pos)
-    dist[start] = 0
-
-    while len(pos):
-        cost, u = heappop(pos)
-
-        if dist[u] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i in range(N):
-            if i == u:
-                continue
-            dis = calc(place[u][0], place[u][1], place[i][0], place[i][1])
-            opt = max(dis - place[u][2] - place[i][2], 0)
-            if dist[u] + opt < dist[i]:
-                dist[i] = dist[u] + opt
-                heappush(pos, (dist[u] + opt, i))
-
-    return dist
-
-print(dijkstra(N, 0)[-1])

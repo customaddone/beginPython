@@ -70,16 +70,34 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 条件
-# それぞれのお客さんに対し対応するたこ焼きがある　→
-# 任意のBiについて、対応するAj(Bi <= Aj <= Bi + T)が必ず１つ存在する
-#
 
-for i in range(-2, 3):
-    for j in range(-2, 3):
-        wy = y + i
-        wx = x + i
-        # 歩いて移動不可能でないと使わない
-        if 0 <= wx < W and 0 <= wy < H and maze[wy][wx] == "." and dp[wy][wx] == -1:
-            pos.append([wy, wx])
-            dp[wy][wx] = dp[y][x] + 1
+# どのように区間を取ればいいか
+# 取り除くことを考えないと
+# 順番はどうでもいい
+N, K, Q = getNM()
+# ソート順Aの連続するK個を取りたいが
+A = getList()
+A = [[i, A[i]] for i in range(N)]
+A.sort(key = lambda i: i[1])
+key = []
+for k, v in A:
+    key.append(k)
+
+# 同じグループ内にいるかつグループ全体の長さがK + Q - 1
+for i in range(N - K + 1):
+    block = key[:i]
+
+    index = [i for i in range(N)]
+    for i in block:
+        index[i] = -1
+    groups = []
+    now = []
+    for i in range(N):
+        if index[i] == -1:
+            if len(now) >= K + Q - 1:
+                groups.append(now)
+        else:
+            now.append(index[i])
+    if len(now) >= K + Q - 1:
+        groups.append(now)
+    print(groups)
