@@ -49,49 +49,80 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 頂点1から頂点kまでの最短パス上
-# ルートはO(n)で求められる
-N = getN()
-A = getList()
-query = [getList() for i in range(N - 1)]
+N, X = getNM()
+edge_list = [getList() for i in range(N - 1)]
 
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+def build_tree_dis(n, edge_list):
 
-ignore = [0] * N
-ignore[0] = 1
-lis = [A[0]]
-rec = [0] * N
-rec[0] = 1
+    G = [[] for i in range(n)]
 
-# 行きがけ帰りがけの要領
-def dfs(u):
-    global lis
-    for i in dist[u]:
-        if ignore[i] != 1:
-            ignore[i] = 1
-            # 巻き戻し用
-            plus = 0 # true or false
-            change = (0, 0, 0) # true or false, 変更した場所、変更した数値
+    for a, b, c in edge_list:
+        G[a - 1].append([b - 1, c])
+        G[b - 1].append([a - 1, c])
 
-            if A[i] > lis[-1]:
-                lis.append(A[i])
-                plus = 1
-            else:
-                index = bisect_left(lis, A[i])
-                change = (1, index, lis[index])
-                lis[index] = A[i]
-            rec[i] = len(lis)
-            dfs(i)
-            # 巻き戻す
-            if plus:
-                lis.pop()
-            else:
-                lis[change[1]] = change[2]
+    return G
 
-dfs(0)
-for i in rec:
-    print(i)
+edges = build_tree_dis(N, edge_list)
+
+# 根0~iまで通るとj桁目のフラグが偶数本/奇数本集まるか
+def search_bit(bit):
+     # 木をKから順にたどる（戻るの禁止）
+    ignore = [-1] * N
+    ignore[0] = 0
+    pos = deque([0])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i[0]] == -1:
+                if i[1] & (1 << bit):
+                    ignore[i[0]] = ignore[u] + 1
+                else:
+                    ignore[i[0]] = ignore[u]
+                pos.append(i[0])
+    # 欲しい情報は偶数本/奇数本集まるかのみ
+    ignore = [i % 2 for i in ignore]
+    return ignore
+
+flags = []
+for i in range(31):
+    flags.append(search_bit(i))
+
+# flagsの情報を基に0~i間のXor(31桁bit換算)を求める
+# aとbの共通祖先をkとすると
+# a ^ b =
+# 0 ~ k ~ a ^ 0 ~ k ~ b = 0 ~ a ^ 0 ~ b
+# (0 ~ k ^ 0 ~ k)が0なので
+dis = [''] * N
+for i in range(N):
+    opt = ''
+    for j in range(30, -1, -1):
+        if flags[j][i] == 0:
+            opt += '0'
+        else:
+            opt += '1'
+    dis[i] = opt
+
+# （1についてTrue, 2についてFalse...みたいなのは
+# bit換算してdictに収納できる）
+dict = defaultdict(int)
+for i in range(N):
+    dict[dis[i]] += 1
+
+ans = 0
+for bit in dis:
+    #　bit ^ opt = Xとなるoptが欲しい =
+    # opt = bit ^ X
+    opt = int(bit, 2) ^ X
+    s = ''
+    for j in range(30, -1, -1):
+        if opt & (1 << j):
+            s += '1'
+        else:
+            s += '0'
+    # a ^ a = 0になるので
+    if X == 0:
+        ans += dict[s] - 1 # 自身を引く
+    else:
+        ans += dict[s]
+print(ans // 2) # a ~ bとb ~ a２回足されるので
