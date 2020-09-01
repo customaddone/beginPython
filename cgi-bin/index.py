@@ -49,46 +49,91 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, X = getNM()
-edge_list = [getList() for i in range(N - 1)]
-
-def build_tree_dis(n, edge_list):
-
-    G = [[] for i in range(n)]
-
-    for a, b, c in edge_list:
-        G[a - 1].append([b - 1, c])
-        G[b - 1].append([a - 1, c])
-
-    return G
-
-edges = build_tree_dis(N, edge_list)
-
-dict = defaultdict(int)
-dict[0] = 1
-# 各地点ごとで数えあげる
-# a ~ bがペアで、bの方がaより探索が遅い
-# a探索時 ans増えない
-# b探索時 ans増える
-# のでダブらない
+"""
+Z algorithm
+def Z(s):
+    n = len(s)
+    z = [0] * n
+    z[0] = n
+    L, R = 0, 0
+    for i in range(1, n):
+        if i >= R:
+            L = R = i
+            # 一致が続く限り伸ばす
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            # LCAを書き込む
+            # 頭から一致しない場合はR - L = i - i = 0
+            z[i] = R - L
+        # 全て利用できる場合
+        elif z[i - L] < R - i:
+            z[i] = z[i - L]
+        # 一部利用できる場合
+        else:
+            L = i
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            z[i] = R - L
+    return z
+# [5, 0, 3, 0, 1]
+#print(Z('ababa'))
+N = getN()
+S = input()
 ans = 0
-
-def search_bit():
-    global ans
-     # 木をKから順にたどる（戻るの禁止）
-    ignore = [-1] * N
-    ignore[0] = 0
-    pos = deque([0])
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i[0]] == -1:
-                rec = ignore[u] ^ i[1]
-                ignore[i[0]] = rec
-                ans += dict[rec ^ X] # ansに加算 自身をペアにするのを防ぐためにレコードの前に行う
-                dict[rec] += 1 # レコード
-                pos.append(i[0])
-
-search_bit()
+for i in range(N):
+    z = Z(S[i:])
+    k = len(z)
+    for j in range(k):
+        # '' と 'ababa'
+        # 'a' と 'baba'
+        # 'ab' と 'aba'
+        # ans は j('', 'a', 'ab')の長さ以上にならない（ダブらないため）
+        ans = max(ans, min(j, z[j]))
 print(ans)
+"""
+
+# Rolling hash
+N = getN()
+S = list(map(ord, list(input())))
+# 適当
+base = 1007
+# base = 1009
+power = [1] * (N + 1)
+# 部分文字列を数字に
+# ハッシュ生成
+for i in range(1, N + 1):
+    power[i] = power[i - 1] * base % mod
+print(power)
+
+def check(m):
+    if N - m < m:
+        return False
+    res = 0
+    # 頭m文字のハッシュ生成
+    for i in range(m):
+        res += S[i] * power[m - i - 1]
+        res %= mod
+    dic = {res: 0}
+    for i in range(N - m):
+        # ハッシュをローリングしていって次々m文字のハッシュを生成していく
+        res = ((res - S[i] * power[m - 1]) * base + S[i + m]) % mod
+        # もし既出なら
+        if res in dic.keys():
+            index = dic[res]
+            if index + m <= i + 1: # 重ならないか
+                return True
+        else:
+            dic[res] = i + 1 # i + 1:頭の位置を記録する
+        print(dic)
+    return False
+
+ok = 0
+ng = N + 1
+while ng - ok > 1:
+    mid = (ok + ng) // 2
+
+    if check(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
