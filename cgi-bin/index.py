@@ -49,43 +49,53 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-X = 5
-Y = 5
-maze = [
-'XXXXX',
-'X...X',
-'D...X',
-'X...D',
-'XXXXX'
+# p210 dining
+# 食べ物と飲み物の両方が割り当てられた牛の数の最大値
+N = 4
+F = 3 # food
+D = 3 # drink
+foods = [
+[1, 2],
+[2, 3],
+[1, 3],
+[1, 3]
+]
+drinks = [
+[1, 3],
+[1, 2],
+[1, 2],
+[3]
 ]
 
-dp = [[float('inf')] * Y for i in range(X)]
-end = []
-for y in range(X):
-    for x in range(Y):
-        if maze[y][x] == 'D':
-            end.append([y, x])
+L = max(N, F)
+# 始点と食べ物を関連づける
+dist = []
+for i in range(1, L + 1):
+    dist.append([0, i, 1])
+# 食べ物と牛を関連づける
+for i in range(N):
+    for food in foods[i]:
+        dist.append([food, i + 1 + L, 1])
+# 牛→牛
+# 同じ牛に異なる複数の割り当てが行くことがないように
+for i in range(1, L + 1):
+    dist.append([i + L, i + 2 * L, 1])
+# 牛→飲み物
+for i in range(N):
+    for drink in drinks[i]:
+        dist.append([i + 1 + 2 * L, drink + 3 * L, 1])
+# 飲み物→終点
+for i in range(1, L + 1):
+    dist.append([i + 3 * L, 4 * L + 1, 1])
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-
-def distance(goal):
-    pos = deque([goal])
-    dp[goal[0]][goal[1]] = 0
-
-    while len(pos) > 0:
-        y, x = pos.popleft()
-        for i in range(4):
-            ny = y + dy[i]
-            nx = x + dx[i]
-            if 0 <= ny < X and 0 <= nx < Y and maze[ny][nx] == "." and dp[ny][nx] > dp[y][x] + 1:
-                pos.append([ny, nx])
-                dp[ny][nx] = dp[y][x] + 1
-
-for e in end:
-    distance(e)
-print(dp)
-
+N = 4 * L + 2
+lines = defaultdict(set)
+cost = [[0] * N for i in range(N)]
+for i in range(len(dist)):
+    a, b, c = dist[i]
+    lines[a].add(b)
+    cost[a][b] += c
+ans = 0
 
 # 二部マッチング問題なので最大流
 # staからスタート
