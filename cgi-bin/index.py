@@ -49,36 +49,43 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# https://www.slideshare.net/drken1215/ss-86894312
-N = 3
-K = 4
-que = [
-[1, 1],
-[1, 3],
-[2, 2],
-[3, 2]
+X = 5
+Y = 5
+maze = [
+'XXXXX',
+'X...X',
+'D...X',
+'X...D',
+'XXXXX'
 ]
 
-# 始点を0、縦座標rowを1 ~ N, 横座標colをN + 1 ~ 2N, 終点を2N + 1にする
-# 1-indexならこれでいい
-# 二分グラフの最小点被覆は最大マッチング
-# 二分グラフの最大安定集合は上記を除く補集合
-dist = []
-for i in range(1, N + 1): # 始点、終点
-    dist.append([0, i, 1])
-    dist.append([i + N, 2 * N + 1, 1])
-for a, b in que: # 各惑星について
-    dist.append([a, b + N, 1])
+dp = [[float('inf')] * Y for i in range(X)]
+end = []
+for y in range(X):
+    for x in range(Y):
+        if maze[y][x] == 'D':
+            end.append([y, x])
 
-N = 2 * N + 2 # 2 * N + 2倍に拡張する
-lines = defaultdict(set)
-cost = [[0] * N for i in range(N)]
-for i in range(len(dist)):
-    a, b, c = dist[i]
-    lines[a].add(b)
-    cost[a][b] += c
-print(dist)
-ans = 0
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
+
+def distance(goal):
+    pos = deque([goal])
+    dp[goal[0]][goal[1]] = 0
+
+    while len(pos) > 0:
+        y, x = pos.popleft()
+        for i in range(4):
+            ny = y + dy[i]
+            nx = x + dx[i]
+            if 0 <= ny < X and 0 <= nx < Y and maze[ny][nx] == "." and dp[ny][nx] > dp[y][x] + 1:
+                pos.append([ny, nx])
+                dp[ny][nx] = dp[y][x] + 1
+
+for e in end:
+    distance(e)
+print(dp)
+
 
 # 二部マッチング問題なので最大流
 # staからスタート
