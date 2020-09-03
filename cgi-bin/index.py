@@ -49,170 +49,86 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
-
-    # a - 1の場所にwを追加する
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
-
-    # a未満の数字が何個あるか
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
-
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self, w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
-"""
-N = 10
-A = [5, 4, 3, 4, 3, 1, 7, 1, 6, 9]
-limit = max(A) + 1
-bit = BIT(limit)
-for i in range(N):
-    bit.add(A[i], 1)
-    if i >= 1:
-        # 2番目に小さな数字はなに？
-        print(bit.lowerbound(2))
-"""
-
-"""
-# 座標圧縮
-A = [333, 555, 333, 222, 111, 555, 444, 222, 111, 666]
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-    return alter, rev
-alter, rev = compress(A)
-N = 10
-limit = N + 1
-bit = BIT(limit)
-for i in range(N):
-    # 1-indexなので
-    bit.add(alter[A[i]] + 1, 1)
-    if i >= 1:
-        # 2番目に小さい数字は何？
-        print(rev[bit.lowerbound(2) - 1])
-"""
-
-"""
-# ARC033 C - データ構造
-Q = getN()
-que = [getList() for i in range(Q)]
-
-# データに入れる数字を抽出する
-A = []
-for t, x in que:
-    if t == 1:
-        A.append(x)
-# 座標圧縮
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {s[i]: i for i in range(len(s))}
-    rev = {i: s[i] for i in range(len(s))}
-
-    return alter, rev
-
-alter, rev = compress(A)
-
-limit = Q + 1
-bit = BIT(limit)
-for t, x in que:
-    if t == 1:
-        bit.add(alter[x] + 1, 1)
-    else:
-        # xを超えないギリギリの場所が1-indexで与えられる
-        # optがx番目の数字
-        opt = bit.lowerbound(x) - 1
-        # 1-indexなのでそのままprintする
-        print(rev[opt])
-        # xを超えないギリギリの場所の一つ右を-1する
-        bit.add(opt + 1, -1)
-"""
-
-# ARC075 E - Meaningful Mean
-N, K = getNM()
-A = getArray(N)
-
-# 連続部分列: imos, 尺取り法, セグ木, 数え上げdpなどが使えそう
-# 算術平均がK以上であるものは何個あるでしょうか？ 尺取りっぽい
-# → 平均なので尺取りではない　{100, 1 100...100}みたいな場合
-
-# 平均なので各項をKで引いて見ようか
-# N, K = 3, 6
-# A = [7, 5, 7] の場合
-# A = [1, -1, 1]になる 累計が0以上のもの → これだとO(n2)かかる
-# 右端rを決めた時にペアになる左端lはいくつあるか
-
-# N, K = 7, 26
-# A = [10, 20, 30, 40, 30, 20, 10]の時
-# imos = [0, -16, -22, -18, -4, 0, -6, -22]
-# l ~ r区間の平均 = imos[r] - imos[l - 1] これが0以上なら
-# = imos[r] >= imos[l - 1]なら
-# imos[b] - imos[a] >= 0になるペアがいくつあるかをO(n)で
-
-# つまり
-# imos上のimos[i] = bについてより左側にb以下の数はいくつあるか
-
-A = [i - K for i in A]
-imos = [0]
-for i in range(N):
-    imos.append(imos[i] + A[i])
-mi = min(imos)
-imos = [i - mi for i in imos] # imosの全ての要素が0以上になるように調整
+# ABC010
+N, G, E = getNM()
+P = getList()
+query = []
+for i in range(E):
+    a, b = getNM()
+    query.append([a, b, 1])
+    query.append([b, a, 1])
+# goalへのquery増築
 N += 1
+for i in range(G):
+    query.append([N - 1, P[i], 1])
+    query.append([P[i], N - 1, 1])
 
-# 座標圧縮BIT
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-    return alter, rev
-
-alter, rev = compress(imos)
-limit = N + 1
-bit = BIT(limit)
 ans = 0
-for i in range(N):
-    # 自身以下の数字が左にいくつあるか
-    ans += bit.get(alter[imos[i]] + 2) # 変換してから調べる
-    bit.add(alter[imos[i]] + 1, 1) # 変換してからレコード
+lines = defaultdict(set)
+cost = [[0] * N for i in range(N)]
+for i in range(len(query)):
+    a, b, c = query[i]
+    if c != 0:
+        lines[a].add(b)
+        cost[a][b] += c
+
+# sからスタート
+def Ford_Fulkerson(sta, end):
+    global ans
+    queue = deque()
+    queue.append([sta, float('inf')])
+
+    ignore = [1] * N
+    ignore[sta] = 0
+
+    route = [0] * N
+    route[sta] = -1
+
+    while queue:
+        s, flow = queue.pop()
+        for t in lines[s]:  #s->t
+            if ignore[t]: #未到達
+                # flowは入ってくる量、出る量のうち小さい方
+                flow = min(cost[s][t], flow)
+                route[t] = s
+                queue.append([t, flow])
+                ignore[t] = 0
+                if t == end: #ゴール到達
+                    ans += flow
+                    break
+        else:
+            continue #breakされなければWhile節の先頭に戻る
+        # Falseはされない
+        break
+    else:
+        return False
+
+    t = end
+    s = route[t]
+    # goalまで流れた量はflow
+    # 逆向きの辺を貼る
+    while s != -1:
+        #s->tのコスト減少，ゼロになるなら辺を削除
+        cost[s][t] -= flow
+        if cost[s][t] == 0:
+            lines[s].remove(t)
+            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
+        if cost[t][s] == 0:
+            lines[t].add(s)
+
+        cost[t][s] += flow
+
+        # 一つ上の辺をたどる
+        t = s
+        s = route[t]
+
+    return True
+
+while True:
+    # ちょびちょび流して行ってゴールまで流れなくなったら終了
+    if Ford_Fulkerson(0, N - 1):
+        continue
+    else:
+        break
 
 print(ans)
