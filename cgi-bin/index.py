@@ -49,28 +49,36 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N_s = getN()
-A = [getList() for i in range(N_s)]
-B = [getList() for i in range(N_s)]
-query = []
-# ノードの始点を2 * N_sに、終点を2 * N_s + 1に設定
-for i in range(N_s):
-    query.append([2 * N_s, i, 1])
-    query.append([N_s + i, 2 * N_s + 1, 1])
-for i in range(N_s):
-    for j in range(N_s):
-        if A[i][0] < B[j][0] and A[i][1] < B[j][1]:
-            query.append([i, N_s + j, 1])
+# https://www.slideshare.net/drken1215/ss-86894312
+N = 3
+K = 4
+que = [
+[1, 1],
+[1, 3],
+[2, 2],
+[3, 2]
+]
 
-N = 2 * N_s + 2
+# 始点を0、縦座標rowを1 ~ N, 横座標colをN + 1 ~ 2N, 終点を2N + 1にする
+# 1-indexならこれでいい
+# 二分グラフの最小点被覆は最大マッチング
+# 二分グラフの最大安定集合は上記を除く補集合
+dist = []
+for i in range(1, N + 1): # 始点、終点
+    dist.append([0, i, 1])
+    dist.append([i + N, 2 * N + 1, 1])
+for a, b in que: # 各惑星について
+    dist.append([a, b + N, 1])
 
-ans = 0
+N = 2 * N + 2 # 2 * N + 2倍に拡張する
 lines = defaultdict(set)
 cost = [[0] * N for i in range(N)]
-for i in range(len(query)):
-    a, b, c = query[i]
+for i in range(len(dist)):
+    a, b, c = dist[i]
     lines[a].add(b)
     cost[a][b] += c
+print(dist)
+ans = 0
 
 # 二部マッチング問題なので最大流
 # staからスタート
@@ -127,7 +135,7 @@ def Ford_Fulkerson(sta, end):
 
 while True:
     # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(N - 2, N - 1):
+    if Ford_Fulkerson(0, N - 1):
         continue
     else:
         break
