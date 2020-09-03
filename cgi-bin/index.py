@@ -49,112 +49,65 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# p210 dining
-# 食べ物と飲み物の両方が割り当てられた牛の数の最大値
-N = 4
-F = 3 # food
-D = 3 # drink
-foods = [
-[1, 2],
-[2, 3],
-[1, 3],
-[1, 3]
-]
-drinks = [
-[1, 3],
-[1, 2],
-[1, 2],
-[3]
-]
+class Dinic:
+    def __init__(self, n):
+        self.n = n
+        self.links = [[] for _ in range(n)]
+        self.depth = None
+        self.progress = None
 
-L = max(N, F)
-# 始点と食べ物を関連づける
-dist = []
-for i in range(1, L + 1):
-    dist.append([0, i, 1])
-# 食べ物と牛を関連づける
-for i in range(N):
-    for food in foods[i]:
-        dist.append([food, i + 1 + L, 1])
-# 牛→牛
-# 同じ牛に異なる複数の割り当てが行くことがないように
-for i in range(1, L + 1):
-    dist.append([i + L, i + 2 * L, 1])
-# 牛→飲み物
-for i in range(N):
-    for drink in drinks[i]:
-        dist.append([i + 1 + 2 * L, drink + 3 * L, 1])
-# 飲み物→終点
-for i in range(1, L + 1):
-    dist.append([i + 3 * L, 4 * L + 1, 1])
+    def add_link(self, _from, to, cap):
+        self.links[_from].append([cap, to, len(self.links[to])])
+        self.links[to].append([0, _from, len(self.links[_from]) - 1])
 
-N = 4 * L + 2
-lines = defaultdict(set)
-cost = [[0] * N for i in range(N)]
-for i in range(len(dist)):
-    a, b, c = dist[i]
-    lines[a].add(b)
-    cost[a][b] += c
-ans = 0
+    def bfs(self, s):
+        depth = [-1] * self.n
+        depth[s] = 0
+        q = deque([s])
+        while q:
+            v = q.popleft()
+            for cap, to, rev in self.links[v]:
+                if cap > 0 and depth[to] < 0:
+                    depth[to] = depth[v] + 1
+                    q.append(to)
+        self.depth = depth
 
-# 二部マッチング問題なので最大流
-# staからスタート
-def Ford_Fulkerson(sta, end):
-    global ans
-    queue = deque()
-    queue.append([sta, float('inf')])
+    def dfs(self, v, t, flow):
+        if v == t: # tに到達する
+            return flow
+        links_v = self.links[v]
+        for i in range(self.progress[v], len(links_v)):
+            self.progress[v] = i
+            cap, to, rev = link = links_v[i]
+            if cap == 0 or self.depth[v] >= self.depth[to]:
+                continue
+            d = self.dfs(to, t, min(flow, cap))
+            if d == 0:
+                continue
+            link[0] -= d
+            self.links[to][rev][0] += d
+            return d
+        return 0
 
-    ignore = [1] * N
-    ignore[sta] = 0
+    def max_flow(self, s, t):
+        flow = 0
+        while True:
+            self.bfs(s) # 各エッジ重みを1としてsからの距離を調べる
+            if self.depth[t] < 0:
+                return flow
+            self.progress = [0] * self.n
+            current_flow = self.dfs(s, t, float('inf'))
+            while current_flow > 0:
+                flow += current_flow
+                current_flow = self.dfs(s, t, float('inf'))
 
-    route = [0] * N
-    route[sta] = -1
-
-    while queue:
-        s, flow = queue.pop()
-        for t in lines[s]:  #s->t
-            if ignore[t]: #未到達
-                # flowは入ってくる量、出る量のうち小さい方
-                flow = min(cost[s][t], flow)
-                route[t] = s
-                queue.append([t, flow])
-                ignore[t] = 0
-                if t == end: #ゴール到達
-                    ans += flow
-                    break
-        else:
-            continue #breakされなければWhile節の先頭に戻る
-        # Falseはされない
-        break
-    else:
-        return False
-
-    t = end
-    s = route[t]
-    # goalまで流れた量はflow
-    # 逆向きの辺を貼る
-    while s != -1:
-        #s->tのコスト減少，ゼロになるなら辺を削除
-        cost[s][t] -= flow
-        if cost[s][t] == 0:
-            lines[s].remove(t)
-            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
-        if cost[t][s] == 0:
-            lines[t].add(s)
-
-        cost[t][s] += flow
-
-        # 一つ上の辺をたどる
-        t = s
-        s = route[t]
-
-    return True
-
-while True:
-    # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(0, N - 1):
-        continue
-    else:
-        break
-
-print(ans)
+# 使い方
+mf = Dinic(6)
+mf.add_link(0, 1, 10)
+mf.add_link(0, 3, 4)
+mf.add_link(1, 2, 9)
+mf.add_link(1, 4, 6)
+mf.add_link(2, 5, 8)
+mf.add_link(3, 4, 3)
+mf.add_link(4, 5, 4)
+print(mf.max_flow(0, 5))
