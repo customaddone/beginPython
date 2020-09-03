@@ -49,30 +49,31 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC010
-N, G, E = getNM()
-P = getList()
+N_s = getN()
+A = [getList() for i in range(N_s)]
+B = [getList() for i in range(N_s)]
 query = []
-for i in range(E):
-    a, b = getNM()
-    query.append([a, b, 1])
-    query.append([b, a, 1])
-# goalへのquery増築
-N += 1
-for i in range(G):
-    query.append([N - 1, P[i], 1])
-    query.append([P[i], N - 1, 1])
+# ノードの始点を2 * N_sに、終点を2 * N_s + 1に設定
+for i in range(N_s):
+    query.append([2 * N_s, i, 1])
+    query.append([N_s + i, 2 * N_s + 1, 1])
+for i in range(N_s):
+    for j in range(N_s):
+        if A[i][0] < B[j][0] and A[i][1] < B[j][1]:
+            query.append([i, N_s + j, 1])
+
+N = 2 * N_s + 2
 
 ans = 0
 lines = defaultdict(set)
 cost = [[0] * N for i in range(N)]
 for i in range(len(query)):
     a, b, c = query[i]
-    if c != 0:
-        lines[a].add(b)
-        cost[a][b] += c
+    lines[a].add(b)
+    cost[a][b] += c
 
-# sからスタート
+# 二部マッチング問題なので最大流
+# staからスタート
 def Ford_Fulkerson(sta, end):
     global ans
     queue = deque()
@@ -126,7 +127,7 @@ def Ford_Fulkerson(sta, end):
 
 while True:
     # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(0, N - 1):
+    if Ford_Fulkerson(N - 2, N - 1):
         continue
     else:
         break
