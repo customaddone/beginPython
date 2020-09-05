@@ -49,71 +49,67 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class Dinic:
-    def __init__(self, n):
-        self.n = n
-        self.links = [[] for _ in range(n)]
-        self.depth = None
-        self.progress = None
+class MinCostFlow:
+    """ 最小費用流(ベルマンフォード版、負コストに対応可) """
 
-    def add_link(self, _from, to, cap):
-        self.links[_from].append([cap, to, len(self.links[to])])
-        self.links[to].append([0, _from, len(self.links[_from]) - 1])
+    INF = 10 ** 18
 
-    def bfs(self, s):
-        depth = [-1] * self.n
-        depth[s] = 0
-        q = deque([s])
-        while q:
-            v = q.popleft()
-            for cap, to, rev in self.links[v]:
-                if cap > 0 and depth[to] < 0:
-                    depth[to] = depth[v] + 1
-                    q.append(to)
-        self.depth = depth
+    def __init__(self, N):
+        self.N = N
+        self.G = [[] for i in range(N)]
 
-    def dfs(self, v, t, flow):
-        if v == t: # tに到達する
-            return flow
-        links_v = self.links[v]
-        for i in range(self.progress[v], len(links_v)):
-            self.progress[v] = i
-            cap, to, rev = link = links_v[i]
-            if cap == 0 or self.depth[v] >= self.depth[to]:
-                continue
-            d = self.dfs(to, t, min(flow, cap))
-            if d == 0:
-                continue
-            link[0] -= d
-            self.links[to][rev][0] += d
-            return d
-        return 0
+    def add_edge(self, fr, to, cap, cost):
+        G = self.G
+        G[fr].append([to, cap, cost, len(G[to])])
+        G[to].append([fr, 0, -cost, len(G[fr])-1])
 
-    def max_flow(self, s, t):
-        flow = 0
-        while True:
-            self.bfs(s) # 各エッジ重みを1としてsからの距離を調べる
-            if self.depth[t] < 0:
-                return flow
-            self.progress = [0] * self.n
-            current_flow = self.dfs(s, t, float('inf'))
-            while current_flow > 0:
-                flow += current_flow
-                current_flow = self.dfs(s, t, float('inf'))
+    def flow(self, s, t, f):
 
-N = 3
-M = 1
-AB = [[1, 10], [2, 10], [10, 3]]
-W = [[2, 3, 1000]]
-# コアA、コアBで仕事を行う時のコスト合計N個 + データ交換のコストM個を最小値にしたい
-# コアA,コアBどちらで仕事を行うか、だけなら楽なのだがデータ交換のコストも考えないといけない
-# データ交換のエッジを余計に貼って最大流
-# 集合Sと集合Tとの最小カットは?
-dinic = Dinic(N + 2) # 始点と終点をプラス
-for i in range(N):
-    dinic.add_link(0, i + 1, AB[i][0])
-    dinic.add_link(i + 1, N + 1, AB[i][1])
-for a, b, w in W: # b ~ a, a ~ bへデータ交換
-    dinic.add_link(a, b, w)
-    dinic.add_link(b, a, w)
-print(dinic.max_flow(0, N + 1))
+        N = self.N; G = self.G
+        INF = MinCostFlow.INF
+
+        res = 0
+        prv_v = [0] * N
+        prv_e = [0] * N
+
+        while f:
+            dist = [INF] * N
+            dist[s] = 0
+            update = True
+
+            while update:
+                update = False
+                for v in range(N):
+                    if dist[v] == INF:
+                        continue
+                    for i, (to, cap, cost, _) in enumerate(G[v]):
+                        if cap > 0 and dist[to] > dist[v] + cost:
+                            dist[to] = dist[v] + cost
+                            prv_v[to] = v; prv_e[to] = i
+                            update = True
+            if dist[t] == INF:
+                return -1
+
+            d = f; v = t
+            while v != s:
+                d = min(d, G[prv_v[v]][prv_e[v]][1])
+                v = prv_v[v]
+            f -= d
+            res += d * dist[t]
+            v = t
+            while v != s:
+                e = G[prv_v[v]][prv_e[v]]
+                e[1] -= d
+                G[v][e[3]][1] += d
+                v = prv_v[v]
+        return res
+
+N = 4
+M = 5
+dist = [[1, 2, 1], [2, 3, 1], [3, 4, 1], [1, 3, 2], [2, 4, 2]]
+
+mcf = MinCostFlow(N)
+for a, b, w in dist:
+    mcf.add_edge(a - 1, b - 1, 1, w)
+# それぞれ違う道を通る２つの道の最小費用は　→　流量２の最小費用流を使う
+print(mcf.flow(0, N - 1, 2))
