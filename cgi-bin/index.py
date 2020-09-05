@@ -101,13 +101,19 @@ class Dinic:
                 flow += current_flow
                 current_flow = self.dfs(s, t, float('inf'))
 
-# 使い方
-mf = Dinic(6)
-mf.add_link(0, 1, 10)
-mf.add_link(0, 3, 4)
-mf.add_link(1, 2, 9)
-mf.add_link(1, 4, 6)
-mf.add_link(2, 5, 8)
-mf.add_link(3, 4, 3)
-mf.add_link(4, 5, 4)
-print(mf.max_flow(0, 5))
+N = 3
+M = 1
+AB = [[1, 10], [2, 10], [10, 3]]
+W = [[2, 3, 1000]]
+# コアA、コアBで仕事を行う時のコスト合計N個 + データ交換のコストM個を最小値にしたい
+# コアA,コアBどちらで仕事を行うか、だけなら楽なのだがデータ交換のコストも考えないといけない
+# データ交換のエッジを余計に貼って最大流
+# 集合Sと集合Tとの最小カットは?
+dinic = Dinic(N + 2) # 始点と終点をプラス
+for i in range(N):
+    dinic.add_link(0, i + 1, AB[i][0])
+    dinic.add_link(i + 1, N + 1, AB[i][1])
+for a, b, w in W: # b ~ a, a ~ bへデータ交換
+    dinic.add_link(a, b, w)
+    dinic.add_link(b, a, w)
+print(dinic.max_flow(0, N + 1))
