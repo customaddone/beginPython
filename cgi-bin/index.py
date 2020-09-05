@@ -104,12 +104,40 @@ class MinCostFlow:
                 v = prv_v[v]
         return res
 
-N = 4
-M = 5
-dist = [[1, 2, 1], [2, 3, 1], [3, 4, 1], [1, 3, 2], [2, 4, 2]]
+# p214 evacuation plan
+N = 3
+M = 4
+build = [[-3, 3, 5], [-2, -2, 6], [2, 2, 5]]
+shell = [[-1, 1, 3], [1, 1, 4], [-2, -2, 7], [0, -1, 3]]
+E = [[3, 1, 1, 0], [0, 0, 6, 0], [0, 3, 0, 2]] # 避難計画　これが最速か？
+ball = 0
 
-mcf = MinCostFlow(N)
-for a, b, w in dist:
-    mcf.add_edge(a - 1, b - 1, 1, w)
-# それぞれ違う道を通る２つの道の最小費用は　→　流量２の最小費用流を使う
-print(mcf.flow(0, N - 1, 2))
+mcf = MinCostFlow(N + M + 2)
+for i in range(N):
+    x, y, b = build[i]
+    mcf.add_edge(0, i + 1, b, 0)
+    ball += b
+    for j in range(M):
+        p, q, c = shell[j]
+        cost = abs(x - p) + abs(y - q) + 1
+        mcf.add_edge(i + 1, N + j + 1, c, cost)
+
+for j in range(M):
+    p, q, c = shell[j]
+    mcf.add_edge(N + j + 1, N + M + 1, c, 0)
+# フロー前とフロー後のGを比べるとどこからどこへいくら流れたかが確認できる
+edge_bef = deepcopy(mcf.G)
+mcf.flow(0, N + M + 1, ball)
+edge_aft = mcf.G
+
+optimal = [[0] * M for i in range(N)]
+for i in range(N):
+    for j in range(M):
+        optimal[i][j] = edge_bef[i + 1][j + 1][1] - edge_aft[i + 1][j + 1][1]
+
+if E == optimal:
+    print('OPTIMAL')
+else:
+    print('SUBOPTIMAL')
+    for i in optimal:
+        print(*i)
