@@ -49,205 +49,29 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-num = [i for i in range(0, 10, 2)]
-A = [2, 4, 5]
-B = [2, 3]
+N = 5
+K = 3
+A = [1, 3, 5, 4, 2]
+# [1, 3, 5]の最小値
+# [2, 5, 4]の最小値
+# [5, 4, 2]の最小値
+pos = deque([0])
 
-for i in A:
-    index = bisect_right(num, i)
-    print(num[index - 1])
-
-# numの中でのi未満の数字の最大値を求める
-for i in A:
-    index = bisect_left(num, i)
-    print(num[index - 1])
-
-# numの中でのiより大きい数字の最小値を求める
-for i in B:
-    index = bisect_right(num, i)
-    print(num[index])
-
-# numの中でのi以上の数字の最小値を求める
-for i in B:
-    index = bisect_left(num, i)
-    print(num[index])
-
-A = [1, 2, 4, 8, 16, 32]
-
-def or_less(array, x):
-    # arrayの中のx以下のものの個数
-    # arrayの中のx以下のもののうちの最大値
-    index = bisect_right(array, x)
-    if index == 0:
-        or_less_int = -float('inf')
+# posの内部のa1, a2...についてa1 < a2...かつ
+# A[a1] < A[a2]...になるように
+for i in range(1, K):
+    if A[pos[-1]] < A[i]:
+        pos.append(i)
     else:
-        or_less_int = array[index - 1]
-    return [index, or_less_int]
+        pos[-1] = i
 
-def less_than(array, x):
-    # arrayの中のx未満のものの個数
-    # arrayの中のx未満のもののうちの最大値
-    index = bisect_left(array, x)
-    if index == 0:
-        less_than_int = -float('inf')
+for i in range(N - K):
+    # iを削除してi + Kを入れる
+    # もしposの先頭がiなら
+    if pos[0] == i:
+        pos.popleft()
+
+    if A[pos[-1]] < A[i + K]:
+        pos.append(i + K)
     else:
-        less_than_int = array[index - 1]
-    return [index, less_than_int]
-
-print(or_less(A, 8))
-print(less_than(A, 1))
-
-def or_more(array, x):
-    # arrayの中のx以上のものの個数
-    # arrayの中のx以上のもののうちの最小値
-    n = len(array)
-    index = bisect_left(array, x)
-    if index == n:
-        or_more_int = float('inf')
-    else:
-        or_more_int = array[index]
-    return [n - index, or_more_int]
-
-def more_than(array, x):
-    # arrayの中のxより大きいものの個数
-    # arrayの中のxより大きいのもののうちの最小値
-    n = len(array)
-    index = bisect_right(array, x)
-    if index == n:
-        more_than_int = float('inf')
-    else:
-        more_than_int = array[index]
-    return [n - index, more_than_int]
-
-print(or_more(A, 32))
-print(more_than(A, 1))
-
-# ABC149 E - Handshake
-N, K = 9, 14
-A = [1, 3, 5, 110, 24, 21, 34, 5, 3]
-
-A.sort(reverse = True)
-
-# 各ペアを大きい順に並べるのはムリ
-# ただし、合計がx以上/以下になるペアが何個あるかは求められる
-# x以上になるペアが何個あるか
-def cnt(x):
-    r = 0
-    ans = 0
-    list_num = [0] * N
-    for i in range(N - 1, -1, -1):
-        while r < N and A[r] + A[i] >= x:
-            r += 1
-        list_num[i] = r
-        ans += r
-
-    return [ans, list_num]
-
-ng = 0
-ok = 2 * (10 ** 6)
-
-while ok - ng > 1:
-    mid = (ok + ng) // 2
-    if cnt(mid)[0] <= K:
-        ok = mid
-    else:
-        ng = mid
-
-# 境界がわかったら
-imos = [0] + copy.deepcopy(A)
-for i in range(N):
-    imos[i + 1] += imos[i]
-
-ans = 0
-plus = cnt(ok)[1]
-
-# cntから得た情報を元に上から順番に足していく
-for i in range(N):
-    ans += (A[i] * plus[i]) + imos[plus[i]]
-# 合計がngになるペアを足りない分K - sum(plus)個足す
-ans += ng * (K - sum(plus))
-print(ans)
-
-# ABC155 D - Pairs
-N, K = 10, 40
-A = [5, 4, 3, 2, -1, 0, 0, 0, 0, 0]
-minus = [-x for x in A if x < 0]
-plus = [x for x in A if x >= 0]
-
-minus.sort()
-plus.sort()
-
-def cnt(x):
-    ans = 0
-    if x < 0:
-        x = -x
-        r = 0
-        # - * +
-        for num in minus[::-1]:
-            while r < len(plus) and plus[r] * num < x:
-                r += 1
-            ans += len(plus) - r
-        return ans
-
-    r = 0
-    for num in minus[::-1]:
-        if num * num <= x:
-            ans -= 1
-        while r < len(minus) and minus[r] * num <= x:
-            r += 1
-        ans += r
-    r = 0
-    for num in plus[::-1]:
-        if num * num <= x:
-            ans -= 1
-        while r < len(plus) and plus[r] * num <= x:
-            r += 1
-        ans += r
-    ans //= 2
-    # -になるものはまとめて計算
-    ans += len(minus) * len(plus)
-    return ans
-
-bottom = 0
-top = 2 * (10 ** 18) + 2
-
-
-while top - bottom > 1:
-    mid = (top + bottom) // 2
-    if cnt(mid - 10 ** 18 - 1) < K:
-        bottom = mid
-    else:
-        top = mid
-
-print(int(top - 10 ** 18 - 1))
-
-# ARC037 C - 億マス計算
-N, K = getNM()
-A = sorted(getList())
-B = sorted(getList())
-
-# かけ合わせるとx以下になるものが何個あるか
-def cnt(x):
-    r = 0
-    ans = 0
-    list_num = [0] * N
-    # BiについてAの各要素とペアになれるのがいくつあるか
-    for i in range(N - 1, -1, -1):
-        while r < N and A[r] * B[i] <= x:
-            r += 1
-        list_num[i] = r
-        ans += r
-
-    return [ans, list_num]
-
-ng = 0
-ok = 2 * (10 ** 18)
-
-while ok - ng > 1:
-    mid = (ok + ng) // 2
-    if cnt(mid)[0] >= K:
-        ok = mid
-    else:
-        ng = mid
-
-print(ok)
+        pos[-1] = i + K
