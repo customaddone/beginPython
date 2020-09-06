@@ -49,73 +49,205 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+num = [i for i in range(0, 10, 2)]
+A = [2, 4, 5]
+B = [2, 3]
 
-class MinCostFlow:
-    """ 最小費用流(ベルマンフォード版、負コストに対応可) """
+for i in A:
+    index = bisect_right(num, i)
+    print(num[index - 1])
 
-    INF = 10 ** 18
+# numの中でのi未満の数字の最大値を求める
+for i in A:
+    index = bisect_left(num, i)
+    print(num[index - 1])
 
-    def __init__(self, N):
-        self.N = N
-        self.G = [[] for i in range(N)]
+# numの中でのiより大きい数字の最小値を求める
+for i in B:
+    index = bisect_right(num, i)
+    print(num[index])
 
-    def add_edge(self, fr, to, cap, cost):
-        G = self.G
-        G[fr].append([to, cap, cost, len(G[to])])
-        G[to].append([fr, 0, -cost, len(G[fr])-1])
+# numの中でのi以上の数字の最小値を求める
+for i in B:
+    index = bisect_left(num, i)
+    print(num[index])
 
-    def flow(self, s, t, f):
+A = [1, 2, 4, 8, 16, 32]
 
-        N = self.N; G = self.G
-        INF = MinCostFlow.INF
+def or_less(array, x):
+    # arrayの中のx以下のものの個数
+    # arrayの中のx以下のもののうちの最大値
+    index = bisect_right(array, x)
+    if index == 0:
+        or_less_int = -float('inf')
+    else:
+        or_less_int = array[index - 1]
+    return [index, or_less_int]
 
-        res = 0
-        prv_v = [0] * N
-        prv_e = [0] * N
+def less_than(array, x):
+    # arrayの中のx未満のものの個数
+    # arrayの中のx未満のもののうちの最大値
+    index = bisect_left(array, x)
+    if index == 0:
+        less_than_int = -float('inf')
+    else:
+        less_than_int = array[index - 1]
+    return [index, less_than_int]
 
-        while f:
-            dist = [INF] * N
-            dist[s] = 0
-            update = True
+print(or_less(A, 8))
+print(less_than(A, 1))
 
-            while update:
-                update = False
-                for v in range(N):
-                    if dist[v] == INF:
-                        continue
-                    for i, (to, cap, cost, _) in enumerate(G[v]):
-                        if cap > 0 and dist[to] > dist[v] + cost:
-                            dist[to] = dist[v] + cost
-                            prv_v[to] = v; prv_e[to] = i
-                            update = True
-            if dist[t] == INF:
-                return -1
+def or_more(array, x):
+    # arrayの中のx以上のものの個数
+    # arrayの中のx以上のもののうちの最小値
+    n = len(array)
+    index = bisect_left(array, x)
+    if index == n:
+        or_more_int = float('inf')
+    else:
+        or_more_int = array[index]
+    return [n - index, or_more_int]
 
-            d = f; v = t
-            while v != s:
-                d = min(d, G[prv_v[v]][prv_e[v]][1])
-                v = prv_v[v]
-            f -= d
-            res += d * dist[t]
-            v = t
-            while v != s:
-                e = G[prv_v[v]][prv_e[v]]
-                e[1] -= d
-                G[v][e[3]][1] += d
-                v = prv_v[v]
-        return res
+def more_than(array, x):
+    # arrayの中のxより大きいものの個数
+    # arrayの中のxより大きいのもののうちの最小値
+    n = len(array)
+    index = bisect_right(array, x)
+    if index == n:
+        more_than_int = float('inf')
+    else:
+        more_than_int = array[index]
+    return [n - index, more_than_int]
 
-N = 3
-K = 2
-E = [[1, 100000, 100000], [1, 150, 301], [100, 200, 300]]
-M = 100001
-mcf = MinCostFlow(M)
-for i in range(1, M):
-    mcf.add_edge(i - 1, i, float('inf'), 0)
-for a, b, w in E:
-    mcf.add_edge(a, b, 1, -w)
-# K個ずつ1 ~ M間を移動させてMまで行く⇆互いに交差しない区間の集合K個に分ける
-# i ~ i + 1間はコスト0で進める
-# a ~ b間に貼られたエッジを通ると重みwを獲得できる
-# ただし一回までしか通れず、a ~ b間にスタート地点があるエッジを使用できない
-print(-mcf.flow(1, M - 1, 2))
+print(or_more(A, 32))
+print(more_than(A, 1))
+
+# ABC149 E - Handshake
+N, K = 9, 14
+A = [1, 3, 5, 110, 24, 21, 34, 5, 3]
+
+A.sort(reverse = True)
+
+# 各ペアを大きい順に並べるのはムリ
+# ただし、合計がx以上/以下になるペアが何個あるかは求められる
+# x以上になるペアが何個あるか
+def cnt(x):
+    r = 0
+    ans = 0
+    list_num = [0] * N
+    for i in range(N - 1, -1, -1):
+        while r < N and A[r] + A[i] >= x:
+            r += 1
+        list_num[i] = r
+        ans += r
+
+    return [ans, list_num]
+
+ng = 0
+ok = 2 * (10 ** 6)
+
+while ok - ng > 1:
+    mid = (ok + ng) // 2
+    if cnt(mid)[0] <= K:
+        ok = mid
+    else:
+        ng = mid
+
+# 境界がわかったら
+imos = [0] + copy.deepcopy(A)
+for i in range(N):
+    imos[i + 1] += imos[i]
+
+ans = 0
+plus = cnt(ok)[1]
+
+# cntから得た情報を元に上から順番に足していく
+for i in range(N):
+    ans += (A[i] * plus[i]) + imos[plus[i]]
+# 合計がngになるペアを足りない分K - sum(plus)個足す
+ans += ng * (K - sum(plus))
+print(ans)
+
+# ABC155 D - Pairs
+N, K = 10, 40
+A = [5, 4, 3, 2, -1, 0, 0, 0, 0, 0]
+minus = [-x for x in A if x < 0]
+plus = [x for x in A if x >= 0]
+
+minus.sort()
+plus.sort()
+
+def cnt(x):
+    ans = 0
+    if x < 0:
+        x = -x
+        r = 0
+        # - * +
+        for num in minus[::-1]:
+            while r < len(plus) and plus[r] * num < x:
+                r += 1
+            ans += len(plus) - r
+        return ans
+
+    r = 0
+    for num in minus[::-1]:
+        if num * num <= x:
+            ans -= 1
+        while r < len(minus) and minus[r] * num <= x:
+            r += 1
+        ans += r
+    r = 0
+    for num in plus[::-1]:
+        if num * num <= x:
+            ans -= 1
+        while r < len(plus) and plus[r] * num <= x:
+            r += 1
+        ans += r
+    ans //= 2
+    # -になるものはまとめて計算
+    ans += len(minus) * len(plus)
+    return ans
+
+bottom = 0
+top = 2 * (10 ** 18) + 2
+
+
+while top - bottom > 1:
+    mid = (top + bottom) // 2
+    if cnt(mid - 10 ** 18 - 1) < K:
+        bottom = mid
+    else:
+        top = mid
+
+print(int(top - 10 ** 18 - 1))
+
+# ARC037 C - 億マス計算
+N, K = getNM()
+A = sorted(getList())
+B = sorted(getList())
+
+# かけ合わせるとx以下になるものが何個あるか
+def cnt(x):
+    r = 0
+    ans = 0
+    list_num = [0] * N
+    # BiについてAの各要素とペアになれるのがいくつあるか
+    for i in range(N - 1, -1, -1):
+        while r < N and A[r] * B[i] <= x:
+            r += 1
+        list_num[i] = r
+        ans += r
+
+    return [ans, list_num]
+
+ng = 0
+ok = 2 * (10 ** 18)
+
+while ok - ng > 1:
+    mid = (ok + ng) // 2
+    if cnt(mid)[0] >= K:
+        ok = mid
+    else:
+        ng = mid
+
+print(ok)
