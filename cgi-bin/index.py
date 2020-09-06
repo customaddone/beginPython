@@ -49,29 +49,36 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 5
-K = 3
-A = [1, 3, 5, 4, 2]
-# [1, 3, 5]の最小値
-# [2, 5, 4]の最小値
-# [5, 4, 2]の最小値
-pos = deque([0])
+N = 7
+H = [2, 1, 4, 5, 1, 3, 3]
+# H[i]の値が最小値になるとする
+# H[i]は谷底でなければならない
 
-# posの内部のa1, a2...についてa1 < a2...かつ
-# A[a1] < A[a2]...になるように
-for i in range(1, K):
-    if A[pos[-1]] < A[i]:
-        pos.append(i)
+L = [0] * N
+R = [0] * N
+pos = [0]
+for i in range(1, N):
+    while pos and H[pos[-1]] >= H[i]:
+        pos.pop() # 左端を向こう側に追いやる
+    if pos:
+        L[i] = pos[-1] + 1
     else:
-        pos[-1] = i
+        L[i] = 0
+    pos.append(i) # 左端が迫ってくる
 
-for i in range(N - K):
-    # iを削除してi + Kを入れる
-    # もしposの先頭がiなら
-    if pos[0] == i:
-        pos.popleft()
-
-    if A[pos[-1]] < A[i + K]:
-        pos.append(i + K)
+pos = [N - 1]
+R[N - 1] = N
+for i in range(N - 2, -1, -1):
+    while pos and H[pos[-1]] >= H[i]:
+        pos.pop()
+    if pos:
+        R[i] = pos[-1]
     else:
-        pos[-1] = i + K
+        R[i] = N
+
+    pos.append(i)
+
+ans = 0
+for i in range(N):
+    ans = max(ans, H[i] * (R[i] - L[i]))
+print(ans)
