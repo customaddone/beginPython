@@ -49,99 +49,73 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 3 # おもちゃ
-M = 4 # 工場
-Z = [
-[1, 100, 100, 100],
-[99, 1, 99, 99],
-[98, 98, 1, 98]
-]
 
-query = []
-for i in range(N):
-    query.append([0, i + 1, 1]) # 各始点からおもちゃまで１
-for j in range(N):
-    for k in range(M):
-        query.append([N + j * M + k + 1, N * (M + 1) + 1, float('inf')]) # 工場から終点まで
-        for i in range(N):
-            # 各工場で何個作るか
-            # 3個作るならエッジを3本使う
-            query.append([i + 1, N + j * M + k + 1, (k + 1) * Z[i][j]])
-print(query)
+class MinCostFlow:
+    """ 最小費用流(ベルマンフォード版、負コストに対応可) """
 
-N = N * (M + 1) + 2
-ans = 0
-lines = defaultdict(set)
-cost = [[0] * N for i in range(N)]
-for i in range(len(query)):
-    a, b, c = query[i]
-    if c != 0:
-        lines[a].add(b)
-        cost[a][b] += c
+    INF = 10 ** 18
 
+    def __init__(self, N):
+        self.N = N
+        self.G = [[] for i in range(N)]
 
-# つまりおもちゃ製造にかかる時間の総和を最小に
+    def add_edge(self, fr, to, cap, cost):
+        G = self.G
+        G[fr].append([to, cap, cost, len(G[to])])
+        G[to].append([fr, 0, -cost, len(G[fr])-1])
 
-# 各工場で一つずつしかおもちゃを作れないなら、エッジを繋いで最小費用流で作れる
-# １つの工場の場合は必要な時間の短いものから作っていく
+    def flow(self, s, t, f):
 
-# sからスタート
-def Ford_Fulkerson(sta, end):
-    global ans
-    queue = deque()
-    queue.append([sta, float('inf')])
+        N = self.N; G = self.G
+        INF = MinCostFlow.INF
 
-    ignore = [1] * N
-    ignore[sta] = 0
+        res = 0
+        prv_v = [0] * N
+        prv_e = [0] * N
 
-    route = [0] * N
-    route[sta] = -1
+        while f:
+            dist = [INF] * N
+            dist[s] = 0
+            update = True
 
-    while queue:
-        s, flow = queue.pop()
-        for t in lines[s]:  #s->t
-            if ignore[t]: #未到達
-                # flowは入ってくる量、出る量のうち小さい方
-                flow = min(cost[s][t], flow)
-                route[t] = s
-                queue.append([t, flow])
-                ignore[t] = 0
-                if t == end: #ゴール到達
-                    ans += flow
-                    break
-        else:
-            continue #breakされなければWhile節の先頭に戻る
-        # Falseはされない
-        break
-    else:
-        return False
+            while update:
+                update = False
+                for v in range(N):
+                    if dist[v] == INF:
+                        continue
+                    for i, (to, cap, cost, _) in enumerate(G[v]):
+                        if cap > 0 and dist[to] > dist[v] + cost:
+                            dist[to] = dist[v] + cost
+                            prv_v[to] = v; prv_e[to] = i
+                            update = True
+            if dist[t] == INF:
+                return -1
 
-    t = end
-    s = route[t]
-    # goalまで流れた量はflow
-    # 逆向きの辺を貼る
-    while s != -1:
-        #s->tのコスト減少，ゼロになるなら辺を削除
-        cost[s][t] -= flow
-        if cost[s][t] == 0:
-            lines[s].remove(t)
-            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
-        if cost[t][s] == 0:
-            lines[t].add(s)
+            d = f; v = t
+            while v != s:
+                d = min(d, G[prv_v[v]][prv_e[v]][1])
+                v = prv_v[v]
+            f -= d
+            res += d * dist[t]
+            v = t
+            while v != s:
+                e = G[prv_v[v]][prv_e[v]]
+                e[1] -= d
+                G[v][e[3]][1] += d
+                v = prv_v[v]
+        return res
 
-        cost[t][s] += flow
-
-        # 一つ上の辺をたどる
-        t = s
-        s = route[t]
-
-    return True
-
-while True:
-    # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(0, N - 1):
-        continue
-    else:
-        break
-
-print(ans)
+N = 3
+K = 2
+E = [[1, 100000, 100000], [1, 150, 301], [100, 200, 300]]
+M = 100001
+mcf = MinCostFlow(M)
+for i in range(1, M):
+    mcf.add_edge(i - 1, i, float('inf'), 0)
+for a, b, w in E:
+    mcf.add_edge(a, b, 1, -w)
+# K個ずつ1 ~ M間を移動させてMまで行く⇆互いに交差しない区間の集合K個に分ける
+# i ~ i + 1間はコスト0で進める
+# a ~ b間に貼られたエッジを通ると重みwを獲得できる
+# ただし一回までしか通れず、a ~ b間にスタート地点があるエッジを使用できない
+print(-mcf.flow(1, M - 1, 2))
