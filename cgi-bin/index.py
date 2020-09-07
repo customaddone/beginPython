@@ -49,105 +49,45 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC167 teleporter
-N, K = 6, 727202214173249351
-A = [6, 5, 2, 5, 3, 2]
-A = [i - 1 for i in A]
-
-logk = K.bit_length()
-doubling = [[-1] * N for _ in range(logk)]
-
-# ダブリング
-# 2 ** 0は１つ後の行き先
-for i in range(N):
-    doubling[0][i] = A[i]
-for i in range(1, logk):
-    for j in range(N):
-        # doubling[i]はdoubling[i - 1]を２回行えばいい
-        # doubling[i - 1][j]移動してその座標からまたdoubling[i - 1]移動
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-index = 0
-# 各bitごとに移動を行う
-for i in range(logk):
-    if K & (1 << i):
-        index = doubling[i][index]
-print(index + 1)
-
-S = 'RRLLLLRLRRLL'
-N = len(S)
-logk = (10 ** 5).bit_length()
-
-doubling = [[-1] * N for _ in range(logk)]
-
-# １回目の移動
-for i in range(N):
-    doubling[0][i] = i + 1 if S[i] == "R" else i - 1
-
-# 2 ** k回目の移動
-for i in range(1, logk):
-    for j in range(N):
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-ans = [0] * N
-
-# 10 ** 5回ぐらい回せば十分
-for i in range(N):
-    ans[doubling[logk - 1][i]] += 1
-
-print(*ans)
-
-# p307 ダブリング
-N = 3
-M = 10
-que = [
-[0, 3],
-[3, 7],
-[7, 0]
-]
-
-alta = []
-for i in range(N):
-    s, t =  que[i]
-    if s < t:
-        alta.append([s, t])
-        alta.append([s + M, t + M])
-    else:
-        alta.append([s, t + M])
-alta.sort(key = lambda i: i[1])
-
-N = len(alta)
-
-logk = (10 ** 6).bit_length()
-doubling = [[-1] * N for _ in range(logk)]
-for i in range(N):
-    s, t = alta[i]
-    for j in range(i + 1, N):
-        opt_s, opt_t = alta[j]
-        if t <= opt_s:
-            doubling[0][i] = j
-            break
-
-for i in range(1, logk):
-    for j in range(N):
-        # 欄外に飛ぶようなら-1
-        if doubling[i - 1][j] == -1:
-            doubling[i][j] = -1
-        else:
-            doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+# 包除原理
+N = 100
+M = 3
+A = [2, 3, 8]
+A.sort(reverse = True)
+minus = [0] * (N + 1)
 
 ans = 0
-# 区間iからスタート
-for i in range(N):
-    s, t = alta[i]
-    now = i
-    cnt = 1
-    # 超過しないよう大きいものから加算していく
-    for j in range(logk - 1, -1, -1):
-        opt_index = doubling[j][now]
-        # 欄内に収まるかつ始点から距離M以内
-        if opt_index >= 0 and alta[opt_index][1] <= M:
-            now = opt_index
-            cnt += 1 << j
-    ans = max(ans, cnt)
+# (A & B & C)の個数について調べる
+# → A & Bの個数を計算したものから (A & B & C)の個数を引く
+for bit in range((1 << M) - 1, 0, -1):
+    prim = 1
+    for j in range(M):
+        if bit & (1 << j):
+            prim = prim // math.gcd(prim, A[j]) * A[j] # lcmの計算
+    mi = N // prim
+    for i in range(prim, N, prim):
+        mi -= minus[i]
+    if minus[prim] == 0:
+        minus[prim] = mi
+    ans += mi
 print(ans)
+
+# ABC162 E - Sum of gcd of Tuples (Hard)
+N,K = getNM()
+ans = 0
+rec = [0] * (K + 1)
+
+"""
+集合A, B, Cについて
+A ⊆ B　かつ B ⊆ Cとすると
+集合が小さい順から数えて行って
+Bを数える時にB -= A
+Cを数える時にC -= Aすればダブらない
+"""
+
+for X in range(K, 0, -1):
+    rec[X] = pow(K // X, N, mod)
+    for i in range(2, K // X + 1):
+        rec[X] -= rec[i * X] % mod
+    ans += (X * rec[X]) % mod
+print(ans % mod)
