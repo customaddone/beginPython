@@ -49,176 +49,89 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# p21 三角形
+# p128 lower_bound
+N = 5
+A = [2, 3, 3, 5, 6]
+K = 3
+
+# K以上であるAiのうち最も左にあるもののインデックス
+print(bisect_left(A, K))
+
+# p129 cable master
 N = 4
-A = [4, 5, 10, 20]
+K = 11
+L = [8.02, 7.43, 4.57, 5.39]
 
-# 全探索
-ans = 0
-for i in range(N):
-    for j in range(i + 1, N):
-        for l in range(j + 1, N):
-            # 一番長い辺の長さが残りの２辺の合計より短い
-            if A[i] + A[j] + A[l] - 2 * max(A[i], A[j], A[l]) > 0:
-                ans = max(ans,  A[i] + A[j] +  A[l])
-print(ans)
+def f(target):
+    cnt = 0
+    for i in range(N):
+        cnt += math.floor(L[i] / target)
+    if cnt >= K:
+        return True
+    else:
+        return False
 
-# p23 ants
-# アリ同士はすり抜けると考える
-L = 10
+ng = 0
+ok = 10 ** 9 + 1
+for i in range(100):
+    mid = (ng + ok) / 2
+    if f(mid):
+        ng = mid
+    else:
+        ok = mid
+print(math.floor(ok * 100) / 100) # 小数点２位まで求める
+
+# p131 aggressive cows
+N = 5
+M = 3
+X = [1, 2, 8, 4, 9]
+X.sort()
+
+def c(d):
+    last = 0
+    # M - 1回indexを進められなかったらFalse
+    for _ in range(M - 1):
+        crt = last + 1
+        while crt < N and X[crt] - X[last] < d:
+            crt += 1
+        if crt == N:
+            return False
+        last = crt # indexを進める
+    return True
+
+ok = -1
+ng = 10 ** 9 + 1
+
+while abs(ok - ng) > 1:
+    mid = (ok + ng) // 2
+    if c(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
+
+# p132 平均最大化
+# 平均値を仮定する
 N = 3
-X = [2, 6, 7]
-mi, ma = 0, 0
-for i in range(N):
-    l = X[i]
-    r = L - X[i]
-    mi = max(mi, min(l, r))
-    ma = max(ma, max(l, r))
-print(mi, ma)
+K = 2
+W = [2, 5, 2]
+V = [2, 3, 1]
 
-def binary_search_loop(data, target):
-    imin = 0
-    imax = len(data) - 1
-    while imin <= imax:
-        imid = imin + (imax - imin) // 2
-        if target == data[imid]:
-            return True
-        elif target < data[imid]:
-            imax = imid - 1
-        else:
-            imin = imid + 1
-    return False
+def c2(x, w, v):
+    cnt = 0
+    items = [v[i] - x * w[i] for i in range(N)]
+    items.sort(reverse = True)
+    for i in range(K):
+        cnt += items[i]
+    return cnt >= 0
 
-# p25くじ引き
-N = 3
-M = 4
-K = [1, 3, 5]
-alta = []
-for i in range(N):
-    for j in range(N):
-        alta.append(K[i] + K[j])
-alta.sort()
+ok = 0
+ng = 10 ** 9 + 1
 
-ans = 'No'
-for i in range(N ** 2):
-    if M - alta[i] <= 0:
-        continue
-    if binary_search_loop(alta, M - alta[i]):
-        ans = 'Yes'
-        break
-print(ans)
-
-# p34 部分和問題
-N = 4
-A = [1, 2, 4, 7]
-K = 13
-
-def dfs(i, sum):
-    if i == N:
-        return sum == K
-    if K - sum < A[i]:
-        return dfs(i + 1, sum)
+for i in range(100):
+    mid = (ng + ok) / 2
+    if c2(mid, W, V):
+        ok = mid
     else:
-        return dfs(i + 1, sum) or dfs(i + 1, sum + A[i])
-
-print(dfs(0, 0))
-
-# p35 lake counting
-N = 10
-M = 12
-# mazeの水溜りを埋めていく
-maze = [
-'W........WW.',
-'.WWW.....WWW',
-'....WW...WW.',
-'.........WW.',
-'.........W..',
-'..W......W..',
-'.W.W.....WW.',
-'W.W.W.....W.',
-'.W.W......W.',
-'..W.......W.'
-]
-maze = [list(i) for i in maze]
-
-dx = [0, 1, 1, 1, 0, -1, -1, -1]
-dy = [1, 1, 0, -1, -1, -1, 0, 1]
-
-def dfs(y, x):
-    maze[y][x] = '.'
-    for i in range(8):
-        ny = y + dy[i]
-        nx = x + dx[i]
-        if 0 <= ny < N and 0 <= nx < M and maze[ny][nx] == 'W':
-            dfs(ny, nx)
-
-ans = 0
-for i in range(N):
-    for j in range(M):
-        if maze[i][j] == 'W':
-            dfs(i, j)
-            ans += 1
-print(ans)
-
-# p37 迷路の最短路
-N = 10
-M = 10
-maze = [
-'#S######.#',
-'......#..#',
-'.#.##.##.#',
-'.#........',
-'##.##.####',
-'....#....#',
-'.#######.#',
-'....#.....',
-'.####.###.',
-'....#...G#'
-]
-maze = [list(i) for i in maze]
-
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-
-start = [-1, -1]
-end = [-1, -1]
-# スタート位置特定
-for i in range(N):
-    for j in range(M):
-        if maze[i][j] == 'S':
-            start = [i, j]
-            break
-    else:
-        continue
-    break
-
-# ゴール位置特定
-for i in range(N):
-    for j in range(M):
-        if maze[i][j] == 'G':
-            goal = [i, j]
-            break
-    else:
-        continue
-    break
-
-def bfs(start, goal, maze):
-    pos = deque([start])
-    dp = [[-1] * M for i in range(N)]
-    dp[start[0]][start[1]] = 0
-
-    while len(pos) > 0:
-        y, x = pos.popleft()
-        if y == goal[0] and x == goal[1]:
-            break
-
-        for i in range(4):
-            ny = y + dy[i]
-            nx = x + dx[i]
-            if 0 <= ny < N and 0 <= nx < M and maze[ny][nx] != "#" and dp[ny][nx] == -1:
-                dp[ny][nx] = dp[y][x] + 1
-                pos.append([ny, nx])
-
-    return dp[goal[0]][goal[1]]
-
-print(bfs(start, goal, maze))
+        ng = mid
+print(ok)
