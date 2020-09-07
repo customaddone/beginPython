@@ -49,45 +49,176 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 包除原理
-N = 100
-M = 3
-A = [2, 3, 8]
-A.sort(reverse = True)
-minus = [0] * (N + 1)
+# p21 三角形
+N = 4
+A = [4, 5, 10, 20]
 
+# 全探索
 ans = 0
-# (A & B & C)の個数について調べる
-# → A & Bの個数を計算したものから (A & B & C)の個数を引く
-for bit in range((1 << M) - 1, 0, -1):
-    prim = 1
-    for j in range(M):
-        if bit & (1 << j):
-            prim = prim // math.gcd(prim, A[j]) * A[j] # lcmの計算
-    mi = N // prim
-    for i in range(prim, N, prim):
-        mi -= minus[i]
-    if minus[prim] == 0:
-        minus[prim] = mi
-    ans += mi
+for i in range(N):
+    for j in range(i + 1, N):
+        for l in range(j + 1, N):
+            # 一番長い辺の長さが残りの２辺の合計より短い
+            if A[i] + A[j] + A[l] - 2 * max(A[i], A[j], A[l]) > 0:
+                ans = max(ans,  A[i] + A[j] +  A[l])
 print(ans)
 
-# ABC162 E - Sum of gcd of Tuples (Hard)
-N,K = getNM()
+# p23 ants
+# アリ同士はすり抜けると考える
+L = 10
+N = 3
+X = [2, 6, 7]
+mi, ma = 0, 0
+for i in range(N):
+    l = X[i]
+    r = L - X[i]
+    mi = max(mi, min(l, r))
+    ma = max(ma, max(l, r))
+print(mi, ma)
+
+def binary_search_loop(data, target):
+    imin = 0
+    imax = len(data) - 1
+    while imin <= imax:
+        imid = imin + (imax - imin) // 2
+        if target == data[imid]:
+            return True
+        elif target < data[imid]:
+            imax = imid - 1
+        else:
+            imin = imid + 1
+    return False
+
+# p25くじ引き
+N = 3
+M = 4
+K = [1, 3, 5]
+alta = []
+for i in range(N):
+    for j in range(N):
+        alta.append(K[i] + K[j])
+alta.sort()
+
+ans = 'No'
+for i in range(N ** 2):
+    if M - alta[i] <= 0:
+        continue
+    if binary_search_loop(alta, M - alta[i]):
+        ans = 'Yes'
+        break
+print(ans)
+
+# p34 部分和問題
+N = 4
+A = [1, 2, 4, 7]
+K = 13
+
+def dfs(i, sum):
+    if i == N:
+        return sum == K
+    if K - sum < A[i]:
+        return dfs(i + 1, sum)
+    else:
+        return dfs(i + 1, sum) or dfs(i + 1, sum + A[i])
+
+print(dfs(0, 0))
+
+# p35 lake counting
+N = 10
+M = 12
+# mazeの水溜りを埋めていく
+maze = [
+'W........WW.',
+'.WWW.....WWW',
+'....WW...WW.',
+'.........WW.',
+'.........W..',
+'..W......W..',
+'.W.W.....WW.',
+'W.W.W.....W.',
+'.W.W......W.',
+'..W.......W.'
+]
+maze = [list(i) for i in maze]
+
+dx = [0, 1, 1, 1, 0, -1, -1, -1]
+dy = [1, 1, 0, -1, -1, -1, 0, 1]
+
+def dfs(y, x):
+    maze[y][x] = '.'
+    for i in range(8):
+        ny = y + dy[i]
+        nx = x + dx[i]
+        if 0 <= ny < N and 0 <= nx < M and maze[ny][nx] == 'W':
+            dfs(ny, nx)
+
 ans = 0
-rec = [0] * (K + 1)
+for i in range(N):
+    for j in range(M):
+        if maze[i][j] == 'W':
+            dfs(i, j)
+            ans += 1
+print(ans)
 
-"""
-集合A, B, Cについて
-A ⊆ B　かつ B ⊆ Cとすると
-集合が小さい順から数えて行って
-Bを数える時にB -= A
-Cを数える時にC -= Aすればダブらない
-"""
+# p37 迷路の最短路
+N = 10
+M = 10
+maze = [
+'#S######.#',
+'......#..#',
+'.#.##.##.#',
+'.#........',
+'##.##.####',
+'....#....#',
+'.#######.#',
+'....#.....',
+'.####.###.',
+'....#...G#'
+]
+maze = [list(i) for i in maze]
 
-for X in range(K, 0, -1):
-    rec[X] = pow(K // X, N, mod)
-    for i in range(2, K // X + 1):
-        rec[X] -= rec[i * X] % mod
-    ans += (X * rec[X]) % mod
-print(ans % mod)
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
+
+start = [-1, -1]
+end = [-1, -1]
+# スタート位置特定
+for i in range(N):
+    for j in range(M):
+        if maze[i][j] == 'S':
+            start = [i, j]
+            break
+    else:
+        continue
+    break
+
+# ゴール位置特定
+for i in range(N):
+    for j in range(M):
+        if maze[i][j] == 'G':
+            goal = [i, j]
+            break
+    else:
+        continue
+    break
+
+def bfs(start, goal, maze):
+    pos = deque([start])
+    dp = [[-1] * M for i in range(N)]
+    dp[start[0]][start[1]] = 0
+
+    while len(pos) > 0:
+        y, x = pos.popleft()
+        if y == goal[0] and x == goal[1]:
+            break
+
+        for i in range(4):
+            ny = y + dy[i]
+            nx = x + dx[i]
+            if 0 <= ny < N and 0 <= nx < M and maze[ny][nx] != "#" and dp[ny][nx] == -1:
+                dp[ny][nx] = dp[y][x] + 1
+                pos.append([ny, nx])
+
+    return dp[goal[0]][goal[1]]
+
+print(bfs(start, goal, maze))
