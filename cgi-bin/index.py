@@ -49,36 +49,105 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 7
-H = [2, 1, 4, 5, 1, 3, 3]
-# H[i]の値が最小値になるとする
-# H[i]は谷底でなければならない
+# ABC167 teleporter
+N, K = 6, 727202214173249351
+A = [6, 5, 2, 5, 3, 2]
+A = [i - 1 for i in A]
 
-L = [0] * N
-R = [0] * N
-pos = [0]
-for i in range(1, N):
-    while pos and H[pos[-1]] >= H[i]:
-        pos.pop() # 左端を向こう側に追いやる
-    if pos:
-        L[i] = pos[-1] + 1
+logk = K.bit_length()
+doubling = [[-1] * N for _ in range(logk)]
+
+# ダブリング
+# 2 ** 0は１つ後の行き先
+for i in range(N):
+    doubling[0][i] = A[i]
+for i in range(1, logk):
+    for j in range(N):
+        # doubling[i]はdoubling[i - 1]を２回行えばいい
+        # doubling[i - 1][j]移動してその座標からまたdoubling[i - 1]移動
+        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+
+index = 0
+# 各bitごとに移動を行う
+for i in range(logk):
+    if K & (1 << i):
+        index = doubling[i][index]
+print(index + 1)
+
+S = 'RRLLLLRLRRLL'
+N = len(S)
+logk = (10 ** 5).bit_length()
+
+doubling = [[-1] * N for _ in range(logk)]
+
+# １回目の移動
+for i in range(N):
+    doubling[0][i] = i + 1 if S[i] == "R" else i - 1
+
+# 2 ** k回目の移動
+for i in range(1, logk):
+    for j in range(N):
+        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+
+ans = [0] * N
+
+# 10 ** 5回ぐらい回せば十分
+for i in range(N):
+    ans[doubling[logk - 1][i]] += 1
+
+print(*ans)
+
+# p307 ダブリング
+N = 3
+M = 10
+que = [
+[0, 3],
+[3, 7],
+[7, 0]
+]
+
+alta = []
+for i in range(N):
+    s, t =  que[i]
+    if s < t:
+        alta.append([s, t])
+        alta.append([s + M, t + M])
     else:
-        L[i] = 0
-    pos.append(i) # 左端が迫ってくる
+        alta.append([s, t + M])
+alta.sort(key = lambda i: i[1])
 
-pos = [N - 1]
-R[N - 1] = N
-for i in range(N - 2, -1, -1):
-    while pos and H[pos[-1]] >= H[i]:
-        pos.pop()
-    if pos:
-        R[i] = pos[-1]
-    else:
-        R[i] = N
+N = len(alta)
 
-    pos.append(i)
+logk = (10 ** 6).bit_length()
+doubling = [[-1] * N for _ in range(logk)]
+for i in range(N):
+    s, t = alta[i]
+    for j in range(i + 1, N):
+        opt_s, opt_t = alta[j]
+        if t <= opt_s:
+            doubling[0][i] = j
+            break
+
+for i in range(1, logk):
+    for j in range(N):
+        # 欄外に飛ぶようなら-1
+        if doubling[i - 1][j] == -1:
+            doubling[i][j] = -1
+        else:
+            doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
 
 ans = 0
+# 区間iからスタート
 for i in range(N):
-    ans = max(ans, H[i] * (R[i] - L[i]))
+    s, t = alta[i]
+    now = i
+    cnt = 1
+    # 超過しないよう大きいものから加算していく
+    for j in range(logk - 1, -1, -1):
+        opt_index = doubling[j][now]
+        # 欄内に収まるかつ始点から距離M以内
+        if opt_index >= 0 and alta[opt_index][1] <= M:
+            now = opt_index
+            cnt += 1 << j
+    ans = max(ans, cnt)
 print(ans)
