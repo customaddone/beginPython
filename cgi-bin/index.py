@@ -49,76 +49,58 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind:
+class BIT:
     def __init__(self, N):
-        """
-        N:要素数
-        root:各要素の親要素の番号を格納するリスト.
-             ただし, root[x] < 0 ならその頂点が根で-root[x]が木の要素数.
-        rank:ランク
-        """
         self.N = N
-        self.root = [-1] * N
-        self.rank = [0] * N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-    def __repr__(self):
-        return '\n'.join('{}: {}'.format(r, self.members(r)) for r in self.roots())
+    # a - 1の場所にwを追加する
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-    def find(self, x):
-        """頂点xの根を見つける"""
-        if self.root[x] < 0:
-            return x
-        else:
-            while self.root[x] >= 0:
-                x = self.root[x]
-            return x
+    # a未満の数字が何個あるか
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-    def union(self, x, y):
-        """x,yが属する木をunion"""
-        x = self.find(x)
-        y = self.find(y)
-        if x == y:
-            return
-        elif self.rank[x] > self.rank[y]:
-            self.root[x] += self.root[y]
-            self.root[y] = x
-        else:
-            self.root[y] += self.root[x]
-            self.root[x] = y
-            if self.rank[x] == self.rank[y]:
-                self.rank[y] += 1
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-    def same(self, x, y):
-        """xとyが同じグループに属するかどうか"""
-        return self.find(x) == self.find(y)
+    def lowerbound(self, w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
-    def count(self, x):
-        """頂点xが属する木のサイズを返す"""
-        return - self.root[self.find(x)]
+N, Q = getNM()
+A = getList()
+query = [getList() for i in range(Q)]
 
-    def members(self, x):
-        """xが属する木の要素を列挙"""
-        _root = self.find(x)
-        return [i for i in range(self.N) if self.find == _root]
+# 全部1-indexになるので注意
+bit = BIT(N + 1)
+for i in range(N):
+    # [1, 2, 3, 4, 5]の場合
+    # 1番目(0 + 1)に１を
+    # 2番目(1 + 1)に２を置く
+    bit.add(i + 1, A[i])
 
-    def roots(self):
-        """森の根を列挙"""
-        return [i for i, x in enumerate(self.root) if x < 0]
-
-    def group_count(self):
-        """連結成分の数"""
-        return len(self.roots())
-
-    def all_group_members(self):
-        """{ルート要素: [そのグループに含まれる要素のリスト], ...}の辞書を返す"""
-        return {r: self.members(r) for r in self.roots()}
-
-n, q = getNM()
-
-uf = UnionFind(n)
-for i in range(q):
-    t, u, v = map(int, input().split())
-    if t:
-        print(int(uf.same(u, v)))
+for a, b, c in query:
+    if a == 0:
+        bit.add(b + 1, c)
     else:
-        uf.union(u, v)
+        # [1, 2, 3, 4, 5]の[0, 3)について聞きたい時
+        # bit.get(0 + 1, 3 + 1)
+        print(bit.cum(b + 1, c + 1))
