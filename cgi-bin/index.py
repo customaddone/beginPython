@@ -49,96 +49,95 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class MinCostFlow:
-    def __init__(self, n: int):
-        """頂点数をnとする。"""
-        self.INF = 10 ** 9 + 7
-        self.n = n
-        self.graph = [[] for _ in range(n)]
+class SegmentTree():
+    def __init__(self, init, unitX, f):
+        self.f = f # (X, X) -> X
+        self.unitX = unitX
+        self.f = f
+        if type(init) == int:
+            self.n = init
+            self.n = 1 << (self.n - 1).bit_length()
+            self.X = [unitX] * (self.n * 2)
+        else:
+            self.n = len(init)
+            self.n = 1 << (self.n - 1).bit_length()
+            self.X = [unitX] * self.n + init + [unitX] * (self.n - len(init))
+            for i in range(self.n-1, 0, -1):
+                self.X[i] = self.f(self.X[i*2], self.X[i*2|1])
 
-    def add_edge(self, _from: int, to: int, capacity: int, cost: int):
-        """辺を追加
-        1. _fromからtoへ向かう容量capacity、単位コストcostの辺をグラフに追加する。
-        2. toから_fromへ向かう容量0、単位コスト-costの辺をグラフに追加する。
-        """
-        forward = [to, capacity, cost, None]
-        forward[3] = backward = [_from, 0, -cost, forward]
-        self.graph[_from].append(forward)
-        self.graph[to].append(backward)
+    def update(self, i, x):
+        i += self.n
+        self.X[i] = x
+        i >>= 1
+        while i:
+            self.X[i] = self.f(self.X[i*2], self.X[i*2|1])
+            i >>= 1
 
-    def min_cost_flow(self, s: int, t: int, f: int) -> int:
-        """s-tパス上に流量fを流すときの最小費用流を求める。
-        計算量: O(|F||E|log|V|)
-        """
-        res = 0
-        potential = [0] * self.n
-        prv_v = [0] * self.n
-        prv_e = [None] * self.n
-        while f > 0:
-            # ポテンシャルを用いたダイクストラ法
-            dist = [self.INF] * self.n
-            dist[s] = 0
-            q = [(0, s)]  # q = [(sからのコスト, 現在地)]
-            while q:
-                cost, _from = heappop(q)
-                if dist[_from] < cost:
-                    continue
-                for edge in self.graph[_from]:
-                    to, capacity, cost, _ = edge
-                    p_diff = potential[_from] - potential[to]
-                    if capacity > 0 and dist[_from] + cost + p_diff < dist[to]:
-                        dist[to] = dist[_from] + cost + p_diff
-                        prv_v[to] = _from
-                        prv_e[to] = edge
-                        heappush(q, (dist[to], to))
+    def getvalue(self, i):
+        return self.X[i + self.n]
 
-            if dist[t] == self.INF:
-                return -1
-            for i in range(self.n):
-                if dist[i] != self.INF:
-                    potential[i] += dist[i]
-            d = f
-            v = t
-            while v != s:
-                d = min(d, prv_e[v][1])
-                v = prv_v[v]
-            f -= d
-            res += potential[t] * d
-            v = t
-            while v != s:
-                edge = prv_e[v]
-                edge[1] -= d
-                edge[3][1] += d
-                v = prv_v[v]
-        return res
+    def getrange(self, l, r):
+        l += self.n
+        r += self.n
+        al = self.unitX
+        ar = self.unitX
+        while l < r:
+            if l & 1:
+                al = self.f(al, self.X[l])
+                l += 1
+            if r & 1:
+                r -= 1
+                ar = self.f(self.X[r], ar)
+            l >>= 1
+            r >>= 1
+        return self.f(al, ar)
 
+    def max_right(self, l, z):
+        if l >= self.n: return self.n
+        l += self.n
+        s = self.unitX
+        while 1:
+            while l % 2 == 0:
+                l >>= 1
+            if not z(self.f(s, self.X[l])):
+                while l < self.n:
+                    l *= 2
+                    if z(self.f(s, self.X[l])):
+                        s = self.f(s, self.X[l])
+                        l += 1
+                return l - self.n
+            s = self.f(s, self.X[l])
+            l += 1
+            if l & -l == l: break
+        return self.n
+    def min_left(self, r, z):
+        if r <= 0: return 0
+        r += self.n
+        s = self.unitX
+        while 1:
+            r -= 1
+            while r > 1 and r % 2:
+                r >>= 1
+            if not z(self.f(self.X[l], s)):
+                while r < self.n:
+                    r = r * 2 + 1
+                    if z(self.f(self.X[l], s)):
+                        s = self.f(self.X[l], s)
+                        r -= 1
+                return r + 1 - self.n
+            s = self.f(self.X[r], s)
+            if r & -r == r: break
+        return 0
 
-n, k = map(int, input().split())
-a = [list(map(int, input().split())) for i in range(n)]
-INF = 10 ** 18
-
-
-pd = MinCostFlow(n + n + 2)
-
-s = n + n
-t = n + n + 1
-
-pd.add_edge(s, t, INF, 0)
-for i in range(n):
-    pd.add_edge(s, n + i, k, 0)
-    pd.add_edge(i, t, k, 0)
-for i in range(n):
-    for j in range(n):
-        pd.add_edge(n + i, j, 1, -a[i][j])
-
-ans = -pd.min_cost_flow(s, t, INF)
-
-res = [["." for i in range(n)] for i in range(n)]
-for i in range(n):
-    for j, cap, cost, _ in pd.graph[n + i]:
-        if 0 <= j <= n and cap == 0:
-            res[i][j] = "X"
-
-print(ans)
-for r in res:
-    print("".join(r))
+N, Q = map(int, input().split())
+A = [int(a) for a in input().split()]
+st = SegmentTree(A, 0, max)
+for _ in range(Q):
+    t, a, b = map(int, input().split())
+    if t == 1:
+        st.update(a-1, b)
+    elif t == 2:
+        print(st.getrange(a-1, b))
+    else:
+        z = lambda x: x < b
+        print(min(N, st.max_right(a-1, z)) + 1)
