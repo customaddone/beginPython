@@ -49,138 +49,153 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ARC008 THE☆たこ焼き祭り2012
-# 完全グラフダイクストラ
-N = 4
-mem = [
-[0, 0, 300, 10],
-[0, 100, 10, 100],
-[0, 200, 10, 200],
-[0, 300, 10, 300]
-]
+# ABC154 E - Almost Everywhere Zero
+N = '9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999'
+K = 3
+L = len(N)
 
-dis = [float('inf')] * N
-edges = []
+def judge(a):
+    return a != 0
 
-def calc(x1, y1, x2, y2, speed):
-    distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-    return distance / speed
+# N以下の数字で条件を満たす桁がk個のもの
+def digit_dp(n, k):
+    l = len(n)
 
-# 完全グラフのダイクストラだろうと0(NlogN)で求まる
-def dijkstra(n, start):
-    dist = [float('inf')] * n
-    pos = [(0, start)]
-    heapify(pos)
-    dist[start] = 0
+    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
 
-    while len(pos):
-        cost, u = heappop(pos)
+    for i in range(l):
+        d = int(n[i])
 
-        if dist[u] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i in range(N):
-            if i == u:
-                continue
-            opt = calc(mem[i][0], mem[i][1], mem[u][0], mem[u][1], min(mem[u][2], mem[i][3]))
-            if dist[u] + opt < dist[i]:
-                dist[i] = dist[u] + opt
-                heappush(pos, (dist[u] + opt, i))
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                for k_j in range(k + 1):
+                    if judge(d_j):
+                        if k_j + 1 <= k:
+                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
 
-    return dist
+    return dp
 
-res = dijkstra(N, 0)
-res.sort(reverse = True)
+dp = digit_dp(N, K)
+print(dp[L][0][K] + dp[L][1][K])
+
+# ABC029 D - 1
+N = '999999999'
+L = len(N)
+
+def judge_2(a):
+    return a == 1
+
+# N以下の数字の中で「1が書いてある桁がk個ある数字」がいくつあるか
+# 上のものと関数の中身自体は変えていない
+def digit_dp_2(n, k):
+    l = len(n)
+
+    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                for k_j in range(k + 1):
+                    if judge_2(d_j):
+                        if k_j + 1 <= k:
+                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+
+    return dp
+
+dp = digit_dp_2(N, L)
 
 ans = 0
-for i in range(N - 1):
-    ans = max(ans, res[i] + i)
-
+for j in range(L + 1):
+    # dp[l]について各j(1のカウント)の通りの数 * j
+    ans += (dp[L][0][j] + dp[L][1][j]) * j
 print(ans)
 
-# ARC025 C - ウサギとカメ
-# N:地点 M:道 R, T:ウサギ、カメの速さ
-N, M, R, T = getNM()
-edges = [[] for i in range(N)]
-for i in range(M):
-    a, b, c = getNM()
-    edges[a - 1].append([b - 1, c])
-    edges[b - 1].append([a - 1, c])
+A, B = 1, 1000000000000000000
 
-# ダイクストラである地点からの最小距離を求められるが
-# NlogNダイクストラ
-def dijkstra(n, start):
-    dist = [float('inf')] * n
-    pos = [(0, start)]
-    heapify(pos)
-    dist[start] = 0
+# 4, 9の個数については求めない簡易版
+def judge_3(a):
+    return a in [4, 9]
 
-    while len(pos):
-        cost, u = heappop(pos)
+def digit_dp(n):
+    l = len(n)
 
-        if dist[u] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i, d in edges[u]:
-            if dist[u] + d < dist[i]:
-                dist[i] = dist[u] + d
-                heappush(pos, (dist[u] + d, i))
+    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
 
-    return dist
+    for i in range(l):
+        d = int(n[i])
 
-cnt = 0
-for i in range(N):
-    # iを目的地にした時の距離
-    ar = sorted(dijkstra(N, i))[1:]
-    # 小数使いたくない
-    ar_t = [i * R for i in ar]
-    ar_r = [i * T for i in ar]
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                # 0:4,9が含まれない　1:4,9が含まれる
+                for k_j in range(2):
+                    if k_j == 0 and judge_3(d_j):
+                        dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+    return dp[l][0][1] + dp[l][1][1]
 
-    for i in range(N - 2, -1, -1):
-        opt = bisect_left(ar_t, ar_r[i])
-        # ウサギが亀より遅い場合のコーナーケース
-        if opt > i:
-            cnt += opt - 1
-        else:
-            cnt += opt
-print(cnt)
+print(digit_dp(str(B)) - digit_dp(str(A - 1)))
 
-# ABC099 C - Strange Bank
-N = 44852
+# ABC129 E - Sum Equals Xor
+# 通りの数を求める
 
-coin = [1]
-sixsta = 6
-while sixsta < 100000:
-    coin.append(sixsta)
-    sixsta *= 6
+L = '1111111111111111111'
 
-ninesta = 9
-while ninesta < 100000:
-    coin.append(ninesta)
-    ninesta *= 9
-coin.sort()
+def digit_dp_3(n):
+    l = len(n)
 
-# NlogNダイクストラ
-# これも最短経路を求める問題
-def dijkstra(n, start):
-    dist = [float('inf')] * n
-    pos = [(0, start)]
-    heapify(pos)
-    dist[start] = 0
+    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
 
-    while len(pos):
-        cost, u = heappop(pos)
+    for i in range(l):
+        d = int(n[i])
 
-        if dist[u] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i in range(len(coin)):
-            if u + coin[i] >= n:
-                continue
-            if dist[u] + 1 < dist[u + coin[i]]:
-                dist[u + coin[i]] = dist[u] + 1
-                heappush(pos, (dist[u] + 1, u + coin[i]))
+        # Lになる可能性があるかないか
+        for j in range(2):
+            # 次の桁が0か1か
+            for d_j in range(2 if j else d + 1):
+                if d_j == 0:
+                    dp[i + 1][j | (d_j < d)][d_j] += (dp[i][j][0] + dp[i][j][1])
+                    dp[i + 1][j | (d_j < d)][d_j] %= mod
+                else:
+                    dp[i + 1][j | (d_j < d)][d_j] += 2 * (dp[i][j][0] + dp[i][j][1])
+                    dp[i + 1][j | (d_j < d)][d_j] %= mod
 
-    return dist
+    return sum(dp[-1][0]) + sum(dp[-1][1])
 
-print(dijkstra(N + 1, 0)[N])
+print(digit_dp_3(L) % mod)
+
+# tipycal dp contest
+# N以下の正の整数であって十進法表記したときの各桁の数の和がi mod Dであるものの個数
+D = getN()
+N = input()
+
+def digit_dp_2(n, k):
+    l = len(n)
+
+    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                # mod k_j
+                for k_j in range(k + 1):
+                    dp[i + 1][j | (d_j < d)][(k_j + d_j) % D] += dp[i][j][k_j]
+                    dp[i + 1][j | (d_j < d)][(k_j + d_j) % D] %= mod
+
+    return dp
+
+dp = digit_dp_2(N, D)
+print((dp[-1][0][0] + dp[-1][1][0]) % mod - 1) # 0は除く
