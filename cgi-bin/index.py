@@ -49,95 +49,138 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class SegmentTree():
-    def __init__(self, init, unitX, f):
-        self.f = f # (X, X) -> X
-        self.unitX = unitX
-        self.f = f
-        if type(init) == int:
-            self.n = init
-            self.n = 1 << (self.n - 1).bit_length()
-            self.X = [unitX] * (self.n * 2)
+# ARC008 THE☆たこ焼き祭り2012
+# 完全グラフダイクストラ
+N = 4
+mem = [
+[0, 0, 300, 10],
+[0, 100, 10, 100],
+[0, 200, 10, 200],
+[0, 300, 10, 300]
+]
+
+dis = [float('inf')] * N
+edges = []
+
+def calc(x1, y1, x2, y2, speed):
+    distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+    return distance / speed
+
+# 完全グラフのダイクストラだろうと0(NlogN)で求まる
+def dijkstra(n, start):
+    dist = [float('inf')] * n
+    pos = [(0, start)]
+    heapify(pos)
+    dist[start] = 0
+
+    while len(pos):
+        cost, u = heappop(pos)
+
+        if dist[u] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for i in range(N):
+            if i == u:
+                continue
+            opt = calc(mem[i][0], mem[i][1], mem[u][0], mem[u][1], min(mem[u][2], mem[i][3]))
+            if dist[u] + opt < dist[i]:
+                dist[i] = dist[u] + opt
+                heappush(pos, (dist[u] + opt, i))
+
+    return dist
+
+res = dijkstra(N, 0)
+res.sort(reverse = True)
+
+ans = 0
+for i in range(N - 1):
+    ans = max(ans, res[i] + i)
+
+print(ans)
+
+# ARC025 C - ウサギとカメ
+# N:地点 M:道 R, T:ウサギ、カメの速さ
+N, M, R, T = getNM()
+edges = [[] for i in range(N)]
+for i in range(M):
+    a, b, c = getNM()
+    edges[a - 1].append([b - 1, c])
+    edges[b - 1].append([a - 1, c])
+
+# ダイクストラである地点からの最小距離を求められるが
+# NlogNダイクストラ
+def dijkstra(n, start):
+    dist = [float('inf')] * n
+    pos = [(0, start)]
+    heapify(pos)
+    dist[start] = 0
+
+    while len(pos):
+        cost, u = heappop(pos)
+
+        if dist[u] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for i, d in edges[u]:
+            if dist[u] + d < dist[i]:
+                dist[i] = dist[u] + d
+                heappush(pos, (dist[u] + d, i))
+
+    return dist
+
+cnt = 0
+for i in range(N):
+    # iを目的地にした時の距離
+    ar = sorted(dijkstra(N, i))[1:]
+    # 小数使いたくない
+    ar_t = [i * R for i in ar]
+    ar_r = [i * T for i in ar]
+
+    for i in range(N - 2, -1, -1):
+        opt = bisect_left(ar_t, ar_r[i])
+        # ウサギが亀より遅い場合のコーナーケース
+        if opt > i:
+            cnt += opt - 1
         else:
-            self.n = len(init)
-            self.n = 1 << (self.n - 1).bit_length()
-            self.X = [unitX] * self.n + init + [unitX] * (self.n - len(init))
-            for i in range(self.n-1, 0, -1):
-                self.X[i] = self.f(self.X[i*2], self.X[i*2|1])
+            cnt += opt
+print(cnt)
 
-    def update(self, i, x):
-        i += self.n
-        self.X[i] = x
-        i >>= 1
-        while i:
-            self.X[i] = self.f(self.X[i*2], self.X[i*2|1])
-            i >>= 1
+# ABC099 C - Strange Bank
+N = 44852
 
-    def getvalue(self, i):
-        return self.X[i + self.n]
+coin = [1]
+sixsta = 6
+while sixsta < 100000:
+    coin.append(sixsta)
+    sixsta *= 6
 
-    def getrange(self, l, r):
-        l += self.n
-        r += self.n
-        al = self.unitX
-        ar = self.unitX
-        while l < r:
-            if l & 1:
-                al = self.f(al, self.X[l])
-                l += 1
-            if r & 1:
-                r -= 1
-                ar = self.f(self.X[r], ar)
-            l >>= 1
-            r >>= 1
-        return self.f(al, ar)
+ninesta = 9
+while ninesta < 100000:
+    coin.append(ninesta)
+    ninesta *= 9
+coin.sort()
 
-    def max_right(self, l, z):
-        if l >= self.n: return self.n
-        l += self.n
-        s = self.unitX
-        while 1:
-            while l % 2 == 0:
-                l >>= 1
-            if not z(self.f(s, self.X[l])):
-                while l < self.n:
-                    l *= 2
-                    if z(self.f(s, self.X[l])):
-                        s = self.f(s, self.X[l])
-                        l += 1
-                return l - self.n
-            s = self.f(s, self.X[l])
-            l += 1
-            if l & -l == l: break
-        return self.n
-    def min_left(self, r, z):
-        if r <= 0: return 0
-        r += self.n
-        s = self.unitX
-        while 1:
-            r -= 1
-            while r > 1 and r % 2:
-                r >>= 1
-            if not z(self.f(self.X[l], s)):
-                while r < self.n:
-                    r = r * 2 + 1
-                    if z(self.f(self.X[l], s)):
-                        s = self.f(self.X[l], s)
-                        r -= 1
-                return r + 1 - self.n
-            s = self.f(self.X[r], s)
-            if r & -r == r: break
-        return 0
+# NlogNダイクストラ
+# これも最短経路を求める問題
+def dijkstra(n, start):
+    dist = [float('inf')] * n
+    pos = [(0, start)]
+    heapify(pos)
+    dist[start] = 0
 
-N, Q = map(int, input().split())
-A = [int(a) for a in input().split()]
-st = SegmentTree(A, 0, max)
-for _ in range(Q):
-    t, a, b = map(int, input().split())
-    if t == 1:
-        st.update(a-1, b)
-    elif t == 2:
-        print(st.getrange(a-1, b))
-    else:
-        z = lambda x: x < b
-        print(min(N, st.max_right(a-1, z)) + 1)
+    while len(pos):
+        cost, u = heappop(pos)
+
+        if dist[u] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for i in range(len(coin)):
+            if u + coin[i] >= n:
+                continue
+            if dist[u] + 1 < dist[u + coin[i]]:
+                dist[u + coin[i]] = dist[u] + 1
+                heappush(pos, (dist[u] + 1, u + coin[i]))
+
+    return dist
+
+print(dijkstra(N + 1, 0)[N])
