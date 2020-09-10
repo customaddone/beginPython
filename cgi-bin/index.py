@@ -50,29 +50,40 @@ mod = 10 ** 9 + 7
 #############
 
 N = getN()
-X = getList()
+# 座標xにあり、半径r
+# ri - (xi - xi-1) - ri-1 > 0ならCi-1はCiの内部に含まれる
+# ri + xi-1 > ri-1 + xiなら
+circle = []
+for i in range(N):
+    x, r = getNM()
+    circle.append([x - r, x + r]) # 端点のみ抑える
 
-dp = [float('inf')] * (1 << 16)
-dp[0] = 0
+# N <= 10 ** 5なので最大流無理
+# 貪欲?
 
-for bit_state in range(1 << 16):
-    for i in range(1, 16):
-        cnt = 0
-        tmp = 0
-        if (1 << (i - 1)) & bit_state:
-            cnt += 1
-            # bit_stateから(1 << (i - 1))のフラグを消したもの
-            tmp += (1 / 3) * dp[~(1 << (i - 1)) & bit_state]
-        if (1 << i) & bit_state:
-            cnt += 1
-            tmp += (1 / 3) * dp[~(1 << (i)) & bit_state]
-        if (1 << (i + 1)) & bit_state:
-            cnt += 1
-            tmp += (1 / 3) * dp[~(1 << (i + 1)) & bit_state]
-        if cnt != 0:
-            dp[bit_state] = min((tmp + cnt / 3 + (3 - cnt) / 3) * 3 / cnt, dp[bit_state])
+# もしleftが同じならrightが小さい順に（小→大へ更新していく）
+### 今回は最小部分減少を求めるため小さい順に並べる ###
+circle.sort(key = lambda i: i[1])
+# lが小さい順に並ぶ
+circle.sort(key = lambda i: i[0])
 
-ans_state = 0
-for i in X:
-    ans_state += (1 << i)
-print(dp[ans_state])
+# うまく並び変えたあと右端の点のみ取りLIS
+### 今回は最小部分減少を求めるため-circle[i][1]を並べる ###
+r_list = []
+for i in range(N):
+    r_list.append(-circle[i][1])
+
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        # Lの末尾よりaが大きければ増加部分を拡張できる
+        if a > L[-1]:
+            # 前から順にLに追加していく
+            L.append(a)
+        else:
+            L[bisect_left(L, a)] = a
+
+    # Lの配列の長さは求まる
+    # Lの中身はデタラメ
+    return len(L)
+print(lis(r_list))
