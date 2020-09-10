@@ -49,41 +49,68 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
-# 座標xにあり、半径r
-# ri - (xi - xi-1) - ri-1 > 0ならCi-1はCiの内部に含まれる
-# ri + xi-1 > ri-1 + xiなら
-circle = []
-for i in range(N):
-    x, r = getNM()
-    circle.append([x - r, x + r]) # 端点のみ抑える
+H, R = getNM()
+G = [getList() for i in range(R)]
 
-# N <= 10 ** 5なので最大流無理
-# 貪欲?
+matrix = [[0] * R for _ in range(R)]
+# staから1, 2...Rまで巡回する通り
+def counter(sta):
+    dp = [[0] * R for i in range(1 << R)]
+    dp[1 << sta][i] = 1
+    for bit in range(1, 1 << R):
+        if not bit & (1 << sta):
+            continue
+        for s in range(R):
+            if bit & (1 << s):
+                for t in range(R):
+                    if (bit & (1 << t)) == 0 and G[s][t]:
+                        dp[bit|(1 << t)][t] = (dp[bit|(1 << t)][t] + dp[bit][s]) % mod
 
-# もしleftが同じならrightが小さい順に（小→大へ更新していく）
-### 今回は最小部分減少を求めるため小さい順に並べる ###
-circle.sort(key = lambda i: i[1])
-# lが小さい順に並ぶ
-circle.sort(key = lambda i: i[0])
+    for bit in range(2 ** R):
+        for j in range(R):
+            matrix[i][j] = (matrix[i][j] + dp[bit][j]) % mod
 
-# うまく並び変えたあと右端の点のみ取りLIS
-### 今回は最小部分減少を求めるため-circle[i][1]を並べる ###
-r_list = []
-for i in range(N):
-    r_list.append(-circle[i][1])
+# 行列生成
+for i in range(R):
+    counter(i)
 
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        # Lの末尾よりaが大きければ増加部分を拡張できる
-        if a > L[-1]:
-            # 前から順にLに追加していく
-            L.append(a)
-        else:
-            L[bisect_left(L, a)] = a
+# matrixをH回[1, 0, 0...]にかける
+logk = H.bit_length()
+dp = [[[0] * R for i in range(R)] for i in range(logk)]
+dp[0] = matrix
 
-    # Lの配列の長さは求まる
-    # Lの中身はデタラメ
-    return len(L)
-print(lis(r_list))
+# 行列掛け算 O(n3)かかる
+def array_cnt(ar1, ar2):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
+
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j]):
+                cnt += x * y
+            res[i][j] = cnt
+            # 今回modをつける
+            res[i][j] %= mod
+    return res
+
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
+
+# 行列の単位元
+ans = [[0] * R]
+ans[0][0] = 1
+
+for i in range(logk):
+    if H & (1 << i):
+        ans = array_cnt(ans, dp[i])
+
+print(ans[0][0] % mod)
