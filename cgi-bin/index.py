@@ -49,19 +49,49 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = getN()
+"""
+# 一個飛ばしでボールを置く通りの数
+def counter(n, s):
+    # dp[i][j][k]: i個目まで進めた時にj個まで置いている通りの数
+    dp = [[[0, 0] for _ in range(s + 1)] for _ in range(n + 1)]
+    dp[0][0][0] = 1
 
-L = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = getNM()
-    L[a - 1].append(b - 1)
-    L[b - 1].append(a - 1)
+    for i in range(1, n + 1):
+        for j in range(s + 1):
+            # ボールを置かない
+            dp[i][j][0] = (dp[i - 1][j][0] + dp[i - 1][j][1])
+            # ボールを置く
+            # 前でボールを置いていない場合のみ置ける
+            dp[i][j][1] = dp[i - 1][j - 1][0]
+    return sum(dp[n][j])
+"""
 
-U = 2 * 10 ** 5
+freq = getList()
+freq = [f for f in freq if f > 0]
+
+N = len(freq)
+S = sum(freq)
+
+"""
+既存の文字列のどこに新しい文字を挿入するか、という思考をする。
+同じ文字が隣り合っている箇所に挿入するのか否か？　
+#dp[i][j] -> i種類目の文字まで見る。同じ文字が隣り合っている箇所がj箇所存在する。
+何分割するか？　同じ文字が隣り合っている箇所のうち、何か所に挿入するか？
+分割数の上限は、既存の文字列の長さ+1 か　文字の長さ
+同じ文字が隣り合っている箇所のうち、何か所に挿入するかの上限は、同じ文字が隣り合っている箇所か分割数
+何分割するか、どこで分割するか、同じ文字がとなり合う箇所に何か所に挿入するか、どこに挿入するか
+"""
+
+dp = [[0] * S for _ in range(N)]
+
+f = freq[0] # １番目の文字が何個あるか
+dp[0][f - 1] = 1 # 1番目の文字を入れた後、同じ文字が隣り合ってる場所が(１番目の文字の個数 - 1)個ある
+
+memo = [[0] * 12 for _ in range(261)]
 
 # 逆元事前処理ver
 # nが小さい場合に
-lim = 2 * 10 ** 5
+lim = 10 ** 5 + 1
 fact = [1, 1]
 factinv = [1, 1]
 inv = [0, 1]
@@ -78,78 +108,31 @@ def cmb(n, r):
     r = min(r, n - r)
     return fact[n] * factinv[r] * factinv[n - r] % mod
 
-# 親i、根jの部分木のサイズ、通りの数
-memo=[[[0, 0]for i in range(N)]for j in range(N)]
+s = 0
+for i in range(N - 1):
+    # i + 1についてレコードしていく
+    s += freq[i] # i番目までの文字の個数の総数
+    f = freq[i + 1] # i + 1番目の文字の個数
 
-def dp(r, v):
-    if memo[r][v] != [0,0]:
-        return memo[r][v]
+    # j: 隣合う箇所(0個 ~ 260個ある)
+    for j in range(S):
+        # d:分割数の個数
+        # ただし分割数の上限はこれまで出てきた文字の個数 + 1個まで
+        # これまで出てきた文字: ?
+        # ○?○?○○
+        for d in range(1, min(f, s + 1) + 1):
+            # k:隣り合う箇所をいくつ潰すか
+            # ただし潰す個数の上限は分割dの個数
+            for k in range(min(j, d) + 1):
+                # d - kがs - jを上回るケースがあるので排除する
+                if d - k <= s + 1 - j:
+                    # 分割したd個のうちk個を使ってj個の隣り合う箇所のうちk個潰す
+                    # dp[i + 1][j + (f - d) - k]:j個の隣り合う箇所のうちk個潰す、ただし新しく追加した文字が内包する
+                    # 隣り合う個数の数(f - d)を足す
 
-    # 子ノードの部分木の大きさについてレコードする
-    ll = []
-    res = 1
-    size = 0
+                    # cmb(j, k):j個の隣り合う箇所のうちk個潰す地点を決める
+                    # cmb(f - 1, d - 1): f - 1個の分割ポイントのうちd - 1個に仕切りを置く　これによりd個に分割できる
+                    # cmb(s + 1 - j, d - k):隣合わない部分 + 1に余ったd - kを入れる
+                    dp[i + 1][j + (f - d) - k] += dp[i][j] * cmb(j, k) * cmb(f - 1, d - 1) * cmb(s + 1 - j, d - k)
 
-    for i in L[v]:
-        if i != r:
-            p, q = dp(v, i)
-            size += p # 子ノードの部分木のサイズを足す
-            ll.append(p)
-            res = res * q % mod # 子ノードの通りの数をかける
-
-    t = size
-    # 通りの数を計算する
-    for i in ll:
-        # 全体のうちどの場所にいるか
-        # ○○1○○1○1○ →
-        # ○2●○2●○●○ → ...
-        res = res * cmb(t, i) % mod
-        t -= i
-
-    memo[r][v] = [size + 1, res]
-
-    return size + 1, res
-
-ans = 0
-for i in range(N):
-    ans = (ans + dp(i, i)[1]) % mod
-print((ans * pow(2, mod - 2, mod)) % mod)
-
-"""
-edges = [[] for i in range(N + 1)]
-for _ in range(N - 1):
-    a, b = getNM()
-    edges[a].append(b)
-    edges[b].append(a)
-
-D = [[-1] * (N + 1) for _ in range(N + 1)] # 通りの数
-S = [[0] * (N + 1) for _ in range(N + 1)] # 親iの根jの部分木のサイズ
-ans = 0
-
-def f(i, j):
-    if D[i][j] == -1:
-        D[i][j] = 0
-
-    for k in edges[j]:
-        if k != i:
-            f(j, k) # 木を探索
-            S[i][j] += S[j][k] # 各子ノードの部分木のサイズを足す
-
-    S[i][j] += 1 # 自身
-    R = math.factorial(S[i][j] - 1)
-
-    for k in edges[j]:
-        if k != i:
-            R *= D[j][k] // math.factorial(S[j][k])
-    D[i][j] = R
-
-    return D[i][j]
-
-for i in range(1, N + 1):
-    a += f(0, i)
-    print(S)
-
-# a ~ bを先に書き始める場合についてa ~ bを縮約して求められるが
-# a, bを計算して // 2もできる
-print((a // 2) % (10 ** 9 + 7))
-"""
+print(dp[-1][0] % mod)
