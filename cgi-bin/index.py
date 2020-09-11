@@ -49,68 +49,107 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-H, R = getNM()
-G = [getList() for i in range(R)]
+N = getN()
 
-matrix = [[0] * R for _ in range(R)]
-# staから1, 2...Rまで巡回する通り
-def counter(sta):
-    dp = [[0] * R for i in range(1 << R)]
-    dp[1 << sta][i] = 1
-    for bit in range(1, 1 << R):
-        if not bit & (1 << sta):
-            continue
-        for s in range(R):
-            if bit & (1 << s):
-                for t in range(R):
-                    if (bit & (1 << t)) == 0 and G[s][t]:
-                        dp[bit|(1 << t)][t] = (dp[bit|(1 << t)][t] + dp[bit][s]) % mod
+L = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = getNM()
+    L[a - 1].append(b - 1)
+    L[b - 1].append(a - 1)
 
-    for bit in range(2 ** R):
-        for j in range(R):
-            matrix[i][j] = (matrix[i][j] + dp[bit][j]) % mod
+U = 2 * 10 ** 5
 
-# 行列生成
-for i in range(R):
-    counter(i)
+# 逆元事前処理ver
+# nが小さい場合に
+lim = 2 * 10 ** 5
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
 
-# matrixをH回[1, 0, 0...]にかける
-logk = H.bit_length()
-dp = [[[0] * R for i in range(R)] for i in range(logk)]
-dp[0] = matrix
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
 
-# 行列掛け算 O(n3)かかる
-def array_cnt(ar1, ar2):
-    h = len(ar1)
-    w = len(ar2[0])
-    row = ar1
-    col = []
-    for j in range(w):
-        opt = []
-        for i in range(len(ar2)):
-            opt.append(ar2[i][j])
-        col.append(opt)
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
 
-    res = [[[0, 0] for i in range(w)] for i in range(h)]
-    for i in range(h):
-        for j in range(w):
-            cnt = 0
-            for x, y in zip(row[i], col[j]):
-                cnt += x * y
-            res[i][j] = cnt
-            # 今回modをつける
-            res[i][j] %= mod
-    return res
+# 親i、根jの部分木のサイズ、通りの数
+memo=[[[0, 0]for i in range(N)]for j in range(N)]
 
-for i in range(1, logk):
-    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
+def dp(r, v):
+    if memo[r][v] != [0,0]:
+        return memo[r][v]
 
-# 行列の単位元
-ans = [[0] * R]
-ans[0][0] = 1
+    # 子ノードの部分木の大きさについてレコードする
+    ll = []
+    res = 1
+    size = 0
 
-for i in range(logk):
-    if H & (1 << i):
-        ans = array_cnt(ans, dp[i])
+    for i in L[v]:
+        if i != r:
+            p, q = dp(v, i)
+            size += p # 子ノードの部分木のサイズを足す
+            ll.append(p)
+            res = res * q % mod # 子ノードの通りの数をかける
 
-print(ans[0][0] % mod)
+    t = size
+    # 通りの数を計算する
+    for i in ll:
+        # 全体のうちどの場所にいるか
+        # ○○1○○1○1○ →
+        # ○2●○2●○●○ → ...
+        res = res * cmb(t, i) % mod
+        t -= i
+
+    memo[r][v] = [size + 1, res]
+
+    return size + 1, res
+
+ans = 0
+for i in range(N):
+    ans = (ans + dp(i, i)[1]) % mod
+print((ans * pow(2, mod - 2, mod)) % mod)
+
+"""
+edges = [[] for i in range(N + 1)]
+for _ in range(N - 1):
+    a, b = getNM()
+    edges[a].append(b)
+    edges[b].append(a)
+
+D = [[-1] * (N + 1) for _ in range(N + 1)] # 通りの数
+S = [[0] * (N + 1) for _ in range(N + 1)] # 親iの根jの部分木のサイズ
+ans = 0
+
+def f(i, j):
+    if D[i][j] == -1:
+        D[i][j] = 0
+
+    for k in edges[j]:
+        if k != i:
+            f(j, k) # 木を探索
+            S[i][j] += S[j][k] # 各子ノードの部分木のサイズを足す
+
+    S[i][j] += 1 # 自身
+    R = math.factorial(S[i][j] - 1)
+
+    for k in edges[j]:
+        if k != i:
+            R *= D[j][k] // math.factorial(S[j][k])
+    D[i][j] = R
+
+    return D[i][j]
+
+for i in range(1, N + 1):
+    a += f(0, i)
+    print(S)
+
+# a ~ bを先に書き始める場合についてa ~ bを縮約して求められるが
+# a, bを計算して // 2もできる
+print((a // 2) % (10 ** 9 + 7))
+"""
