@@ -49,87 +49,91 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = getNM()
-query = [getList() for i in range(M)]
-K = getN()
-question = [getList() for i in range(K)]
-
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-for i in range(M):
-    a, b, c = query[i]
-    dist[a - 1][b - 1] = c
-    dist[b - 1][a - 1] = c
-
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
-
-# まず一回回す
-warshall_floyd(dist)
-
-# 距離の方を更新していけばO(K * N ** 2)で済む
-for x, y, z in question:
-    x -= 1
-    y -= 1
-    for i in range(N):
-        for j in range(N):
-            dist[i][j] = min(dist[i][j], dist[i][x] + z + dist[y][j], dist[i][y] + z + dist[x][j])
-    res = 0
-    for i in range(N):
-        for j in range(i + 1, N):
-            res += dist[i][j]
-    print(res)
-
 """
-第７回日本情報オリンピック 予選
-F - 船旅 
-0:いくつかの船舶を乗り継いで，出発地と目的地を結ぶ航路の中で，もっとも安価な運賃を計算し，客に伝える
-1:島と島の間を結ぶ新しい船舶が，運航を開始する
+転倒数を操作する
+[1, 2, 3, 4, 5]:転倒数0
+[5, 1, 2, 3, 4]:転倒数4
+[3, 1, 2, 4, 5]:転倒数2
+[5, 4, 1, 2, 3](5と4を前方に):転倒数4 + 5 = 9
+転倒数5 * (5 - 1) // 2 = 10までは行内を入れ替えることで対応できる
 
-①ワーシャルフロイドする
-②1でエッジを追加し、ワーシャルフロイドを更新する 0で答える
-　ワーシャルフロイドの更新を最小限にするには？
-　→
-　新しい航路がc ~ dまでで運賃がeだとすると
-　任意の区間i ~ jについて運賃
-  1:i ~ j
-  2:i ~ c + c ~ d(e円) + d ~ j
-  3:j ~ c + c ~ d(e円) + d ~ i
-  を比べる
-"""
+[1, 2, 3, 4, 5]
+[6, 7, 8, 9, 10]
+[11, 12, 13, 14, 15] 転倒数0
 
-N, K = getNM()
-query = [getList() for i in range(K)]
+[11, 12, 13, 14, 15]
+[1, 2, 3, 4, 5]
+[6, 7, 8, 9, 10] 転倒数2 * 5 = 10
 
-# 距離の表
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
+Mの倍数分については行ごと入れ替え、残りについては行内を入れ替える
 
-for q in query:
-    # queryに答える
-    if q[0] == 0:
-        _, a, b = q
-        a -= 1
-        b -= 1
-        if dist[a][b] == float('inf'):
-            print(-1)
+1 ~ (N - 1)までを使って数字Kを作ろう
+1 ~ 15までを使って数字Kを作ろう
+def assem(n, k):
+    cnt = n * (n + 1) // 2
+    use = []
+    left = [] # 一つ目は転倒させても意味ないので
+    for i in range(n, 0, -1):
+        if cnt - i >= k:
+            cnt -= i
+            left.append(i)
         else:
-            print(dist[a][b])
-    # ワーシャルフロイドの更新
-    else:
-        _, c, d, e = q
-        c -= 1
-        d -= 1
-        dist[c][d] = min(dist[c][d], e)
-        dist[d][c] = min(dist[d][c], e)
+            use.append(i)
 
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][c] + e + dist[d][j], dist[i][d] + e + dist[c][j])
+    return use, left
+"""
+
+# 1 ~ Nまでを使って数字Kを作ろう
+def assem(n, k):
+    cnt = n * (n + 1) // 2
+    use = []
+    left = [1] # 一つ目は転倒させても意味ないので
+    for i in range(n, 0, -1):
+        if cnt - i >= k:
+            cnt -= i
+            left.append(i + 1)
+        else:
+            use.append(i + 1)
+    left.sort()
+    return use, left
+
+N, M, K = getNM()
+# 行の入れ替え
+# 上限は行全てを全転倒させるN * (N - 1) // 2
+c_row = min(K // M, N * (N - 1) // 2)
+K -= M * c_row
+# i行について全転倒させる
+# M = 1の場合に注意
+c_inner = 0
+if M > 1:
+    c_inner = K // (M * (M - 1) // 2)
+K -= (M * (M - 1) // 2) * c_inner
+left = K
+
+# どの行を転倒させるか
+row_fore, row_aft = assem(N - 1, c_row)
+row = row_fore + row_aft
+
+# 全転倒
+row_rev = [i + 1 for i in range(M - 1, -1, -1)]
+
+# c_inner + 1行目の順番
+inner_bef, inner_aft = assem(M - 1, left)
+last = inner_bef + inner_aft
+
+maze = [[0] * M for i in range(N)]
+for i in range(N):
+    for j in range(M):
+        # 行内の要素について
+        # 全転倒
+        if i <= c_inner - 1:
+            maze[i][j] = (row[i] - 1) * M + row_rev[j]
+        # 少し転倒
+        elif i == c_inner:
+            maze[i][j] = (row[i] - 1) * M + last[j]
+        # 順番のまま
+        else:
+            maze[i][j] = (row[i] - 1) * M + (j + 1)
+
+for i in maze:
+    print(*i)
