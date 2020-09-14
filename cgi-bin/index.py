@@ -49,88 +49,223 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 割り当てを一つ求める
-# N回Mラウンドを行う 1ラウンドあたりの最大対戦者数はN以下になる
+# mod不使用ver
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if (r < 0) or (n < r):
+        return 0
 
-# 対戦者A, B, C, D...にそれぞれ１、２、３、４...を割り当てる
-# 試合後、A, B, C, D...の数字は２、３、４、５...になる N + 1になったら１になる
-# N, M = 4, 1の時 M1に[1, 2]を割り当てると
-#   A B C D
-# 1 1 2 3 4 A vs B
-# 2 2 3 4 1 D vs A
-# 3 3 4 1 2 C vs D
-# 4 4 1 2 3 B vs C なのでok
-# Nラウンドでちょうど一周するので、M = 1の時は何を入れてもok
+    if r == 0:
+        return 1
 
-# N, M = 5, 2の時
-#   A B C D E
-# 1 1 2 3 4 5
-# 2 2 3 4 5 1
-# 3 3 4 5 1 2
-# 4 4 5 1 2 3
-# 5 5 1 2 3 4
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-# M1には何を指定してもいい？
-# 少なくともM1とM2が同じパターン(i, i+1等)はダメ
-# 全てのMについて違うパターンで数字を割り当てられるか
-# = 任意のMi(ai, bi), Mj(aj, bj)について abs(bi - ai) != abs(bj - aj)
-N, M = getNM()
-A = []
-B = []
-if N % 2 != 0:
-    for i in range(M):
-        A.append(i + 1)
-        B.append(N - i)
-else:
-    for i in range(M):
-        A.append(i + 1)
-        if i <= ((N // 4) - 1):
-            B.append(N - i)
-        else:
-            B.append(N - i - 1) # 一つずらす
-for i in range(M):
-    print(A[i], B[i])
+# 10
+print(cmb_1(5, 3))
+
+# mod使用ver
+# nが大きい場合に
+def cmb_2(x,y):
+    r = 1
+    for i in range(1, y + 1):
+        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
+    return r
+
+# 10
+print(cmb_2(5, 3))
+
+# 逆元事前処理ver
+# nが小さい場合に
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+
+    if r == 0:
+        return 1
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+# 120
+print(cmb(10, 3))
+
+# 重複組み合わせ
+# 10個のものから重複を許して3つとる
+print(cmb_1(10 + 3 - 1, 3))
+
+# modが素数じゃない時
+def cmb_compose(n, k, mod):
+    dp = [[0] * (k + 1) for i in range(n + 1)]
+    dp[0][0] = 1
+    for i in range(1, n + 1):
+        dp[i][0] = 1
+        for j in range(1, k + 1):
+            # nCk = n - 1Ck - 1 + n - 1Ck
+            dp[i][j] = (dp[i - 1][j - 1] + dp[i - 1][j]) % mod
+
+    return dp[n][k]
+
+print(cmb_compose(10, 3, 50))
+
+A, B, C = 144949225, 545897619, 393065978
+
+# kCc / k+1Cc = k - c + 1 / k + 1
+# k+1Cc+1 / kCc = k + 1 / c + 1
+# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
+x = (C * pow(A, mod - 2, mod)) % mod
+y = (B * pow(A, mod - 2, mod)) % mod
+
+n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
+k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
+print((n - k) % mod, k % mod)
 
 
-# コーナーケースあり
-# 前と後ろから取っていったのではダメなケース？
-# ちょうどrotateしたところ
-# N, M = 6, 2
-# m1に[1, 6], m2に[3, 4]を指定するとダブル
-#   A B C D E F
-# 1 1 2 3 4 5 6
-# 2 2 3 4 5 [6 1] E, F
-# 3 3 4 5 6 1 2
-# 4 4 5 6 1 2 3
-# 5 5 6 1 2 [3 4] E, F
-# 6 6 1 2 3 4 5
+# 再帰で組み合わせ
+N = 4
+L = [1, 1]
+root = 5
 
-# rotateしてもダブらないように
-# m1に[1, 6], m2に[2, 3]を指定すると
-#   A B C D E F
-# 1 1 2 3 4 5 6
-# 2 2 3 4 5 [6 1] E vs F
-# 3 3 4 5 6 1 2
-# 4 4 5 6 1 2 3
-# 5 5 6 1 2 3 4
-# 6 6 1 2 3 4 5
+# root ** Nでループ
+def four_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    for j in range(root):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+# four_pow(0, [])
 
-# 偶奇で分かれる？
-# 奇数の場合は大丈夫
-# m1 間はN - 2(奇数), 0
-# m2 間はN - 4(奇数), 2
+# 組み合わせ
+def comb_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = -1
+    if len(array) > 0:
+        last = array[-1]
 
-# 偶数の場合はダメ
-# うまくズラして
-# m1 間はN - 2(偶数), 0
-# m2 間はN - 4(偶数), 2
+    for j in range(last + 1, root):
+        new_array = array + [j]
+        comb_pow(i + 1, new_array)
+#comb_pow(0, [])
 
-# m1 間はN - 2, 0
-# m2 間はN - 4, 2
-# m3 間はN - 6, 4
-# ...
-# mm-2 間は6, N - 6
-# mm-1 間は4, N - 4
-# mm 間は2, N - 2
-# 関係があるのは1個目とN個目, 2個目とN-1個目...
-# 小さい方から半分については１個ずらす
+# 1スタート
+def comb_pow_2(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root + 1):
+        new_array = array + [j]
+        comb_pow_2(i + 1, new_array)
+# comb_pow_2(0, [])
+
+# 重複組み合わせ
+def rep_comb_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last, root):
+        new_array = array + [j]
+        rep_comb_pow(i + 1, new_array)
+# rep_comb_pow(0, [])
+
+N = 2
+root = 5
+
+# 1スタート
+def rep_comb_pow_2(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root + 1):
+        new_array = array + [j]
+        rep_comb_pow_2(i + 1, new_array)
+# rep_comb_pow_2(0, [])
+
+N, K = 10, 5
+
+c1 = cmb(N, K)
+
+# 完全順列（モンモール数）
+dp = [0] * (K + 1)
+dp[2] = 1
+for i in range(3, K + 1):
+    dp[i] = (i - 1) * (dp[i - 1] + dp[i - 2]) % mod
+c2 = dp[K]
+
+ans = c1 * c2 % mod
+print(ans)
+
+# ABC154F many many paths
+# 経路組み合わせ
+
+### ここ注意 ###
+lim = 2 * (10 ** 6) + 7
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+
+    if r == 0:
+        return 1
+
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+"""
+g(r,c) を 0 ≤ i ≤ r かつ 0 ≤ j ≤ c を満たす全ての整数の組 (i,j) に対する f(i,j) の総和とする。
+ここでf(r + 1, c) = f(r, c) + f(r, c - 1)...f(r, 0)
+f(r, c)からr方向へ1つ（一通り）
+f(r, c - 1)からr方向へ1つ, c方向に1つ（一通り）
+...
+
+つまりf(r2 + 1, c2) = f(r2, c) + f(r2, c - 1) + ... f(r2, 0)
+これをf(0, c2)からf(r2 + 1, c2)まで求めればg(r2, c2)が求まる
+"""
+r1, c1, r2, c2 = 1, 1, 2, 2
+
+ans = 0
+for i in range(r1, r2 + 1):
+    ans = (ans + cmb(c2 + i + 1, i + 1) - cmb(c1 + i, i + 1)) % mod
+print(ans)

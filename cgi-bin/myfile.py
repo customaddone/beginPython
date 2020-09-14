@@ -69,35 +69,34 @@ mod = 10 ** 9 + 7
 #############
 # Main Code #
 #############
+K = getN()
+S = input()
+N = len(S)
 
+# 多分dp
+# できる文字列の数
+# アルファベットa~z26個をK回挿入すると？
+# 一回目a 二回目aだとaaであり、順番逆でも同じ
+# 文字数 * どこに挿入するか
+# oの右にoを置いてもoの左にoを置いても同じ
 
-# どのように区間を取ればいいか
-# 取り除くことを考えないと
-# 順番はどうでもいい
-N, K, Q = getNM()
-# ソート順Aの連続するK個を取りたいが
-A = getList()
-A = [[i, A[i]] for i in range(N)]
-A.sort(key = lambda i: i[1])
-key = []
-for k, v in A:
-    key.append(k)
+# 最終的には長さN + Kの文字ができる
+# ???o?of? ?はオールマイティ
 
-# 同じグループ内にいるかつグループ全体の長さがK + Q - 1
-for i in range(N - K + 1):
-    block = key[:i]
+# 前から順にdpしていく?
+# i文字目にS[j]を使うか?を使うか
 
-    index = [i for i in range(N)]
-    for i in block:
-        index[i] = -1
-    groups = []
-    now = []
-    for i in range(N):
-        if index[i] == -1:
-            if len(now) >= K + Q - 1:
-                groups.append(now)
-        else:
-            now.append(index[i])
-    if len(now) >= K + Q - 1:
-        groups.append(now)
-    print(groups)
+### ????????のうちo, o, fを使う文字列の種類は? ###
+# o, o, fの場所を決めて?にa~zを入れる？
+# ?でoを使ってもo, o, fのうちのoを使っても同じ
+
+A = 'abcdefghijklmnopqrstuvwxyz'
+S = [A.index(S[i]) for i in range(N)]
+print(S)
+
+dp = [[0] * 26 for i in range(N + K + 1)]
+dp[0][0] = 1
+
+for i in range(1, N + K + 1):
+    for j in range(26):
+        if j == S[i]:
