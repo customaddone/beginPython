@@ -69,34 +69,31 @@ mod = 10 ** 9 + 7
 #############
 # Main Code #
 #############
+# nが小さい場合に
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
 K = getN()
 S = input()
 N = len(S)
 
-# 多分dp
-# できる文字列の数
-# アルファベットa~z26個をK回挿入すると？
-# 一回目a 二回目aだとaaであり、順番逆でも同じ
-# 文字数 * どこに挿入するか
-# oの右にoを置いてもoの左にoを置いても同じ
+ans = 0
+for k in range(K + 1):
+    ans += cmb(N + K - k - 1, N - 1) * pow(26, k, mod) * pow(25, K - k, mod) % mod
+    ans %= mod
 
-# 最終的には長さN + Kの文字ができる
-# ???o?of? ?はオールマイティ
-
-# 前から順にdpしていく?
-# i文字目にS[j]を使うか?を使うか
-
-### ????????のうちo, o, fを使う文字列の種類は? ###
-# o, o, fの場所を決めて?にa~zを入れる？
-# ?でoを使ってもo, o, fのうちのoを使っても同じ
-
-A = 'abcdefghijklmnopqrstuvwxyz'
-S = [A.index(S[i]) for i in range(N)]
-print(S)
-
-dp = [[0] * 26 for i in range(N + K + 1)]
-dp[0][0] = 1
-
-for i in range(1, N + K + 1):
-    for j in range(26):
-        if j == S[i]:
+print(ans)

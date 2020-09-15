@@ -49,223 +49,141 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# mod不使用ver
-def cmb_1(n, r):
-    r = min(n - r, r)
-    if (r < 0) or (n < r):
-        return 0
+# 部分文字列の個数
+S = 'aaaaa'
+N = len(S)
+# i文字目以降で最初に
+alphabet = 'abcdefghijklmnopqrstuvwxyz'
+alp = {}
+for i in range(26):
+    alp[alphabet[i]] = i
 
-    if r == 0:
-        return 1
+# i文字目以降で最初に文字sが登場するのは
+next = [[-1] * 26 for i in range(N)]
+for i in range(N - 1, -1, -1):
+    for j in range(26):
+        if i == N - 1:
+            break
+        next[i][j] = next[i + 1][j]
+    next[i][alp[S[i]]] = i
 
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+dp = [0] * (N + 1) # 1-indexになる
+dp[0] = 1
+# 配るdpでやる
+for i in range(N):
+    for j in range(26):
+        if next[i][j] == -1:
+            continue
+        # 0-indexを1-indexに直す
+        dp[next[i][j] + 1] += dp[i]
+print(sum(dp))
 
-# 10
-print(cmb_1(5, 3))
+# G - 辞書順
 
-# mod使用ver
-# nが大きい場合に
-def cmb_2(x,y):
-    r = 1
-    for i in range(1, y + 1):
-        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
-    return r
+S = input()
+K = getN()
+N = len(S)
+# i文字目以降で最初に
+alphabet = 'abcdefghijklmnopqrstuvwxyz'
+alp = {}
+for i in range(26):
+    alp[alphabet[i]] = i
+S = [alp[S[i]] for i in range(N)] # pypyだと遅いので
 
-# 10
-print(cmb_2(5, 3))
+def changer(i, j):
+    return i * 26 + j
+# i文字目以降について文字cから始まる部分文字列の個数
+dp = [0] * (N + 1) * 26 # 1次元配列にしないとメモリ容量の関係で無理
+dp[changer(N - 1, S[N - 1])]= 1
 
-# 逆元事前処理ver
-# nが小さい場合に
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
+for i in range(N - 2, -1, -1):
 
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
+    for j in range(26):
+        # S[i]と一致しない場合
+        if S[i] != j:
+            dp[changer(i, j)] += dp[changer(i + 1, j)] # 前のを引き継ぐだけ
+        # 一致する場合
+        else:
+            dp[changer(i, j)] += 1 # 後に何も足さないケース
+            dp[changer(i, j)] += sum(dp[changer(i + 1, 0):changer(i + 2, 0)]) # S[i] + 今まで出た全てのケースを足すå
 
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
+part_sum = sum(dp[:26])
+if part_sum < K:
+    print('Eel')
+    exit()
 
-    if r == 0:
-        return 1
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-# 120
-print(cmb(10, 3))
+res = ""
+i = 0
 
-# 重複組み合わせ
-# 10個のものから重複を許して3つとる
-print(cmb_1(10 + 3 - 1, 3))
+while i < N:
+    for j in range(26):
+        if K - dp[changer(i, j)] <= 0:
+            break
+        K -= dp[changer(i, j)] # K >= dp[i][j]ならそのケースはK番目より前にあるので飛ばす
+    res += alphabet[j] # jが次の文字
+    K -= 1 # jを選んで dp[i][j]については終了
+    if K <= 0: # K <= 0ならもう足さなくていい
+        break
+    while S[i] != j: # S[i]が足した文字jと一致するまでS[i]を進める
+        i += 1
+    i += 1 # 次はS[i + 1]から探索する
+print(res)
 
-# modが素数じゃない時
-def cmb_compose(n, k, mod):
-    dp = [[0] * (k + 1) for i in range(n + 1)]
-    dp[0][0] = 1
-    for i in range(1, n + 1):
-        dp[i][0] = 1
-        for j in range(1, k + 1):
-            # nCk = n - 1Ck - 1 + n - 1Ck
-            dp[i][j] = (dp[i - 1][j - 1] + dp[i - 1][j]) % mod
-
-    return dp[n][k]
-
-print(cmb_compose(10, 3, 50))
-
-A, B, C = 144949225, 545897619, 393065978
-
-# kCc / k+1Cc = k - c + 1 / k + 1
-# k+1Cc+1 / kCc = k + 1 / c + 1
-# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
-x = (C * pow(A, mod - 2, mod)) % mod
-y = (B * pow(A, mod - 2, mod)) % mod
-
-n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
-k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
-print((n - k) % mod, k % mod)
-
-
-# 再帰で組み合わせ
-N = 4
-L = [1, 1]
-root = 5
-
-# root ** Nでループ
-def four_pow(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-    for j in range(root):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-# four_pow(0, [])
-
-# 組み合わせ
-def comb_pow(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-    # ここの4を変えてrootを変更
-    last = -1
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last + 1, root):
-        new_array = array + [j]
-        comb_pow(i + 1, new_array)
-#comb_pow(0, [])
-
-# 1スタート
-def comb_pow_2(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-    # ここの4を変えてrootを変更
-    last = 0
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last + 1, root + 1):
-        new_array = array + [j]
-        comb_pow_2(i + 1, new_array)
-# comb_pow_2(0, [])
-
-# 重複組み合わせ
-def rep_comb_pow(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-    # ここの4を変えてrootを変更
-    last = 0
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last, root):
-        new_array = array + [j]
-        rep_comb_pow(i + 1, new_array)
-# rep_comb_pow(0, [])
-
-N = 2
-root = 5
-
-# 1スタート
-def rep_comb_pow_2(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-
-    last = 0
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last + 1, root + 1):
-        new_array = array + [j]
-        rep_comb_pow_2(i + 1, new_array)
-# rep_comb_pow_2(0, [])
-
-N, K = 10, 5
-
-c1 = cmb(N, K)
-
-# 完全順列（モンモール数）
-dp = [0] * (K + 1)
-dp[2] = 1
-for i in range(3, K + 1):
-    dp[i] = (i - 1) * (dp[i - 1] + dp[i - 2]) % mod
-c2 = dp[K]
-
-ans = c1 * c2 % mod
-print(ans)
-
-# ABC154F many many paths
-# 経路組み合わせ
-
-### ここ注意 ###
-lim = 2 * (10 ** 6) + 7
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
-
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-
-    if r == 0:
-        return 1
-
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
+# ABC171 F - Strivore 
 
 """
-g(r,c) を 0 ≤ i ≤ r かつ 0 ≤ j ≤ c を満たす全ての整数の組 (i,j) に対する f(i,j) の総和とする。
-ここでf(r + 1, c) = f(r, c) + f(r, c - 1)...f(r, 0)
-f(r, c)からr方向へ1つ（一通り）
-f(r, c - 1)からr方向へ1つ, c方向に1つ（一通り）
+dp[i][j]を
+「i文字目まででj回Sの文字を使ったか」とする
+
+K = 5
+S = 'oof'
+dp = [[0] * (len(S) + 1) for i in range(K + len(S) + 1)]
+dp[0][0] = 1
+
+for i in range(1, K + len(S) + 1):
+    for j in range(len(S) + 1):
+        if j < len(S):
+            dp[i][j] += dp[i - 1][j] * 25
+        else:
+            dp[i][j] += dp[i - 1][j] * 26 # j回使い切るともうSは関係なくなるので *= 26になる
+        if j >= 1:
+            dp[i][j] += dp[i - 1][j - 1]
+
+l_s = len(S)
+どのタイミングで「この先ずっと*= 26」になるか
+後ろからi文字目にSを使い切る: pow(25, K - k, mod) * cmb(N + K - k - 1, N - 1) * pow(26, k, mod)
 ...
-
-つまりf(r2 + 1, c2) = f(r2, c) + f(r2, c - 1) + ... f(r2, 0)
-これをf(0, c2)からf(r2 + 1, c2)まで求めればg(r2, c2)が求まる
 """
-r1, c1, r2, c2 = 1, 1, 2, 2
+
+lim = 2 * (10 ** 6) + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    if r == 0:
+        return 1
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+K = getN()
+S = input()
+N = len(S)
 
 ans = 0
-for i in range(r1, r2 + 1):
-    ans = (ans + cmb(c2 + i + 1, i + 1) - cmb(c1 + i, i + 1)) % mod
+# l_s + i文字目に文字を使い切る
+# 次から *= 26
+for k in range(K + 1):
+    # 逆からやってる
+    ans += cmb(N + K - k - 1, N - 1) * pow(26, k, mod) * pow(25, K - k, mod) % mod
+    ans %= mod
+
 print(ans)
