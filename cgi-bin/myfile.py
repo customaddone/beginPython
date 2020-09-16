@@ -70,30 +70,58 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 # nが小さい場合に
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
+if N % 2 == 0:
+    alta_f = deepcopy(A) # 前から1個目、3個目...を累積和
+    alta_b = deepcopy(A) # 後ろから1個目、3個目...を累積和
 
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
+    for i in range(1, N):
+        if i % 2 == 0:
+            alta_f[i] += alta_f[i - 2]
+        else:
+            alta_f[i] = 0
 
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
+    for i in range(1, N):
+        if i % 2 == 0:
+            alta_b[-i - 1] += alta_b[-i + 1]
+        else:
+            alta_b[-i - 1] = 0
 
-K = getN()
-S = input()
-N = len(S)
+    ans = alta_b[1]
+    for i in range(0, N, 2):
+        if i + 3 < N:
+            ans = max(ans, alta_f[i] + alta_b[i + 3])
+        else:
+            ans = max(ans, alta_f[i])
+    print(ans)
+else:
+    # 奇数の場合
+    # 3つ飛ばしを１回もやらない
+    opt_l = [A[i] for i in range(N) if i % 2 == 0]
+    ans = sum(opt_l) - min(opt_l)
 
-ans = 0
-for k in range(K + 1):
-    ans += cmb(N + K - k - 1, N - 1) * pow(26, k, mod) * pow(25, K - k, mod) % mod
-    ans %= mod
+    alta_f = deepcopy(A) # 前から1個目、3個目...を累積和
+    alta_b = deepcopy(A) # 後ろから2個目、4個目...を累積和
 
-print(ans)
+    # 2回3つ飛ばしができる
+
+    for i in range(1, N):
+        if i % 2 == 0:
+            alta_f[i] += alta_f[i - 2]
+        else:
+            alta_f[i] = 0
+
+    for i in range(2, N):
+        if i % 2 == 1:
+            alta_b[-i - 1] += alta_b[-i + 1]
+        else:
+            alta_b[-i - 1] = 0
+    print(alta_f)
+    print(alta_b)
+    # 偶数個目だけ取るのを判定
+    ans = max(ans, alta_b[1])
+    for i in range(0, N - 2, 2):
+        if i + 3 < N:
+            ans = max(ans, alta_f[i] + alta_b[i + 3])
+        else:
+            ans = max(ans, alta_f[i])
+    print(ans)

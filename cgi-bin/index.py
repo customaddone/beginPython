@@ -49,141 +49,177 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 部分文字列の個数
-S = 'aaaaa'
-N = len(S)
-# i文字目以降で最初に
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
-alp = {}
-for i in range(26):
-    alp[alphabet[i]] = i
+# 基本の二分探索
+lista = [i for i in range(10)]
 
-# i文字目以降で最初に文字sが登場するのは
-next = [[-1] * 26 for i in range(N)]
-for i in range(N - 1, -1, -1):
-    for j in range(26):
-        if i == N - 1:
-            break
-        next[i][j] = next[i + 1][j]
-    next[i][alp[S[i]]] = i
+def binary_search_loop(data, target):
+    imin = 0
+    imax = len(data) - 1
+    while imin <= imax:
+        imid = imin + (imax - imin) // 2
+        if target == data[imid]:
+            return imid
+        elif target < data[imid]:
+            imax = imid - 1
+        else:
+            imin = imid + 1
+    return False
+print(binary_search_loop(lista, 4))
 
-dp = [0] * (N + 1) # 1-indexになる
-dp[0] = 1
-# 配るdpでやる
+# 三分探索
+# ARC054 ムーアの法則
+def f(x):
+    return x + p / pow(2, 2 * x / 3)
+
+p = float(input())
+left, right = 0, 100
+
+while right > left + 10 ** -10:
+    # mid二つ
+    mid1 = (right * 2 + left) / 3
+    mid2 = (right + left * 2) / 3
+    if f(mid1) >= f(mid2):
+        right = mid1
+    else:
+        left = mid2
+print(f(right))
+
+# 三分探索整数ver
+num = []
+for i in range(100):
+    if i < 50:
+        num.append(i)
+    else:
+        num.append(100 - i)
+
+left, right = 0, len(num) - 1
+while abs(right - left) > 3:
+    mid1 = (right * 2 + left) // 3 + 1
+    mid2 = (right + left * 2) // 3
+    # 最小値を求める場合は矢印逆になる
+    if num[mid1] <= num[mid2]:
+        right = mid1
+    else:
+        left = mid2
+print(right)
+print(left)
+
+# ARC050 B - 花束
+R, B = getNM()
+x, y = getNM()
+# 赤い花束をr束, 青い花束をb束とすると
+# R >= xr + b
+# B >= r + yb
+# を満たしながらk = r + bを最大化せよ
+# r = k - b
+# R >= x(k - b) + b = xk - (x - 1)b
+# B >= (k - b) + yb = k + (y - 1)b
+# (y - 1)R >= (y - 1)xk - (x - 1)(y - 1)b
+# (x - 1)B >= (x - 1)k + (x - 1)(y - 1)b
+# (y - 1)R + (x - 1)B >= ((y - 1)x + (x - 1))k
+# 二分探索?
+
+def judge(k):
+    # あるkを決めた時に
+
+    # ①r >= 0, b >= 0
+    # ②r + b = k
+    # ③R >= xr + b = (x - 1)b
+    # ④B >= r + yb = (y - 1)b
+    # となるr, bが存在するか
+
+    # R - k >= (x - 1)r
+    # (R - k) / (x - 1) >= r
+    # B - k >= (y - 1)b
+    # (B - k) / (y - 1) >= b
+    # (R - k) // (x - 1) + (B - k) // (y - 1) >= kになるか
+    if R - k >= 0 and B - k >= 0 and (R - k) // (x - 1) + (B - k) // (y - 1) >= k:
+        return True
+    else:
+        return False
+
+ok = -1
+ng = 10 ** 18 + 1
+
+while abs(ok - ng) > 1:
+    mid = (ok + ng) // 2
+    if judge(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
+
+# AGC041 B - Voting Judges
+
+"""
+# 問題:N問、ジャッジ:M人
+# M人のジャッジがそれぞれV問を選び、問題のスコアを１ずつあげる
+# M人の投票の後、大きい方からP問が選ばれる
+# 問題セットに選ばれる可能性があるのは何問あるか
+
+M人全員が投票すれば選ばれやすくなる
+選ばれるとは？
+可能性がないものを数えた方が早いのでは
+P番目以内にあれば無条件で通過
+現在のP番目 <= A[i] + M
+V <= Pなら
+上からP - 1番目までのどれか + A[i]を加算させることでA[i]を強くできる　
+V > Pなら？
+上からP - 1番目までとA[i]を強化するとして、残りのV - P個は小さいものから順に選ぶ
+A[i]を抜かせないようにしたい
+A[i]より大きい数字も一緒に足される場合にはP以内に入れない
+"""
+N, M, V, P = getNM()
+A = getList()
+A.sort(reverse = True)
+
+def judge(x):
+    if x < P:
+        return True
+    if A[P - 1] > A[x] + M:
+        return False
+    # P - 1番目まで + 自身以降の数字についてはM個足す
+    left = (V - (P - 1) - (N - x)) * M
+    # P個目からx-1まで A[x] + Mを超えない分足す
+    for i in range(P - 1, x):
+        left -= A[x] + M - A[i]
+
+    return left <= 0
+
+ok = -1
+ng = N
+
+while abs(ok - ng) > 1:
+    mid = (ok + ng) // 2
+    if judge(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok + 1)
+
+# ABC023 D - 射撃王
+N = getN()
+listh = []
+lists = []
 for i in range(N):
-    for j in range(26):
-        if next[i][j] == -1:
-            continue
-        # 0-indexを1-indexに直す
-        dp[next[i][j] + 1] += dp[i]
-print(sum(dp))
+    h, s = getNM()
+    listh.append(h)
+    lists.append(s)
+left = 0
+right = 10 ** 15
 
-# G - 辞書順
-
-S = input()
-K = getN()
-N = len(S)
-# i文字目以降で最初に
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
-alp = {}
-for i in range(26):
-    alp[alphabet[i]] = i
-S = [alp[S[i]] for i in range(N)] # pypyだと遅いので
-
-def changer(i, j):
-    return i * 26 + j
-# i文字目以降について文字cから始まる部分文字列の個数
-dp = [0] * (N + 1) * 26 # 1次元配列にしないとメモリ容量の関係で無理
-dp[changer(N - 1, S[N - 1])]= 1
-
-for i in range(N - 2, -1, -1):
-
-    for j in range(26):
-        # S[i]と一致しない場合
-        if S[i] != j:
-            dp[changer(i, j)] += dp[changer(i + 1, j)] # 前のを引き継ぐだけ
-        # 一致する場合
-        else:
-            dp[changer(i, j)] += 1 # 後に何も足さないケース
-            dp[changer(i, j)] += sum(dp[changer(i + 1, 0):changer(i + 2, 0)]) # S[i] + 今まで出た全てのケースを足すå
-
-part_sum = sum(dp[:26])
-if part_sum < K:
-    print('Eel')
-    exit()
-
-res = ""
-i = 0
-
-while i < N:
-    for j in range(26):
-        if K - dp[changer(i, j)] <= 0:
-            break
-        K -= dp[changer(i, j)] # K >= dp[i][j]ならそのケースはK番目より前にあるので飛ばす
-    res += alphabet[j] # jが次の文字
-    K -= 1 # jを選んで dp[i][j]については終了
-    if K <= 0: # K <= 0ならもう足さなくていい
-        break
-    while S[i] != j: # S[i]が足した文字jと一致するまでS[i]を進める
-        i += 1
-    i += 1 # 次はS[i + 1]から探索する
-print(res)
-
-# ABC171 F - Strivore 
-
-"""
-dp[i][j]を
-「i文字目まででj回Sの文字を使ったか」とする
-
-K = 5
-S = 'oof'
-dp = [[0] * (len(S) + 1) for i in range(K + len(S) + 1)]
-dp[0][0] = 1
-
-for i in range(1, K + len(S) + 1):
-    for j in range(len(S) + 1):
-        if j < len(S):
-            dp[i][j] += dp[i - 1][j] * 25
-        else:
-            dp[i][j] += dp[i - 1][j] * 26 # j回使い切るともうSは関係なくなるので *= 26になる
-        if j >= 1:
-            dp[i][j] += dp[i - 1][j - 1]
-
-l_s = len(S)
-どのタイミングで「この先ずっと*= 26」になるか
-後ろからi文字目にSを使い切る: pow(25, K - k, mod) * cmb(N + K - k - 1, N - 1) * pow(26, k, mod)
-...
-"""
-
-lim = 2 * (10 ** 6) + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
-
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    if r == 0:
-        return 1
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-
-K = getN()
-S = input()
-N = len(S)
-
-ans = 0
-# l_s + i文字目に文字を使い切る
-# 次から *= 26
-for k in range(K + 1):
-    # 逆からやってる
-    ans += cmb(N + K - k - 1, N - 1) * pow(26, k, mod) * pow(25, K - k, mod) % mod
-    ans %= mod
-
-print(ans)
+for _ in range(50):
+    flag = True
+    mid = (left + right) // 2
+    costtime = [0] * N
+    for i in range(N):
+        costtime[i] = (mid - listh[i]) / lists[i]
+    costtime.sort()
+    for i in range(N):
+        if costtime[i] - i < 0:
+            flag = False
+    if flag:
+        right = mid
+    else:
+        left = mid
+print(right)
