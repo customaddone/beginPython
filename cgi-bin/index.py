@@ -49,6 +49,40 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+
+num = [2, 4, 6, 8]
+limit = 10
+
+def part_bitset1(num, limit):
+    N = len(num)
+    dp = 1 # 最初の0
+
+    for i in range(N):
+        dp |= (dp << num[i])
+
+    return bin(dp)
+
+max_diff = 30
+
+def part_bitset2(num, limit):
+    N = len(num)
+    dp = 1 << max_diff # 最初の0
+    print(bin(dp))
+
+    for i in range(N):
+        # +, -を加える
+        dp |= (dp << num[i]) | (dp >> num[i])
+
+    return dp
+
+l = part_bitset2(num, limit)
+ans = []
+for i in range(l.bit_length()):
+    if l & (1 << i):
+        ans.append(i - max_diff)
+# [-20, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+# print(ans)
+
 # ABC147 E - Balanced Path
 
 MAX_DIFF = 80
