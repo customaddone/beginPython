@@ -49,46 +49,37 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M, L = getNM()
-edges = [getList() for i in range(M)]
-Q = getN()
-query = [getList() for i in range(Q)]
+# ABC147 E - Balanced Path
 
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-for i in range(M):
-    a, b, c = edges[i]
-    dist[a - 1][b - 1] = c
-    dist[b - 1][a - 1] = c
+MAX_DIFF = 80
+h, w = getNM()
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
+A = [getList() for i in range(h)]
+B = [getList() for i in range(h)]
+c = [[abs(A[i][j] - B[i][j]) for j in range(w)] for i in range(h)]
 
-# まず一回回す
-warshall_floyd(dist)
+# bitset高速化
+# 集合を010110...の形で持つ
+sets = [[0 for j in range(w)] for i in range(h)]
+# 中央0: 1 << MAX_DIFFに + c[0][0], - c[0][0]
+sets[0][0] = (1 << MAX_DIFF + c[0][0]) | (1 << MAX_DIFF - c[0][0])
 
-# distの抽象化
-# edgesの張り替え
-dist_alta = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    for j in range(i, N):
-        if i == j:
-            dist_alta[i][j] = 0
-            continue
-        if dist[i][j] <= L:
-            dist_alta[i][j] = 1
-            dist_alta[j][i] = 1
+# 縦方向に進む
+for i in range(1, h):
+    # c[i][0]の+-を足したもの
+    sets[i][0] |= (sets[i - 1][0] << MAX_DIFF + c[i][0]) | (sets[i - 1][0] << MAX_DIFF - c[i][0])
+# 下方向に進む
+for i in range(1, w):
+    sets[0][i] |= (sets[0][i - 1] << MAX_DIFF + c[0][i]) | (sets[0][i - 1] << MAX_DIFF - c[0][i])
+for i in range(1, h):
+    for j in range(1, w):
+        sets[i][j] |= (sets[i - 1][j] << MAX_DIFF + c[i][j]) | (sets[i - 1][j] << MAX_DIFF - c[i][j])
+        sets[i][j] |= (sets[i][j - 1] << MAX_DIFF + c[i][j]) | (sets[i][j - 1] << MAX_DIFF - c[i][j])
 
-warshall_floyd(dist_alta)
-
-for s, t in query:
-    if dist_alta[s - 1][t - 1] == float('inf'):
-        print(-1)
-        continue
-    print(dist_alta[s - 1][t - 1] - 1)
+# 終点の集合を見る
+s = bin(sets[h - 1][w - 1] + (1 << (h + w) * MAX_DIFF))
+min_diff = 1 << MAX_DIFF
+for i in range(len(s)):
+    if s[- 1 - i] == '1': # フラグが立っているなら判定
+        min_diff = min(min_diff, abs(i - (h + w - 1) * MAX_DIFF))
+print(min_diff)
