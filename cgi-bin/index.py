@@ -28,92 +28,52 @@ def rand_query(ran1, ran2, rantime):
       r_query.append(n_q)
   return sorted(r_query)
 
-from collections import defaultdict, deque, Counter
 from sys import exit
-from decimal import *
-from heapq import heapify, heappop, heappush
-import math
-import random
-import string
-from copy import deepcopy
-from itertools import combinations, permutations, product
-from operator import mul, itemgetter
-from functools import reduce
-from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
-mod = 10 ** 9 + 7
+mod = 998244353
 
 #############
 # Main Code #
 #############
 
+N, K = getNM()
+que = [getList() for i in range(K)]
 
-num = [2, 4, 6, 8]
-limit = 10
+dp = [0] * (N + 1) # dp[i] iの時の通りの数
+imos = [0] * (N + 1) # imos[i]: dp[1] ~ dp[i]までの累計
+dp[1] = 1
+imos[1] = 1
 
-def part_bitset1(num, limit):
-    N = len(num)
-    dp = 1 # 最初の0
+# 貰うdp
+# dp += dp[l] - dp[r]
 
-    for i in range(N):
-        dp |= (dp << num[i])
+for i in range(2, N + 1):
+    for l, r in que:
+        if i - l >= 0:
+            dp[i] += imos[i - l] - imos[max((i - r - 1), 0)]
+            dp[i] %= mod
+    imos[i] = dp[i]
+    imos[i] += imos[i - 1]
+    imos[i] %= mod
 
-    return bin(dp)
+print(dp[N] % mod)
 
-max_diff = 30
+"""
+# 配るdp
 
-def part_bitset2(num, limit):
-    N = len(num)
-    dp = 1 << max_diff # 最初の0
-    print(bin(dp))
+dp = [0] * (N + 1)
+dp[1] = 1
+dp[2] = -1
 
-    for i in range(N):
-        # +, -を加える
-        dp |= (dp << num[i]) | (dp >> num[i])
-
-    return dp
-
-l = part_bitset2(num, limit)
-ans = []
-for i in range(l.bit_length()):
-    if l & (1 << i):
-        ans.append(i - max_diff)
-# [-20, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
-# print(ans)
-
-# ABC147 E - Balanced Path
-
-MAX_DIFF = 80
-h, w = getNM()
-
-A = [getList() for i in range(h)]
-B = [getList() for i in range(h)]
-c = [[abs(A[i][j] - B[i][j]) for j in range(w)] for i in range(h)]
-
-# bitset高速化
-# 集合を010110...の形で持つ
-sets = [[0 for j in range(w)] for i in range(h)]
-# 中央0: 1 << MAX_DIFFに + c[0][0], - c[0][0]
-sets[0][0] = (1 << MAX_DIFF + c[0][0]) | (1 << MAX_DIFF - c[0][0])
-
-# 縦方向に進む
-for i in range(1, h):
-    # c[i][0]の+-を足したもの
-    sets[i][0] |= (sets[i - 1][0] << MAX_DIFF + c[i][0]) | (sets[i - 1][0] << MAX_DIFF - c[i][0])
-# 下方向に進む
-for i in range(1, w):
-    sets[0][i] |= (sets[0][i - 1] << MAX_DIFF + c[0][i]) | (sets[0][i - 1] << MAX_DIFF - c[0][i])
-for i in range(1, h):
-    for j in range(1, w):
-        sets[i][j] |= (sets[i - 1][j] << MAX_DIFF + c[i][j]) | (sets[i - 1][j] << MAX_DIFF - c[i][j])
-        sets[i][j] |= (sets[i][j - 1] << MAX_DIFF + c[i][j]) | (sets[i][j - 1] << MAX_DIFF - c[i][j])
-
-# 終点の集合を見る
-s = bin(sets[h - 1][w - 1] + (1 << (h + w) * MAX_DIFF))
-min_diff = 1 << MAX_DIFF
-for i in range(len(s)):
-    if s[- 1 - i] == '1': # フラグが立っているなら判定
-        min_diff = min(min_diff, abs(i - (h + w - 1) * MAX_DIFF))
-print(min_diff)
+for i in range(1, N + 1):
+    dp[i] += dp[i - 1]
+    dp[i] %= mod
+    for l, r in que:
+        if i + l <= N:
+            dp[i + l] += dp[i]
+        if i + r + 1 <= N:
+            dp[i + r + 1] -= dp[i]
+print(dp[N] % mod)
+"""
