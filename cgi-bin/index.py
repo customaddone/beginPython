@@ -49,101 +49,194 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 文字列を整数に変換
-N = 26
+"""
+# ABC004 マーブル
+# ベルマンフォード式最小
 
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
+# 全てのボールを全て違う箱に入れる
+# 地点からi離れたところに置くためにはi回試行が必要
+
+# 原点pのボールを(s, e)に一列に置くときの試行回数
+def counter(s, e, p):
+    sp = abs(s - p)
+    ep = abs(e - p)
+    if e < p:
+        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
+    elif s <= p <= e:
+        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
     else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
+        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
 
-# z
-print(num2alpha(N))
+# 全範囲を探索すると微妙に間に合わない
+# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
+# 緑がこの位置にある時、赤の最適な置き方は...
+# 緑がこの位置にある時、青の最適な置き方は...
+# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
 
-n = N
-lista = []
-digit = 26
-i = 0
+class MinCostFlow:
+    # 最小費用流(ベルマンフォード版、負コストに対応可)
 
-while n != 0:
-    opt = n % digit
-    lista.insert(0, opt)
-    if n % digit == 0:
-        n = n // digit - 1
+    INF = 10 ** 18
+
+    def __init__(self, N):
+        self.N = N
+        self.G = [[] for i in range(N)]
+
+    def add_edge(self, fr, to, cap, cost):
+        G = self.G
+        G[fr].append([to, cap, cost, len(G[to])])
+        G[to].append([fr, 0, -cost, len(G[fr])-1])
+
+    def flow(self, s, t, f):
+
+        N = self.N; G = self.G
+        INF = MinCostFlow.INF
+
+        res = 0
+        prv_v = [0] * N
+        prv_e = [0] * N
+
+        while f:
+            dist = [INF] * N
+            dist[s] = 0
+            update = True
+
+            while update:
+                update = False
+                for v in range(N):
+                    if dist[v] == INF:
+                        continue
+                    for i, (to, cap, cost, _) in enumerate(G[v]):
+                        if cap > 0 and dist[to] > dist[v] + cost:
+                            dist[to] = dist[v] + cost
+                            prv_v[to] = v; prv_e[to] = i
+                            update = True
+            if dist[t] == INF:
+                return -1
+
+            d = f; v = t
+            while v != s:
+                d = min(d, G[prv_v[v]][prv_e[v]][1])
+                v = prv_v[v]
+            f -= d
+            res += d * dist[t]
+            v = t
+            while v != s:
+                e = G[prv_v[v]][prv_e[v]]
+                e[1] -= d
+                G[v][e[3]][1] += d
+                v = prv_v[v]
+        return res
+
+R, G, B = getNM()
+N = R + G + B
+
+# 最小費用流
+mcf = MinCostFlow(1006)
+# 始点からRGBの移動前
+# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
+mcf.add_edge(1001, 1002, R, 0)
+mcf.add_edge(1001, 1003, G, 0)
+mcf.add_edge(1001, 1004, B, 0)
+
+# 0~1000の頂点番号は座標位置と一致させてある
+# 各頂点1個まで通れる
+for v in range(1001):
+    # R => 各座標
+    mcf.add_edge(1002, v, 1, abs(400-v))
+    # G => 各座標
+    mcf.add_edge(1003, v, 1, abs(500-v))
+    # B => 各座標
+    mcf.add_edge(1004, v, 1, abs(600-v))
+    # 各座標 => 終点(1005)
+    mcf.add_edge(v, 1005, 1, 0)
+
+# N個のボールを送るための最小費用
+print(mcf.flow(1001, 1005, N))
+"""
+
+# ABC010
+# 最小カット問題
+# 始点、終点と各点を結びつける
+N, G, E = getNM()
+P = getList()
+query = []
+for i in range(E):
+    a, b = getNM()
+    query.append([a, b, 1])
+    query.append([b, a, 1])
+# goalへのquery増築
+N += 1
+for i in range(G):
+    query.append([N - 1, P[i], 1])
+    query.append([P[i], N - 1, 1])
+
+ans = 0
+lines = defaultdict(set)
+cost = defaultdict(lambda: defaultdict(int))
+for i in range(len(query)):
+    a, b, c = query[i]
+    if c != 0:
+        lines[a].add(b)
+        cost[a][b] += c
+
+# sからスタート
+def Ford_Fulkerson(sta, end):
+    global ans
+    queue = deque()
+    queue.append([sta, float('inf')])
+
+    ignore = [1] * N
+    ignore[sta] = 0
+
+    route = [0] * N
+    route[sta] = -1
+
+    while queue:
+        s, flow = queue.pop()
+        for t in lines[s]:  #s->t
+            if ignore[t]: #未到達
+                # flowは入ってくる量、出る量のうち小さい方
+                flow = min(cost[s][t], flow)
+                route[t] = s
+                queue.append([t, flow])
+                ignore[t] = 0
+                if t == end: #ゴール到達
+                    ans += flow
+                    break
+        else:
+            continue #breakされなければWhile節の先頭に戻る
+        # Falseはされない
+        break
     else:
-        n = n // digit
-    i += 1
+        return False
 
-str_list = 'abcdefghijklmnopqrstuvwxyz'
-ans = ''
-for i in range(len(lista)):
-    ans += str_list[lista[i] - 1]
+    t = end
+    s = route[t]
+    # goalまで流れた量はflow
+    # 逆向きの辺を貼る
+    while s != -1:
+        #s->tのコスト減少，ゼロになるなら辺を削除
+        cost[s][t] -= flow
+        if cost[s][t] == 0:
+            lines[s].remove(t)
+            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
+        if cost[t][s] == 0:
+            lines[t].add(s)
 
-# z
-print(ans)
+        cost[t][s] += flow
 
-#  最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
+        # 一つ上の辺をたどる
+        t = s
+        s = route[t]
 
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
+    return True
 
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
+while True:
+    # ちょびちょび流して行ってゴールまで流れなくなったら終了
+    if Ford_Fulkerson(0, N - 1):
+        continue
+    else:
+        break
 
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
-
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# ABC009 C - 辞書式順序ふたたび
-
-N,K = getNM()
-S = list(input())
-T = sorted(S)
-diff = 0
-ans = ""
-
-for i in range(N):
-    s = S[i]
-    # 残りの文字を全ループさせる
-    for t in T:
-        # tを追加して良いか確かめる
-        diff1 = diff + (s != t)
-        count = Counter(T)
-        count[t] -= 1
-        diff2 = sum((Counter(S[i + 1:]) - count).values())
-        # 追加していいなら
-        if diff1 + diff2 <= K:
-            diff = diff1
-            ans += t
-            T.remove(t)
-            break
 print(ans)
