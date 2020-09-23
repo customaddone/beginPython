@@ -49,27 +49,76 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC004 マーブル
-R, G, B = getNM()
+# 文字列を整数に変換
+N = 26
 
-dp = [[float('inf')] * (R + G + B + 1) for i in range(2001)]
-dp[0][R + G + B] = 0
-
-# 残り個数により置くボールの色が変化する
-# ボールを置くコストも変化する
-def judge(point, ball):
-    if ball > G + B:
-        return abs(point - (-100))
-    elif G + B >= ball > B:
-        return abs(point)
+def num2alpha(num):
+    if num <= 26:
+        return chr(96 + num)
+    elif num % 26 == 0:
+        return num2alpha(num // 26 - 1) + chr(122)
     else:
-        return abs(100 - point)
+        return num2alpha(num // 26) + chr(96 + num % 26)
 
-for i in range(1, 2001):
-    for j in range(R + G + B, -1, -1):
-        if j == R + G + B:
-            dp[i][j] = dp[i - 1][j]
-        else:
-            # i - 1000の地点にj + 1ボールを置き,残りはj個
-            dp[i][j] = min(dp[i - 1][j], dp[i - 1][j + 1] + judge(i - 1000, j + 1))
-print(dp[2000][0])
+# z
+print(num2alpha(N))
+
+n = N
+lista = []
+digit = 26
+i = 0
+
+while n != 0:
+    opt = n % digit
+    lista.insert(0, opt)
+    if n % digit == 0:
+        n = n // digit - 1
+    else:
+        n = n // digit
+    i += 1
+
+str_list = 'abcdefghijklmnopqrstuvwxyz'
+ans = ''
+for i in range(len(lista)):
+    ans += str_list[lista[i] - 1]
+
+# z
+print(ans)
+
+#  最長共通部分列
+s = 'pirikapirirara'
+t = 'poporinapeperuto'
+
+def dfs(s, ts):
+    lens = len(s)
+    lent = len(t)
+    dp = [[0] * (lent + 1) for i in range(lens + 1)]
+    dp[0][0] = 0
+
+    for i in range(lens):
+        for j in range(lent):
+            if s[i] == t[j]:
+                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
+            else:
+                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
+    return dp[lens][lent]
+print(dfs(s, t))
+
+# レーベンシュタイン距離
+s = "pirikapirirara"
+t = "poporinapeperuto"
+
+def dfs(s, t):
+    lens = len(s)
+    lent = len(t)
+    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
+    dp[0][0] = 0
+
+    for i in range(lens):
+        for j in range(lent):
+            if s[i] == t[j]:
+                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
+            else:
+                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
+    return dp[lens][lent]
+print(dfs(s, t))
