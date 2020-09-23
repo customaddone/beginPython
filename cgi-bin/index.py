@@ -49,76 +49,99 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# dfs部分和問題
-def dfs(i, sum):
-    if i == N:
-        return sum == K
-    if dfs(i + 1, sum):
-        return True
-    if dfs(i + 1, sum + A[i]):
-        return True
-    return False
+# ABC037 D - 経路
+H, W = getNM()
+maze = []
+for i in range(H):
+    m = getList()
+    maze.append(m)
 
-N, K = map(int, input().split())
-A = list(map(int, input().split()))
+memo = [[-1] * W for i in range(H)]
 
-if dfs(0, 0):
-    print("Yes")
-else:
-    print("No")
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
-# dfsナップサック
-def rec_memo(i, j):
-    if dp[i][j]:
-        return dp[i][j]
-    if i == N:
-        res = 0
-    elif j < w[i]:
-        res = rec_memo(i + 1, j)
-    else:
-        res = max(rec_memo(i + 1, j), rec_memo(i + 1, j - w[i]) + v[i])
-    dp[i][j] = res
+# ぐるぐる回るやつはdfs
+def dfs(x, y):
+    if memo[y][x] != -1:
+        return memo[y][x]
+
+    res = 1
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] > maze[y][x]:
+            res += dfs(nx, ny)
+            res %= mod
+
+    memo[y][x] = res
     return res
 
-N = 4
-w = [2, 1, 3, 2]
-v = [3, 2, 4, 2]
+ans = 0
+for i in range(H):
+    for j in range(W):
+        ans += dfs(j, i)
+        ans %= mod
 
-W = 5
-dp = [[0] * (W + 1) for i in range(N + 1)]  # メモ化テーブル
-print(rec_memo(0, W))
+print(ans % mod)
 
-# 個数制限あり（３個）重複なし再帰
-N, X = getNM()
-lista = [i for i in range(1, N + 1)]
-dp = [[0] * (N + 1) for i in range(N)]
+maze = [
+    [9,9,9,9,9,9,9,9,9,9,9,9],
+    [9,0,0,0,9,0,0,0,0,0,0,9],
+    [9,0,9,0,0,0,9,9,0,9,9,9],
+    [9,0,9,9,0,9,0,0,0,9,0,9],
+    [9,0,0,0,9,0,0,9,9,0,9,9],
+    [9,9,9,0,0,9,0,9,0,0,0,9],
+    [9,0,0,0,9,0,9,0,0,9,1,9],
+    [9,0,9,0,0,0,0,9,0,0,9,9],
+    [9,0,0,9,0,9,0,0,9,0,0,9],
+    [9,0,9,0,9,0,9,0,0,9,0,9],
+    [9,0,0,0,0,0,0,9,0,0,0,9],
+    [9,9,9,9,9,9,9,9,9,9,9,9]
+]
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
+ans = 100000
+
+def dfs(x, y, depth):
+    global ans
+    if maze[y][x] == 1:
+        ans = min(ans, depth)
+    maze[y][x] = 2
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if maze[ny][nx] < 2:
+            dfs(nx, ny, depth + 1)
+    maze[y][x] = 0
+
+dfs(1, 1, 0)
+print(ans)
+
+m = int(input())
+n = int(input())
+maze = []
+for i in range(n):
+    maze.append(list(map(int, input().split())))
+dx = [0, 1, 0, -1]
+dy = [1, 0, -1, 0]
 ans = 0
 
-def rec_memo(i, plus, sum):
+# 最長距離を求める
+def dfs(x, y, depth):
     global ans
-    if i == N or plus == 3:
-        if plus == 3:
-            print([i, sum])
-            ans += (sum == 0)
-    elif sum < lista[i]:
-        rec_memo(i + 1, plus, sum)
-    else:
-        rec_memo(i + 1, plus, sum)
-        rec_memo(i + 1, plus + 1, sum - lista[i])
-rec_memo(0, 0, X)
+    maze[y][x] = 0
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if 0 <= nx < m and 0 <= ny < n and maze[ny][nx] == 1:
+            dfs(nx, ny, depth + 1)
+    maze[y][x] = 1
+    ans = max(ans, depth)
 
-# 個数制限なし重複あり再帰部分和
-# 1 + 3 と3 + 1 と1 + 1 + 1 + 1は違う通りになる
-# dfs使った方がいい
-def dfs(now, sum):
-    if sum <= 0:
-        return sum == 0
-    res = 0
-    for i in range(now, W):
-        res += dfs(i, sum - a[i])
-    return res
-
-a = [1, 3, 5, 7, 9]
-W = len(a)
-A = 9
-print(dfs(0, A))
+for i in range(m):
+    for j in range(n):
+        if maze[j][i] == 1:
+            dfs(i, j, 1)
+# TLEにならないんですかこれ
+print(ans)
