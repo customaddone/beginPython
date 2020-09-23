@@ -49,106 +49,239 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC004 マーブル
-# ベルマンフォード式最小
+A = [3, 4, -8]
+# array内の連続する区間の総和
+def imos_sum(A):
+    n = len(A)
+    imos = [0]
+    for i in range(n):
+        imos.append(imos[i] + A[i])
+    for i in range(n):
+        for j in range(i + 1, n + 1):
+            print(imos[j] - imos[i])
+imos_sum(A)
 
-# 全てのボールを全て違う箱に入れる
-# 地点からi離れたところに置くためにはi回試行が必要
+# roopする配列の長さk以下の区間和
+def roop_imos(array, k):
+    n = len(array)
+    alta = copy.deepcopy(array)
+    alta += alta
+    imos = [0]
+    for i in range(len(alta)):
+        imos.append(imos[i] + alta[i])
+    for i in range(n):
+        for j in range(1, k + 1):
+            print(imos[i + j] - imos[i])
+# roop_imos(A, 2)
 
-# 原点pのボールを(s, e)に一列に置くときの試行回数
-def counter(s, e, p):
-    sp = abs(s - p)
-    ep = abs(e - p)
-    if e < p:
-        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
-    elif s <= p <= e:
-        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
-    else:
-        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
+# ABC005 D - おいしいたこ焼きの焼き方
+N = getN()
+maze = [getList() for i in range(N)]
+Q = getN()
+query = getArray(Q)
 
-# 全範囲を探索すると微妙に間に合わない
-# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
-# 緑がこの位置にある時、赤の最適な置き方は...
-# 緑がこの位置にある時、青の最適な置き方は...
-# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
+# 二次元累積和
+dp = [[0] * N for i in range(N)]
+# 縦１行目、横１行目
+for i in range(N):
+    dp[i][0] = maze[i][0]
+for i in range(N):
+    for j in range(1, N):
+        dp[i][j] = dp[i][j - 1] + maze[i][j]
+# 全て
+for i in range(1, N):
+    for j in range(N):
+        dp[i][j] += dp[i - 1][j]
 
-class MinCostFlow:
-    """ 最小費用流(ベルマンフォード版、負コストに対応可) """
+# 採点マシーン
+def judge(sx, sy, ex, ey):
+    mother = dp[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
 
-    INF = 10 ** 18
+# 「大きさNの時の美味しさ」のリスト
+anslist = [0] * (N ** 2 + 1)
+for nsx in range(N):
+    for nex in range(nsx, N):
+        for nsy in range(N):
+            for ney in range(nsy, N):
+                opt = judge(nsx, nsy, nex, ney)
+                #print(opt, [nsx, nsy, nex, ney])
+                index = (nex - nsx + 1) * (ney - nsy + 1)
+                anslist[index] = max(anslist[index], opt)
 
-    def __init__(self, N):
-        self.N = N
-        self.G = [[] for i in range(N)]
+# 「大きさN以下の時の美味しさ」のリスト
+ans_alta = [0] * (N ** 2 + 1)
+for i in range(1, len(ans_alta)):
+    ans_alta[i] = max(ans_alta[i - 1], anslist[i])
 
-    def add_edge(self, fr, to, cap, cost):
-        G = self.G
-        G[fr].append([to, cap, cost, len(G[to])])
-        G[to].append([fr, 0, -cost, len(G[fr])-1])
+for i in query:
+    print(ans_alta[i])
 
-    def flow(self, s, t, f):
+H, W = 3, 4
+# maze = [getList() for i in range(H)]
+maze = [
+[1, 2, 1, 2],
+[2, 3, 2, 3],
+[1, 3, 1, 3]
+]
 
-        N = self.N; G = self.G
-        INF = MinCostFlow.INF
+# 二次元累積和
+dp_sum = [[0] * W for i in range(H)]
+dp_1 = [[0] * W for i in range(H)]
+dp_2 = [[0] * W for i in range(H)]
+dp_3 = [[0] * W for i in range(H)]
 
-        res = 0
-        prv_v = [0] * N
-        prv_e = [0] * N
+# x = 0 ~ i, y = 0 ~ j までの数の合計
+def bi_cumul_sum(dp_n):
+    # 縦１行目、横１行目
+    for i in range(H):
+        dp_n[i][0] = maze[i][0]
+    for i in range(H):
+        for j in range(1, W):
+            dp_n[i][j] = dp_n[i][j - 1] + maze[i][j]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_n[i][j] += dp_n[i - 1][j]
+bi_cumul_sum(dp_sum)
+# print(dp_sum)
 
-        while f:
-            dist = [INF] * N
-            dist[s] = 0
-            update = True
+# x = 0 ~ i, y = 0 ~ j までに出るnumの回数の合計
+def bi_cumul_cnt(num, dp_m):
+    # 縦１行目、横１行目
+    for i in range(H):
+        if maze[i][0] == num:
+            dp_m[i][0] = 1
+    for i in range(H):
+        for j in range(1, W):
+            if maze[i][j] == num:
+                dp_m[i][j] = dp_m[i][j - 1] + 1
+            else:
+                dp_m[i][j] = dp_m[i][j - 1]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_m[i][j] += dp_m[i - 1][j]
+bi_cumul_cnt(3, dp_3)
+# print(dp_1)
 
-            while update:
-                update = False
-                for v in range(N):
-                    if dist[v] == INF:
-                        continue
-                    for i, (to, cap, cost, _) in enumerate(G[v]):
-                        if cap > 0 and dist[to] > dist[v] + cost:
-                            dist[to] = dist[v] + cost
-                            prv_v[to] = v; prv_e[to] = i
-                            update = True
-            if dist[t] == INF:
-                return -1
+# x = sx ~ ex y = sy ~ eyまで
+def judge(sx, sy, ex, ey, dp_l):
+    mother = dp_l[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp_l[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp_l[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp_l[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
 
-            d = f; v = t
-            while v != s:
-                d = min(d, G[prv_v[v]][prv_e[v]][1])
-                v = prv_v[v]
-            f -= d
-            res += d * dist[t]
-            v = t
-            while v != s:
-                e = G[prv_v[v]][prv_e[v]]
-                e[1] -= d
-                G[v][e[3]][1] += d
-                v = prv_v[v]
-        return res
+print(judge(1, 1, 3, 2, dp_sum))
+print(judge(2, 1, 3, 2, dp_3))
 
-R, G, B = getNM()
-N = R + G + B
+N, M, Q = 10, 3, 2
+query = [
+[1, 5],
+[2, 8],
+[7, 10],
+[1, 7],
+[3, 10]
+]
 
-# 最小費用流
-mcf = MinCostFlow(1006)
-# 始点からRGBの移動前
-# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
-mcf.add_edge(1001, 1002, R, 0)
-mcf.add_edge(1001, 1003, G, 0)
-mcf.add_edge(1001, 1004, B, 0)
+# l から rまで行く鉄道の数
+lr = [[0 for i in range(N + 1)] for j in range(N + 1)]
+# l から r以前のどこかまで行く鉄道の数
+imos = [[0 for i in range(N + 1)] for j in range(N + 1)]
+imos2 = [[0 for i in range(N + 1)] for j in range(N + 1)]
 
-# 0~1000の頂点番号は座標位置と一致させてある
-# 各頂点1個まで通れる
-for v in range(1001):
-    # R => 各座標
-    mcf.add_edge(1002, v, 1, abs(400-v))
-    # G => 各座標
-    mcf.add_edge(1003, v, 1, abs(500-v))
-    # B => 各座標
-    mcf.add_edge(1004, v, 1, abs(600-v))
-    # 各座標 => 終点(1005)
-    mcf.add_edge(v, 1005, 1, 0)
+for i in query:
+    l, r = i
+    lr[l][r] += 1
 
-# N個のボールを送るための最小費用
-print(mcf.flow(1001, 1005, N))
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # j - 1以前のどこかまで行くもの　+ jまで行くもの
+        imos[i][j] = imos[i][j - 1] + lr[i][j]
+
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # i - 1以前のどこかからスタート + iスタート
+        imos2[i][j] = imos2[i - 1][j] + lr[i][j]
+
+print(imos2)
+
+"""
+# 飛ばし累積和
+N = 10
+num = [i for i in range(1, N + 1)]
+D = 2
+lista = [0] * N
+for i in range(D):
+    for j in range(i, N, D):
+        if j == i:
+            lista[j] = num[j]
+        else:
+            lista[j] = num[j] + lista[j - D]
+# [1, 2, 4, 6, 9, 12, 16, 20, 25, 30]
+print(lista)
+# 9番目までの奇数の数字の合計 - 1番目までの奇数の数字の合計
+# 3 + 5 + 7 + 9
+print(lista[8] - lista[0])
+"""
+
+# Dかそれぞれのqueryで固定なのでこの問題は解ける
+H, W, D = getNM()
+maze = []
+for i in range(H):
+    a = getList()
+    maze.append(a)
+Q = getN()
+# piece[0]からpiece[1]まで
+# 4 → 6　→ 8
+piece = []
+for i in range(Q):
+    l, r = getNM()
+    piece.append([l, r])
+
+place_list = [[-1, -1] for i in range(H * W)]
+
+for y in range(H):
+    for x in range(W):
+        place_list[maze[y][x] - 1] = [x, y]
+
+# 飛ばし累積和
+x_plus = [0] * (H * W)
+y_plus = [0] * (H * W)
+for i in range(D):
+    for j in range(i, H * W, D):
+        if j == i:
+            opt_x = 0
+            opt_y = 0
+        else:
+            opt_x = abs(place_list[j][0] - place_list[j - D][0])
+            opt_y = abs(place_list[j][1] - place_list[j - D][1])
+            x_plus[j] = opt_x + x_plus[j - D]
+            y_plus[j] = opt_y + y_plus[j - D]
+
+def past_exam(piece_query):
+    start = piece_query[0]
+    goal = piece_query[1]
+
+    x_point = x_plus[goal - 1] - x_plus[start - 1]
+    y_point = y_plus[goal - 1] - y_plus[start - 1]
+    return x_point + y_point
+
+for i in range(Q):
+    print(past_exam(piece[i]))
