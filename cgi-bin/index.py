@@ -49,83 +49,21 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-"""
+'''
+区間最小区間更新
 #####segfunc#####
 def segfunc(x, y):
     return min(x, y)
 #################
 
 #####ide_ele#####
-ide_ele = float('inf')
+ide_ele = 2**31 - 1
 #################
 
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-
-    def query(self, l, r):
-        res = self.ide_ele
-
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-
-N, M = getNM()
-seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
-L = [getList() for i in range(N)]
-L.sort()
-seg.update(0, 0)
-
-# [0, 1, 2, 3, 4, 5]
-# seg.query(0, 2): [0, 1]の最小値
-# seg.query(2, 2 + 1): [2]の最小値
-# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
-for l, r, c in L:
-    opt = seg.query(l, r)
-    vs = seg.query(r, r + 1)
-    seg.update(r, min(vs, opt + c))
-print(seg.query(M, M + 1))
-"""
-
-'''
-#####segfunc#####
-def segfunc(x, y):
-    return x * y
-#################
-
-#####ide_ele#####
-ide_ele = 1
-#################
-
-class SegTree:
+class LazySegmentTree:
     """
     init(init_val, ide_ele): 配列init_valで初期化 O(N)
-    update(k, x): k番目の値をxに更新 O(logN)
+    update(l, r, x): 区間[l, r)をxに更新 O(logN)
     query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
     """
     def __init__(self, init_val, segfunc, ide_ele):
@@ -133,33 +71,83 @@ class SegTree:
         init_val: 配列の初期値
         segfunc: 区間にしたい操作
         ide_ele: 単位元
-        n: 要素数
         num: n以上の最小の2のべき乗
-        tree: セグメント木(1-index)
+        data: 値配列(1-index)
+        lazy: 遅延配列(1-index)
         """
         n = len(init_val)
         self.segfunc = segfunc
         self.ide_ele = ide_ele
         self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
+        self.data = [ide_ele] * 2 * self.num
+        self.lazy = [None] * 2 * self.num
         # 配列の値を葉にセット
         for i in range(n):
-            self.tree[self.num + i] = init_val[i]
+            self.data[self.num + i] = init_val[i]
         # 構築していく
         for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
 
-    def update(self, k, x):
+    def gindex(self, l, r):
+            """
+            伝搬する対象の区間を求める
+            lm: 伝搬する必要のある最大の左閉区間
+            rm: 伝搬する必要のある最大の右開区間
+            """
+            l += self.num
+            r += self.num
+            lm = l >> (l & -l).bit_length()
+            rm = r >> (r & -r).bit_length()
+
+            while r > l:
+                if l <= lm:
+                    yield l
+                if r <= rm:
+                    yield r
+                r >>= 1
+                l >>= 1
+            while l:
+                yield l
+                l >>= 1
+
+    def propagates(self, *ids):
         """
-        k番目の値をxに更新
-        k: index(0-index)
+        遅延伝搬処理
+        ids: 伝搬する対象の区間
+        """
+        for i in reversed(ids):
+            v = self.lazy[i]
+            if v is None:
+                continue
+            self.lazy[2 * i] = v
+            self.lazy[2 * i + 1] = v
+            self.data[2 * i] = v
+            self.data[2 * i + 1] = v
+            self.lazy[i] = None
+
+    def update(self, l, r, x):
+        """
+        区間[l, r)の値をxに更新
+        l, r: index(0-index)
         x: update value
         """
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
+        *ids, = self.gindex(l, r)
+        self.propagates(*ids)
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                self.lazy[l] = x
+                self.data[l] = x
+                l += 1
+            if r & 1:
+                self.lazy[r - 1] = x
+                self.data[r - 1] = x
+            r >>= 1
+            l >>= 1
+        for i in ids:
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
+
 
     def query(self, l, r):
         """
@@ -167,60 +155,148 @@ class SegTree:
         l: index(0-index)
         r: index(0-index)
         """
+        *ids, = self.gindex(l, r)
+        self.propagates(*ids)
+
         res = self.ide_ele
 
         l += self.num
         r += self.num
         while l < r:
             if l & 1:
-                res = self.segfunc(res, self.tree[l])
+                res = self.segfunc(res, self.data[l])
                 l += 1
             if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
+                res = self.segfunc(res, self.data[r - 1])
             l >>= 1
             r >>= 1
         return res
 
-N = 7
-s = 'abcdbbd'
-Q = 6
-query = [
-[2, 3, 6],
-[1, 5, 'z'],
-[2, 1, 1],
-[1, 4, 'a'],
-[1, 7, 'd'],
-[2, 1, 7]
-]
+a = [1, 2, 3, 4, 5]
+seg = LazySegmentTree(a, segfunc, ide_ele)
+seg.update(0, 3, 2)
+print(seg.query(0, 3))
+'''
 
-S = []
-for i in s:
-    # 面倒なので文字を数値化
-	S.append(ord(i) - ord("a"))
+'''
+区間最小区間加算
+#####segfunc#####
+def segfunc(x, y):
+    return min(x, y)
+#################
 
-seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
+#####ide_ele#####
+ide_ele = 2**31 - 1
+#################
 
-# 入力
-for i in range(N):
-	seg[S[i]].update(i, 0)
+class LazySegmentTree:
+    """
+    init(init_val, ide_ele): 配列init_valで初期化 O(N)
+    add(l, r, x): 区間[l, r)にxを加算 O(logN)
+    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
+    """
+    def __init__(self, init_val, segfunc, ide_ele):
+        """
+        init_val: 配列の初期値
+        segfunc: 区間にしたい操作
+        ide_ele: 単位元
+        num: n以上の最小の2のべき乗
+        data: 値配列(1-index)
+        lazy: 遅延配列(1-index)
+        """
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.data = [ide_ele] * 2 * self.num
+        self.lazy = [0] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.data[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
 
-for i in range(Q):
-    a, b, c = query[i]
-    if int(a) == 1:
-        b = int(b) - 1
-        # Sのb番目にある文字をupdate
-        seg[S[b]].update(b, 1)
-        t = ord(c) - ord("a")
-        seg[t].update(b, 0)
-        S[b] = t
-    else:
-        b = int(b) - 1
-        c = int(c)
-        cnt = 0
-        for se in seg:
-            # 1 * 1 * 0 * 1 *...
-            # 区間内に一つでも0があれば0
-            if se.query(b, c) == 0:
-                cnt += 1
-        print(cnt)
+    def gindex(self, l, r):
+            """
+            伝搬する対象の区間を求める
+            lm: 伝搬する必要のある最大の左閉区間
+            rm: 伝搬する必要のある最大の右開区間
+            """
+            l += self.num
+            r += self.num
+            lm = l >> (l & -l).bit_length()
+            rm = r >> (r & -r).bit_length()
+
+            while r > l:
+                if l <= lm:
+                    yield l
+                if r <= rm:
+                    yield r
+                r >>= 1
+                l >>= 1
+            while l:
+                yield l
+                l >>= 1
+
+    def propagates(self, *ids):
+        """
+        遅延伝搬処理
+        ids: 伝搬する対象の区間
+        """
+        for i in reversed(ids):
+            v = self.lazy[i]
+            if not v:
+                continue
+            self.lazy[2 * i] += v
+            self.lazy[2 * i + 1] += v
+            self.data[2 * i] += v
+            self.data[2 * i + 1] += v
+            self.lazy[i] = 0
+
+    def add(self, l, r, x):
+        """
+        区間[l, r)の値にxを加算
+        l, r: index(0-index)
+        x: additional value
+        """
+        *ids, = self.gindex(l, r)
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                self.lazy[l] += x
+                self.data[l] += x
+                l += 1
+            if r & 1:
+                self.lazy[r - 1] += x
+                self.data[r - 1] += x
+            r >>= 1
+            l >>= 1
+        for i in ids:
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1]) + self.lazy[i]
+
+
+    def query(self, l, r):
+        """
+        [l, r)のsegfuncしたものを得る
+        l: index(0-index)
+        r: index(0-index)
+        """
+        *ids, = self.gindex(l, r)
+        self.propagates(*ids)
+
+        res = self.ide_ele
+
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.data[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.data[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
 '''
