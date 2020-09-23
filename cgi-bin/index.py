@@ -49,18 +49,76 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC006 D - トランプ挿入ソート
-n = getN()
-lista = [getList() for i in range(n)]
+# dfs部分和問題
+def dfs(i, sum):
+    if i == N:
+        return sum == K
+    if dfs(i + 1, sum):
+        return True
+    if dfs(i + 1, sum + A[i]):
+        return True
+    return False
 
-# 最長増加部分列問題 (LIS)の問題
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-print(n - lis(lista))
+N, K = map(int, input().split())
+A = list(map(int, input().split()))
+
+if dfs(0, 0):
+    print("Yes")
+else:
+    print("No")
+
+# dfsナップサック
+def rec_memo(i, j):
+    if dp[i][j]:
+        return dp[i][j]
+    if i == N:
+        res = 0
+    elif j < w[i]:
+        res = rec_memo(i + 1, j)
+    else:
+        res = max(rec_memo(i + 1, j), rec_memo(i + 1, j - w[i]) + v[i])
+    dp[i][j] = res
+    return res
+
+N = 4
+w = [2, 1, 3, 2]
+v = [3, 2, 4, 2]
+
+W = 5
+dp = [[0] * (W + 1) for i in range(N + 1)]  # メモ化テーブル
+print(rec_memo(0, W))
+
+# 個数制限あり（３個）重複なし再帰
+N, X = getNM()
+lista = [i for i in range(1, N + 1)]
+dp = [[0] * (N + 1) for i in range(N)]
+ans = 0
+
+def rec_memo(i, plus, sum):
+    global ans
+    if i == N or plus == 3:
+        if plus == 3:
+            print([i, sum])
+            ans += (sum == 0)
+    elif sum < lista[i]:
+        rec_memo(i + 1, plus, sum)
+    else:
+        rec_memo(i + 1, plus, sum)
+        rec_memo(i + 1, plus + 1, sum - lista[i])
+rec_memo(0, 0, X)
+
+# 個数制限なし重複あり再帰部分和
+# 1 + 3 と3 + 1 と1 + 1 + 1 + 1は違う通りになる
+# dfs使った方がいい
+def dfs(now, sum):
+    if sum <= 0:
+        return sum == 0
+    res = 0
+    for i in range(now, W):
+        res += dfs(i, sum - a[i])
+    return res
+
+a = [1, 3, 5, 7, 9]
+W = len(a)
+A = 9
+print(dfs(0, A))
