@@ -49,99 +49,178 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC037 D - 経路
-H, W = getNM()
-maze = []
-for i in range(H):
-    m = getList()
-    maze.append(m)
+"""
+#####segfunc#####
+def segfunc(x, y):
+    return min(x, y)
+#################
 
-memo = [[-1] * W for i in range(H)]
+#####ide_ele#####
+ide_ele = float('inf')
+#################
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+class SegTree:
+    def __init__(self, init_val, segfunc, ide_ele):
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
 
-# ぐるぐる回るやつはdfs
-def dfs(x, y):
-    if memo[y][x] != -1:
-        return memo[y][x]
+    def update(self, k, x):
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
 
-    res = 1
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] > maze[y][x]:
-            res += dfs(nx, ny)
-            res %= mod
+    def query(self, l, r):
+        res = self.ide_ele
 
-    memo[y][x] = res
-    return res
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
 
-ans = 0
-for i in range(H):
-    for j in range(W):
-        ans += dfs(j, i)
-        ans %= mod
+N, M = getNM()
+seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
+L = [getList() for i in range(N)]
+L.sort()
+seg.update(0, 0)
 
-print(ans % mod)
+# [0, 1, 2, 3, 4, 5]
+# seg.query(0, 2): [0, 1]の最小値
+# seg.query(2, 2 + 1): [2]の最小値
+# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
+for l, r, c in L:
+    opt = seg.query(l, r)
+    vs = seg.query(r, r + 1)
+    seg.update(r, min(vs, opt + c))
+print(seg.query(M, M + 1))
+"""
 
-maze = [
-    [9,9,9,9,9,9,9,9,9,9,9,9],
-    [9,0,0,0,9,0,0,0,0,0,0,9],
-    [9,0,9,0,0,0,9,9,0,9,9,9],
-    [9,0,9,9,0,9,0,0,0,9,0,9],
-    [9,0,0,0,9,0,0,9,9,0,9,9],
-    [9,9,9,0,0,9,0,9,0,0,0,9],
-    [9,0,0,0,9,0,9,0,0,9,1,9],
-    [9,0,9,0,0,0,0,9,0,0,9,9],
-    [9,0,0,9,0,9,0,0,9,0,0,9],
-    [9,0,9,0,9,0,9,0,0,9,0,9],
-    [9,0,0,0,0,0,0,9,0,0,0,9],
-    [9,9,9,9,9,9,9,9,9,9,9,9]
+'''
+#####segfunc#####
+def segfunc(x, y):
+    return x * y
+#################
+
+#####ide_ele#####
+ide_ele = 1
+#################
+
+class SegTree:
+    """
+    init(init_val, ide_ele): 配列init_valで初期化 O(N)
+    update(k, x): k番目の値をxに更新 O(logN)
+    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
+    """
+    def __init__(self, init_val, segfunc, ide_ele):
+        """
+        init_val: 配列の初期値
+        segfunc: 区間にしたい操作
+        ide_ele: 単位元
+        n: 要素数
+        num: n以上の最小の2のべき乗
+        tree: セグメント木(1-index)
+        """
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+
+    def update(self, k, x):
+        """
+        k番目の値をxに更新
+        k: index(0-index)
+        x: update value
+        """
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
+
+    def query(self, l, r):
+        """
+        [l, r)のsegfuncしたものを得る
+        l: index(0-index)
+        r: index(0-index)
+        """
+        res = self.ide_ele
+
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
+
+N = 7
+s = 'abcdbbd'
+Q = 6
+query = [
+[2, 3, 6],
+[1, 5, 'z'],
+[2, 1, 1],
+[1, 4, 'a'],
+[1, 7, 'd'],
+[2, 1, 7]
 ]
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-ans = 100000
 
-def dfs(x, y, depth):
-    global ans
-    if maze[y][x] == 1:
-        ans = min(ans, depth)
-    maze[y][x] = 2
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if maze[ny][nx] < 2:
-            dfs(nx, ny, depth + 1)
-    maze[y][x] = 0
+S = []
+for i in s:
+    # 面倒なので文字を数値化
+	S.append(ord(i) - ord("a"))
 
-dfs(1, 1, 0)
-print(ans)
+seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
 
-m = int(input())
-n = int(input())
-maze = []
-for i in range(n):
-    maze.append(list(map(int, input().split())))
-dx = [0, 1, 0, -1]
-dy = [1, 0, -1, 0]
-ans = 0
+# 入力
+for i in range(N):
+	seg[S[i]].update(i, 0)
 
-# 最長距離を求める
-def dfs(x, y, depth):
-    global ans
-    maze[y][x] = 0
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if 0 <= nx < m and 0 <= ny < n and maze[ny][nx] == 1:
-            dfs(nx, ny, depth + 1)
-    maze[y][x] = 1
-    ans = max(ans, depth)
-
-for i in range(m):
-    for j in range(n):
-        if maze[j][i] == 1:
-            dfs(i, j, 1)
-# TLEにならないんですかこれ
-print(ans)
+for i in range(Q):
+    a, b, c = query[i]
+    if int(a) == 1:
+        b = int(b) - 1
+        # Sのb番目にある文字をupdate
+        seg[S[b]].update(b, 1)
+        t = ord(c) - ord("a")
+        seg[t].update(b, 0)
+        S[b] = t
+    else:
+        b = int(b) - 1
+        c = int(c)
+        cnt = 0
+        for se in seg:
+            # 1 * 1 * 0 * 1 *...
+            # 区間内に一つでも0があれば0
+            if se.query(b, c) == 0:
+                cnt += 1
+        print(cnt)
+'''
