@@ -49,33 +49,93 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC002 派閥 
-# 条件
-# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
-# (i, j)がqueryに含まれる
+# プリム法
+n = 7
+edge = [
+[[1, 1]],
+[[1, 0], [2, 2], [3, 3], [7, 4]],
+[[2, 1], [10, 5]],
+[[3, 1], [1, 4], [5, 6]],
+[[7, 1], [1, 3], [8, 6], [5, 5]],
+[[10, 2], [5, 4]],
+[[5, 3], [8, 4]]
+]
 
-# この人数nの最大値を求める
+def prim_heap():
+    used = [1] * n #True:未使用
 
-# 集合Aの取り方は？
-# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
-N, M = getNM()
-mem = set()
-for i in range(M):
-    a, b = getNM()
-    mem.add((a - 1, b - 1))
+    edgelist = []
+    for e in edge[0]:
+        heapq.heappush(edgelist,e)
 
-ans = 0
-for bit in range(1 << N):
-    # 任意のi, jについてqueryに含まれているか判定
-    flag = True
-    for i in range(N):
-        for j in range(i + 1, N):
-            # 適当に選んだ２人がbitの中に含まれていれば
-            if bit & (1 << i) and bit & (1 << j):
-                if not (i, j) in mem:
-                    flag = False
-    # もし集合bitが条件を満たすなら人数を調べる
-    if flag:
-        opt = bin(bit).count('1')
-        ans = max(ans, opt)
-print(ans)
+    used[0] = 0
+    res = 0
+
+    while len(edgelist) != 0:
+        minedge = heapq.heappop(edgelist)
+        # もし使用済なら飛ばす
+        if not used[minedge[1]]:
+            continue
+
+        # 距離最小のものを使用する
+        # エッジを一つ使うたびに頂点を消す
+        # これをN - 1回繰り返す
+        v = minedge[1]
+        used[v] = 0
+
+        for e in edge[v]:
+            if used[e[1]]:
+                heapq.heappush(edgelist,e)
+        res += minedge[0]
+
+    return res
+
+print(prim_heap())
+
+# クラスカル法
+
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
+
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
+
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+
+        if x == y:
+            return
+
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+V, E = map(int, input().split())
+edges = []
+for i in range(E):
+    s, t, w = map(int, input().split())
+    edges.append((w, s, t))
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(V, edges))
