@@ -49,93 +49,27 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# プリム法
-n = 7
-edge = [
-[[1, 1]],
-[[1, 0], [2, 2], [3, 3], [7, 4]],
-[[2, 1], [10, 5]],
-[[3, 1], [1, 4], [5, 6]],
-[[7, 1], [1, 3], [8, 6], [5, 5]],
-[[10, 2], [5, 4]],
-[[5, 3], [8, 4]]
-]
+# ABC004 マーブル
+R, G, B = getNM()
 
-def prim_heap():
-    used = [1] * n #True:未使用
+dp = [[float('inf')] * (R + G + B + 1) for i in range(2001)]
+dp[0][R + G + B] = 0
 
-    edgelist = []
-    for e in edge[0]:
-        heapq.heappush(edgelist,e)
+# 残り個数により置くボールの色が変化する
+# ボールを置くコストも変化する
+def judge(point, ball):
+    if ball > G + B:
+        return abs(point - (-100))
+    elif G + B >= ball > B:
+        return abs(point)
+    else:
+        return abs(100 - point)
 
-    used[0] = 0
-    res = 0
-
-    while len(edgelist) != 0:
-        minedge = heapq.heappop(edgelist)
-        # もし使用済なら飛ばす
-        if not used[minedge[1]]:
-            continue
-
-        # 距離最小のものを使用する
-        # エッジを一つ使うたびに頂点を消す
-        # これをN - 1回繰り返す
-        v = minedge[1]
-        used[v] = 0
-
-        for e in edge[v]:
-            if used[e[1]]:
-                heapq.heappush(edgelist,e)
-        res += minedge[0]
-
-    return res
-
-print(prim_heap())
-
-# クラスカル法
-
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
-
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
+for i in range(1, 2001):
+    for j in range(R + G + B, -1, -1):
+        if j == R + G + B:
+            dp[i][j] = dp[i - 1][j]
         else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
-
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
-
-        if x == y:
-            return
-
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
-
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-V, E = map(int, input().split())
-edges = []
-for i in range(E):
-    s, t, w = map(int, input().split())
-    edges.append((w, s, t))
-edges.sort()
-
-def kruskal(n, edges):
-    U = UnionFind(n)
-    res = 0
-    for e in edges:
-        w, s, t = e
-        if not U.same(s, t):
-            res += w
-            U.union(s, t)
-    return res
-print(kruskal(V, edges))
+            # i - 1000の地点にj + 1ボールを置き,残りはj個
+            dp[i][j] = min(dp[i - 1][j], dp[i - 1][j + 1] + judge(i - 1000, j + 1))
+print(dp[2000][0])
