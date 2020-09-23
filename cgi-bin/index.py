@@ -49,76 +49,106 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 文字列を整数に変換
-N = 26
+# ABC004 マーブル
+# ベルマンフォード式最小
 
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
+# 全てのボールを全て違う箱に入れる
+# 地点からi離れたところに置くためにはi回試行が必要
+
+# 原点pのボールを(s, e)に一列に置くときの試行回数
+def counter(s, e, p):
+    sp = abs(s - p)
+    ep = abs(e - p)
+    if e < p:
+        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
+    elif s <= p <= e:
+        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
     else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
+        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
 
-# z
-print(num2alpha(N))
+# 全範囲を探索すると微妙に間に合わない
+# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
+# 緑がこの位置にある時、赤の最適な置き方は...
+# 緑がこの位置にある時、青の最適な置き方は...
+# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
 
-n = N
-lista = []
-digit = 26
-i = 0
+class MinCostFlow:
+    """ 最小費用流(ベルマンフォード版、負コストに対応可) """
 
-while n != 0:
-    opt = n % digit
-    lista.insert(0, opt)
-    if n % digit == 0:
-        n = n // digit - 1
-    else:
-        n = n // digit
-    i += 1
+    INF = 10 ** 18
 
-str_list = 'abcdefghijklmnopqrstuvwxyz'
-ans = ''
-for i in range(len(lista)):
-    ans += str_list[lista[i] - 1]
+    def __init__(self, N):
+        self.N = N
+        self.G = [[] for i in range(N)]
 
-# z
-print(ans)
+    def add_edge(self, fr, to, cap, cost):
+        G = self.G
+        G[fr].append([to, cap, cost, len(G[to])])
+        G[to].append([fr, 0, -cost, len(G[fr])-1])
 
-#  最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
+    def flow(self, s, t, f):
 
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
+        N = self.N; G = self.G
+        INF = MinCostFlow.INF
 
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
+        res = 0
+        prv_v = [0] * N
+        prv_e = [0] * N
 
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
+        while f:
+            dist = [INF] * N
+            dist[s] = 0
+            update = True
 
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
+            while update:
+                update = False
+                for v in range(N):
+                    if dist[v] == INF:
+                        continue
+                    for i, (to, cap, cost, _) in enumerate(G[v]):
+                        if cap > 0 and dist[to] > dist[v] + cost:
+                            dist[to] = dist[v] + cost
+                            prv_v[to] = v; prv_e[to] = i
+                            update = True
+            if dist[t] == INF:
+                return -1
 
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
+            d = f; v = t
+            while v != s:
+                d = min(d, G[prv_v[v]][prv_e[v]][1])
+                v = prv_v[v]
+            f -= d
+            res += d * dist[t]
+            v = t
+            while v != s:
+                e = G[prv_v[v]][prv_e[v]]
+                e[1] -= d
+                G[v][e[3]][1] += d
+                v = prv_v[v]
+        return res
+
+R, G, B = getNM()
+N = R + G + B
+
+# 最小費用流
+mcf = MinCostFlow(1006)
+# 始点からRGBの移動前
+# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
+mcf.add_edge(1001, 1002, R, 0)
+mcf.add_edge(1001, 1003, G, 0)
+mcf.add_edge(1001, 1004, B, 0)
+
+# 0~1000の頂点番号は座標位置と一致させてある
+# 各頂点1個まで通れる
+for v in range(1001):
+    # R => 各座標
+    mcf.add_edge(1002, v, 1, abs(400-v))
+    # G => 各座標
+    mcf.add_edge(1003, v, 1, abs(500-v))
+    # B => 各座標
+    mcf.add_edge(1004, v, 1, abs(600-v))
+    # 各座標 => 終点(1005)
+    mcf.add_edge(v, 1005, 1, 0)
+
+# N個のボールを送るための最小費用
+print(mcf.flow(1001, 1005, N))
