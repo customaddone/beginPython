@@ -49,306 +49,254 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC013 D-阿弥陀
-N, M, D = getNM()
-A = getList()
-A = [x - 1 for x in A]
-
-# 1回阿弥陀を試してみる
-amida = [i for i in range(N)]
-for i in range(M):
-    a1 = amida[A[i]]
-    a2 = amida[A[i] + 1]
-    amida[A[i]] = a2
-    amida[A[i] + 1] = a1
-
-# 逆にする
-amida_alta = [0] * N
-for i in range(N):
-    amida_alta[amida[i]] = i
-
-# ダブリング
-logk = D.bit_length()
-
-doubling = [[-1] * N for _ in range(logk)]
-
-for i in range(N):
-    doubling[0][i] = amida_alta[i]
-
-for i in range(1, logk):
-    for j in range(N):
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-ans = [i for i in range(N)]
-for i in range(logk):
-    for j in range(N):
-        if D & (1 << i):
-            ans[j] = doubling[i][ans[j]]
-
-for i in range(N):
-    print(ans[i] + 1)
-
-# ABC167 teleporter
-N, K = 6, 727202214173249351
-A = [6, 5, 2, 5, 3, 2]
-A = [i - 1 for i in A]
-
-logk = K.bit_length()
-doubling = [[-1] * N for _ in range(logk)]
-
-# ダブリング
-# 2 ** 0は１つ後の行き先
-for i in range(N):
-    doubling[0][i] = A[i]
-for i in range(1, logk):
-    for j in range(N):
-        # doubling[i]はdoubling[i - 1]を２回行えばいい
-        # doubling[i - 1][j]移動してその座標からまたdoubling[i - 1]移動
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-index = 0
-# 各bitごとに移動を行う
-for i in range(logk):
-    if K & (1 << i):
-        index = doubling[i][index]
-print(index + 1)
-
-S = 'RRLLLLRLRRLL'
-N = len(S)
-logk = (10 ** 5).bit_length()
-
-doubling = [[-1] * N for _ in range(logk)]
-
-# １回目の移動
-for i in range(N):
-    doubling[0][i] = i + 1 if S[i] == "R" else i - 1
-
-# 2 ** k回目の移動
-for i in range(1, logk):
-    for j in range(N):
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-ans = [0] * N
-
-# 10 ** 5回ぐらい回せば十分
-for i in range(N):
-    ans[doubling[logk - 1][i]] += 1
-
-print(*ans)
-
-# p307 ダブリング
-N = 3
-M = 10
-que = [
-[0, 3],
-[3, 7],
-[7, 0]
-]
-
-alta = []
-for i in range(N):
-    s, t =  que[i]
-    if s < t:
-        alta.append([s, t])
-        alta.append([s + M, t + M])
-    else:
-        alta.append([s, t + M])
-alta.sort(key = lambda i: i[1])
-
-N = len(alta)
-
-logk = (10 ** 6).bit_length()
-doubling = [[-1] * N for _ in range(logk)]
-for i in range(N):
-    s, t = alta[i]
-    for j in range(i + 1, N):
-        opt_s, opt_t = alta[j]
-        if t <= opt_s:
-            doubling[0][i] = j
-            break
-
-for i in range(1, logk):
-    for j in range(N):
-        # 欄外に飛ぶようなら-1
-        if doubling[i - 1][j] == -1:
-            doubling[i][j] = -1
-        else:
-            doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-ans = 0
-# 区間iからスタート
-for i in range(N):
-    s, t = alta[i]
-    now = i
-    cnt = 1
-    # 超過しないよう大きいものから加算していく
-    for j in range(logk - 1, -1, -1):
-        opt_index = doubling[j][now]
-        # 欄内に収まるかつ始点から距離M以内
-        if opt_index >= 0 and alta[opt_index][1] <= M:
-            now = opt_index
-            cnt += 1 << j
-    ans = max(ans, cnt)
-print(ans)
-
-# ヘンテコ辞書
-# ダブリング不使用ループ
-N, A = getNM()
-K = getN()
-B = getList()
-A -= 1
-B = [i - 1 for i in B]
-
-visited = [-1] * N
-visited[A] = 1
-
-cnt = 1
-to = B[A]
-
-while cnt < K:
-    cnt += 1
-    if visited[to] >= 0:
-        cnt += ((K - cnt) // (cnt - visited[to])) * (cnt - visited[to])
-        visited = [-1] * N
-    visited[to] = cnt
-    to = B[to]
-
-print(to + 1)
-
-class Roop:
-    def __init__(self, array):
-        self.n = len(array)
-        self.array = array
-        # ループ検出
-        self.roops = []
-        # iはどのループのものか
-        self.roop_dict = [-1] * self.n
-        # ループ内の何番目にあるか
-        self.opt_dic = [-1] * self.n
-        ignore = [-1] * self.n
-        cnt = 0
-        for i in range(self.n):
-            if ignore[i] >= 0:
-                continue
-            opt = [i]
-            # opt内の何番目にあるか
-            self.opt_dic[i] = 0
-            c = 1
-            # 探索したらフラグを立てる
-            ignore[i] = cnt
-            # i → array[i]
-            to = array[i]
-            # ループが詰まるまで回す
-            while True:
-                if ignore[to] == cnt:
-                    # 作成してないならループ作成
-                    for j in range(self.opt_dic[to], len(opt)):
-                        self.roop_dict[opt[j]] = cnt
-                    self.roops.append(opt[self.opt_dic[to]:])
-                    # 次のループはcnt + 1番
-                    cnt += 1
-                    break
-                opt.append(to)
-                ignore[to] = cnt
-                self.opt_dic[to] = c
-                c += 1
-                to = array[to]
-
-    # xがどの番号のループにあるか
-    def roop_n(self, x):
-        return self.roop_dict[x]
-
-    # xが入っているループは何か
-    # ループ内になければFalse
-    def inspect(self, x):
-        if self.roop_n(x) == -1:
-            return False
-        return self.roops[self.roop_dict(x)]
-
-    # ループの大きさ
-    def roop_len(self, x):
-        return len(self.roops[self.roop_n(x)])
-
-    # xからk回移動してどの場所に行けるか
-    def move(self, x, k):
-        cnt = k
-        to = x
-        # ループに入る前にどのルートを通ったか
-        # スタート地点から既にループに入っていた場合、headは空になる
-        head = []
-        # ループ脱出後どのルートを通るか
-        tail = []
-        # 何回ループしたか
-        time = -1
-        res = 0
-        while cnt > 0:
-            to = self.array[to]
-            cnt -= 1
-            # まだループしておらず、踏んだ場所がループ内にある場合
-            if time == -1 and self.roop_n(to) >= 0:
-                r = self.roops[self.roop_n(to)]
-                time = (cnt // len(r))
-                cnt -= time * len(r)
-            # ループ前なら
-            if time == -1:
-                head.append(to)
-            # ループ後なら
-            else:
-                tail.append(to)
-        # 例: N, K = 6 727202214173249351
-        # A = [6, 5, 2, 5, 3, 2]の時
-        # 1回目の移動 1 → 6
-        # 2回目の移動 6 → ### ここからループが始まる ### → 2
-        # ... 242400738057749783回ループ
-        # 727202214173249351回目の移動 3 → 2
-        # to, head, tail, time = (1, [5], [1], 242400738057749783)
-        return to
-
-N, A = getNM()
-A -= 1
-K = getN()
-B = [i - 1 for i in getList()]
-roop = Roop(B)
-print(roop.move(A, K) + 1)
-
-"""
-# ABC167 D - Teleporter
-N, K = getNM()
-N -= 1
-A = [i - 1 for i in getList()]
-roop = Roop(A)
-print(roop.move(0, K) + 1)
-"""
-
-"""
-# ABC175 D - Moving Piece
-N, K = getNM()
-P = [i - 1 for i in getList()]
-C = getList()
-# ループ検出
-roop = Roop(P)
-# 各ループごと調べる
-ans = -float('inf')
-for r in roop.roops:
-    n = len(r)
-    # ループに対応するスコアリストを用意
-    alta = []
+A = [3, 4, -8]
+# array内の連続する区間の総和
+def imos_sum(A):
+    n = len(A)
+    imos = [0]
     for i in range(n):
-        alta.append(C[r[i]])
-    # １回ループすると何点getできるか
-    one_roop = sum(alta)
+        imos.append(imos[i] + A[i])
+    for i in range(n):
+        for j in range(i + 1, n + 1):
+            print(imos[j] - imos[i])
+imos_sum(A)
+
+# roopする配列の長さk以下の区間和
+def roop_imos(array, k):
+    n = len(array)
+    alta = copy.deepcopy(array)
     alta += alta
     imos = [0]
     for i in range(len(alta)):
         imos.append(imos[i] + alta[i])
-    t = min(n, K)
     for i in range(n):
-        # 長さ1からtまでの区間の総和の最大値を探索
-        for j in range(1, t + 1):
-            if one_roop >= 0:
-                opt = (imos[i + j] - imos[i]) + ((K - j) // n) * one_roop
+        for j in range(1, k + 1):
+            print(imos[i + j] - imos[i])
+# roop_imos(A, 2)
+
+# ABC005 D - おいしいたこ焼きの焼き方
+N = getN()
+maze = [getList() for i in range(N)]
+Q = getN()
+query = getArray(Q)
+
+# 二次元累積和
+dp = [[0] * N for i in range(N)]
+# 縦１行目、横１行目
+for i in range(N):
+    dp[i][0] = maze[i][0]
+for i in range(N):
+    for j in range(1, N):
+        dp[i][j] = dp[i][j - 1] + maze[i][j]
+# 全て
+for i in range(1, N):
+    for j in range(N):
+        dp[i][j] += dp[i - 1][j]
+
+# 採点マシーン
+def judge(sx, sy, ex, ey):
+    mother = dp[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
+
+# 「大きさNの時の美味しさ」のリスト
+anslist = [0] * (N ** 2 + 1)
+for nsx in range(N):
+    for nex in range(nsx, N):
+        for nsy in range(N):
+            for ney in range(nsy, N):
+                opt = judge(nsx, nsy, nex, ney)
+                #print(opt, [nsx, nsy, nex, ney])
+                index = (nex - nsx + 1) * (ney - nsy + 1)
+                anslist[index] = max(anslist[index], opt)
+
+# 「大きさN以下の時の美味しさ」のリスト
+ans_alta = [0] * (N ** 2 + 1)
+for i in range(1, len(ans_alta)):
+    ans_alta[i] = max(ans_alta[i - 1], anslist[i])
+
+for i in query:
+    print(ans_alta[i])
+
+# ABC014 atcolor
+n = int(input())
+lista = []
+for i in range(n):
+    a, b = map(int, input().split())
+    lista.append([a, b])
+listb = [0] * (10 ** 6 + 2)
+for i in lista:
+    listb[i[0]] += 1
+    listb[i[1] + 1] -= 1
+listc = [0]
+for i in range(10 ** 6 + 2):
+    listc.append(listb[i] + listc[i])
+print(max(listc))
+
+H, W = 3, 4
+# maze = [getList() for i in range(H)]
+maze = [
+[1, 2, 1, 2],
+[2, 3, 2, 3],
+[1, 3, 1, 3]
+]
+
+# 二次元累積和
+dp_sum = [[0] * W for i in range(H)]
+dp_1 = [[0] * W for i in range(H)]
+dp_2 = [[0] * W for i in range(H)]
+dp_3 = [[0] * W for i in range(H)]
+
+# x = 0 ~ i, y = 0 ~ j までの数の合計
+def bi_cumul_sum(dp_n):
+    # 縦１行目、横１行目
+    for i in range(H):
+        dp_n[i][0] = maze[i][0]
+    for i in range(H):
+        for j in range(1, W):
+            dp_n[i][j] = dp_n[i][j - 1] + maze[i][j]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_n[i][j] += dp_n[i - 1][j]
+bi_cumul_sum(dp_sum)
+# print(dp_sum)
+
+# x = 0 ~ i, y = 0 ~ j までに出るnumの回数の合計
+def bi_cumul_cnt(num, dp_m):
+    # 縦１行目、横１行目
+    for i in range(H):
+        if maze[i][0] == num:
+            dp_m[i][0] = 1
+    for i in range(H):
+        for j in range(1, W):
+            if maze[i][j] == num:
+                dp_m[i][j] = dp_m[i][j - 1] + 1
             else:
-                opt = imos[i + j] - imos[i]
-            ans = max(ans, opt)
-print(ans)
+                dp_m[i][j] = dp_m[i][j - 1]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_m[i][j] += dp_m[i - 1][j]
+bi_cumul_cnt(3, dp_3)
+# print(dp_1)
+
+# x = sx ~ ex y = sy ~ eyまで
+def judge(sx, sy, ex, ey, dp_l):
+    mother = dp_l[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp_l[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp_l[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp_l[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
+
+print(judge(1, 1, 3, 2, dp_sum))
+print(judge(2, 1, 3, 2, dp_3))
+
+N, M, Q = 10, 3, 2
+query = [
+[1, 5],
+[2, 8],
+[7, 10],
+[1, 7],
+[3, 10]
+]
+
+# l から rまで行く鉄道の数
+lr = [[0 for i in range(N + 1)] for j in range(N + 1)]
+# l から r以前のどこかまで行く鉄道の数
+imos = [[0 for i in range(N + 1)] for j in range(N + 1)]
+imos2 = [[0 for i in range(N + 1)] for j in range(N + 1)]
+
+for i in query:
+    l, r = i
+    lr[l][r] += 1
+
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # j - 1以前のどこかまで行くもの　+ jまで行くもの
+        imos[i][j] = imos[i][j - 1] + lr[i][j]
+
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # i - 1以前のどこかからスタート + iスタート
+        imos2[i][j] = imos2[i - 1][j] + lr[i][j]
+
+print(imos2)
+
 """
+# 飛ばし累積和
+N = 10
+num = [i for i in range(1, N + 1)]
+D = 2
+lista = [0] * N
+for i in range(D):
+    for j in range(i, N, D):
+        if j == i:
+            lista[j] = num[j]
+        else:
+            lista[j] = num[j] + lista[j - D]
+# [1, 2, 4, 6, 9, 12, 16, 20, 25, 30]
+print(lista)
+# 9番目までの奇数の数字の合計 - 1番目までの奇数の数字の合計
+# 3 + 5 + 7 + 9
+print(lista[8] - lista[0])
+"""
+
+# Dかそれぞれのqueryで固定なのでこの問題は解ける
+H, W, D = getNM()
+maze = []
+for i in range(H):
+    a = getList()
+    maze.append(a)
+Q = getN()
+# piece[0]からpiece[1]まで
+# 4 → 6　→ 8
+piece = []
+for i in range(Q):
+    l, r = getNM()
+    piece.append([l, r])
+
+place_list = [[-1, -1] for i in range(H * W)]
+
+for y in range(H):
+    for x in range(W):
+        place_list[maze[y][x] - 1] = [x, y]
+
+# 飛ばし累積和
+x_plus = [0] * (H * W)
+y_plus = [0] * (H * W)
+for i in range(D):
+    for j in range(i, H * W, D):
+        if j == i:
+            opt_x = 0
+            opt_y = 0
+        else:
+            opt_x = abs(place_list[j][0] - place_list[j - D][0])
+            opt_y = abs(place_list[j][1] - place_list[j - D][1])
+            x_plus[j] = opt_x + x_plus[j - D]
+            y_plus[j] = opt_y + y_plus[j - D]
+
+def past_exam(piece_query):
+    start = piece_query[0]
+    goal = piece_query[1]
+
+    x_point = x_plus[goal - 1] - x_plus[start - 1]
+    y_point = y_plus[goal - 1] - y_plus[start - 1]
+    return x_point + y_point
+
+for i in range(Q):
+    print(past_exam(piece[i]))
