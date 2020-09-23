@@ -49,226 +49,46 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-"""
-# ABC004 マーブル
-# ベルマンフォード式最小
+# ABC008 C - コイン
+n = getN()
+c = getArray(n)
+sumans = 0
 
-# 全てのボールを全て違う箱に入れる
-# 地点からi離れたところに置くためにはi回試行が必要
+for i in c:
+    lista = [j for j in c if i % j == 0]
+    count = len(lista)
+    sumans += math.ceil(count / 2) / count
+print(sumans)
 
-# 原点pのボールを(s, e)に一列に置くときの試行回数
-def counter(s, e, p):
-    sp = abs(s - p)
-    ep = abs(e - p)
-    if e < p:
-        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
-    elif s <= p <= e:
-        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
-    else:
-        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
+# ABC011 D - 大ジャンプ
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-# 全範囲を探索すると微妙に間に合わない
-# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
-# 緑がこの位置にある時、赤の最適な置き方は...
-# 緑がこの位置にある時、青の最適な置き方は...
-# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
+N, D = getNM()
+X, Y = getNM()
+X = abs(X)
+Y = abs(Y)
 
-class MinCostFlow:
-    # 最小費用流(ベルマンフォード版、負コストに対応可)
+# X軸に平行に正の向きに飛ぶ回数はx_time + α回
+# X軸に平行に負の向きに飛ぶ回数はα回
+x_time = X // D
+y_time = Y // D
 
-    INF = 10 ** 18
+if X % D != 0 or Y % D != 0 or N < x_time + y_time:
+    print(0)
+    exit()
 
-    def __init__(self, N):
-        self.N = N
-        self.G = [[] for i in range(N)]
-
-    def add_edge(self, fr, to, cap, cost):
-        G = self.G
-        G[fr].append([to, cap, cost, len(G[to])])
-        G[to].append([fr, 0, -cost, len(G[fr])-1])
-
-    def flow(self, s, t, f):
-
-        N = self.N; G = self.G
-        INF = MinCostFlow.INF
-
-        res = 0
-        prv_v = [0] * N
-        prv_e = [0] * N
-
-        while f:
-            dist = [INF] * N
-            dist[s] = 0
-            update = True
-
-            while update:
-                update = False
-                for v in range(N):
-                    if dist[v] == INF:
-                        continue
-                    for i, (to, cap, cost, _) in enumerate(G[v]):
-                        if cap > 0 and dist[to] > dist[v] + cost:
-                            dist[to] = dist[v] + cost
-                            prv_v[to] = v; prv_e[to] = i
-                            update = True
-            if dist[t] == INF:
-                return -1
-
-            d = f; v = t
-            while v != s:
-                d = min(d, G[prv_v[v]][prv_e[v]][1])
-                v = prv_v[v]
-            f -= d
-            res += d * dist[t]
-            v = t
-            while v != s:
-                e = G[prv_v[v]][prv_e[v]]
-                e[1] -= d
-                G[v][e[3]][1] += d
-                v = prv_v[v]
-        return res
-
-R, G, B = getNM()
-N = R + G + B
-
-# 最小費用流
-mcf = MinCostFlow(1006)
-# 始点からRGBの移動前
-# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
-mcf.add_edge(1001, 1002, R, 0)
-mcf.add_edge(1001, 1003, G, 0)
-mcf.add_edge(1001, 1004, B, 0)
-
-# 0~1000の頂点番号は座標位置と一致させてある
-# 各頂点1個まで通れる
-for v in range(1001):
-    # R => 各座標
-    mcf.add_edge(1002, v, 1, abs(400-v))
-    # G => 各座標
-    mcf.add_edge(1003, v, 1, abs(500-v))
-    # B => 各座標
-    mcf.add_edge(1004, v, 1, abs(600-v))
-    # 各座標 => 終点(1005)
-    mcf.add_edge(v, 1005, 1, 0)
-
-# N個のボールを送るための最小費用
-print(mcf.flow(1001, 1005, N))
-"""
-
-"""
-# ABC010
-# 最小カット問題
-# 始点、終点と各点を結びつける
-N, G, E = getNM()
-P = getList()
-query = []
-for i in range(E):
-    a, b = getNM()
-    query.append([a, b, 1])
-    query.append([b, a, 1])
-# goalへのquery増築
-N += 1
-for i in range(G):
-    query.append([N - 1, P[i], 1])
-    query.append([P[i], N - 1, 1])
+N_a = N - (x_time + y_time)
+if N_a % 2 != 0:
+    print(0)
+    exit()
+N_a //= 2
 
 ans = 0
-lines = defaultdict(set)
-cost = defaultdict(lambda: defaultdict(int))
-for i in range(len(query)):
-    a, b, c = query[i]
-    if c != 0:
-        lines[a].add(b)
-        cost[a][b] += c
-"""
-
-# 蟻本  p205 asteroid
-N = 3
-K = 4
-que = [
-[1, 1],
-[1, 3],
-[2, 2],
-[3, 2]
-]
-
-# 始点を0、縦座標rowを1 ~ N, 横座標colをN + 1 ~ 2N, 終点を2N + 1にする
-# 1-indexならこれでいい
-# 二分グラフの最小点被覆は最大マッチング
-# 二分グラフの最大安定集合は上記を除く補集合
-dist = []
-for i in range(1, N + 1): # 始点、終点
-    dist.append([0, i, 1])
-    dist.append([i + N, 2 * N + 1, 1])
-for a, b in que: # 各惑星について
-    dist.append([a, b + N, 1])
-
-N = 2 * N + 2 # 2 * N + 2倍に拡張する
-lines = defaultdict(set)
-cost = [[0] * N for i in range(N)]
-for i in range(len(dist)):
-    a, b, c = dist[i]
-    lines[a].add(b)
-    cost[a][b] += c
-ans = 0
-
-# sからスタート
-def Ford_Fulkerson(sta, end):
-    global ans
-    queue = deque()
-    queue.append([sta, float('inf')])
-
-    ignore = [1] * N
-    ignore[sta] = 0
-
-    route = [0] * N
-    route[sta] = -1
-
-    while queue:
-        s, flow = queue.pop()
-        for t in lines[s]:  #s->t
-            if ignore[t]: #未到達
-                # flowは入ってくる量、出る量のうち小さい方
-                flow = min(cost[s][t], flow)
-                route[t] = s
-                queue.append([t, flow])
-                ignore[t] = 0
-                if t == end: #ゴール到達
-                    ans += flow
-                    break
-        else:
-            continue #breakされなければWhile節の先頭に戻る
-        # Falseはされない
-        break
-    else:
-        return False
-
-    t = end
-    s = route[t]
-    # goalまで流れた量はflow
-    # 逆向きの辺を貼る
-    while s != -1:
-        #s->tのコスト減少，ゼロになるなら辺を削除
-        cost[s][t] -= flow
-        if cost[s][t] == 0:
-            lines[s].remove(t)
-            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
-        if cost[t][s] == 0:
-            lines[t].add(s)
-
-        cost[t][s] += flow
-
-        # 一つ上の辺をたどる
-        t = s
-        s = route[t]
-
-    return True
-
-while True:
-    # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(0, N - 1):
-        continue
-    else:
-        break
-
-print(ans)
+for i in range(N_a + 1):
+    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
+print(ans / (4 ** N))
