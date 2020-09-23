@@ -49,135 +49,33 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind:
-    def __init__(self, N):
-        """
-        N:要素数
-        root:各要素の親要素の番号を格納するリスト.
-             ただし, root[x] < 0 ならその頂点が根で-root[x]が木の要素数.
-        rank:ランク
-        """
-        self.N = N
-        self.root = [-1] * N
-        self.rank = [0] * N
+# ABC002 派閥 
+# 条件
+# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
+# (i, j)がqueryに含まれる
 
-    def __repr__(self):
-        return '\n'.join('{}: {}'.format(r, self.members(r)) for r in self.roots())
+# この人数nの最大値を求める
 
-    def find(self, x):
-        """頂点xの根を見つける"""
-        if self.root[x] < 0:
-            return x
-        else:
-            while self.root[x] >= 0:
-                x = self.root[x]
-            return x
+# 集合Aの取り方は？
+# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
+N, M = getNM()
+mem = set()
+for i in range(M):
+    a, b = getNM()
+    mem.add((a - 1, b - 1))
 
-    def union(self, x, y):
-        """x,yが属する木をunion"""
-        x = self.find(x)
-        y = self.find(y)
-        if x == y:
-            return
-        elif self.rank[x] > self.rank[y]:
-            self.root[x] += self.root[y]
-            self.root[y] = x
-        else:
-            self.root[y] += self.root[x]
-            self.root[x] = y
-            if self.rank[x] == self.rank[y]:
-                self.rank[y] += 1
-
-    def same(self, x, y):
-        """xとyが同じグループに属するかどうか"""
-        return self.find(x) == self.find(y)
-
-    def count(self, x):
-        """頂点xが属する木のサイズを返す"""
-        return - self.root[self.find(x)]
-
-    def members(self, x):
-        """xが属する木の要素を列挙"""
-        _root = self.find(x)
-        return [i for i in range(self.N) if self.find == _root]
-
-    def roots(self):
-        """森の根を列挙"""
-        return [i for i, x in enumerate(self.root) if x < 0]
-
-    def group_count(self):
-        """連結成分の数"""
-        return len(self.roots())
-
-    def all_group_members(self):
-        """{ルート要素: [そのグループに含まれる要素のリスト], ...}の辞書を返す"""
-        return {r: self.members(r) for r in self.roots()}
-
-N = getN()
-Q = [getList() for i in range(N)]
-que = deepcopy(Q)
-que.sort(key = lambda i:i[1], reverse = True)
-que.sort()
-
-# xy座標が共に大きいもの
-# 順列になっている？
-
-"""
-O(n**2)
-U = UnionFind(N)
-for i in range(N):
-    for j in range(i + 1, N):
-        if que[i][1] < que[j][1]:
-            U.union(i, j)
-for i in range(N):
-    print(U.count(i))
-"""
-#　ソート方法はこれでOK
-# やらなくていい探索がある　それを減らす
-# 4 3
-# 4 1
-# 4 2
-# 3 1
-# 3 2
-# 1 2 これだけいる
-
-# 4 3 1 2でi < jになるものをペアに
-# 1とペアにできるのは2, 3, 4
-# 2とペアにできるのは3, 4
-# 3は4
-# それぞれ右側にあれば
-
-# 6 7 5 3 2 4 1
-# グループ１ 6 7
-# グループ2 5
-# グループ3 3 2 4
-# グループ4 1
-# どれか１つのグループに属する
-
-U = UnionFind(N + 1)
-group = []
-
-for x, y in que:
-    # １番目のものは必ずグループのリーダーになれる
-    if not group:
-        group.append(y)
-        continue
-    # リーダーが降順に並ぶように
-    if y < group[-1]:
-        group.append(y)
-        continue
-    opt = float('inf')
-    # グループ再編成
-    while group:
-        # yより小さいものは全てyが所属するグループに入る
-        if y > group[-1]:
-            l = group.pop()
-            U.union(l, y)
-            opt = min(opt, l) # yが所属するグループの中のリーダー　一番最初のものが記録される
-        else:
-            break
-    # リーダー変更
-    group.append(opt)
-
-for i in range(N):
-    print(U.count(Q[i][1])) # yがiのもののサイズの大きさ　uf.funcはインデックスで呼ばなくてもいい
+ans = 0
+for bit in range(1 << N):
+    # 任意のi, jについてqueryに含まれているか判定
+    flag = True
+    for i in range(N):
+        for j in range(i + 1, N):
+            # 適当に選んだ２人がbitの中に含まれていれば
+            if bit & (1 << i) and bit & (1 << j):
+                if not (i, j) in mem:
+                    flag = False
+    # もし集合bitが条件を満たすなら人数を調べる
+    if flag:
+        opt = bin(bit).count('1')
+        ans = max(ans, opt)
+print(ans)
