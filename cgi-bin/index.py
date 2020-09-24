@@ -49,66 +49,42 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC025 C - 双子と○×ゲーム
-# ゲーム木
+# ABC027 C - 倍々ゲーム
+# ２人が最善を尽くす時、どちらが勝つか
+# パターン1:ある状態になるように収束させれば必ず勝つ
+# パターン2:ある場所を目指せば必ず勝つようになる
+# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
 
-b1 = getList()
-b2 = getList()
-c1 = getList() + [0]
-c2 = getList() + [0]
-c3 = getList() + [0]
-b = b1 + b2
-c = c1 + c2 + c3
-S = sum(b) + sum(c)
-
-def counter(array):
-    male = 0
-    for i in range(9):
-        # bの得点
-        if i <= 5:
-            if array[i] == array[i + 3]:
-                male += b[i]
-        # cの得点
-        if i % 3 == 0 or i % 3 == 1:
-            if array[i] == array[i + 1]:
-                male += c[i]
-    return male
-
-memo = {}
-
-def solve(array):
-    # メモ呼び出し
-    if str(array) in memo:
-        return memo[str(array)]
-    # ターンの計算
-    turn = 1
-    for i in array:
-        if i == 0 or i == 1:
-            turn += 1
-    if turn == 10:
-        return counter(array)
-
-    if turn % 2 == 0:
-        point = S
+# まずは全通り試してみる　その中で勝ちが偏っている部分がある
+N = getN()
+k = N
+depth = 0
+while k > 1:
+    k //= 2
+    depth += 1
+x = 1
+cnt = 1
+if depth % 2:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
+        else:
+            x *= 2
+            x += 1
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
     else:
-        point = -S
-
-    # i番目に駒を置いた時の全通りを探索して最善の手を呼び出す
-    # 今の盤面 + αを置いた時の点数が全て帰ってくる その中で
-    # turn % 2 == 0なら最小値、turn % 2 != 0 なら最大値を選ぶ
-    for i in range(9):
-        if array[i] == -1:
-            new = copy.deepcopy(array)
-            if turn % 2 == 0:
-                new[i] = 1
-                point = min(point, solve(new))
-            else:
-                new[i] = 0
-                point = max(point, solve(new))
-    memo[str(array)] = point
-    return point
-
-opt = [-1] * 9
-ans = solve(opt)
-print(ans)
-print(S - ans)
+        print("Aoki")
+else:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
+            x += 1
+        else:
+            x *= 2
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
+    else:
+        print("Aoki")
