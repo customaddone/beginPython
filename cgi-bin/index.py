@@ -49,84 +49,50 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC004 マーブル
-R, G, B = getNM()
+# ABC027 C - 倍々ゲーム
+# ２人が最善を尽くす時、どちらが勝つか
+# パターン1:ある状態になるように収束させれば必ず勝つ
+# パターン2:ある場所を目指せば必ず勝つようになる
+# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
 
-dp = [[float('inf')] * (R + G + B + 1) for i in range(2001)]
-dp[0][R + G + B] = 0
-
-# 残り個数により置くボールの色が変化する
-# ボールを置くコストも変化する
-def judge(point, ball):
-    if ball > G + B:
-        return abs(point - (-100))
-    elif G + B >= ball > B:
-        return abs(point)
-    else:
-        return abs(100 - point)
-
-for i in range(1, 2001):
-    for j in range(R + G + B, -1, -1):
-        if j == R + G + B:
-            dp[i][j] = dp[i - 1][j]
+# まずは全通り試してみる　その中で勝ちが偏っている部分がある
+N = getN()
+k = N
+depth = 0
+while k > 1:
+    k //= 2
+    depth += 1
+x = 1
+cnt = 1
+if depth % 2:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
         else:
-            # i - 1000の地点にj + 1ボールを置き,残りはj個
-            dp[i][j] = min(dp[i - 1][j], dp[i - 1][j + 1] + judge(i - 1000, j + 1))
-print(dp[2000][0])
+            x *= 2
+            x += 1
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
+    else:
+        print("Aoki")
+else:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
+            x += 1
+        else:
+            x *= 2
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
+    else:
+        print("Aoki")
 
-# ABC017 D - サプリメント
-N, M = getNM()
-F = getArray(N)
-
-# 何通り　→ comb or dp
-# O(N)で
-# 同じ味のサプリメントを摂取しない
-# dp[i]:i日目までにサプリを摂取する通りが何通りあるか
-# dp[i]:サプリi個目までにサプリを摂取する通りが何通りあるか
-
-# N, M = 5, 2
-# L = [1, 2, 1, 2, 2]の場合
-# dp[0] = 1
-# dp[1] = 1 1個目を新たに食べた場合、それ以前の通りは1通り
-# dp[2] = 2 2個目を新たに食べた場合、それ以前の通りは2通り
-# (前回1個目を食べたかもしれないし、今回1個目と合わせて2個目を食べたかもしれない)
-# dp[i] += dp[（最後にF[i]が登場した場所）] ~ dp[i - 1]
-
-dp = [0] * (N + 1) # dpだけ1-index
-dp[0] = 1
-ignore = [0] * (M + 1)
-l = 0
-now = dp[0]
-for r in range(N):
-    # 最初ignoreのフラグが立っていないが,nowにはdp[0]の値が入っている状態
-    while ignore[F[r]]:
-        ignore[F[l]] = 0 # F[l]のフラグを消す
-        now -= dp[l] # lの直前のdpを引く
-        now %= mod
-        l += 1
-    # dpをレコード（範囲の合計を足す）
-    dp[r + 1] = now
-    # rを1個ずらして更新
-    now += dp[r + 1]
-    now %= mod
-    ignore[F[r]] = 1
-
-print(dp)
-
-# ABC044 C - 高橋君とカード
-# 平均はQ[i] -= Aしとく
-N, A = getNM()
-Q = getList()
-for i in range(N):
-    Q[i] -= A
-
-dp = [[0] * 5002 for i in range(N + 1)]
-dp[0][2501] = 1
-
-for i in range(1, N + 1):
-    for j in range(5002):
-        dp[i][j] += dp[i - 1][j]
-        if 0 <= j - Q[i - 1] <= 5001:
-            dp[i][j] += dp[i - 1][j - Q[i - 1]]
-
-print(dp[-1][2501] - 1)
+# ABC048 D - An Ordinary Game
+# 最終的にどのような形で終わるか
+S = input()
+if (S[0] != S[-1]) ^ (len(S) % 2):
+    print('Second')
+else:
+    print('First')
