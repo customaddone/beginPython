@@ -49,144 +49,77 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, K = 7, 6
-S = [4, 3, 1, 1, 2, 10, 2]
+# ABC002 派閥
+# 条件
+# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
+# (i, j)がqueryに含まれる
 
-# 左を伸ばしていく
-# その部分列に含まれる全ての要素の値の積は「K以下」である。
-# lはrをオーバーすることもある
+# この人数nの最大値を求める
 
-if 0 in S:
-    print(N)
-    exit()
-else:
-    l, ans, total = 0, 0, 1
-    for r in range(N):
-        total *= S[r]
-        while total > K and l <= r:
-            total //= S[l]
-            l += 1
-        ans = max(ans, r - l + 1)
-print(ans)
+# 集合Aの取り方は？
+# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
+N, M = getNM()
+mem = set()
+for i in range(M):
+    a, b = getNM()
+    mem.add((a - 1, b - 1))
 
-# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
-N, K = 4, 10
-A = [6, 1, 2, 7]
-
-left = 0
-total = 0
 ans = 0
-
-for right in range(0, N):
-    total += A[right]
-    while total >= K:
-        ans += N - right
-        total -= A[left]
-        left += 1
+for bit in range(1 << N):
+    # 任意のi, jについてqueryに含まれているか判定
+    flag = True
+    for i in range(N):
+        for j in range(i + 1, N):
+            # 適当に選んだ２人がbitの中に含まれていれば
+            if bit & (1 << i) and bit & (1 << j):
+                if not (i, j) in mem:
+                    flag = False
+    # もし集合bitが条件を満たすなら人数を調べる
+    if flag:
+        opt = bin(bit).count('1')
+        ans = max(ans, opt)
 print(ans)
 
-N = 10
-S = 15
-A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
-right = 0
-total = 0
+# ABC018 D - バレンタインデー
+N, M, P, Q, R = getNM()
+que = []
+
+# 女子N人の中からP人、男子M人の中からR人選ぶ
+# 女子N人の中からP人選ぶ通りがNCR通り 最大18C9 = 役4万通り
+# 男子についてもう4万通りを選ぶのは無理
+# 逆に女子P人が選んだ時にチョコレートを選んで幸福度が最大になるようにしよう
+# 男子y1がいれば += z1
+# 男子y2がいれば += z2...
+
+# 各通りについてチョコレート最大364通りを探索
+# チョコciについて選んだ女子にxiがいる場合はyiに幸福度を追加（yiが選ばれる場合の幸福度）
+
+for i in range(R):
+    x, y, z = getNM()
+    que.append([x - 1, y - 1, z])
+
+def counter(array):
+    girls = set(array)
+    boys = [0] * M
+    for x, y, z in que:
+        if x in girls:
+            boys[y] += z
+    boys.sort(reverse = True)
+    return sum(boys[:Q])
+
 ans = 0
-# S以上を求める場合にはこの形で
-for left in range(N):
-    while right < N and total < S:
-        total += A[right]
-        right += 1
-    if total < S:
-        break
-    if left == right:
-        right += 1
-    total -= A[left]
+# 女子の全組み合わせを出す
+def comb_pow(i, array):
+    global ans
+    if i == P:
+        ans = max(ans, counter(array))
+        return
+    # ここの4を変えてrootを変更
+    last = -1
+    if len(array) > 0:
+        last = array[-1]
 
-# 要素の種類についての問題
-# 全ての要素を含む
-P = 5
-A = [1, 8, 8, 8, 1]
-dict = {}
-for i in A:
-    dict[i] = 0
-# 要素の種類数
-V = len(dict.items())
-
-# 事象の数をカウント
-cnt = 0
-right = 0
-# １つ目から全ての事象をカバーするまでrightを進める
-while right < P:
-    if dict[A[right]] == 0:
-        cnt += 1
-    dict[A[right]] += 1
-
-    if cnt == len(dict.items()):
-        break
-
-    right += 1
-print(l, r)
-
-l = 0
-# 右を一つ進めて左をできる限り進める
-for r in range(right + 1, P):
-    # 新しく一つ加える
-    dict[A[r]] += 1
-    while True:
-        # もし要素が一つしか無かったら削れない
-        if dict[A[l]] == 1:
-            break
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
-
-# 各要素にダブりがない範囲
-N = 6
-A = [1, 2, 2, 3, 4, 4]
-
-dict = defaultdict(int)
-l = 0
-for r in range(N):
-    while dict[A[r]] == 1:
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
-    dict[A[r]] += 1
-
-N = 4
-A = 2, 5, 4, 6
-
-r, tmp = 0, 0
-# l:左端
-cnt = 0
-# 一つオーバーさせる
-for l in range(N):
-    while r < N and tmp ^ A[r] == tmp + A[r]:
-        # 右端を伸ばす
-        tmp += A[r]
-        r += 1
-    # 計算
-    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
-    # (r - l + 1) - 1
-    cnt += r - l
-
-    if l == r:
-        r += 1
-    tmp -= A[l]
-print(cnt)
-
-N, K = 10, 4
-A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
-
-right, ans = 0, 0
-for left in range(N):
-    # 単調増加するとこまでもしくは長さKになるまで
-    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
-        right += 1
-    # もし長さKまで伸ばせたらans += 1
-    if right - left == K - 1:
-        ans += 1
-    # 前に進めないならright += 1
-    if left == right and right < N:
-        right += 1
-print(ans)
+    for j in range(last + 1, N):
+        new_array = array + [j]
+        comb_pow(i + 1, new_array)
+comb_pow(0, [])
