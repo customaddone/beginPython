@@ -49,193 +49,200 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 文字列を整数に変換
-N = 26
+# 基本の二分探索
+lista = [i for i in range(10)]
 
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
-    else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
-
-# z
-print(num2alpha(N))
-
-n = N
-lista = []
-digit = 26
-i = 0
-
-while n != 0:
-    opt = n % digit
-    lista.insert(0, opt)
-    if n % digit == 0:
-        n = n // digit - 1
-    else:
-        n = n // digit
-    i += 1
-
-str_list = 'abcdefghijklmnopqrstuvwxyz'
-ans = ''
-for i in range(len(lista)):
-    ans += str_list[lista[i] - 1]
-
-# z
-print(ans)
-
-#  最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
-
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
-
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# ABC009 C - 辞書式順序ふたたび
-
-N,K = getNM()
-S = list(input())
-T = sorted(S)
-diff = 0
-ans = ""
-
-for i in range(N):
-    s = S[i]
-    # 残りの文字を全ループさせる
-    for t in T:
-        # tを追加して良いか確かめる
-        diff1 = diff + (s != t)
-        count = Counter(T)
-        count[t] -= 1
-        diff2 = sum((Counter(S[i + 1:]) - count).values())
-        # 追加していいなら
-        if diff1 + diff2 <= K:
-            diff = diff1
-            ans += t
-            T.remove(t)
-            break
-print(ans)
-
-# ABC031 語呂合わせ
-
-# 1 ~ Kまでの数字がどの単語に当てはまるか
-# 1 ~ Kに対し文字の候補は26 ** 3通り?
-
-# 文字列は総文字数、アルファベットの種類（２６種類、定数倍）で捉えられる
-
-N, M = getNM()
-que = []
-for i in range(M):
-    v, w = input().split()
-    que.append([v, w])
-root = 3
-
-def judge(array):
-    # 1 ~ Kに割り当てた文字数が正しいか
-    for v, w in que:
-        cnt = 0
-        for i in range(len(v)):
-            cnt += array[int(v[i]) - 1]
-        if cnt != len(w):
-            return
-    # 文字数が適合するなら
-    str_list = [''] * N
-    for v, w in que:
-        cnt = 0
-        # 文字を区切っていく
-        for i in range(len(v)):
-            str_len = array[int(v[i]) - 1]
-            opt = w[cnt: cnt + str_len]
-            if str_list[int(v[i]) - 1] == '':
-                str_list[int(v[i]) - 1] = opt
-            else:
-                if str_list[int(v[i]) - 1] != opt:
-                    return
-            cnt += str_len
-
-    # 全て適合するなら
-    for i in str_list:
-        print(i)
-    exit()
-
-# 1 ~ Kの文字数が何文字かについて3 ** Kを全探索
-def four_pow(i, array):
-    global cnt
-    if i == N:
-        judge(array)
-        return
-    for j in range(1, root + 1):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-four_pow(0, [])
-
-K, N = getNM()
-G = []
-for i in range(N):
-    v, w = map(str, input().split())
-    # 桁ごとに数字を分ける
-    v = list(v)
-    v = [int(d) - 1 for d in v]
-    G.append((v, w))
-
-# それぞれの語呂数に対して長さ1 ~ 3を割り当てる
-for p in product(range(1, 4), repeat = K):
-    S = [[] for _ in range(K)]
-    for v, w in G:
-        c = 0
-        # 長さが正しいか判定するパート
-        for d in v:
-            # 使われた語呂数の長さを足し合わせる
-            c += p[d]
-        if c != len(w):
-            break
-        # 文字列を割り当てるパート
+def binary_search_loop(data, target):
+    imin = 0
+    imax = len(data) - 1
+    while imin <= imax:
+        imid = imin + (imax - imin) // 2
+        if target == data[imid]:
+            return imid
+        elif target < data[imid]:
+            imax = imid - 1
         else:
-            cur = 0
-            for d in v:
-                # 長さごとに文字列を切っていく
-                S[d].append(w[cur: cur + p[d]])
-                cur += p[d]
-    # 長さが整合したものが見つかれば
+            imin = imid + 1
+    return False
+print(binary_search_loop(lista, 4))
+
+# 三分探索
+# ARC054 ムーアの法則
+def f(x):
+    return x + p / pow(2, 2 * x / 3)
+
+p = float(input())
+left, right = 0, 100
+
+while right > left + 10 ** -10:
+    # mid二つ
+    mid1 = (right * 2 + left) / 3
+    mid2 = (right + left * 2) / 3
+    if f(mid1) >= f(mid2):
+        right = mid1
     else:
-        for i in range(K):
-            # 任意の語呂数に対する文字列が一意に定まらなければ
-            # 112: abcで 1 = a, 1 = B, 2 = cになるみたいなケース
-            if len(set(S[i])) != 1:
-                break
-        else:
-            for i in range(K):
-                print(S[i][0])
-            exit()
+        left = mid2
+print(f(right))
+
+# 三分探索整数ver
+num = []
+for i in range(100):
+    if i < 50:
+        num.append(i)
+    else:
+        num.append(100 - i)
+
+left, right = 0, len(num) - 1
+while abs(right - left) > 3:
+    mid1 = (right * 2 + left) // 3 + 1
+    mid2 = (right + left * 2) // 3
+    # 最小値を求める場合は矢印逆になる
+    if num[mid1] <= num[mid2]:
+        right = mid1
+    else:
+        left = mid2
+print(right)
+print(left)
+
+# ARC050 B - 花束
+R, B = getNM()
+x, y = getNM()
+# 赤い花束をr束, 青い花束をb束とすると
+# R >= xr + b
+# B >= r + yb
+# を満たしながらk = r + bを最大化せよ
+# r = k - b
+# R >= x(k - b) + b = xk - (x - 1)b
+# B >= (k - b) + yb = k + (y - 1)b
+# (y - 1)R >= (y - 1)xk - (x - 1)(y - 1)b
+# (x - 1)B >= (x - 1)k + (x - 1)(y - 1)b
+# (y - 1)R + (x - 1)B >= ((y - 1)x + (x - 1))k
+# 二分探索?
+
+def judge(k):
+    # あるkを決めた時に
+
+    # ①r >= 0, b >= 0
+    # ②r + b = k
+    # ③R >= xr + b = (x - 1)b
+    # ④B >= r + yb = (y - 1)b
+    # となるr, bが存在するか
+
+    # R - k >= (x - 1)r
+    # (R - k) / (x - 1) >= r
+    # B - k >= (y - 1)b
+    # (B - k) / (y - 1) >= b
+    # (R - k) // (x - 1) + (B - k) // (y - 1) >= kになるか
+    if R - k >= 0 and B - k >= 0 and (R - k) // (x - 1) + (B - k) // (y - 1) >= k:
+        return True
+    else:
+        return False
+
+ok = -1
+ng = 10 ** 18 + 1
+
+while abs(ok - ng) > 1:
+    mid = (ok + ng) // 2
+    if judge(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
+
+# AGC041 B - Voting Judges
+
+"""
+# 問題:N問、ジャッジ:M人
+# M人のジャッジがそれぞれV問を選び、問題のスコアを１ずつあげる
+# M人の投票の後、大きい方からP問が選ばれる
+# 問題セットに選ばれる可能性があるのは何問あるか
+M人全員が投票すれば選ばれやすくなる
+選ばれるとは？
+可能性がないものを数えた方が早いのでは
+P番目以内にあれば無条件で通過
+現在のP番目 <= A[i] + M
+V <= Pなら
+上からP - 1番目までのどれか + A[i]を加算させることでA[i]を強くできる　
+V > Pなら？
+上からP - 1番目までとA[i]を強化するとして、残りのV - P個は小さいものから順に選ぶ
+A[i]を抜かせないようにしたい
+A[i]より大きい数字も一緒に足される場合にはP以内に入れない
+"""
+N, M, V, P = getNM()
+A = getList()
+A.sort(reverse = True)
+
+def judge(x):
+    if x < P:
+        return True
+    if A[P - 1] > A[x] + M:
+        return False
+    # P - 1番目まで + 自身以降の数字についてはM個足す
+    left = (V - (P - 1) - (N - x)) * M
+    # P個目からx-1まで A[x] + Mを超えない分足す
+    for i in range(P - 1, x):
+        left -= A[x] + M - A[i]
+
+    return left <= 0
+
+ok = -1
+ng = N
+
+while abs(ok - ng) > 1:
+    mid = (ok + ng) // 2
+    if judge(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok + 1)
+
+# ABC023 D - 射撃王
+N = getN()
+listh = []
+lists = []
+for i in range(N):
+    h, s = getNM()
+    listh.append(h)
+    lists.append(s)
+left = 0
+right = 10 ** 15
+
+for _ in range(50):
+    flag = True
+    mid = (left + right) // 2
+    costtime = [0] * N
+    for i in range(N):
+        costtime[i] = (mid - listh[i]) / lists[i]
+    costtime.sort()
+    for i in range(N):
+        if costtime[i] - i < 0:
+            flag = False
+    if flag:
+        right = mid
+    else:
+        left = mid
+print(right)
+
+# ABC034 D - 食塩水
+
+N, K = getNM()
+query = [getList() for i in range(N)]
+
+def judge(target):
+    alta = []
+    for i in range(N):
+        salt = query[i][0] * (query[i][1] - target)
+        alta.append(salt)
+    alta.sort(reverse = True)
+    return sum(alta[:K]) >= 0
+
+left = -1
+right = 101
+
+for i in range(100):
+    mid = left + (right - left) / 2
+    if judge(mid):
+        left = mid
+    else:
+        right = mid
+print(left)
