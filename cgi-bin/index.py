@@ -49,85 +49,95 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC022 C - Blue Bird
-# 自分の家からスタートして同じ道を通らないで家に戻ってくる
-# 違う道を通る、一つ目の家と最後の家は違うということ
-# ワーシャルフロイドで
+N = 4
+inf = float('inf')
+
+d = [
+[0, 2, inf, inf],
+[inf, 0, 3, 9],
+[1, inf, 0, 6],
+[inf, inf, 4, 0]
+]
+
+dp = [[-1] * N for i in range(1 << N)]
+
+def rec(s, v, dp):
+    if dp[s][v] >= 0:
+        return dp[s][v]
+    if s == (1 << N) - 1 and v == 0:
+        dp[s][v] = 0
+        return 0
+    res = float('inf')
+    for u in range(N):
+        if s & (1 << u) == 0:
+            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
+    dp[s][v] = res
+    return res
+# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
+print(rec(0,0,dp))
+
+# ABC054 C - One-stroke Path
 
 N, M = getNM()
-query = [getList() for i in range(M)]
-
-dist = [[float('inf')] * N for i in range(N)]
-sec_list = []
-
+dist = [[] for i in range(N + 1)]
 for i in range(M):
-    a, b, c = query[i]
-    if a == 1:
-        sec_list.append([b - 1, c])
-    elif b == 1:
-        sec_list.appedn([a - 1, c])
-    if a != 1 and b != 1:
-        dist[a - 1][b - 1] = c
-        dist[b - 1][a - 1] = c
-
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
-
-warshall_floyd(dist)
-
-# 高橋くんの家の隣にある家同志について探索
-ans = float('inf')
-for i in range(len(sec_list)):
-    for j in range(i + 1, len(sec_list)):
-        x1 = sec_list[i]
-        x2 = sec_list[j]
-        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
-        ans = min(ans, opt)
-
-if ans == float('inf'):
-    print(-1)
-else:
-    print(ans)
-
-# ABC051 D - Candidates of No Shortest Paths
-
-N, M = getNM()
-query = [getList() for i in range(M)]
-
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-for i in range(M):
-    a, b, c = query[i]
-    dist[a - 1][b - 1] = c
-    dist[b - 1][a - 1] = c
-
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
-
-warshall_floyd(dist)
-ng_dist = [0] * M
-
-# 各エッジについて探索
-# dist(s, i) + edge(i, j) = dist(s, j)ならその辺は最短距離を構成する
-for i in range(N):
-    for j in range(M):
-        s, t, c = query[j]
-        if dist[i][s - 1] + c == dist[i][t - 1]:
-            ng_dist[j] = 1
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
 cnt = 0
-for i in ng_dist:
-    if i == 0:
+
+pos = deque([[1 << 0, 0]])
+
+while len(pos) > 0:
+    s, v = pos.popleft()
+    if s == (1 << N) - 1:
         cnt += 1
+    for u in dist[v]:
+        if s & (1 << u):
+            continue
+        pos.append([s | (1 << u), u])
 print(cnt)
+
+"""
+全ての場所を一度だけ通り巡回する通りの数
+bit(1 << N)を小さい順から探索する
+①bit & (1 << 0)
+最初に0を踏んでないということだから飛ばす
+②現在の場所sを探すためN個探索する
+③次の場所tを探すためN個探索する
+④渡すdpする
+"""
+
+N, M = getNM()
+G = [[0] * N for i in range(N)]
+for i in range(M):
+    a, b = getNM()
+    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
+    G[b - 1][a - 1] = 1
+
+# 状態bitから次の状態へ渡すdpするというのはよくやる
+# [0](001) → [0, 1](011) → [0, 1, 2](111)
+#          → [0, 2](101) → [0, 1, 2](111)
+def counter(sta):
+    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
+    dp = [[0] * N for i in range(1 << N)]
+    dp[1 << sta][sta] = 1
+
+    for bit in range(1, 1 << N):
+        if not bit & (1 << sta):
+            continue
+        # s:現在の場所
+        for s in range(N):
+            # sを踏んだことになっていなければ飛ばす
+            if not bit & (1 << s):
+                continue
+            # t:次の場所
+            for t in range(N):
+                # tを過去踏んでいない and s → tへのエッジがある
+                if (bit & (1 << t)) == 0 and G[s][t]:
+                    dp[bit|(1 << t)][t] += dp[bit][s]
+
+    return sum(dp[(1 << N) - 1])
+
+print(counter(0))
