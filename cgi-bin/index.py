@@ -49,47 +49,55 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC022 C - Blue Bird
-# 自分の家からスタートして同じ道を通らないで家に戻ってくる
-# 違う道を通る、一つ目の家と最後の家は違うということ
-# ワーシャルフロイドで
+# ABC023 C - 収集王
+# 経路圧縮
 
-N, M = getNM()
-query = [getList() for i in range(M)]
+R, C, K = getNM()
+N = getN()
+query = [getList() for i in range(N)]
 
-dist = [[float('inf')] * N for i in range(N)]
-sec_list = []
+# 縦hに行くとi個飴がもらえる
+h_list = defaultdict(int)
+w_list = defaultdict(int)
+h_len = set()
+w_len = set()
 
-for i in range(M):
-    a, b, c = query[i]
-    if a == 1:
-        sec_list.append([b - 1, c])
-    elif b == 1:
-        sec_list.appedn([a - 1, c])
-    if a != 1 and b != 1:
-        dist[a - 1][b - 1] = c
-        dist[b - 1][a - 1] = c
+for h, w in query:
+    h -= 1
+    w -= 1
+    h_list[h] += 1
+    w_list[w] += 1
+    h_len.add(h)
+    w_len.add(w)
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
+# 飴がj個もらえる行はどこか
+candy_h = defaultdict(list)
+candy_w = defaultdict(list)
 
-warshall_floyd(dist)
+for i in h_list.items():
+    candy_h[i[1]].append(i[0])
+for i in w_list.items():
+    candy_w[i[1]].append(i[0])
 
-# 高橋くんの家の隣にある家同志について探索
-ans = float('inf')
-for i in range(len(sec_list)):
-    for j in range(i + 1, len(sec_list)):
-        x1 = sec_list[i]
-        x2 = sec_list[j]
-        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
-        ans = min(ans, opt)
+# 縦のキャンディの個数が1 ~ K - 1の行それぞれについて
+# 横のキャンディの個数がK - 1 ~ 1の列を調べて掛け合わせ
+cnt = 0
+for i in candy_h.items():
+    if K - i[0] >= 1:
+        cnt += len(i[1]) * len(candy_w[K - i[0]])
 
-if ans == float('inf'):
-    print(-1)
-else:
-    print(ans)
+# 縦が0個
+cnt += (R - len(h_len)) * len(candy_w[K])
+# 縦がN個
+cnt += (C - len(w_len)) * len(candy_h[K])
+
+# 足しすぎたもの、足していないものを修正
+for r, c in query:
+    r -= 1
+    c -= 1
+    if h_list[r] + w_list[c] == K:
+        cnt -= 1
+    elif h_list[r] + w_list[c] == K + 1:
+        cnt += 1
+
+print(cnt)
