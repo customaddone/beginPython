@@ -49,50 +49,85 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC027 C - 倍々ゲーム
-# ２人が最善を尽くす時、どちらが勝つか
-# パターン1:ある状態になるように収束させれば必ず勝つ
-# パターン2:ある場所を目指せば必ず勝つようになる
-# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
+# ABC022 C - Blue Bird
+# 自分の家からスタートして同じ道を通らないで家に戻ってくる
+# 違う道を通る、一つ目の家と最後の家は違うということ
+# ワーシャルフロイドで
 
-# まずは全通り試してみる　その中で勝ちが偏っている部分がある
-N = getN()
-k = N
-depth = 0
-while k > 1:
-    k //= 2
-    depth += 1
-x = 1
-cnt = 1
-if depth % 2:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-        else:
-            x *= 2
-            x += 1
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
-else:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-            x += 1
-        else:
-            x *= 2
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
+N, M = getNM()
+query = [getList() for i in range(M)]
 
-# ABC048 D - An Ordinary Game
-# 最終的にどのような形で終わるか
-S = input()
-if (S[0] != S[-1]) ^ (len(S) % 2):
-    print('Second')
+dist = [[float('inf')] * N for i in range(N)]
+sec_list = []
+
+for i in range(M):
+    a, b, c = query[i]
+    if a == 1:
+        sec_list.append([b - 1, c])
+    elif b == 1:
+        sec_list.appedn([a - 1, c])
+    if a != 1 and b != 1:
+        dist[a - 1][b - 1] = c
+        dist[b - 1][a - 1] = c
+
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
+
+warshall_floyd(dist)
+
+# 高橋くんの家の隣にある家同志について探索
+ans = float('inf')
+for i in range(len(sec_list)):
+    for j in range(i + 1, len(sec_list)):
+        x1 = sec_list[i]
+        x2 = sec_list[j]
+        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
+        ans = min(ans, opt)
+
+if ans == float('inf'):
+    print(-1)
 else:
-    print('First')
+    print(ans)
+
+# ABC051 D - Candidates of No Shortest Paths
+
+N, M = getNM()
+query = [getList() for i in range(M)]
+
+dist = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    dist[i][i] = 0
+for i in range(M):
+    a, b, c = query[i]
+    dist[a - 1][b - 1] = c
+    dist[b - 1][a - 1] = c
+
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
+
+warshall_floyd(dist)
+ng_dist = [0] * M
+
+# 各エッジについて探索
+# dist(s, i) + edge(i, j) = dist(s, j)ならその辺は最短距離を構成する
+for i in range(N):
+    for j in range(M):
+        s, t, c = query[j]
+        if dist[i][s - 1] + c == dist[i][t - 1]:
+            ng_dist[j] = 1
+
+cnt = 0
+for i in ng_dist:
+    if i == 0:
+        cnt += 1
+print(cnt)
