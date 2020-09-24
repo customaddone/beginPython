@@ -49,95 +49,116 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 4
-inf = float('inf')
+# ABC006 D - トランプ挿入ソート
+n = getN()
+lista = [getList() for i in range(n)]
 
-d = [
-[0, 2, inf, inf],
-[inf, 0, 3, 9],
-[1, inf, 0, 6],
-[inf, inf, 4, 0]
-]
+# 最長増加部分列問題 (LIS)の問題
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        if a > L[-1]:
+            L.append(a)
+        # このelseに引っかかった時にトランプのソートが必要
+        else:
+            L[bisect_left(L, a)] = a
+    return len(L)
+print(n - lis(lista))
 
-dp = [[-1] * N for i in range(1 << N)]
+# Donutsプロコンチャレンジ2015 C - 行列のできるドーナツ屋
+# LISの応用
 
-def rec(s, v, dp):
-    if dp[s][v] >= 0:
-        return dp[s][v]
-    if s == (1 << N) - 1 and v == 0:
-        dp[s][v] = 0
-        return 0
-    res = float('inf')
-    for u in range(N):
-        if s & (1 << u) == 0:
-            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
-    dp[s][v] = res
-    return res
-# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
-print(rec(0,0,dp))
+N = getN()
+H = getList()
 
-# ABC054 C - One-stroke Path
+# まあBITだろう
+# 逆から置くBITではない？
+# 累積和？
+# 個数だけ求めればいい
 
-N, M = getNM()
-dist = [[] for i in range(N + 1)]
-for i in range(M):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+# 地点iからは
+# i - 1起点の単純増加列
+# LIS？
+ans = [0] * N
+L = []
+# 人0 ~ iまでがどのように見えるか これを人i + 1が見る
+for i in range(N - 1):
+    # もしLの一番小さいやつよりH[i]が大きければ
+    while L and L[-1] < H[i]:
+        L.pop()
+    L.append(H[i])
+    ans[i + 1] = len(L)
 
-cnt = 0
+for i in ans:
+    print(i)
 
-pos = deque([[1 << 0, 0]])
+# ACLC1 A - Reachable Towns
 
-while len(pos) > 0:
-    s, v = pos.popleft()
-    if s == (1 << N) - 1:
-        cnt += 1
-    for u in dist[v]:
-        if s & (1 << u):
-            continue
-        pos.append([s | (1 << u), u])
-print(cnt)
+N = getN()
+Q = [getList() for i in range(N)]
+que = deepcopy(Q)
+que.sort(key = lambda i:i[1], reverse = True)
+que.sort()
+
+# xy座標が共に大きいもの
+# 順列になっている？
 
 """
-全ての場所を一度だけ通り巡回する通りの数
-bit(1 << N)を小さい順から探索する
-①bit & (1 << 0)
-最初に0を踏んでないということだから飛ばす
-②現在の場所sを探すためN個探索する
-③次の場所tを探すためN個探索する
-④渡すdpする
+O(n**2)
+U = UnionFind(N)
+for i in range(N):
+    for j in range(i + 1, N):
+        if que[i][1] < que[j][1]:
+            U.union(i, j)
+for i in range(N):
+    print(U.count(i))
 """
+#　ソート方法はこれでOK
+# やらなくていい探索がある　それを減らす
+# 4 3
+# 4 1
+# 4 2
+# 3 1
+# 3 2
+# 1 2 これだけいる
 
-N, M = getNM()
-G = [[0] * N for i in range(N)]
-for i in range(M):
-    a, b = getNM()
-    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
-    G[b - 1][a - 1] = 1
+# 4 3 1 2でi < jになるものをペアに
+# 1とペアにできるのは2, 3, 4
+# 2とペアにできるのは3, 4
+# 3は4
+# それぞれ右側にあれば
 
-# 状態bitから次の状態へ渡すdpするというのはよくやる
-# [0](001) → [0, 1](011) → [0, 1, 2](111)
-#          → [0, 2](101) → [0, 1, 2](111)
-def counter(sta):
-    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
-    dp = [[0] * N for i in range(1 << N)]
-    dp[1 << sta][sta] = 1
+# 6 7 5 3 2 4 1
+# グループ１ 6 7
+# グループ2 5
+# グループ3 3 2 4
+# グループ4 1
+# どれか１つのグループに属する
 
-    for bit in range(1, 1 << N):
-        if not bit & (1 << sta):
-            continue
-        # s:現在の場所
-        for s in range(N):
-            # sを踏んだことになっていなければ飛ばす
-            if not bit & (1 << s):
-                continue
-            # t:次の場所
-            for t in range(N):
-                # tを過去踏んでいない and s → tへのエッジがある
-                if (bit & (1 << t)) == 0 and G[s][t]:
-                    dp[bit|(1 << t)][t] += dp[bit][s]
+U = UnionFind(N + 1)
+group = []
 
-    return sum(dp[(1 << N) - 1])
+for x, y in que:
+    # １番目のものは必ずグループのリーダーになれる
+    if not group:
+        group.append(y)
+        continue
+    # リーダーが降順に並ぶように
+    if y < group[-1]:
+        group.append(y)
+        continue
+    opt = float('inf')
+    # グループ再編成
+    while group:
+        # yより小さいものは全てyが所属するグループに入る
+        if y > group[-1]:
+            l = group.pop()
+            U.union(l, y)
+            opt = min(opt, l) # yが所属するグループの中のリーダー　一番最初のものが記録される
+        else:
+            break
+    # リーダー変更
+    group.append(opt)
 
-print(counter(0))
+for i in range(N):
+    print(U.count(Q[i][1])) # yがiのもののサイズの大きさ　uf.funcはインデックスで呼ばなくてもいい
