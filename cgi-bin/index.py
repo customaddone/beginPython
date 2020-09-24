@@ -49,77 +49,61 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC002 派閥
-# 条件
-# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
-# (i, j)がqueryに含まれる
+# ABC021 C - 正直者の高橋くん
+# 経路の通りを求める問題
+N = 7
+a, b = 1, 7
+M = 8
+que = [
+[1, 2],
+[1, 3],
+[4, 2],
+[4, 3],
+[4, 5],
+[4, 6],
+[7, 5],
+[7, 6]
+]
+dist = [[] for i in range(N)]
+for x, y in que:
+    dist[x - 1].append(y - 1)
+    dist[y - 1].append(x - 1)
 
-# この人数nの最大値を求める
+# スタートからの最短距離測定
+def distance(sta):
+    # 木をstaから順にたどる（戻るの禁止）
+    pos = deque([sta])
+    ignore = [-1] * N
+    ignore[sta] = 0
 
-# 集合Aの取り方は？
-# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
-N, M = getNM()
-mem = set()
-for i in range(M):
-    a, b = getNM()
-    mem.add((a - 1, b - 1))
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in dist[u]:
+            if ignore[i] == -1:
+                ignore[i] = ignore[u] + 1
+                pos.append(i)
 
-ans = 0
-for bit in range(1 << N):
-    # 任意のi, jについてqueryに含まれているか判定
-    flag = True
-    for i in range(N):
-        for j in range(i + 1, N):
-            # 適当に選んだ２人がbitの中に含まれていれば
-            if bit & (1 << i) and bit & (1 << j):
-                if not (i, j) in mem:
-                    flag = False
-    # もし集合bitが条件を満たすなら人数を調べる
-    if flag:
-        opt = bin(bit).count('1')
-        ans = max(ans, opt)
-print(ans)
+    return ignore
 
-# ABC018 D - バレンタインデー
-N, M, P, Q, R = getNM()
-que = []
+d = distance(a - 1)
 
-# 女子N人の中からP人、男子M人の中からR人選ぶ
-# 女子N人の中からP人選ぶ通りがNCR通り 最大18C9 = 役4万通り
-# 男子についてもう4万通りを選ぶのは無理
-# 逆に女子P人が選んだ時にチョコレートを選んで幸福度が最大になるようにしよう
-# 男子y1がいれば += z1
-# 男子y2がいれば += z2...
+# スタートから特定の点まで最短距離で行く通りの数
+def counter(sta):
+    pos = deque([sta])
+    ignore = [0] * N
+    cnt = [0] * N
+    cnt[sta] = 1
 
-# 各通りについてチョコレート最大364通りを探索
-# チョコciについて選んだ女子にxiがいる場合はyiに幸福度を追加（yiが選ばれる場合の幸福度）
+    while len(pos) > 0:
+        u = pos.popleft()
+        if ignore[u] == 0:
+            ignore[u] = 1
+            # d[i] == d[u] + 1を満たすuの子ノード全てに
+            # 「スタートからuまでの通りの数」をプラス（他のルートからも来る）
+            for i in dist[u]:
+                if d[i] == d[u] + 1:
+                    cnt[i] += cnt[u]
+                    pos.append(i)
+    return cnt
 
-for i in range(R):
-    x, y, z = getNM()
-    que.append([x - 1, y - 1, z])
-
-def counter(array):
-    girls = set(array)
-    boys = [0] * M
-    for x, y, z in que:
-        if x in girls:
-            boys[y] += z
-    boys.sort(reverse = True)
-    return sum(boys[:Q])
-
-ans = 0
-# 女子の全組み合わせを出す
-def comb_pow(i, array):
-    global ans
-    if i == P:
-        ans = max(ans, counter(array))
-        return
-    # ここの4を変えてrootを変更
-    last = -1
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last + 1, N):
-        new_array = array + [j]
-        comb_pow(i + 1, new_array)
-comb_pow(0, [])
+print(counter(a - 1)[b - 1] % mod)
