@@ -49,59 +49,66 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC008 C - コイン
-n = getN()
-c = getArray(n)
-sumans = 0
+# ABC025 C - 双子と○×ゲーム
+# ゲーム木
 
-for i in c:
-    lista = [j for j in c if i % j == 0]
-    count = len(lista)
-    sumans += math.ceil(count / 2) / count
-print(sumans)
+b1 = getList()
+b2 = getList()
+c1 = getList() + [0]
+c2 = getList() + [0]
+c3 = getList() + [0]
+b = b1 + b2
+c = c1 + c2 + c3
+S = sum(b) + sum(c)
 
-# ABC011 D - 大ジャンプ
-def cmb_1(n, r):
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+def counter(array):
+    male = 0
+    for i in range(9):
+        # bの得点
+        if i <= 5:
+            if array[i] == array[i + 3]:
+                male += b[i]
+        # cの得点
+        if i % 3 == 0 or i % 3 == 1:
+            if array[i] == array[i + 1]:
+                male += c[i]
+    return male
 
-N, D = getNM()
-X, Y = getNM()
-X = abs(X)
-Y = abs(Y)
+memo = {}
 
-# X軸に平行に正の向きに飛ぶ回数はx_time + α回
-# X軸に平行に負の向きに飛ぶ回数はα回
-x_time = X // D
-y_time = Y // D
+def solve(array):
+    # メモ呼び出し
+    if str(array) in memo:
+        return memo[str(array)]
+    # ターンの計算
+    turn = 1
+    for i in array:
+        if i == 0 or i == 1:
+            turn += 1
+    if turn == 10:
+        return counter(array)
 
-if X % D != 0 or Y % D != 0 or N < x_time + y_time:
-    print(0)
-    exit()
+    if turn % 2 == 0:
+        point = S
+    else:
+        point = -S
 
-N_a = N - (x_time + y_time)
-if N_a % 2 != 0:
-    print(0)
-    exit()
-N_a //= 2
+    # i番目に駒を置いた時の全通りを探索して最善の手を呼び出す
+    # 今の盤面 + αを置いた時の点数が全て帰ってくる その中で
+    # turn % 2 == 0なら最小値、turn % 2 != 0 なら最大値を選ぶ
+    for i in range(9):
+        if array[i] == -1:
+            new = copy.deepcopy(array)
+            if turn % 2 == 0:
+                new[i] = 1
+                point = min(point, solve(new))
+            else:
+                new[i] = 0
+                point = max(point, solve(new))
+    memo[str(array)] = point
+    return point
 
-ans = 0
-for i in range(N_a + 1):
-    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
-print(ans / (4 ** N))
-
-# ABC024 D - 動的計画法
-A, B, C = getArray(3)
-
-# kCc / k+1Cc = k - c + 1 / k + 1
-# k+1Cc+1 / kCc = k + 1 / c + 1
-# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
-x = (C * pow(A, mod - 2, mod)) % mod
-y = (B * pow(A, mod - 2, mod)) % mod
-
-n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
-k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
-print((n - k) % mod, k % mod)
+opt = [-1] * 9
+ans = solve(opt)
+print(ans)
+print(S - ans)
