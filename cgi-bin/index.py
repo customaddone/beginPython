@@ -201,6 +201,39 @@ if fen_ans > N - fen_ans:
 else:
     print('Snuke')
 
+# ABC070 D - Transit Tree Path
+
+N = getN()
+dist = [[] for i in range(N + 1)]
+for i in range(N - 1):
+    a, b, c = getNM()
+    dist[a].append([b, c])
+    dist[b].append([a, c])
+ignore = [-1] * (N + 1)
+
+# Kからの最短距離をbfsで測る
+def distance(sta):
+    # 木をKから順にたどる（戻るの禁止）
+    pos = deque([sta])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in dist[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+
+Q, K = getNM()
+ignore[K] = 0
+distance(K)
+# 答えはK~xまでの距離+K~yまでの距離
+ans = []
+for i in range(Q):
+    x, y = getNM()
+    ans.append(ignore[x] + ignore[y])
+for i in ans:
+    print(i)
+
 # ARC037 B - バウムテスト
 N, M = 11, 11
 query = [
