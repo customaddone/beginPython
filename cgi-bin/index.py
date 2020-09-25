@@ -49,168 +49,154 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC008 C - コイン
-n = getN()
-c = getArray(n)
-sumans = 0
+N = 5
+# 木グラフ
+que = [
+[1, 2],
+[1, 4],
+[2, 3],
+[2, 5]
+]
+# 重みつき
+que_dis = [
+[1, 2, 2],
+[1, 4, 1],
+[2, 3, 2],
+[2, 5, 1]
+]
 
-for i in c:
-    lista = [j for j in c if i % j == 0]
-    count = len(lista)
-    sumans += math.ceil(count / 2) / count
-print(sumans)
+def build_tree(n, edge_list):
 
-# ABC011 D - 大ジャンプ
-def cmb_1(n, r):
-    r = min(n - r, r)
-    if (r < 0) or (n < r):
-        return 0
+    G = [[] for i in range(n)]
 
-    if n == 0:
-        return 1
+    for a, b in edge_list:
+        G[a - 1].append(b - 1)
+        G[b - 1].append(a - 1)
 
-    if r == 0:
-        return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+    return G
 
-N, D = getNM()
-X, Y = getNM()
-X = abs(X)
-Y = abs(Y)
+def build_tree_dis(n, edge_list):
 
-# X軸に平行に正の向きに飛ぶ回数はx_time + α回
-# X軸に平行に負の向きに飛ぶ回数はα回
-x_time = X // D
-y_time = Y // D
+    G = [[] for i in range(n)]
 
-if X % D != 0 or Y % D != 0 or N < x_time + y_time:
-    print(0)
-    exit()
+    for a, b, c in edge_list:
+        G[a - 1].append([b - 1, c])
+        G[b - 1].append([a - 1, c])
 
-N_a = N - (x_time + y_time)
-if N_a % 2 != 0:
-    print(0)
-    exit()
-N_a //= 2
+    return G
 
-ans = 0
-for i in range(N_a + 1):
-    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
-print(ans / (4 ** N))
+# 木の建設
+G1 = build_tree(N, que)
+G2 = build_tree_dis(N, que_dis)
 
-# ABC024 D - 動的計画法
-A, B, C = getArray(3)
+# 木を探索
+def search(n, edges, sta):
+    ignore = [0] * N
+    ignore[sta] = 1
+    pos = deque([sta])
+    # 探索
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i] == 0:
+                ignore[i] = 1
+                pos.append(i)
+# [0, 1, 3, 2, 4]
+search(N, G1, 0)
 
-# kCc / k+1Cc = k - c + 1 / k + 1
-# k+1Cc+1 / kCc = k + 1 / c + 1
-# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
-x = (C * pow(A, mod - 2, mod)) % mod
-y = (B * pow(A, mod - 2, mod)) % mod
+# staからの距離
+def distance(n, edges, sta):
+    # 木をKから順にたどる（戻るの禁止）
+    ignore = [-1] * N
+    ignore[sta] = 0
+    pos = deque([sta])
 
-n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
-k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
-print((n - k) % mod, k % mod)
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+    return ignore
+# [0, 2, 4, 1, 3]
+print(distance(N, G2, 0))
 
-# ABC058 D - いろはちゃんとマス目
-# 総計する
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
+# ABC067 D - Fennec VS. Snuke
+N = 12
+query = [
+[1, 3],
+[2, 3],
+[3, 4],
+[3, 5],
+[5, 11],
+[6, 12],
+[7, 9],
+[8, 9],
+[9, 10],
+[9, 11],
+[11, 12]
+]
 
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
+# nowからNまでのルート
+def router(n, sta, end):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    path[sta] = -1
 
-H, W, A, B = getNM()
+    while pos[0] != end:
+        u = pos.popleft()
+        ignore[u] = 1
 
-mother = cmb((H - 1) + (W - 1), (W - 1))
+        for i in dist[u]:
+            if ignore[i] != 1:
+                path[i] = u
+                pos.append(i)
 
-goban = cmb((H - A) + (B - 1), B - 1)
-togoal = cmb((A - 1) + (W - B - 1), (W - B - 1))
+    route = deque([end])
+    while True:
+        next = path[route[0]]
+        route.appendleft(next)
+        if route[0] == sta:
+            break
 
-for i in range(A):
-    row = H - A + i
-    col = B - 1
-    row_left = A - 1 - i
-    col_left = W - B - 1
-    mother -= cmb(row + col, row) * cmb(row_left + col_left, row_left)
-    mother %= mod
-print(mother)
+    return list(route)
 
-# ABC057 D - Maximum Average Sets
-N, A, B = getNM()
-V = sorted(getList(), reverse = True)
+route = router(N, 0, N - 1)
+print(route)
 
-# 1行目の答え　上からA個
-print(sum(V[:A]) / A)
+# NG以外のところで辿れるところの数
+def dfs_ter(sta, ng):
+    pos = deque([sta])
 
-# Vの各要素の数を数える
-dict = defaultdict(int)
-for i in range(N):
-    dict[V[i]] += 1
+    ignore = [0] * N
+    for i in ng:
+        ignore[i] = 1
 
-r = A
-n = 0
-for i in dict.items():
-    print(i)
-    if r - i[1] >= 0:
-        r -= i[1]
-    else:
-        n = i[1] # A個まで残りr個であり、そこには要素i[j]がn個入れられる
-        break
+    cnt = 0
+    while len(pos) > 0:
+        u = pos.popleft()
+        ignore[u] = 1
+        cnt += 1
+        for i in dist[u]:
+            if ignore[i] != 1:
+                pos.append(i)
 
-ans = 0
-# V[0] == V[A - 1]ならA個を超えても平均値が下がらない
-# 残りr個(合計でA個)決める、残りr + 1個(合計でA + 1個)決める...合計でB個決める
-if r > 0 and V[0] == V[A - 1]:
-    for i in range(r, B + 1):
-        ans += cmb_1(n, i)
+    return cnt
+
+L = len(route)
+fen_ter = route[:(L + 2 - 1) // 2]
+snu_ter = route[(L + 2 - 1) // 2:]
+
+fen_ans = dfs_ter(0, snu_ter)
+
+if fen_ans > N - fen_ans:
+    print('Fennec')
 else:
-    ans += cmb_1(n, r) # A個まであとr個残っており、n個のうちr個選ぶ
-
-print(ans)
-
-# ABC066 D - 11
-# 普通にやれば(cmb(N + 1, i)だが、今回ダブりがある
-# 29 19 ~ 19 31 9の場合
-# [29]のうちいくつか + １番目の19 + [31, 9]のうちいくつかと
-# [29]のうちいくつか + ２番目の19 + [31, 9]のうちいくつかはダブル
-# i個要素を選ぶとすると、19を選び、外側の要素からi - 1個選ぶ全通りについてダブルので１回引く
-N = getN()
-A = getList()
-
-lista = [0] * (max(A) + 1)
-double = 0
-# ダブり位置1を決める
-dou_ind_2 = 0
-for i in range(N + 1):
-    if lista[A[i]] > 0:
-        double = A[i]
-        dou_ind_2 = i
-        break
-    lista[A[i]] += 1
-# ダブり位置2を決める
-dou_ind_1 = 0
-for i in range(N + 1):
-    if A[i] == double:
-        dou_ind_1 = i
-        break
-
-outer = dou_ind_1 + (N - dou_ind_2)
-
-for i in range(1, N + 2):
-    if i == 1:
-        print(N)
-        continue
-    print((cmb(N + 1, i) - cmb(outer, i - 1)) % mod)
+    print('Snuke')
