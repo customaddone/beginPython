@@ -49,116 +49,40 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC006 D - トランプ挿入ソート
-n = getN()
-lista = [getList() for i in range(n)]
+def prime_factorize(n):
+    divisors = []
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
 
-# 最長増加部分列問題 (LIS)の問題
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-print(n - lis(lista))
+    return divisors
 
-# Donutsプロコンチャレンジ2015 C - 行列のできるドーナツ屋
-# LISの応用
-
+# ABC052 C - Factors of Factorial
 N = getN()
-H = getList()
 
-# まあBITだろう
-# 逆から置くBITではない？
-# 累積和？
-# 個数だけ求めればいい
+# N!の因数 = (2の因数) + (3の因数)...
+# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
+mod = 10 ** 9 + 7
+ans = 1
+# それぞれの因数となる素数の数をセットする
+dp = [0] * (N + 1)
 
-# 地点iからは
-# i - 1起点の単純増加列
-# LIS？
-ans = [0] * N
-L = []
-# 人0 ~ iまでがどのように見えるか これを人i + 1が見る
-for i in range(N - 1):
-    # もしLの一番小さいやつよりH[i]が大きければ
-    while L and L[-1] < H[i]:
-        L.pop()
-    L.append(H[i])
-    ans[i + 1] = len(L)
-
-for i in ans:
-    print(i)
-
-# ACLC1 A - Reachable Towns
-
-N = getN()
-Q = [getList() for i in range(N)]
-que = deepcopy(Q)
-que.sort(key = lambda i:i[1], reverse = True)
-que.sort()
-
-# xy座標が共に大きいもの
-# 順列になっている？
-
-"""
-O(n**2)
-U = UnionFind(N)
-for i in range(N):
-    for j in range(i + 1, N):
-        if que[i][1] < que[j][1]:
-            U.union(i, j)
-for i in range(N):
-    print(U.count(i))
-"""
-#　ソート方法はこれでOK
-# やらなくていい探索がある　それを減らす
-# 4 3
-# 4 1
-# 4 2
-# 3 1
-# 3 2
-# 1 2 これだけいる
-
-# 4 3 1 2でi < jになるものをペアに
-# 1とペアにできるのは2, 3, 4
-# 2とペアにできるのは3, 4
-# 3は4
-# それぞれ右側にあれば
-
-# 6 7 5 3 2 4 1
-# グループ１ 6 7
-# グループ2 5
-# グループ3 3 2 4
-# グループ4 1
-# どれか１つのグループに属する
-
-U = UnionFind(N + 1)
-group = []
-
-for x, y in que:
-    # １番目のものは必ずグループのリーダーになれる
-    if not group:
-        group.append(y)
-        continue
-    # リーダーが降順に並ぶように
-    if y < group[-1]:
-        group.append(y)
-        continue
-    opt = float('inf')
-    # グループ再編成
-    while group:
-        # yより小さいものは全てyが所属するグループに入る
-        if y > group[-1]:
-            l = group.pop()
-            U.union(l, y)
-            opt = min(opt, l) # yが所属するグループの中のリーダー　一番最初のものが記録される
-        else:
-            break
-    # リーダー変更
-    group.append(opt)
-
-for i in range(N):
-    print(U.count(Q[i][1])) # yがiのもののサイズの大きさ　uf.funcはインデックスで呼ばなくてもいい
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        if j[0] > 1:
+            dp[j[0]] += j[1]
+# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
+for i in dp:
+    if i > 0:
+        ans = (ans * (i + 1)) % mod
+print(ans % mod)
