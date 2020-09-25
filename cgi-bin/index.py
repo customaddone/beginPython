@@ -49,194 +49,168 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
+# ABC008 C - コイン
+n = getN()
+c = getArray(n)
+sumans = 0
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+for i in c:
+    lista = [j for j in c if i % j == 0]
+    count = len(lista)
+    sumans += math.ceil(count / 2) / count
+print(sumans)
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
+# ABC011 D - 大ジャンプ
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if (r < 0) or (n < r):
+        return 0
 
-        if x == y:
-            return
+    if n == 0:
+        return 1
 
-        if self.parents[x] > self.parents[y]:
-            x, y = y, x
+    if r == 0:
+        return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
+N, D = getNM()
+X, Y = getNM()
+X = abs(X)
+Y = abs(Y)
 
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
+# X軸に平行に正の向きに飛ぶ回数はx_time + α回
+# X軸に平行に負の向きに飛ぶ回数はα回
+x_time = X // D
+y_time = Y // D
 
-    def size(self, x):
-        return -self.parents[self.find(x)]
+if X % D != 0 or Y % D != 0 or N < x_time + y_time:
+    print(0)
+    exit()
 
-    def members(self, x):
-        root = self.find(x)
-        return [i for i in range(self.n) if self.find(i) == root]
-
-    def roots(self):
-        return [i for i, x in enumerate(self.parents) if x < 0]
-
-    def all_group_members(self):
-        return {r: self.members(r) for r in self.roots()}
-
-# ABC002 派閥
-# 条件
-# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
-# (i, j)がqueryに含まれる
-
-# この人数nの最大値を求める
-
-# 集合Aの取り方は？
-# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
-N, M = getNM()
-mem = set()
-for i in range(M):
-    a, b = getNM()
-    mem.add((a - 1, b - 1))
+N_a = N - (x_time + y_time)
+if N_a % 2 != 0:
+    print(0)
+    exit()
+N_a //= 2
 
 ans = 0
-for bit in range(1 << N):
-    # 任意のi, jについてqueryに含まれているか判定
-    flag = True
-    for i in range(N):
-        for j in range(i + 1, N):
-            # 適当に選んだ２人がbitの中に含まれていれば
-            if bit & (1 << i) and bit & (1 << j):
-                if not (i, j) in mem:
-                    flag = False
-    # もし集合bitが条件を満たすなら人数を調べる
-    if flag:
-        opt = bin(bit).count('1')
-        ans = max(ans, opt)
+for i in range(N_a + 1):
+    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
+print(ans / (4 ** N))
+
+# ABC024 D - 動的計画法
+A, B, C = getArray(3)
+
+# kCc / k+1Cc = k - c + 1 / k + 1
+# k+1Cc+1 / kCc = k + 1 / c + 1
+# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
+x = (C * pow(A, mod - 2, mod)) % mod
+y = (B * pow(A, mod - 2, mod)) % mod
+
+n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
+k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
+print((n - k) % mod, k % mod)
+
+# ABC058 D - いろはちゃんとマス目
+# 総計する
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+H, W, A, B = getNM()
+
+mother = cmb((H - 1) + (W - 1), (W - 1))
+
+goban = cmb((H - A) + (B - 1), B - 1)
+togoal = cmb((A - 1) + (W - B - 1), (W - B - 1))
+
+for i in range(A):
+    row = H - A + i
+    col = B - 1
+    row_left = A - 1 - i
+    col_left = W - B - 1
+    mother -= cmb(row + col, row) * cmb(row_left + col_left, row_left)
+    mother %= mod
+print(mother)
+
+# ABC057 D - Maximum Average Sets
+N, A, B = getNM()
+V = sorted(getList(), reverse = True)
+
+# 1行目の答え　上からA個
+print(sum(V[:A]) / A)
+
+# Vの各要素の数を数える
+dict = defaultdict(int)
+for i in range(N):
+    dict[V[i]] += 1
+
+r = A
+n = 0
+for i in dict.items():
+    print(i)
+    if r - i[1] >= 0:
+        r -= i[1]
+    else:
+        n = i[1] # A個まで残りr個であり、そこには要素i[j]がn個入れられる
+        break
+
+ans = 0
+# V[0] == V[A - 1]ならA個を超えても平均値が下がらない
+# 残りr個(合計でA個)決める、残りr + 1個(合計でA + 1個)決める...合計でB個決める
+if r > 0 and V[0] == V[A - 1]:
+    for i in range(r, B + 1):
+        ans += cmb_1(n, i)
+else:
+    ans += cmb_1(n, r) # A個まであとr個残っており、n個のうちr個選ぶ
+
 print(ans)
 
-# ABC040 D - 道路の老朽化対策について
-# 人によって通れる橋が限定される場合がある
-# クエリソートしてUnion Find
-
-N, M = getNM()
-bridge = [getList() for i in range(M)]
-Q = getN()
-resident = []
-for i in range(Q):
-    a, b = getNM()
-    resident.append([a, b, i])
-
-bridge.sort(reverse = True, key = lambda i:i[2])
-resident.sort(reverse = True, key = lambda i:i[1])
-
-U = UnionFind(N)
-
-ans = []
-index = 0
-for i in range(Q):
-    # 建築年が新しい順に橋をかけていく
-    for j in range(index, M):
-        if bridge[j][2] > resident[i][1]:
-            a, b, c = bridge[j]
-            U.union(a - 1, b - 1)
-        else:
-            index = j
-            break
-    # U.sizeで判定
-    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
-
-# 国民を登場順にソート
-ans.sort(key = lambda i: i[0])
-for i in ans:
-    print(i[1])
-
-# 各1 ~ Nに交易所を立てるのを0~Nにエッジを貼るのに見立てる
-N, M = getNM()
-edges = []
-for i in range(N):
-    c = getN()
-    edges.append((c, 0, i + 1))
-for i in range(M):
-    s, t, w = getNM()
-    edges.append((w, s, t))
-edges.sort()
-
-def kruskal(n, edges):
-    U = UnionFind(n)
-    res = 0
-    for e in edges:
-        w, s, t = e
-        if not U.same(s, t):
-            res += w
-            U.union(s, t)
-    return res
-print(kruskal(N + 1, edges))
-
-# 駐車場
-N, M, S = getNM()
-S -= 1
-dist = [[] for i in range(N)]
-for i in range(M):
-    v1, v2 = getNM()
-    v1 -= 1
-    v2 -= 1
-    v1, v2 = min(v1, v2), max(v1, v2)
-    dist[v1].append(v2)
-
-U = UnionFind(N)
-
-ans = []
-for i in range(N - 1, -1, -1):
-    # 地点iに車を駐める場合、一端がiの道は使えない
-    # → iに車を停める以前であれば,一端がiの道を使える
-    for j in dist[i]:
-        U.union(i, j)
-    if U.same(i, S):
-        ans.append(i + 1)
-ans.sort()
-for i in ans:
-    print(i)
-
-# ABC065 built?
-# xでソート、yでソートし、それぞれ
-# abs(a - b)とabs(c - d)のエッジをそれぞれ加える
-# どちらか短い方が使われる
+# ABC066 D - 11
+# 普通にやれば(cmb(N + 1, i)だが、今回ダブりがある
+# 29 19 ~ 19 31 9の場合
+# [29]のうちいくつか + １番目の19 + [31, 9]のうちいくつかと
+# [29]のうちいくつか + ２番目の19 + [31, 9]のうちいくつかはダブル
+# i個要素を選ぶとすると、19を選び、外側の要素からi - 1個選ぶ全通りについてダブルので１回引く
 N = getN()
-query = []
-for i in range(N):
-    a, b = getNM()
-    query.append([a, b, i])
+A = getList()
 
-q_a = sorted(query, key = lambda i: i[0])
-q_b = sorted(query, key = lambda i: i[1])
-edges = []
+lista = [0] * (max(A) + 1)
+double = 0
+# ダブり位置1を決める
+dou_ind_2 = 0
+for i in range(N + 1):
+    if lista[A[i]] > 0:
+        double = A[i]
+        dou_ind_2 = i
+        break
+    lista[A[i]] += 1
+# ダブり位置2を決める
+dou_ind_1 = 0
+for i in range(N + 1):
+    if A[i] == double:
+        dou_ind_1 = i
+        break
 
-a1 = q_a[0]
-b1 = q_b[0]
-for i in range(1, N):
-    a2 = q_a[i]
-    b2 = q_b[i]
-    edges.append([abs(a1[0] - a2[0]), a1[2], a2[2]])
-    edges.append([abs(b1[1] - b2[1]), b1[2], b2[2]])
-    a1, b1 = a2, b2
-edges.sort()
+outer = dou_ind_1 + (N - dou_ind_2)
 
-def kruskal(n, edges):
-    U = UnionFind(n)
-    res = 0
-    for e in edges:
-        w, s, t = e
-        if not U.same(s, t):
-            res += w
-            U.union(s, t)
-        if U.size(0) == N:
-            break
-    return res
-print(kruskal(N, edges))
+for i in range(1, N + 2):
+    if i == 1:
+        print(N)
+        continue
+    print((cmb(N + 1, i) - cmb(outer, i - 1)) % mod)
