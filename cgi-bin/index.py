@@ -49,40 +49,236 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def prime_factorize(n):
-    divisors = []
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == []:
-        divisors.append([n, 1])
+# 文字列を整数に変換
+N = 26
 
-    return divisors
+def num2alpha(num):
+    if num <= 26:
+        return chr(96 + num)
+    elif num % 26 == 0:
+        return num2alpha(num // 26 - 1) + chr(122)
+    else:
+        return num2alpha(num // 26) + chr(96 + num % 26)
 
-# ABC052 C - Factors of Factorial
-N = getN()
+# z
+print(num2alpha(N))
 
-# N!の因数 = (2の因数) + (3の因数)...
-# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
-mod = 10 ** 9 + 7
-ans = 1
-# それぞれの因数となる素数の数をセットする
-dp = [0] * (N + 1)
+n = N
+lista = []
+digit = 26
+i = 0
 
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        if j[0] > 1:
-            dp[j[0]] += j[1]
-# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
-for i in dp:
-    if i > 0:
-        ans = (ans * (i + 1)) % mod
-print(ans % mod)
+while n != 0:
+    opt = n % digit
+    lista.insert(0, opt)
+    if n % digit == 0:
+        n = n // digit - 1
+    else:
+        n = n // digit
+    i += 1
+
+str_list = 'abcdefghijklmnopqrstuvwxyz'
+ans = ''
+for i in range(len(lista)):
+    ans += str_list[lista[i] - 1]
+
+# z
+print(ans)
+
+#  最長共通部分列
+s = 'pirikapirirara'
+t = 'poporinapeperuto'
+
+def dfs(s, ts):
+    lens = len(s)
+    lent = len(t)
+    dp = [[0] * (lent + 1) for i in range(lens + 1)]
+    dp[0][0] = 0
+
+    for i in range(lens):
+        for j in range(lent):
+            if s[i] == t[j]:
+                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
+            else:
+                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
+    return dp[lens][lent]
+print(dfs(s, t))
+
+# レーベンシュタイン距離
+s = "pirikapirirara"
+t = "poporinapeperuto"
+
+def dfs(s, t):
+    lens = len(s)
+    lent = len(t)
+    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
+    dp[0][0] = 0
+
+    for i in range(lens):
+        for j in range(lent):
+            if s[i] == t[j]:
+                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
+            else:
+                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
+    return dp[lens][lent]
+print(dfs(s, t))
+
+# ABC009 C - 辞書式順序ふたたび
+
+N,K = getNM()
+S = list(input())
+T = sorted(S)
+diff = 0
+ans = ""
+
+for i in range(N):
+    s = S[i]
+    # 残りの文字を全ループさせる
+    for t in T:
+        # tを追加して良いか確かめる
+        diff1 = diff + (s != t)
+        count = Counter(T)
+        count[t] -= 1
+        diff2 = sum((Counter(S[i + 1:]) - count).values())
+        # 追加していいなら
+        if diff1 + diff2 <= K:
+            diff = diff1
+            ans += t
+            T.remove(t)
+            break
+print(ans)
+
+# ABC031 語呂合わせ
+
+# 1 ~ Kまでの数字がどの単語に当てはまるか
+# 1 ~ Kに対し文字の候補は26 ** 3通り?
+
+# 文字列は総文字数、アルファベットの種類（２６種類、定数倍）で捉えられる
+
+N, M = getNM()
+que = []
+for i in range(M):
+    v, w = input().split()
+    que.append([v, w])
+root = 3
+
+def judge(array):
+    # 1 ~ Kに割り当てた文字数が正しいか
+    for v, w in que:
+        cnt = 0
+        for i in range(len(v)):
+            cnt += array[int(v[i]) - 1]
+        if cnt != len(w):
+            return
+    # 文字数が適合するなら
+    str_list = [''] * N
+    for v, w in que:
+        cnt = 0
+        # 文字を区切っていく
+        for i in range(len(v)):
+            str_len = array[int(v[i]) - 1]
+            opt = w[cnt: cnt + str_len]
+            if str_list[int(v[i]) - 1] == '':
+                str_list[int(v[i]) - 1] = opt
+            else:
+                if str_list[int(v[i]) - 1] != opt:
+                    return
+            cnt += str_len
+
+    # 全て適合するなら
+    for i in str_list:
+        print(i)
+    exit()
+
+# 1 ~ Kの文字数が何文字かについて3 ** Kを全探索
+def four_pow(i, array):
+    global cnt
+    if i == N:
+        judge(array)
+        return
+    for j in range(1, root + 1):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+four_pow(0, [])
+
+K, N = getNM()
+G = []
+for i in range(N):
+    v, w = map(str, input().split())
+    # 桁ごとに数字を分ける
+    v = list(v)
+    v = [int(d) - 1 for d in v]
+    G.append((v, w))
+
+# それぞれの語呂数に対して長さ1 ~ 3を割り当てる
+for p in product(range(1, 4), repeat = K):
+    S = [[] for _ in range(K)]
+    for v, w in G:
+        c = 0
+        # 長さが正しいか判定するパート
+        for d in v:
+            # 使われた語呂数の長さを足し合わせる
+            c += p[d]
+        if c != len(w):
+            break
+        # 文字列を割り当てるパート
+        else:
+            cur = 0
+            for d in v:
+                # 長さごとに文字列を切っていく
+                S[d].append(w[cur: cur + p[d]])
+                cur += p[d]
+    # 長さが整合したものが見つかれば
+    else:
+        for i in range(K):
+            # 任意の語呂数に対する文字列が一意に定まらなければ
+            # 112: abcで 1 = a, 1 = B, 2 = cになるみたいなケース
+            if len(set(S[i])) != 1:
+                break
+        else:
+            for i in range(K):
+                print(S[i][0])
+            exit()
+
+# ABC043 D - アンバランス
+# i文字目を見る場合
+# i - 1文字目が同じ文字ならアウト
+# i - 2文字目が同じでもアウト
+S = input()
+N = len(S)
+
+ans = [-1, -1]
+for i in range(1, N):
+    if S[i] == S[i - 1]:
+        ans = [i, i + 1]
+        break
+    if i > 1 and S[i] == S[i - 2]:
+        ans = [i - 1, i + 1]
+        break
+print(*ans)
+
+# ABC049 C - 白昼夢
+
+S = input()
+
+while len(S) >= 5:
+    # Sを４つの単語で順に調べて刈っていく
+    if len(S) >= 7 and S[-7:] == "dreamer":
+        S = S[:-7]
+        continue
+
+    if len(S) >= 6 and S[-6:] == "eraser":
+        S = S[:-6]
+        continue
+
+    elif S[-5:] == "dream" or S[-5:] == "erase":
+        S = S[:-5]
+        continue
+
+    else:
+        break
+
+if len(S) == 0:
+    print("YES")
+else:
+    print("NO")
