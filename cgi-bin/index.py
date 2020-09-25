@@ -49,233 +49,194 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 基本の二分探索
-lista = [i for i in range(10)]
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-def binary_search_loop(data, target):
-    imin = 0
-    imax = len(data) - 1
-    while imin <= imax:
-        imid = imin + (imax - imin) // 2
-        if target == data[imid]:
-            return imid
-        elif target < data[imid]:
-            imax = imid - 1
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
         else:
-            imin = imid + 1
-    return False
-print(binary_search_loop(lista, 4))
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-# 三分探索
-# ARC054 ムーアの法則
-def f(x):
-    return x + p / pow(2, 2 * x / 3)
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-p = float(input())
-left, right = 0, 100
+        if x == y:
+            return
 
-while right > left + 10 ** -10:
-    # mid二つ
-    mid1 = (right * 2 + left) / 3
-    mid2 = (right + left * 2) / 3
-    if f(mid1) >= f(mid2):
-        right = mid1
-    else:
-        left = mid2
-print(f(right))
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
 
-# 三分探索整数ver
-num = []
-for i in range(100):
-    if i < 50:
-        num.append(i)
-    else:
-        num.append(100 - i)
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
 
-left, right = 0, len(num) - 1
-while abs(right - left) > 3:
-    mid1 = (right * 2 + left) // 3 + 1
-    mid2 = (right + left * 2) // 3
-    # 最小値を求める場合は矢印逆になる
-    if num[mid1] <= num[mid2]:
-        right = mid1
-    else:
-        left = mid2
-print(right)
-print(left)
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
 
-# ARC050 B - 花束
-R, B = getNM()
-x, y = getNM()
-# 赤い花束をr束, 青い花束をb束とすると
-# R >= xr + b
-# B >= r + yb
-# を満たしながらk = r + bを最大化せよ
-# r = k - b
-# R >= x(k - b) + b = xk - (x - 1)b
-# B >= (k - b) + yb = k + (y - 1)b
-# (y - 1)R >= (y - 1)xk - (x - 1)(y - 1)b
-# (x - 1)B >= (x - 1)k + (x - 1)(y - 1)b
-# (y - 1)R + (x - 1)B >= ((y - 1)x + (x - 1))k
-# 二分探索?
+    def size(self, x):
+        return -self.parents[self.find(x)]
 
-def judge(k):
-    # あるkを決めた時に
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
 
-    # ①r >= 0, b >= 0
-    # ②r + b = k
-    # ③R >= xr + b = (x - 1)b
-    # ④B >= r + yb = (y - 1)b
-    # となるr, bが存在するか
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
 
-    # R - k >= (x - 1)r
-    # (R - k) / (x - 1) >= r
-    # B - k >= (y - 1)b
-    # (B - k) / (y - 1) >= b
-    # (R - k) // (x - 1) + (B - k) // (y - 1) >= kになるか
-    if R - k >= 0 and B - k >= 0 and (R - k) // (x - 1) + (B - k) // (y - 1) >= k:
-        return True
-    else:
-        return False
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
 
-ok = -1
-ng = 10 ** 18 + 1
+# ABC002 派閥
+# 条件
+# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
+# (i, j)がqueryに含まれる
 
-while abs(ok - ng) > 1:
-    mid = (ok + ng) // 2
-    if judge(mid):
-        ok = mid
-    else:
-        ng = mid
-print(ok)
+# この人数nの最大値を求める
 
-# AGC041 B - Voting Judges
+# 集合Aの取り方は？
+# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
+N, M = getNM()
+mem = set()
+for i in range(M):
+    a, b = getNM()
+    mem.add((a - 1, b - 1))
 
-"""
-# 問題:N問、ジャッジ:M人
-# M人のジャッジがそれぞれV問を選び、問題のスコアを１ずつあげる
-# M人の投票の後、大きい方からP問が選ばれる
-# 問題セットに選ばれる可能性があるのは何問あるか
-M人全員が投票すれば選ばれやすくなる
-選ばれるとは？
-可能性がないものを数えた方が早いのでは
-P番目以内にあれば無条件で通過
-現在のP番目 <= A[i] + M
-V <= Pなら
-上からP - 1番目までのどれか + A[i]を加算させることでA[i]を強くできる　
-V > Pなら？
-上からP - 1番目までとA[i]を強化するとして、残りのV - P個は小さいものから順に選ぶ
-A[i]を抜かせないようにしたい
-A[i]より大きい数字も一緒に足される場合にはP以内に入れない
-"""
-N, M, V, P = getNM()
-A = getList()
-A.sort(reverse = True)
-
-def judge(x):
-    if x < P:
-        return True
-    if A[P - 1] > A[x] + M:
-        return False
-    # P - 1番目まで + 自身以降の数字についてはM個足す
-    left = (V - (P - 1) - (N - x)) * M
-    # P個目からx-1まで A[x] + Mを超えない分足す
-    for i in range(P - 1, x):
-        left -= A[x] + M - A[i]
-
-    return left <= 0
-
-ok = -1
-ng = N
-
-while abs(ok - ng) > 1:
-    mid = (ok + ng) // 2
-    if judge(mid):
-        ok = mid
-    else:
-        ng = mid
-print(ok + 1)
-
-# ABC023 D - 射撃王
-N = getN()
-listh = []
-lists = []
-for i in range(N):
-    h, s = getNM()
-    listh.append(h)
-    lists.append(s)
-left = 0
-right = 10 ** 15
-
-for _ in range(50):
+ans = 0
+for bit in range(1 << N):
+    # 任意のi, jについてqueryに含まれているか判定
     flag = True
-    mid = (left + right) // 2
-    costtime = [0] * N
     for i in range(N):
-        costtime[i] = (mid - listh[i]) / lists[i]
-    costtime.sort()
-    for i in range(N):
-        if costtime[i] - i < 0:
-            flag = False
+        for j in range(i + 1, N):
+            # 適当に選んだ２人がbitの中に含まれていれば
+            if bit & (1 << i) and bit & (1 << j):
+                if not (i, j) in mem:
+                    flag = False
+    # もし集合bitが条件を満たすなら人数を調べる
     if flag:
-        right = mid
-    else:
-        left = mid
-print(right)
+        opt = bin(bit).count('1')
+        ans = max(ans, opt)
+print(ans)
 
-# ABC034 D - 食塩水
+# ABC040 D - 道路の老朽化対策について
+# 人によって通れる橋が限定される場合がある
+# クエリソートしてUnion Find
 
-N, K = getNM()
-query = [getList() for i in range(N)]
+N, M = getNM()
+bridge = [getList() for i in range(M)]
+Q = getN()
+resident = []
+for i in range(Q):
+    a, b = getNM()
+    resident.append([a, b, i])
 
-def judge(target):
-    alta = []
-    for i in range(N):
-        salt = query[i][0] * (query[i][1] - target)
-        alta.append(salt)
-    alta.sort(reverse = True)
-    return sum(alta[:K]) >= 0
+bridge.sort(reverse = True, key = lambda i:i[2])
+resident.sort(reverse = True, key = lambda i:i[1])
 
-left = -1
-right = 101
+U = UnionFind(N)
 
-for i in range(100):
-    mid = left + (right - left) / 2
-    if judge(mid):
-        left = mid
-    else:
-        right = mid
-print(left)
+ans = []
+index = 0
+for i in range(Q):
+    # 建築年が新しい順に橋をかけていく
+    for j in range(index, M):
+        if bridge[j][2] > resident[i][1]:
+            a, b, c = bridge[j]
+            U.union(a - 1, b - 1)
+        else:
+            index = j
+            break
+    # U.sizeで判定
+    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
 
-# ABC063 D - Widespread
-# 最小で何回の　二分探索
-# 通常攻撃time回を全員に食らわせる→爆発time回を食らわせる
-# 魔物は生き残ることができるか
-N, A, B = getNM()
-H = getArray(N)
+# 国民を登場順にソート
+ans.sort(key = lambda i: i[0])
+for i in ans:
+    print(i[1])
 
-def judge(time, main, sub, hp):
-    diff = main - sub
-    cnt = 0
-    for i in range(len(hp)):
-        left = hp[i] - time * sub
-        if left > 0:
-            cnt += (left + diff - 1) // diff
+# 各1 ~ Nに交易所を立てるのを0~Nにエッジを貼るのに見立てる
+N, M = getNM()
+edges = []
+for i in range(N):
+    c = getN()
+    edges.append((c, 0, i + 1))
+for i in range(M):
+    s, t, w = getNM()
+    edges.append((w, s, t))
+edges.sort()
 
-    return cnt
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(N + 1, edges))
 
-ok = 10 ** 12 + 1
-ng = -1
+# 駐車場
+N, M, S = getNM()
+S -= 1
+dist = [[] for i in range(N)]
+for i in range(M):
+    v1, v2 = getNM()
+    v1 -= 1
+    v2 -= 1
+    v1, v2 = min(v1, v2), max(v1, v2)
+    dist[v1].append(v2)
 
-while ok - ng > 1:
-    mid = (ok + ng) // 2
-    opt = judge(mid, A, B, H)
+U = UnionFind(N)
 
-    # mid:仮のの回数
-    # opt:midを定めた時必要な爆発の回数
-    # 仮の回数が必要な回数より多ければokを緩和
-    if mid >= opt:
-        ok = mid
-    else:
-        ng = mid
-print(ok)
+ans = []
+for i in range(N - 1, -1, -1):
+    # 地点iに車を駐める場合、一端がiの道は使えない
+    # → iに車を停める以前であれば,一端がiの道を使える
+    for j in dist[i]:
+        U.union(i, j)
+    if U.same(i, S):
+        ans.append(i + 1)
+ans.sort()
+for i in ans:
+    print(i)
+
+# ABC065 built?
+# xでソート、yでソートし、それぞれ
+# abs(a - b)とabs(c - d)のエッジをそれぞれ加える
+# どちらか短い方が使われる
+N = getN()
+query = []
+for i in range(N):
+    a, b = getNM()
+    query.append([a, b, i])
+
+q_a = sorted(query, key = lambda i: i[0])
+q_b = sorted(query, key = lambda i: i[1])
+edges = []
+
+a1 = q_a[0]
+b1 = q_b[0]
+for i in range(1, N):
+    a2 = q_a[i]
+    b2 = q_b[i]
+    edges.append([abs(a1[0] - a2[0]), a1[2], a2[2]])
+    edges.append([abs(b1[1] - b2[1]), b1[2], b2[2]])
+    a1, b1 = a2, b2
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+        if U.size(0) == N:
+            break
+    return res
+print(kruskal(N, edges))
