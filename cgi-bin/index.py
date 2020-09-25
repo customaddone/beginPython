@@ -49,54 +49,134 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def prime_factorize(n):
-    divisors = []
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == []:
-        divisors.append([n, 1])
+# ABC008 C - コイン
+n = getN()
+c = getArray(n)
+sumans = 0
 
-    return divisors
+for i in c:
+    lista = [j for j in c if i % j == 0]
+    count = len(lista)
+    sumans += math.ceil(count / 2) / count
+print(sumans)
 
-# ABC052 C - Factors of Factorial
-N = getN()
+# ABC011 D - 大ジャンプ
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if (r < 0) or (n < r):
+        return 0
 
-# N!の因数 = (2の因数) + (3の因数)...
-# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
+    if n == 0:
+        return 1
 
-N = getN()
-mod = 10 ** 9 + 7
-ans = 1
-# それぞれの因数となる素数の数をセットする
-dp = [0] * (N + 1)
+    if r == 0:
+        return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        if j[0] > 1:
-            dp[j[0]] += j[1]
-# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
-for i in dp:
-    if i > 0:
-        ans = (ans * (i + 1)) % mod
-print(ans % mod)
+N, D = getNM()
+X, Y = getNM()
+X = abs(X)
+Y = abs(Y)
 
-# ABC057 C - Digits in Multiplication
-# √nで求まる
-N = getN()
+# X軸に平行に正の向きに飛ぶ回数はx_time + α回
+# X軸に平行に負の向きに飛ぶ回数はα回
+x_time = X // D
+y_time = Y // D
 
-ans = []
-sq = math.floor(math.sqrt(N))
-for i in range(sq, 0, -1):
-    if N % i == 0:
-        ans = [i, N // i]
+if X % D != 0 or Y % D != 0 or N < x_time + y_time:
+    print(0)
+    exit()
+
+N_a = N - (x_time + y_time)
+if N_a % 2 != 0:
+    print(0)
+    exit()
+N_a //= 2
+
+ans = 0
+for i in range(N_a + 1):
+    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
+print(ans / (4 ** N))
+
+# ABC024 D - 動的計画法
+A, B, C = getArray(3)
+
+# kCc / k+1Cc = k - c + 1 / k + 1
+# k+1Cc+1 / kCc = k + 1 / c + 1
+# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
+x = (C * pow(A, mod - 2, mod)) % mod
+y = (B * pow(A, mod - 2, mod)) % mod
+
+n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
+k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
+print((n - k) % mod, k % mod)
+
+# ABC058 D - いろはちゃんとマス目
+# 総計する
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+H, W, A, B = getNM()
+
+mother = cmb((H - 1) + (W - 1), (W - 1))
+
+goban = cmb((H - A) + (B - 1), B - 1)
+togoal = cmb((A - 1) + (W - B - 1), (W - B - 1))
+
+for i in range(A):
+    row = H - A + i
+    col = B - 1
+    row_left = A - 1 - i
+    col_left = W - B - 1
+    mother -= cmb(row + col, row) * cmb(row_left + col_left, row_left)
+    mother %= mod
+print(mother)
+
+# ABC057 D - Maximum Average Sets
+N, A, B = getNM()
+V = sorted(getList(), reverse = True)
+
+# 1行目の答え　上からA個
+print(sum(V[:A]) / A)
+
+# Vの各要素の数を数える
+dict = defaultdict(int)
+for i in range(N):
+    dict[V[i]] += 1
+
+r = A
+n = 0
+for i in dict.items():
+    print(i)
+    if r - i[1] >= 0:
+        r -= i[1]
+    else:
+        n = i[1] # A個まで残りr個であり、そこには要素i[j]がn個入れられる
         break
-print(max(len(str(ans[0])), len(str(ans[1]))))
+
+ans = 0
+# V[0] == V[A - 1]ならA個を超えても平均値が下がらない
+# 残りr個(合計でA個)決める、残りr + 1個(合計でA + 1個)決める...合計でB個決める
+if r > 0 and V[0] == V[A - 1]:
+    for i in range(r, B + 1):
+        ans += cmb_1(n, i)
+else:
+    ans += cmb_1(n, r) # A個まであとr個残っており、n個のうちr個選ぶ
+
+print(ans)
