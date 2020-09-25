@@ -49,238 +49,101 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 5
-# 木グラフ
-que = [
-[1, 2],
-[1, 4],
-[2, 3],
-[2, 5]
-]
-# 重みつき
-que_dis = [
-[1, 2, 2],
-[1, 4, 1],
-[2, 3, 2],
-[2, 5, 1]
-]
+# ABC022 C - Blue Bird
+# 自分の家からスタートして同じ道を通らないで家に戻ってくる
+# 違う道を通る、一つ目の家と最後の家は違うということ
+# ワーシャルフロイドで
 
-def build_tree(n, edge_list):
+N, M = getNM()
+query = [getList() for i in range(M)]
 
-    G = [[] for i in range(n)]
+dist = [[float('inf')] * N for i in range(N)]
+sec_list = []
 
-    for a, b in edge_list:
-        G[a - 1].append(b - 1)
-        G[b - 1].append(a - 1)
-
-    return G
-
-def build_tree_dis(n, edge_list):
-
-    G = [[] for i in range(n)]
-
-    for a, b, c in edge_list:
-        G[a - 1].append([b - 1, c])
-        G[b - 1].append([a - 1, c])
-
-    return G
-
-# 木の建設
-G1 = build_tree(N, que)
-G2 = build_tree_dis(N, que_dis)
-
-# 木を探索
-def search(n, edges, sta):
-    ignore = [0] * N
-    ignore[sta] = 1
-    pos = deque([sta])
-    # 探索
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i] == 0:
-                ignore[i] = 1
-                pos.append(i)
-# [0, 1, 3, 2, 4]
-search(N, G1, 0)
-
-# staからの距離
-def distance(n, edges, sta):
-    # 木をKから順にたどる（戻るの禁止）
-    ignore = [-1] * N
-    ignore[sta] = 0
-    pos = deque([sta])
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
-    return ignore
-# [0, 2, 4, 1, 3]
-print(distance(N, G2, 0))
-
-# ABC067 D - Fennec VS. Snuke
-N = 12
-query = [
-[1, 3],
-[2, 3],
-[3, 4],
-[3, 5],
-[5, 11],
-[6, 12],
-[7, 9],
-[8, 9],
-[9, 10],
-[9, 11],
-[11, 12]
-]
-
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-# nowからNまでのルート
-def router(n, sta, end):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    path[sta] = -1
-
-    while pos[0] != end:
-        u = pos.popleft()
-        ignore[u] = 1
-
-        for i in dist[u]:
-            if ignore[i] != 1:
-                path[i] = u
-                pos.append(i)
-
-    route = deque([end])
-    while True:
-        next = path[route[0]]
-        route.appendleft(next)
-        if route[0] == sta:
-            break
-
-    return list(route)
-
-route = router(N, 0, N - 1)
-print(route)
-
-# NG以外のところで辿れるところの数
-def dfs_ter(sta, ng):
-    pos = deque([sta])
-
-    ignore = [0] * N
-    for i in ng:
-        ignore[i] = 1
-
-    cnt = 0
-    while len(pos) > 0:
-        u = pos.popleft()
-        ignore[u] = 1
-        cnt += 1
-        for i in dist[u]:
-            if ignore[i] != 1:
-                pos.append(i)
-
-    return cnt
-
-L = len(route)
-fen_ter = route[:(L + 2 - 1) // 2]
-snu_ter = route[(L + 2 - 1) // 2:]
-
-fen_ans = dfs_ter(0, snu_ter)
-
-if fen_ans > N - fen_ans:
-    print('Fennec')
-else:
-    print('Snuke')
-
-# ABC070 D - Transit Tree Path
-
-N = getN()
-dist = [[] for i in range(N + 1)]
-for i in range(N - 1):
-    a, b, c = getNM()
-    dist[a].append([b, c])
-    dist[b].append([a, c])
-ignore = [-1] * (N + 1)
-
-# Kからの最短距離をbfsで測る
-def distance(sta):
-    # 木をKから順にたどる（戻るの禁止）
-    pos = deque([sta])
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in dist[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
-
-Q, K = getNM()
-ignore[K] = 0
-distance(K)
-# 答えはK~xまでの距離+K~yまでの距離
-ans = []
-for i in range(Q):
-    x, y = getNM()
-    ans.append(ignore[x] + ignore[y])
-for i in ans:
-    print(i)
-
-# ARC037 B - バウムテスト
-N, M = 11, 11
-query = [
-[1, 2],
-[1, 3],
-[2, 4],
-[3, 5],
-[4, 6],
-[5, 7],
-[6, 8],
-[7, 9],
-[8, 10],
-[9, 11],
-[10, 11]
-]
-dist = [[] for i in range(N)]
 for i in range(M):
-    a, b = query[i]
-    a -= 1
-    b -= 1
-    dist[a].append(b)
-    dist[b].append(a)
+    a, b, c = query[i]
+    if a == 1:
+        sec_list.append([b - 1, c])
+    elif b == 1:
+        sec_list.appedn([a - 1, c])
+    if a != 1 and b != 1:
+        dist[a - 1][b - 1] = c
+        dist[b - 1][a - 1] = c
 
-ignore = [0] * N
-ans = 0
-# 閉路検出
-def search(x, dist):
-    global ans
-    # 現在の位置とparent
-    pos = deque([[x, -1]])
-    ignore[x] = 1
-    flag = True
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
 
-    while pos:
-        u, parent = pos.popleft()
-        for i in dist[u]:
-            if i != parent:
-                if ignore[i] == 1:
-                    flag = False
-                    continue
-                ignore[i] = 1
-                pos.append([i, u])
-    if flag:
-        ans += 1
+warshall_floyd(dist)
 
-# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+# 高橋くんの家の隣にある家同志について探索
+ans = float('inf')
+for i in range(len(sec_list)):
+    for j in range(i + 1, len(sec_list)):
+        x1 = sec_list[i]
+        x2 = sec_list[j]
+        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
+        ans = min(ans, opt)
+
+if ans == float('inf'):
+    print(-1)
+else:
+    print(ans)
+
+# ABC051 D - Candidates of No Shortest Paths
+
+N, M = getNM()
+query = [getList() for i in range(M)]
+
+dist = [[float('inf')] * N for i in range(N)]
 for i in range(N):
-    if ignore[i] == 0:
-        search(i, dist)
+    dist[i][i] = 0
+for i in range(M):
+    a, b, c = query[i]
+    dist[a - 1][b - 1] = c
+    dist[b - 1][a - 1] = c
+
+warshall_floyd(dist)
+ng_dist = [0] * M
+
+# 各エッジについて探索
+# dist(s, i) + edge(i, j) = dist(s, j)ならその辺は最短距離を構成する
+for i in range(N):
+    for j in range(M):
+        s, t, c = query[j]
+        if dist[i][s - 1] + c == dist[i][t - 1]:
+            ng_dist[j] = 1
+
+cnt = 0
+for i in ng_dist:
+    if i == 0:
+        cnt += 1
+print(cnt)
+
+# ABC073 D - joisino's travel
+# Rが小さいのでpermutationする
+N, M, R = getNM()
+
+d = [[float("inf")] * N for i in range(N)]
+list_R = [int(i) - 1 for i in input().split()]
+for i in range(M):
+   x, y, z = getNM()
+   d[x - 1][y - 1] = min(d[x - 1][y - 1], z)
+   d[y - 1][x - 1] = min(d[x - 1][y - 1], z)
+
+warshall_floyd(d)
+
+ans = float('inf')
+for case in permutations(list_R):
+    x1 = case[0]
+    opt = 0
+    for j in range(1, R):
+        x2 = case[j]
+        opt += d[x1][x2]
+        x1 = x2
+    ans = min(ans, opt)
 print(ans)
