@@ -114,6 +114,10 @@ for i in range(K, N):
 # ABC062 D - 3N Numbers
 N = getN()
 A = getList()
+# foreとbackの境界線を移動させる
+# [3 1 4 1 5 9]の場合
+# foreは[3 1], [3 1 4], [3, 1, 4, 1]の場合
+# backは[5 9], [1 5 9], [4, 1, 5, 9]の場合を前計算
 # 前から計算
 fore = A[:N]
 # 後ろから計算
@@ -121,23 +125,27 @@ back = A[2 * N:]
 back = [-i for i in back]
 for_sum = sum(fore)
 back_sum = sum(back)
-heapq.heapify(fore)
-heapq.heapify(back)
+heapify(fore)
+heapify(back)
+
 fore_list = []
 back_list = []
 for i in range(N):
     fore_list.append(for_sum)
     back_list.append(back_sum)
     in_fore = A[N + i]
-    heapq.heappush(fore, in_fore)
-    out_fore = heapq.heappop(fore)
+    heappush(fore, in_fore)
+    out_fore = heappop(fore)
     for_sum += in_fore - out_fore
+
     in_back = (-1) * A[-N - i - 1]
-    heapq.heappush(back, in_back)
-    out_back = heapq.heappop(back)
+    heappush(back, in_back)
+    out_back = heappop(back)
     back_sum += in_back - out_back
+
 fore_list.append(for_sum)
 back_list.append(back_sum)
+
 ans = -float('inf')
 for i in range(N + 1):
     opt = fore_list[i] + back_list[N - i]
