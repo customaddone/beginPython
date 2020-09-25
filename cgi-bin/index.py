@@ -49,117 +49,216 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC023 C - 収集王
-# 経路圧縮
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-R, C, K = getNM()
-N = getN()
-query = [getList() for i in range(N)]
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-# 縦hに行くとi個飴がもらえる
-h_list = defaultdict(int)
-w_list = defaultdict(int)
-h_len = set()
-w_len = set()
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-for h, w in query:
-    h -= 1
-    w -= 1
-    h_list[h] += 1
-    w_list[w] += 1
-    h_len.add(h)
-    w_len.add(w)
+        if x == y:
+            return
 
-# 飴がj個もらえる行はどこか
-candy_h = defaultdict(list)
-candy_w = defaultdict(list)
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
 
-for i in h_list.items():
-    candy_h[i[1]].append(i[0])
-for i in w_list.items():
-    candy_w[i[1]].append(i[0])
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
 
-# 縦のキャンディの個数が1 ~ K - 1の行それぞれについて
-# 横のキャンディの個数がK - 1 ~ 1の列を調べて掛け合わせ
-cnt = 0
-for i in candy_h.items():
-    if K - i[0] >= 1:
-        cnt += len(i[1]) * len(candy_w[K - i[0]])
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
 
-# 縦が0個
-cnt += (R - len(h_len)) * len(candy_w[K])
-# 縦がN個
-cnt += (C - len(w_len)) * len(candy_h[K])
+    def size(self, x):
+        return -self.parents[self.find(x)]
 
-# 足しすぎたもの、足していないものを修正
-for r, c in query:
-    r -= 1
-    c -= 1
-    if h_list[r] + w_list[c] == K:
-        cnt -= 1
-    elif h_list[r] + w_list[c] == K + 1:
-        cnt += 1
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
 
-print(cnt)
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
 
-# ABC075 D - Axis-Parallel Rectangle
-# 経路圧縮 + 二次元累積和
-N, K = getNM()
-query = [getList() for i in range(N)]
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
 
-# x軸, y軸を作る
-x_axis = set()
-y_axis = set()
-for i in query:
-    x_axis.add(i[0])
-    y_axis.add(i[1])
-x_axis = sorted(list(x_axis))
-y_axis = sorted(list(y_axis))
+# ABC002 派閥
+# 条件
+# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
+# (i, j)がqueryに含まれる
 
-# 経路圧縮
-dp = [[0] * len(x_axis) for i in range(len(y_axis))]
-for i in query:
-    x = x_axis.index(i[0])
-    y = y_axis.index(i[1])
-    dp[y][x] += 1
+# この人数nの最大値を求める
 
-dp_n = [[0] * len(x_axis) for i in range(len(y_axis))]
+# 集合Aの取り方は？
+# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
+N, M = getNM()
+mem = set()
+for i in range(M):
+    a, b = getNM()
+    mem.add((a - 1, b - 1))
 
-# 累積和
-def bi_cumul_sum(dp_n, dp_bef, h, w):
-    # 縦１行目、横１行目
-    for i in range(h):
-        dp_n[i][0] = dp_bef[i][0]
-    for i in range(h):
-        for j in range(1, w):
-            dp_n[i][j] = dp_n[i][j - 1] + dp_bef[i][j]
-    # 全て
-    for i in range(1, h):
-        for j in range(w):
-            dp_n[i][j] += dp_n[i - 1][j]
-
-bi_cumul_sum(dp_n, dp, len(y_axis), len(x_axis))
-
-# 範囲内に含まれる点の数を計算する
-def judge(sx, ex, sy, ey, dp):
-    mother = dp[ey][ex]
-    minus1 = 0
-    minus2 = 0
-    plus = 0
-    if sx > 0:
-        minus1 = dp[ey][sx - 1]
-    if sy > 0:
-        minus2 = dp[sy - 1][ex]
-    if sx > 0 and sy > 0:
-        plus = dp[sy - 1][sx - 1]
-    return mother - minus1 - minus2 + plus
-
-ans = float('inf')
-for sy in range(len(y_axis)):
-    for ey in range(sy, len(y_axis)):
-        for sx in range(len(x_axis)):
-            for ex in range(sx, len(x_axis)):
-                if judge(sx, ex, sy, ey, dp_n) >= K:
-                    opt = (x_axis[ex] - x_axis[sx]) * (y_axis[ey] - y_axis[sy])
-                    ans = min(ans, opt)
+ans = 0
+for bit in range(1 << N):
+    # 任意のi, jについてqueryに含まれているか判定
+    flag = True
+    for i in range(N):
+        for j in range(i + 1, N):
+            # 適当に選んだ２人がbitの中に含まれていれば
+            if bit & (1 << i) and bit & (1 << j):
+                if not (i, j) in mem:
+                    flag = False
+    # もし集合bitが条件を満たすなら人数を調べる
+    if flag:
+        opt = bin(bit).count('1')
+        ans = max(ans, opt)
 print(ans)
+
+# ABC040 D - 道路の老朽化対策について
+# 人によって通れる橋が限定される場合がある
+# クエリソートしてUnion Find
+
+N, M = getNM()
+bridge = [getList() for i in range(M)]
+Q = getN()
+resident = []
+for i in range(Q):
+    a, b = getNM()
+    resident.append([a, b, i])
+
+bridge.sort(reverse = True, key = lambda i:i[2])
+resident.sort(reverse = True, key = lambda i:i[1])
+
+U = UnionFind(N)
+
+ans = []
+index = 0
+for i in range(Q):
+    # 建築年が新しい順に橋をかけていく
+    for j in range(index, M):
+        if bridge[j][2] > resident[i][1]:
+            a, b, c = bridge[j]
+            U.union(a - 1, b - 1)
+        else:
+            index = j
+            break
+    # U.sizeで判定
+    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
+
+# 国民を登場順にソート
+ans.sort(key = lambda i: i[0])
+for i in ans:
+    print(i[1])
+
+# 各1 ~ Nに交易所を立てるのを0~Nにエッジを貼るのに見立てる
+N, M = getNM()
+edges = []
+for i in range(N):
+    c = getN()
+    edges.append((c, 0, i + 1))
+for i in range(M):
+    s, t, w = getNM()
+    edges.append((w, s, t))
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(N + 1, edges))
+
+# 駐車場
+N, M, S = getNM()
+S -= 1
+dist = [[] for i in range(N)]
+for i in range(M):
+    v1, v2 = getNM()
+    v1 -= 1
+    v2 -= 1
+    v1, v2 = min(v1, v2), max(v1, v2)
+    dist[v1].append(v2)
+
+U = UnionFind(N)
+
+ans = []
+for i in range(N - 1, -1, -1):
+    # 地点iに車を駐める場合、一端がiの道は使えない
+    # → iに車を停める以前であれば,一端がiの道を使える
+    for j in dist[i]:
+        U.union(i, j)
+    if U.same(i, S):
+        ans.append(i + 1)
+ans.sort()
+for i in ans:
+    print(i)
+
+# ABC065 built?
+# xでソート、yでソートし、それぞれ
+# abs(a - b)とabs(c - d)のエッジをそれぞれ加える
+# どちらか短い方が使われる
+N = getN()
+query = []
+for i in range(N):
+    a, b = getNM()
+    query.append([a, b, i])
+
+q_a = sorted(query, key = lambda i: i[0])
+q_b = sorted(query, key = lambda i: i[1])
+edges = []
+
+a1 = q_a[0]
+b1 = q_b[0]
+for i in range(1, N):
+    a2 = q_a[i]
+    b2 = q_b[i]
+    edges.append([abs(a1[0] - a2[0]), a1[2], a2[2]])
+    edges.append([abs(b1[1] - b2[1]), b1[2], b2[2]])
+    a1, b1 = a2, b2
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+        if U.size(0) == N:
+            break
+    return res
+print(kruskal(N, edges))
+
+# ABC075 bridge
+# 橋を探す
+n, m = map(int, input().split())
+lista = [list(map(int, input().split())) for i in range(m)]
+
+cnt = 0
+# 自分以外の道を全て繋いで一つのグループになるか（自分を繋がなくてもグループが一つにまとまるか）
+# を調べる
+for i in range(m):
+    # UnionFindをm回生成する
+    U = UnionFind(n)
+    # 自分以外の道を全てunionしていく
+    for j in range(m):
+        if i == j:
+            continue
+        a, b = lista[j]
+        U.union(a - 1, b - 1)
+    # 繋ぎ終わったら全体でグループが１つにまとまっているか調べる
+    if U.count_group() > 1:
+        cnt += 1
+print(cnt)
