@@ -49,101 +49,171 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC022 C - Blue Bird
-# 自分の家からスタートして同じ道を通らないで家に戻ってくる
-# 違う道を通る、一つ目の家と最後の家は違うということ
-# ワーシャルフロイドで
+# ABC004 マーブル
+R, G, B = getNM()
 
+dp = [[float('inf')] * (R + G + B + 1) for i in range(2001)]
+dp[0][R + G + B] = 0
+
+# 残り個数により置くボールの色が変化する
+# ボールを置くコストも変化する
+def judge(point, ball):
+    if ball > G + B:
+        return abs(point - (-100))
+    elif G + B >= ball > B:
+        return abs(point)
+    else:
+        return abs(100 - point)
+
+for i in range(1, 2001):
+    for j in range(R + G + B, -1, -1):
+        if j == R + G + B:
+            dp[i][j] = dp[i - 1][j]
+        else:
+            # i - 1000の地点にj + 1ボールを置き,残りはj個
+            dp[i][j] = min(dp[i - 1][j], dp[i - 1][j + 1] + judge(i - 1000, j + 1))
+print(dp[2000][0])
+
+# ABC017 D - サプリメント
 N, M = getNM()
-query = [getList() for i in range(M)]
+F = getArray(N)
 
-dist = [[float('inf')] * N for i in range(N)]
-sec_list = []
+# 何通り　→ comb or dp
+# O(N)で
+# 同じ味のサプリメントを摂取しない
+# dp[i]:i日目までにサプリを摂取する通りが何通りあるか
+# dp[i]:サプリi個目までにサプリを摂取する通りが何通りあるか
 
-for i in range(M):
-    a, b, c = query[i]
-    if a == 1:
-        sec_list.append([b - 1, c])
-    elif b == 1:
-        sec_list.appedn([a - 1, c])
-    if a != 1 and b != 1:
-        dist[a - 1][b - 1] = c
-        dist[b - 1][a - 1] = c
+# N, M = 5, 2
+# L = [1, 2, 1, 2, 2]の場合
+# dp[0] = 1
+# dp[1] = 1 1個目を新たに食べた場合、それ以前の通りは1通り
+# dp[2] = 2 2個目を新たに食べた場合、それ以前の通りは2通り
+# (前回1個目を食べたかもしれないし、今回1個目と合わせて2個目を食べたかもしれない)
+# dp[i] += dp[（最後にF[i]が登場した場所）] ~ dp[i - 1]
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
+dp = [0] * (N + 1) # dpだけ1-index
+dp[0] = 1
+ignore = [0] * (M + 1)
+l = 0
+now = dp[0]
+for r in range(N):
+    # 最初ignoreのフラグが立っていないが,nowにはdp[0]の値が入っている状態
+    while ignore[F[r]]:
+        ignore[F[l]] = 0 # F[l]のフラグを消す
+        now -= dp[l] # lの直前のdpを引く
+        now %= mod
+        l += 1
+    # dpをレコード（範囲の合計を足す）
+    dp[r + 1] = now
+    # rを1個ずらして更新
+    now += dp[r + 1]
+    now %= mod
+    ignore[F[r]] = 1
 
-warshall_floyd(dist)
+print(dp)
 
-# 高橋くんの家の隣にある家同志について探索
-ans = float('inf')
-for i in range(len(sec_list)):
-    for j in range(i + 1, len(sec_list)):
-        x1 = sec_list[i]
-        x2 = sec_list[j]
-        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
-        ans = min(ans, opt)
+# ABC044 C - 高橋君とカード
+# 平均はQ[i] -= Aしとく
+N, A = getNM()
+Q = getList()
+for i in range(N):
+    Q[i] -= A
 
-if ans == float('inf'):
-    print(-1)
+dp = [[0] * 5002 for i in range(N + 1)]
+dp[0][2501] = 1
+
+for i in range(1, N + 1):
+    for j in range(5002):
+        dp[i][j] += dp[i - 1][j]
+        if 0 <= j - Q[i - 1] <= 5001:
+            dp[i][j] += dp[i - 1][j - Q[i - 1]]
+
+print(dp[-1][2501] - 1)
+
+# ABC071 D - Coloring Dominoes
+N = getN()
+S1 = input()
+S2 = input()
+dp = [0 for i in range(N)]
+if S1[0] == S2[0]:
+    dp[0] = 3
 else:
-    print(ans)
+    dp[0] = 6
+# i - 1個目、i個目が
+# 横ドミノ１個目→横ドミノ２個目
+# 横ドミノ→横ドミノ
+# 横ドミノ→縦ドミノ
+# 縦ドミノ→縦ドミノ
+# 縦ドミノ→横ドミノそれぞれについて場合分け
+# 各回について
+for i in range(1, N):
+    # 横ドミノ２つ目だった場合
+    if S1[i] == S1[i - 1]:
+        dp[i] = dp[i - 1]
+    # 横ドミノ１つめor縦ドミノ１つ目の場合
+    else:
+        # 縦ドミノ１つ目
+        if S1[i] == S2[i]:
+            # 一つ前も縦ドミノ
+            if S1[i - 1] == S2[i - 1]:
+                dp[i] = (dp[i - 1] * 2) % mod
+            # 横ドミノ
+            else:
+                dp[i] = dp[i - 1]
+        # 横ドミノ1つ目
+        else:
+            # 一つ前が縦ドミノ
+            if S1[i - 1] == S2[i - 1]:
+                dp[i] = (dp[i - 1] * 2) % mod
+            # 一つ前が２つ目横ドミノ
+            else:
+                dp[i] = (dp[i - 1] * 3) % mod
+print(dp[-1])
 
-# ABC051 D - Candidates of No Shortest Paths
+# ABC074 C - Sugar Water
+# ABが水、CDが砂糖、Eがとけられる量、Fが上限
+A, B, C, D, E, F = getNM()
 
-N, M = getNM()
-query = [getList() for i in range(M)]
+# A,Bを好きな回数使うことでi(0 <= i <= 30)の水を作り出せる
+dp1 = [0] * 31
+dp1[0] = 1
+for i in range(1, 31):
+    if i >= A:
+        dp1[i] = max(dp1[i], dp1[i - A])
+    if i >= B:
+        dp1[i] = max(dp1[i], dp1[i - B])
+waterlist = []
+for i in range(31):
+    if dp1[i] > 0:
+        waterlist.append(i)
 
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-for i in range(M):
-    a, b, c = query[i]
-    dist[a - 1][b - 1] = c
-    dist[b - 1][a - 1] = c
+# C,Dを好きな回数使うことでi(0 <= i <= 3000)の砂糖を作り出せる
+dp2 = [0] * 3001
+dp2[0] = 1
+for i in range(1, 3001):
+    if i >= C:
+        dp2[i] = max(dp2[i], dp2[i - C])
+    if i >= D:
+        dp2[i] = max(dp2[i], dp2[i - D])
+sugerlist = []
+for i in range(3001):
+    if dp2[i] > 0:
+        sugerlist.append(i)
 
-warshall_floyd(dist)
-ng_dist = [0] * M
+ans = [0, 0]
+concent = 0
 
-# 各エッジについて探索
-# dist(s, i) + edge(i, j) = dist(s, j)ならその辺は最短距離を構成する
-for i in range(N):
-    for j in range(M):
-        s, t, c = query[j]
-        if dist[i][s - 1] + c == dist[i][t - 1]:
-            ng_dist[j] = 1
-
-cnt = 0
-for i in ng_dist:
-    if i == 0:
-        cnt += 1
-print(cnt)
-
-# ABC073 D - joisino's travel
-# Rが小さいのでpermutationする
-N, M, R = getNM()
-
-d = [[float("inf")] * N for i in range(N)]
-list_R = [int(i) - 1 for i in input().split()]
-for i in range(M):
-   x, y, z = getNM()
-   d[x - 1][y - 1] = min(d[x - 1][y - 1], z)
-   d[y - 1][x - 1] = min(d[x - 1][y - 1], z)
-
-warshall_floyd(d)
-
-ans = float('inf')
-for case in permutations(list_R):
-    x1 = case[0]
-    opt = 0
-    for j in range(1, R):
-        x2 = case[j]
-        opt += d[x1][x2]
-        x1 = x2
-    ans = min(ans, opt)
-print(ans)
+for water in waterlist[1:]:
+    if 100 * water <= F:
+        left = F - (water * 100)
+        # Fから水をひいた分、溶ける砂糖の限界を超えない量の砂糖を取得する
+        index = bisect_right(sugerlist, min(left, E * water))
+        suger = sugerlist[index - 1]
+        # 濃度計算
+        optconc = (100 * suger) / (100 * water + suger)
+        # ここ>にすると濃度0%に対応できずWAに
+        if optconc >= concent:
+            concent = optconc
+            ans = [100 * water + suger, suger]
+print(*ans)
