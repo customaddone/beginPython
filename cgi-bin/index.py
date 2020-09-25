@@ -49,67 +49,37 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC027 C - 倍々ゲーム
-# ２人が最善を尽くす時、どちらが勝つか
-# パターン1:ある状態になるように収束させれば必ず勝つ
-# パターン2:ある場所を目指せば必ず勝つようになる
-# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
+N, M = getNM()
+edges = []
+for i in range(M):
+    a, b, c = getNM()
+    edges.append([a - 1, b - 1, c])
 
-# まずは全通り試してみる　その中で勝ちが偏っている部分がある
-N = getN()
-k = N
-depth = 0
-while k > 1:
-    k //= 2
-    depth += 1
-x = 1
-cnt = 1
-if depth % 2:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-        else:
-            x *= 2
-            x += 1
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
-else:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-            x += 1
-        else:
-            x *= 2
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
+def bellman(edges, num_v):
+    dist = [-float('inf') for i in range(num_v)]
+    dist[0] = 0
 
-# ABC048 D - An Ordinary Game
-# 最終的にどのような形で終わるか
-S = input()
-if (S[0] != S[-1]) ^ (len(S) % 2):
-    print('Second')
-else:
-    print('First')
+    # 一回目のループ
+    for i in range(N - 1):
+        for edge in edges:
+            if dist[edge[1]] < dist[edge[0]] + edge[2]:
+                dist[edge[1]] = dist[edge[0]] + edge[2]
 
-# ABC059 D - Alice&Brown
-# まずは全通り試してみる
+    # 負閉路検出
+    nega = [0] * N
+    for i in range(N):
+        for edge in edges:
+            # rootが既に更新されているなら行く際も更新される
+            if nega[edge[0]] == 1:
+                nega[edge[1]] = 1
+            if dist[edge[1]] < dist[edge[0]] + edge[2]:
+                dist[edge[1]] = dist[edge[0]] + edge[2]
+                nega[edge[1]] = 1
 
-# 最終形をイメージする →
-# 1 0 操作出来ない　終わり
-# 1 1 操作出来ない　終わり
-# 逆に2 0 や 3 0 なら操作できる
-# 2以上開く、０か１開くを繰り返す
-X, Y = getNM()
-X = int(X)
-Y = int(Y)
+    if nega[N - 1]:
+        print('inf')
+        exit()
 
-if (X - Y) ** 2 > 1:
-    print("Alice")
-else:
-    print("Brown")
+    return dist
+
+print(bellman(edges, N)[N - 1])
