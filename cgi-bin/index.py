@@ -200,3 +200,54 @@ if fen_ans > N - fen_ans:
     print('Fennec')
 else:
     print('Snuke')
+
+# ARC037 B - バウムテスト
+N, M = 11, 11
+query = [
+[1, 2],
+[1, 3],
+[2, 4],
+[3, 5],
+[4, 6],
+[5, 7],
+[6, 8],
+[7, 9],
+[8, 10],
+[9, 11],
+[10, 11]
+]
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = query[i]
+    a -= 1
+    b -= 1
+    dist[a].append(b)
+    dist[b].append(a)
+
+ignore = [0] * N
+ans = 0
+# 閉路検出
+def search(x, dist):
+    global ans
+    # 現在の位置とparent
+    pos = deque([[x, -1]])
+    ignore[x] = 1
+    flag = True
+
+    while pos:
+        u, parent = pos.popleft()
+        for i in dist[u]:
+            if i != parent:
+                if ignore[i] == 1:
+                    flag = False
+                    continue
+                ignore[i] = 1
+                pos.append([i, u])
+    if flag:
+        ans += 1
+
+# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+for i in range(N):
+    if ignore[i] == 0:
+        search(i, dist)
+print(ans)
