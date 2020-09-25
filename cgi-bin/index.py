@@ -49,131 +49,117 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC022 C - Blue Bird
-# 自分の家からスタートして同じ道を通らないで家に戻ってくる
-# 違う道を通る、一つ目の家と最後の家は違うということ
-# ワーシャルフロイドで
+# ABC023 C - 収集王
+# 経路圧縮
 
-N, M = getNM()
-query = [getList() for i in range(M)]
-
-dist = [[float('inf')] * N for i in range(N)]
-sec_list = []
-
-for i in range(M):
-    a, b, c = query[i]
-    if a == 1:
-        sec_list.append([b - 1, c])
-    elif b == 1:
-        sec_list.appedn([a - 1, c])
-    if a != 1 and b != 1:
-        dist[a - 1][b - 1] = c
-        dist[b - 1][a - 1] = c
-
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
-
-warshall_floyd(dist)
-
-# 高橋くんの家の隣にある家同志について探索
-ans = float('inf')
-for i in range(len(sec_list)):
-    for j in range(i + 1, len(sec_list)):
-        x1 = sec_list[i]
-        x2 = sec_list[j]
-        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
-        ans = min(ans, opt)
-
-if ans == float('inf'):
-    print(-1)
-else:
-    print(ans)
-
-# ABC051 D - Candidates of No Shortest Paths
-
-N, M = getNM()
-query = [getList() for i in range(M)]
-
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-for i in range(M):
-    a, b, c = query[i]
-    dist[a - 1][b - 1] = c
-    dist[b - 1][a - 1] = c
-
-warshall_floyd(dist)
-ng_dist = [0] * M
-
-# 各エッジについて探索
-# dist(s, i) + edge(i, j) = dist(s, j)ならその辺は最短距離を構成する
-for i in range(N):
-    for j in range(M):
-        s, t, c = query[j]
-        if dist[i][s - 1] + c == dist[i][t - 1]:
-            ng_dist[j] = 1
-
-cnt = 0
-for i in ng_dist:
-    if i == 0:
-        cnt += 1
-print(cnt)
-
-# ABC073 D - joisino's travel
-# Rが小さいのでpermutationする
-N, M, R = getNM()
-
-d = [[float("inf")] * N for i in range(N)]
-list_R = [int(i) - 1 for i in input().split()]
-for i in range(M):
-   x, y, z = getNM()
-   d[x - 1][y - 1] = min(d[x - 1][y - 1], z)
-   d[y - 1][x - 1] = min(d[x - 1][y - 1], z)
-
-warshall_floyd(d)
-
-ans = float('inf')
-for case in permutations(list_R):
-    x1 = case[0]
-    opt = 0
-    for j in range(1, R):
-        x2 = case[j]
-        opt += d[x1][x2]
-        x1 = x2
-    ans = min(ans, opt)
-print(ans)
-
-# ABC074 D - Restoring Road Network
-
+R, C, K = getNM()
 N = getN()
 query = [getList() for i in range(N)]
-query_before = copy.deepcopy(query)
 
-warshall_floyd(query)
+# 縦hに行くとi個飴がもらえる
+h_list = defaultdict(int)
+w_list = defaultdict(int)
+h_len = set()
+w_len = set()
 
-if query != query_before:
-    print(-1)
-    exit()
+for h, w in query:
+    h -= 1
+    w -= 1
+    h_list[h] += 1
+    w_list[w] += 1
+    h_len.add(h)
+    w_len.add(w)
 
-edges = []
-for i in range(N):
-    for j in range(i + 1, N):
-        edges.append([query[i][j], i, j])
+# 飴がj個もらえる行はどこか
+candy_h = defaultdict(list)
+candy_w = defaultdict(list)
 
+for i in h_list.items():
+    candy_h[i[1]].append(i[0])
+for i in w_list.items():
+    candy_w[i[1]].append(i[0])
+
+# 縦のキャンディの個数が1 ~ K - 1の行それぞれについて
+# 横のキャンディの個数がK - 1 ~ 1の列を調べて掛け合わせ
 cnt = 0
-# それぞれのエッジについてそれが最短路の一部かを判定する
-for i in edges:
-    flag = True
-    w, s, t = i
-    for k in range(N):
-        if k != s and k != t and w >= query[s][k] + query[k][t]:
-            flag = False
-            break
-    if flag:
-        cnt += w
+for i in candy_h.items():
+    if K - i[0] >= 1:
+        cnt += len(i[1]) * len(candy_w[K - i[0]])
+
+# 縦が0個
+cnt += (R - len(h_len)) * len(candy_w[K])
+# 縦がN個
+cnt += (C - len(w_len)) * len(candy_h[K])
+
+# 足しすぎたもの、足していないものを修正
+for r, c in query:
+    r -= 1
+    c -= 1
+    if h_list[r] + w_list[c] == K:
+        cnt -= 1
+    elif h_list[r] + w_list[c] == K + 1:
+        cnt += 1
+
 print(cnt)
+
+# ABC075 D - Axis-Parallel Rectangle
+# 経路圧縮 + 二次元累積和
+N, K = getNM()
+query = [getList() for i in range(N)]
+
+# x軸, y軸を作る
+x_axis = set()
+y_axis = set()
+for i in query:
+    x_axis.add(i[0])
+    y_axis.add(i[1])
+x_axis = sorted(list(x_axis))
+y_axis = sorted(list(y_axis))
+
+# 経路圧縮
+dp = [[0] * len(x_axis) for i in range(len(y_axis))]
+for i in query:
+    x = x_axis.index(i[0])
+    y = y_axis.index(i[1])
+    dp[y][x] += 1
+
+dp_n = [[0] * len(x_axis) for i in range(len(y_axis))]
+
+# 累積和
+def bi_cumul_sum(dp_n, dp_bef, h, w):
+    # 縦１行目、横１行目
+    for i in range(h):
+        dp_n[i][0] = dp_bef[i][0]
+    for i in range(h):
+        for j in range(1, w):
+            dp_n[i][j] = dp_n[i][j - 1] + dp_bef[i][j]
+    # 全て
+    for i in range(1, h):
+        for j in range(w):
+            dp_n[i][j] += dp_n[i - 1][j]
+
+bi_cumul_sum(dp_n, dp, len(y_axis), len(x_axis))
+
+# 範囲内に含まれる点の数を計算する
+def judge(sx, ex, sy, ey, dp):
+    mother = dp[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
+
+ans = float('inf')
+for sy in range(len(y_axis)):
+    for ey in range(sy, len(y_axis)):
+        for sx in range(len(x_axis)):
+            for ex in range(sx, len(x_axis)):
+                if judge(sx, ex, sy, ey, dp_n) >= K:
+                    opt = (x_axis[ex] - x_axis[sx]) * (y_axis[ey] - y_axis[sy])
+                    ans = min(ans, opt)
+print(ans)
