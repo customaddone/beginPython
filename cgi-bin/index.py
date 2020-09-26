@@ -43,7 +43,7 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
-mod = 10 ** 9 + 7
+mod = 998244353
 
 #############
 # Main Code #
@@ -142,14 +142,12 @@ C = getArray(N)
 要素2について
 全く選ばない場合, (a, b)を選ぶ場合...
 島にして考える
-
 [1, 3, 1, 2, 3, 2, 1]の場合
 区間(0, 2), (0, 6), (1, 4), (3, 5)を選べる
 区間をピックアップするのは無理そう
 ダブらないように区間を選びたい
 最大流でできる？
 ソートすると？
-
 dpっぽい
 """
 
@@ -176,3 +174,27 @@ for i in range(N):
         dp[i + 1] += dp[dict[alta[i]][index - 1] + 1]
     dp[i + 1] %= mod
 print(dp[N] % mod)
+
+# ACLB D - Flat Subsequence
+# 実家DP
+# Aの要素そのものに着目する(BITで大きい要素から置いていく感覚)
+N, K = getNM()
+A = getArray(N)
+ma = max(A)
+
+# Aの部分列
+# Bの隣り合う要素の絶対値がK以下
+
+# NlogNまでいける
+# セグ木？ dp?
+# 全てにエッジを貼る必要はない？
+# LIS?
+# まあdp
+
+# 数字iの最長はなんぼか
+seg = SegTree([0] * (ma + 1), segfunc, ide_ele)
+dp = [1] * N
+for i in range(N):
+    dp[i] = seg.query(max(0, A[i] - K), min(ma, A[i] + K) + 1) + 1
+    seg.update(A[i], dp[i])
+print(max(dp))
