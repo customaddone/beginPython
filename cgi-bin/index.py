@@ -49,129 +49,186 @@ mod = 998244353
 # Main Code #
 #############
 
-N = 4
-inf = float('inf')
+# ABC008 C - コイン
+n = getN()
+c = getArray(n)
+sumans = 0
 
-d = [
-[0, 2, inf, inf],
-[inf, 0, 3, 9],
-[1, inf, 0, 6],
-[inf, inf, 4, 0]
-]
+for i in c:
+    lista = [j for j in c if i % j == 0]
+    count = len(lista)
+    sumans += math.ceil(count / 2) / count
+print(sumans)
 
-dp = [[-1] * N for i in range(1 << N)]
-
-def rec(s, v, dp):
-    if dp[s][v] >= 0:
-        return dp[s][v]
-    if s == (1 << N) - 1 and v == 0:
-        dp[s][v] = 0
+# ABC011 D - 大ジャンプ
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if (r < 0) or (n < r):
         return 0
-    res = float('inf')
-    for u in range(N):
-        if s & (1 << u) == 0:
-            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
-    dp[s][v] = res
-    return res
-# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
-print(rec(0,0,dp))
 
-# ABC054 C - One-stroke Path
+    if n == 0:
+        return 1
 
+    if r == 0:
+        return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
+
+N, D = getNM()
+X, Y = getNM()
+X = abs(X)
+Y = abs(Y)
+
+# X軸に平行に正の向きに飛ぶ回数はx_time + α回
+# X軸に平行に負の向きに飛ぶ回数はα回
+x_time = X // D
+y_time = Y // D
+
+if X % D != 0 or Y % D != 0 or N < x_time + y_time:
+    print(0)
+    exit()
+
+N_a = N - (x_time + y_time)
+if N_a % 2 != 0:
+    print(0)
+    exit()
+N_a //= 2
+
+ans = 0
+for i in range(N_a + 1):
+    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
+print(ans / (4 ** N))
+
+# ABC024 D - 動的計画法
+A, B, C = getArray(3)
+
+# kCc / k+1Cc = k - c + 1 / k + 1
+# k+1Cc+1 / kCc = k + 1 / c + 1
+# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
+x = (C * pow(A, mod - 2, mod)) % mod
+y = (B * pow(A, mod - 2, mod)) % mod
+
+n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
+k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
+print((n - k) % mod, k % mod)
+
+# ABC058 D - いろはちゃんとマス目
+# 総計する
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+H, W, A, B = getNM()
+
+mother = cmb((H - 1) + (W - 1), (W - 1))
+
+goban = cmb((H - A) + (B - 1), B - 1)
+togoal = cmb((A - 1) + (W - B - 1), (W - B - 1))
+
+for i in range(A):
+    row = H - A + i
+    col = B - 1
+    row_left = A - 1 - i
+    col_left = W - B - 1
+    mother -= cmb(row + col, row) * cmb(row_left + col_left, row_left)
+    mother %= mod
+print(mother)
+
+# ABC057 D - Maximum Average Sets
+N, A, B = getNM()
+V = sorted(getList(), reverse = True)
+
+# 1行目の答え　上からA個
+print(sum(V[:A]) / A)
+
+# Vの各要素の数を数える
+dict = defaultdict(int)
+for i in range(N):
+    dict[V[i]] += 1
+
+r = A
+n = 0
+for i in dict.items():
+    print(i)
+    if r - i[1] >= 0:
+        r -= i[1]
+    else:
+        n = i[1] # A個まで残りr個であり、そこには要素i[j]がn個入れられる
+        break
+
+ans = 0
+# V[0] == V[A - 1]ならA個を超えても平均値が下がらない
+# 残りr個(合計でA個)決める、残りr + 1個(合計でA + 1個)決める...合計でB個決める
+if r > 0 and V[0] == V[A - 1]:
+    for i in range(r, B + 1):
+        ans += cmb_1(n, i)
+else:
+    ans += cmb_1(n, r) # A個まであとr個残っており、n個のうちr個選ぶ
+
+print(ans)
+
+# ABC066 D - 11
+# 普通にやれば(cmb(N + 1, i)だが、今回ダブりがある
+# 29 19 ~ 19 31 9の場合
+# [29]のうちいくつか + １番目の19 + [31, 9]のうちいくつかと
+# [29]のうちいくつか + ２番目の19 + [31, 9]のうちいくつかはダブル
+# i個要素を選ぶとすると、19を選び、外側の要素からi - 1個選ぶ全通りについてダブルので１回引く
+N = getN()
+A = getList()
+
+lista = [0] * (max(A) + 1)
+double = 0
+# ダブり位置1を決める
+dou_ind_2 = 0
+for i in range(N + 1):
+    if lista[A[i]] > 0:
+        double = A[i]
+        dou_ind_2 = i
+        break
+    lista[A[i]] += 1
+# ダブり位置2を決める
+dou_ind_1 = 0
+for i in range(N + 1):
+    if A[i] == double:
+        dou_ind_1 = i
+        break
+
+outer = dou_ind_1 + (N - dou_ind_2)
+
+for i in range(1, N + 2):
+    if i == 1:
+        print(N)
+        continue
+    print((cmb(N + 1, i) - cmb(outer, i - 1)) % mod)
+
+# ABC105 D - Candy Distribution
+# M人に配る mod M
 N, M = getNM()
-dist = [[] for i in range(N + 1)]
-for i in range(M):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+A = getList()
 
-cnt = 0
+alta = []
+for i in A:
+    alta.append(i % M)
 
-pos = deque([[1 << 0, 0]])
+imos = [0]
+for i in range(N):
+    imos.append((alta[i] + imos[i]) % M)
 
-while len(pos) > 0:
-    s, v = pos.popleft()
-    if s == (1 << N) - 1:
-        cnt += 1
-    for u in dist[v]:
-        if s & (1 << u):
-            continue
-        pos.append([s | (1 << u), u])
-print(cnt)
-
-"""
-全ての場所を一度だけ通り巡回する通りの数
-bit(1 << N)を小さい順から探索する
-①bit & (1 << 0)
-最初に0を踏んでないということだから飛ばす
-②現在の場所sを探すためN個探索する
-③次の場所tを探すためN個探索する
-④渡すdpする
-"""
-
-N, M = getNM()
-G = [[0] * N for i in range(N)]
-for i in range(M):
-    a, b = getNM()
-    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
-    G[b - 1][a - 1] = 1
-
-# 状態bitから次の状態へ渡すdpするというのはよくやる
-# [0](001) → [0, 1](011) → [0, 1, 2](111)
-#          → [0, 2](101) → [0, 1, 2](111)
-def counter(sta):
-    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
-    dp = [[0] * N for i in range(1 << N)]
-    dp[1 << sta][sta] = 1
-
-    for bit in range(1, 1 << N):
-        if not bit & (1 << sta):
-            continue
-        # s:現在の場所
-        for s in range(N):
-            # sを踏んだことになっていなければ飛ばす
-            if not bit & (1 << s):
-                continue
-            # t:次の場所
-            for t in range(N):
-                # tを過去踏んでいない and s → tへのエッジがある
-                if (bit & (1 << t)) == 0 and G[s][t]:
-                    dp[bit|(1 << t)][t] += dp[bit][s]
-
-    return sum(dp[(1 << N) - 1])
-
-print(counter(0))
-
-# ABC104 C - All Green
-# 特別ボーナスがある問題は大抵bit dp
-# 目標700点
-D, G = getNM()
-query = []
-for i in range(D):
-    p, c = getNM()
-    query.append([i + 1, p, c])
-
-ans_cnt = float('inf')
-
-for bit in range(1 << D):
-    sum = 0
-    cnt = 0
-    for i in range(D):
-        if bit & (1 << i):
-            sum += query[i][0] * query[i][1] * 100 + query[i][2]
-            cnt += query[i][1]
-
-    if sum < G:
-        for j in range(D - 1, -1, -1):
-            if not bit & (1 << j):
-                left = G - sum
-                fire = query[j][0] * 100
-                opt = min(query[j][1], (left + fire - 1) // fire)
-                sum += opt * query[j][0] * 100
-                cnt += opt
-                break
-
-    if sum >= G:
-        ans_cnt = min(ans_cnt, cnt)
-
-print(ans_cnt)
+ans = 0
+for i in Counter(imos).values():
+    ans += cmb_1(i, 2)
+print(ans)
