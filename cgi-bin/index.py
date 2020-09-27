@@ -49,152 +49,23 @@ mod = 998244353
 # Main Code #
 #############
 
-def prime_factorize(n):
-    divisors = []
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == []:
-        divisors.append([n, 1])
-
-    return divisors
-
-# ABC052 C - Factors of Factorial
+# ABC114 C - 755
 N = getN()
+rength = len(str(N))
+numlist = [3, 5, 7]
+cnt = 0
 
-# N!の因数 = (2の因数) + (3の因数)...
-# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
-mod = 10 ** 9 + 7
-ans = 1
-# それぞれの因数となる素数の数をセットする
-dp = [0] * (N + 1)
-
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        if j[0] > 1:
-            dp[j[0]] += j[1]
-# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
-for i in dp:
-    if i > 0:
-        ans = (ans * (i + 1)) % mod
-print(ans % mod)
-
-# ABC090 D - Remainder Reminder
-# 数え上げ
-N, K = getNM()
-sum = 0
-for b in range(1, N + 1):
-    opt1 = (N // b) * max(0, (b - K))
-    if K == 0:
-        opt2 = N % b
+def sevfivthr(i, strint):
+    global cnt
+    if i == rength:
+        return
     else:
-        opt2 = max(0, (N % b) - K + 1)
-    sum += (opt1 + opt2)
-print(sum)
-
-# 094 D - Binomial Coefficients
-# combはrを真ん中に設定すると大きくなる
-
-N = getN()
-A = getList()
-A.sort()
-
-max = max(A)
-index = bisect_left(A, max / 2)
-if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
-    ans = [max, A[index]]
-else:
-    ans = [max, A[index - 1]]
-print(*ans)
-
-# ABC096 D - Five, Five Everywhere
-# 素数はmod nでグルーピングできる
-N = getN()
-
-# エラストテネスの篩
-prime = [2]
-max = 55555
-limit = int(math.sqrt(max))
-data = [i + 1 for i in range(2, max, 2)]
-
-while limit > data[0]:
-    prime.append(data[0])
-    data = [j for j in data if j % data[0] != 0]
-prime = prime + data
-
-prime = sorted(prime)
-
-prime = [i for i in prime if i % 5 == 1]
-print(*prime[:N])
-
-# ABC114 D - 756
-N = getN()
-
-def prime_factorize(n):
-    divisors = []
-    # 27(2 * 2 * 7)の7を出すためにtemp使う
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == [] and n != 1:
-        divisors.append([n, 1])
-
-    return divisors
-
-primli = [0] * 101
-# N! の因数を計算する
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        primli[j[0]] += j[1]
-# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
-# 75 = 3 * 3 * 5なので例えば
-# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
-alta = []
-for i in primli:
-    if i != 0:
-        alta.append(i + 1)
-
-prim3 = 0
-prim5 = 0
-prim15 = 0
-prim25 = 0
-prim75 = 0
-for i in alta:
-    if i >= 75:
-        prim75 += 1
-    if i >= 25:
-        prim25 += 1
-    if i >= 15:
-        prim15 += 1
-    if i >= 5:
-        prim5 += 1
-    if i >= 3:
-        prim3 += 1
-
-ans = 0
-if prim3 >= 1 and prim5 >= 2:
-    # prim5 C 2
-    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
-if prim15 >= 1 and prim5 >= 1:
-    ans += prim15 * (prim5 - 1)
-if prim25 >= 1 and prim3 >= 1:
-    ans += prim25 * (prim3 - 1)
-if prim75 >= 1:
-    ans += prim75
-print(ans)
+        for num in numlist:
+            newstr = strint + str(num)
+            if ('3' in newstr) and ('5' in newstr) and ('7' in newstr):
+                if int(newstr) <= N:
+                    cnt += 1
+            sevfivthr(i + 1, newstr)
+for i in numlist:
+    sevfivthr(1, str(i))
+print(cnt)
