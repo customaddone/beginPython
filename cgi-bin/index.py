@@ -49,142 +49,223 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC005 C - おいしいたこ焼きの売り方
-# マッチング問題だが貪欲
-T = getN()
-N = getN()
-sell = getList()
-M = getN()
-buy = getList()
+N, K = 7, 6
+S = [4, 3, 1, 1, 2, 10, 2]
 
-# 来る客1, 2に売れるか
-for cus in buy:
-    flag = False
-    for i in range(N):
-        if sell[i] <= cus <= sell[i] + T:
-            flag = True
-            sell[i] = mod
+# 左を伸ばしていく
+# その部分列に含まれる全ての要素の値の積は「K以下」である。
+# lはrをオーバーすることもある
+
+if 0 in S:
+    print(N)
+    exit()
+else:
+    l, ans, total = 0, 0, 1
+    for r in range(N):
+        total *= S[r]
+        while total > K and l <= r:
+            total //= S[l]
+            l += 1
+        ans = max(ans, r - l + 1)
+print(ans)
+
+# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
+N, K = 4, 10
+A = [6, 1, 2, 7]
+
+left = 0
+total = 0
+ans = 0
+
+for right in range(0, N):
+    total += A[right]
+    while total >= K:
+        ans += N - right
+        total -= A[left]
+        left += 1
+print(ans)
+
+N = 10
+S = 15
+A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
+right = 0
+total = 0
+ans = 0
+# S以上を求める場合にはこの形で
+for left in range(N):
+    while right < N and total < S:
+        total += A[right]
+        right += 1
+    if total < S:
+        break
+    if left == right:
+        right += 1
+    total -= A[left]
+
+# 要素の種類についての問題
+# 全ての要素を含む
+P = 5
+A = [1, 8, 8, 8, 1]
+dict = {}
+for i in A:
+    dict[i] = 0
+# 要素の種類数
+V = len(dict.items())
+
+# 事象の数をカウント
+cnt = 0
+right = 0
+# １つ目から全ての事象をカバーするまでrightを進める
+while right < P:
+    if dict[A[right]] == 0:
+        cnt += 1
+    dict[A[right]] += 1
+
+    if cnt == len(dict.items()):
+        break
+
+    right += 1
+print(l, r)
+
+l = 0
+# 右を一つ進めて左をできる限り進める
+for r in range(right + 1, P):
+    # 新しく一つ加える
+    dict[A[r]] += 1
+    while True:
+        # もし要素が一つしか無かったら削れない
+        if dict[A[l]] == 1:
             break
-    if not flag:
-        print('no')
-        exit()
-print('yes')
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
 
-# ABC080 D - Recording
-# 使ってない録画機は他のチャンネルにスイッチできる
-# 同時にいくつ放送が流れているか
-N, C = getNM()
-query = [getList() for i in range(N)]
-dp = [[0] * (C + 1) for i in range(10 ** 5 + 2)]
-for i in range(N):
-    s, t, c = query[i]
-    dp[s][c] += 1
-    dp[t + 1][c] -= 1
+# 各要素にダブりがない範囲
+N = 6
+A = [1, 2, 2, 3, 4, 4]
 
-for i in range(1, 10 ** 5 + 2):
-    for j in range(C + 1):
-        dp[i][j] += dp[i - 1][j]
+dict = defaultdict(int)
+l = 0
+for r in range(N):
+    while dict[A[r]] == 1:
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
+    dict[A[r]] += 1
 
-ans = 0
-for i in range(10 ** 5 + 2):
-    cnt = 0
-    for j in dp[i]:
-        if j > 0:
-            cnt += 1
-    ans = max(ans, cnt)
-print(ans)
+N = 4
+A = 2, 5, 4, 6
 
-# ABC085 D - Katana Thrower
-N, H = getNM()
+r, tmp = 0, 0
+# l:左端
+cnt = 0
+# 一つオーバーさせる
+for l in range(N):
+    while r < N and tmp ^ A[r] == tmp + A[r]:
+        # 右端を伸ばす
+        tmp += A[r]
+        r += 1
+    # 計算
+    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
+    # (r - l + 1) - 1
+    cnt += r - l
 
-a = []
-b = []
+    if l == r:
+        r += 1
+    tmp -= A[l]
+print(cnt)
 
-for i in range(N):
-  x, y = map(int, input().split())
-  a.append(x)
-  b.append(y)
+# ABC017 D - サプリメント
+N, M = getNM()
+F = getArray(N)
 
-# 振った場合の最大値
-max_a = max(a)
+# 何通り　→ comb or dp
+# O(N)で
+# 同じ味のサプリメントを摂取しない
+# dp[i]:i日目までにサプリを摂取する通りが何通りあるか
+# dp[i]:サプリi個目までにサプリを摂取する通りが何通りあるか
 
-ans = 0
-# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
-# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
-# 両方利用することができる
-# 実は投げてしまった刀も振ることができるというルールに変更しても
-# 問題の答えは変わらない
-# 実際のムーブとしては
-# ①最も攻撃力が高い振り刀で攻撃する
-# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
-# という流れになる
-for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
-    H -= x
-    ans += 1
-    if H <= 0: break
+# N, M = 5, 2
+# L = [1, 2, 1, 2, 2]の場合
+# dp[0] = 1
+# dp[1] = 1 1個目を新たに食べた場合、それ以前の通りは1通り
+# dp[2] = 2 2個目を新たに食べた場合、それ以前の通りは2通り
+# (前回1個目を食べたかもしれないし、今回1個目と合わせて2個目を食べたかもしれない)
+# dp[i] += dp[（最後にF[i]が登場した場所）] ~ dp[i - 1]
 
-ans += max(0, (H + max_a - 1) // max_a)
-print(ans)
+dp = [0] * (N + 1) # dpだけ1-index
+dp[0] = 1
+ignore = [0] * (M + 1)
+l = 0
+now = dp[0]
+for r in range(N):
+    # 最初ignoreのフラグが立っていないが,nowにはdp[0]の値が入っている状態
+    while ignore[F[r]]:
+        ignore[F[l]] = 0 # F[l]のフラグを消す
+        now -= dp[l] # lの直前のdpを引く
+        now %= mod
+        l += 1
+    # dpをレコード（範囲の合計を足す）
+    dp[r + 1] = now
+    # rを1個ずらして更新
+    now += dp[r + 1]
+    now %= mod
+    ignore[F[r]] = 1
 
-# ABC091 C - 2D Plane 2N Points
+print(dp)
 
+# ABC102 D - Equal Cut
+# 中央の境界をスライドさせる → １番目の境界は尺取りで求められる
 N = getN()
-# Rはループさせるのでソートさせる必要ない
-R = [getList() for i in range(N)]
-R_l = [1] * N
+A = getList()
+fore = copy.deepcopy(A)
+back = copy.deepcopy(A)
 
-B = [getList() for i in range(N)]
-B.sort()
+for i in range(N - 1):
+    fore[i + 1] += fore[i]
+    back[N - i - 2] += back[N - i - 1]
 
-# 貪欲法でペア作りする問題
-# ABC005 C - おいしいたこ焼きの売り方の時と同様に
-# それとしか繋げないもの　を優先的に繋いでいく
+left = 0
+total = A[0]
 
-# 条件Aの通過が厳しい順に対象bをソートし、
-# たこ焼き　条件A:客が来る前にたこ焼きができてないといけない
-#  　　　　      客を来るのが早い順に並べる（最初から並んでる）
-# 今回     条件A:赤星のx座標が青星のx座標より小さくないといけない
-#  　　　　　　　 青星をx座標が小さい順に並べる
+fore_list = []
+for right in range(1, N - 2):
+    while abs((fore[right] / 2) - (total + A[left + 1])) < abs((fore[right] / 2) - total):
+        left += 1
+        total += A[left]
+    fore_list.append([right, total, fore[right] - total])
 
-# 条件A, 条件Bをクリアしたものの中で、最も条件Bの通過が厳しい対象aと結ぶ
-# たこ焼き　条件B:たこ焼きが賞味期限より前のものでないといけない
-#  　　　　      できるだけ古いものを売る（最初から並んでる）
-# 今回     条件B:赤星のy座標が青星のy座標より小さくないといけない
-#  　　　　　　　 条件をクリアしたもののうちでできるだけy座標が大きいものを選ぶ
+right = N - 1
+total = A[-1]
 
-ans = 0
-for b in B:
-    max_y = -1
-    max_index = -1
-    for i, a in enumerate(R):
-        # x, y座標が小さいもののうちでまた使ってないもの
-        if a[0] < b[0] and a[1] < b[1] and R_l[i] == 1:
-            # あるならY座標が最も大きいもの
-            if a[1] > max_y:
-                max_y = a[1]
-                max_index = i
-    if max_y >= 0:
-        R_l[max_index] = 0
+back_list = []
+for left in range(N - 2, 1, -1):
+    while abs((back[left] / 2) - (total + A[right - 1])) < abs((back[left] / 2) - total):
+        right -= 1
+        total += A[right]
+    back_list.append([left, total, back[left] - total])
+back_list.sort()
+
+ans = float('inf')
+for i in range(len(back_list)):
+    ind1, a, b = fore_list[i]
+    ind2, c, d = back_list[i]
+    opt = max(a, b, c, d) - min(a, b, c, d)
+    ans = min(ans, opt)
+print(ans)
+
+N, K = 10, 4
+A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
+
+right, ans = 0, 0
+for left in range(N):
+    # 単調増加するとこまでもしくは長さKになるまで
+    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
+        right += 1
+    # もし長さKまで伸ばせたらans += 1
+    if right - left == K - 1:
         ans += 1
-
-# ABC100 D - Patisserie ABC
-# 8パターン全部調べる
-
-N,M = getNM()
-data = [[] for i in range(8)]
-for _ in range(N):
-    x,y,z = getNM()
-    data[0].append(x + y + z)
-    data[1].append(x + y - z)
-    data[2].append(x - y + z)
-    data[3].append(x - y - z)
-    data[4].append(- x + y + z)
-    data[5].append(- x + y - z)
-    data[6].append(- x - y + z)
-    data[7].append(- x - y - z)
-
-ans = -mod
-for i in range(8):
-    data[i].sort(reverse = True)
-    ans = max(ans,sum(data[i][:M]))
+    # 前に進めないならright += 1
+    if left == right and right < N:
+        right += 1
 print(ans)
