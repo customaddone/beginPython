@@ -49,79 +49,242 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC005 C - おいしいたこ焼きの売り方
-# マッチング問題だが貪欲
-T = getN()
-N = getN()
-sell = getList()
-M = getN()
-buy = getList()
+N = 5
+# 木グラフ
+que = [
+[1, 2],
+[1, 4],
+[2, 3],
+[2, 5]
+]
+# 重みつき
+que_dis = [
+[1, 2, 2],
+[1, 4, 1],
+[2, 3, 2],
+[2, 5, 1]
+]
 
-# 来る客1, 2に売れるか
-for cus in buy:
-    flag = False
-    for i in range(N):
-        if sell[i] <= cus <= sell[i] + T:
-            flag = True
-            sell[i] = mod
+def build_tree(n, edge_list):
+
+    G = [[] for i in range(n)]
+
+    for a, b in edge_list:
+        G[a - 1].append(b - 1)
+        G[b - 1].append(a - 1)
+
+    return G
+
+def build_tree_dis(n, edge_list):
+
+    G = [[] for i in range(n)]
+
+    for a, b, c in edge_list:
+        G[a - 1].append([b - 1, c])
+        G[b - 1].append([a - 1, c])
+
+    return G
+
+# 木の建設
+G1 = build_tree(N, que)
+G2 = build_tree_dis(N, que_dis)
+
+# 木を探索
+def search(n, edges, sta):
+    ignore = [0] * N
+    ignore[sta] = 1
+    pos = deque([sta])
+    # 探索
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i] == 0:
+                ignore[i] = 1
+                pos.append(i)
+# [0, 1, 3, 2, 4]
+search(N, G1, 0)
+
+# staからの距離
+def distance(n, edges, sta):
+    # 木をKから順にたどる（戻るの禁止）
+    ignore = [-1] * N
+    ignore[sta] = 0
+    pos = deque([sta])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+    return ignore
+# [0, 2, 4, 1, 3]
+print(distance(N, G2, 0))
+
+# ABC067 D - Fennec VS. Snuke
+N = 12
+query = [
+[1, 3],
+[2, 3],
+[3, 4],
+[3, 5],
+[5, 11],
+[6, 12],
+[7, 9],
+[8, 9],
+[9, 10],
+[9, 11],
+[11, 12]
+]
+
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+# nowからNまでのルート
+def router(n, sta, end):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    path[sta] = -1
+
+    while pos[0] != end:
+        u = pos.popleft()
+        ignore[u] = 1
+
+        for i in dist[u]:
+            if ignore[i] != 1:
+                path[i] = u
+                pos.append(i)
+
+    route = deque([end])
+    while True:
+        next = path[route[0]]
+        route.appendleft(next)
+        if route[0] == sta:
             break
-    if not flag:
-        print('no')
-        exit()
-print('yes')
 
-# ABC080 D - Recording
-# 使ってない録画機は他のチャンネルにスイッチできる
-# 同時にいくつ放送が流れているか
-N, C = getNM()
-query = [getList() for i in range(N)]
-dp = [[0] * (C + 1) for i in range(10 ** 5 + 2)]
-for i in range(N):
-    s, t, c = query[i]
-    dp[s][c] += 1
-    dp[t + 1][c] -= 1
+    return list(route)
 
-for i in range(1, 10 ** 5 + 2):
-    for j in range(C + 1):
-        dp[i][j] += dp[i - 1][j]
+route = router(N, 0, N - 1)
+print(route)
 
-ans = 0
-for i in range(10 ** 5 + 2):
+# NG以外のところで辿れるところの数
+def dfs_ter(sta, ng):
+    pos = deque([sta])
+
+    ignore = [0] * N
+    for i in ng:
+        ignore[i] = 1
+
     cnt = 0
-    for j in dp[i]:
-        if j > 0:
-            cnt += 1
-    ans = max(ans, cnt)
-print(ans)
+    while len(pos) > 0:
+        u = pos.popleft()
+        ignore[u] = 1
+        cnt += 1
+        for i in dist[u]:
+            if ignore[i] != 1:
+                pos.append(i)
 
-# ABC085 D - Katana Thrower
-N, H = getNM()
+    return cnt
 
-a = []
-b = []
+L = len(route)
+fen_ter = route[:(L + 2 - 1) // 2]
+snu_ter = route[(L + 2 - 1) // 2:]
 
-for i in range(N):
-  x, y = map(int, input().split())
-  a.append(x)
-  b.append(y)
+fen_ans = dfs_ter(0, snu_ter)
 
-# 振った場合の最大値
-max_a = max(a)
+if fen_ans > N - fen_ans:
+    print('Fennec')
+else:
+    print('Snuke')
 
+# ABC087 D - People on a Line
+
+N, M = getNM()
+dist = [[] for i in range(N)]
+for i in range(M):
+    l, r, d = getNM()
+    dist[l - 1].append([r - 1, d])
+    dist[r - 1].append([l - 1, -d])
+
+dis = [float('inf')] * N
+
+pos = deque([i for i in range(N)])
+while len(pos) > 0:
+    u = pos.popleft()
+    # 始めの第一歩
+    if dis[u] == float('inf'):
+        dis[u] = 0
+    # 行き先の位置が未確定なら確定させる
+    # 既に確定しているなら判定
+    for to, d in dist[u]:
+        if dis[to] == float('inf'):
+            dis[to] = dis[u] + d
+            # 位置をレコードした頂点を優先的に処理する必要があるためappendleft
+            # 例 que = [0, 2, 1], [1, 2, 3]
+            # pos = [0, 1, 2] の時
+            # dis = [0, -2, 1]でYesになるはず
+            # 0を探索, 1の距離をレコードしてappend disは[0, inf, 1]
+            # pos = [1, 2, 2]のため次は1を探索
+            # dis[1] == infなのでdis[1] = 0にする
+            # dis[1] = 0, dis[2] = 1なのでNo
+            pos.appendleft(to)
+        else:
+            if dis[u] + d != dis[to]:
+                print('No')
+                exit()
+print('Yes')
+
+# ARC037 B - バウムテスト
+N, M = 11, 11
+query = [
+[1, 2],
+[1, 3],
+[2, 4],
+[3, 5],
+[4, 6],
+[5, 7],
+[6, 8],
+[7, 9],
+[8, 10],
+[9, 11],
+[10, 11]
+]
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = query[i]
+    a -= 1
+    b -= 1
+    dist[a].append(b)
+    dist[b].append(a)
+
+ignore = [0] * N
 ans = 0
-# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
-# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
-# 両方利用することができる
-# 実は投げてしまった刀も振ることができるというルールに変更しても
-# 問題の答えは変わらない
-# 実際のムーブとしては
-# ①最も攻撃力が高い振り刀で攻撃する
-# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
-# という流れになる
-for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
-    H -= x
-    ans += 1
-    if H <= 0: break
+# 閉路検出
+def search(x, dist):
+    global ans
+    # 現在の位置とparent
+    pos = deque([[x, -1]])
+    ignore[x] = 1
+    flag = True
 
-ans += max(0, (H + max_a - 1) // max_a)
+    while pos:
+        u, parent = pos.popleft()
+        for i in dist[u]:
+            if i != parent:
+                if ignore[i] == 1:
+                    flag = False
+                    continue
+                ignore[i] = 1
+                pos.append([i, u])
+    if flag:
+        ans += 1
+
+# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+for i in range(N):
+    if ignore[i] == 0:
+        search(i, dist)
 print(ans)
