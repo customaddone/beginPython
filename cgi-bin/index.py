@@ -230,6 +230,71 @@ for i in range(K):
 
 print(ans)
 
+# ABC089 D - Practical Skill Test
+
+"""
+# 飛ばし累積和
+N = 10
+num = [i for i in range(1, N + 1)]
+D = 2
+lista = [0] * N
+for i in range(D):
+    for j in range(i, N, D):
+        if j == i:
+            lista[j] = num[j]
+        else:
+            lista[j] = num[j] + lista[j - D]
+# [1, 2, 4, 6, 9, 12, 16, 20, 25, 30]
+print(lista)
+# 9番目までの奇数の数字の合計 - 1番目までの奇数の数字の合計
+# 3 + 5 + 7 + 9
+print(lista[8] - lista[0])
+"""
+
+# Dかそれぞれのqueryで固定なのでこの問題は解ける
+H, W, D = getNM()
+maze = []
+for i in range(H):
+    a = getList()
+    maze.append(a)
+Q = getN()
+# piece[0]からpiece[1]まで
+# 4 → 6　→ 8
+piece = []
+for i in range(Q):
+    l, r = getNM()
+    piece.append([l, r])
+
+place_list = [[-1, -1] for i in range(H * W)]
+
+for y in range(H):
+    for x in range(W):
+        place_list[maze[y][x] - 1] = [x, y]
+
+# 飛ばし累積和
+x_plus = [0] * (H * W)
+y_plus = [0] * (H * W)
+for i in range(D):
+    for j in range(i, H * W, D):
+        if j == i:
+            opt_x = 0
+            opt_y = 0
+        else:
+            opt_x = abs(place_list[j][0] - place_list[j - D][0])
+            opt_y = abs(place_list[j][1] - place_list[j - D][1])
+            x_plus[j] = opt_x + x_plus[j - D]
+            y_plus[j] = opt_y + y_plus[j - D]
+
+def past_exam(piece_query):
+    start = piece_query[0]
+    goal = piece_query[1]
+
+    x_point = x_plus[goal - 1] - x_plus[start - 1]
+    y_point = y_plus[goal - 1] - y_plus[start - 1]
+    return x_point + y_point
+
+for i in range(Q):
+    print(past_exam(piece[i]))
 
 H, W = 3, 4
 # maze = [getList() for i in range(H)]
@@ -326,114 +391,3 @@ for i in range(1, N + 1):
         imos2[i][j] = imos2[i - 1][j] + lr[i][j]
 
 print(imos2)
-
-"""
-# 飛ばし累積和
-N = 10
-num = [i for i in range(1, N + 1)]
-D = 2
-lista = [0] * N
-for i in range(D):
-    for j in range(i, N, D):
-        if j == i:
-            lista[j] = num[j]
-        else:
-            lista[j] = num[j] + lista[j - D]
-# [1, 2, 4, 6, 9, 12, 16, 20, 25, 30]
-print(lista)
-# 9番目までの奇数の数字の合計 - 1番目までの奇数の数字の合計
-# 3 + 5 + 7 + 9
-print(lista[8] - lista[0])
-"""
-
-# Dかそれぞれのqueryで固定なのでこの問題は解ける
-H, W, D = getNM()
-maze = []
-for i in range(H):
-    a = getList()
-    maze.append(a)
-Q = getN()
-# piece[0]からpiece[1]まで
-# 4 → 6　→ 8
-piece = []
-for i in range(Q):
-    l, r = getNM()
-    piece.append([l, r])
-
-place_list = [[-1, -1] for i in range(H * W)]
-
-for y in range(H):
-    for x in range(W):
-        place_list[maze[y][x] - 1] = [x, y]
-
-# 飛ばし累積和
-x_plus = [0] * (H * W)
-y_plus = [0] * (H * W)
-for i in range(D):
-    for j in range(i, H * W, D):
-        if j == i:
-            opt_x = 0
-            opt_y = 0
-        else:
-            opt_x = abs(place_list[j][0] - place_list[j - D][0])
-            opt_y = abs(place_list[j][1] - place_list[j - D][1])
-            x_plus[j] = opt_x + x_plus[j - D]
-            y_plus[j] = opt_y + y_plus[j - D]
-
-def past_exam(piece_query):
-    start = piece_query[0]
-    goal = piece_query[1]
-
-    x_point = x_plus[goal - 1] - x_plus[start - 1]
-    y_point = y_plus[goal - 1] - y_plus[start - 1]
-    return x_point + y_point
-
-for i in range(Q):
-    print(past_exam(piece[i]))
-
-N, K = getNM()
-imos = [[0] * K for j in range(K)] # 累積和 左上のマスがどの位置にあると
-white = 0
-# 黒白
-# 白黒　テーブルを考える
-for i in range(N):
-    x, y, c = input().split()
-    x = int(x)
-    y = int(y)
-    if c == "W":
-        c = 1
-    else:
-        c = 0
-    x %= 2 * K
-    y %= 2 * K
-
-    if x > K - 1:
-        x -= K
-        c += 1
-    if y > K - 1:
-        y -= K
-        c += 1
-    c %= 2
-
-    if c == 1:
-        white += 1
-        imos[x][y] -= 1
-    else:
-        imos[x][y] += 1
-
-for i in range(K):
-    for j in range(K - 1):
-        imos[i][j + 1] += imos[i][j]
-
-for j in range(K):
-    for i in range(K - 1):
-        imos[i + 1][j] += imos[i][j]
-print(imos)
-
-ans = 0
-for i in range(K):
-    for j in range(K):
-        exp = imos[K - 1][K - 1] - imos[K - 1][j] - imos[i][K - 1] + 2 * imos[i][j] + white
-        ans = max(ans, max(exp, N - exp))
-
-print(ans)
