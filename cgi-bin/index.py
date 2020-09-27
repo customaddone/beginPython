@@ -69,3 +69,50 @@ def sevfivthr(i, strint):
 for i in numlist:
     sevfivthr(1, str(i))
 print(cnt)
+
+# ABC115 D - Christmas
+# レベルNバーガーの下からX層目まで
+N, X = getNM()
+
+# レベルNバーガーの中間地点、全体のサイズ
+cnt_burger = [[0 for i in range(2)] for i in range(51)]
+cnt_burger[0] = [1, 1]
+for i in range(1, 51):
+    cnt_burger[i][0] = 1 + cnt_burger[i - 1][1] + 1
+    cnt_burger[i][1] = cnt_burger[i][0] + cnt_burger[i - 1][1] + 1
+
+# レベルNバーガーにパティが何枚含まれる？
+cnt_patty = [0] * 51
+cnt_patty[0] = 1
+for i in range(1, 51):
+    cnt_patty[i] = 2 * cnt_patty[i - 1] + 1
+
+# レベルNの下からX番目までにパティが何枚含まれるか
+# xが大きいのでdpはできない
+def count(n, x):
+    # レベル0バーガーの場合
+    if n == 0 and x == 1:
+        return 1
+
+    # バーガーの一番下のパンのみ食べる場合
+    if x == 1:
+        return 0
+
+    # 中間地点以前のどこかまで食べる場合
+    elif 1 < x < cnt_burger[n][0]:
+        # レベルn - 1バーガーの下からx - 1層目まで
+        return count(n - 1, x - 1)
+
+    # 中間地点まで食べる
+    elif x == cnt_burger[n][0]:
+        return cnt_patty[n - 1] + 1
+
+    # 中間地点 ~ 最後以前のうちのどこか
+    elif cnt_burger[n][0] < x < cnt_burger[n][1]:
+        return cnt_patty[n - 1] + 1 + count(n - 1, x - cnt_burger[n][0])
+
+    # 最後
+    else:
+         return 2 * cnt_patty[n - 1] + 1
+
+print(count(N, X))
