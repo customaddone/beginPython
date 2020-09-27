@@ -49,120 +49,68 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC005 C - おいしいたこ焼きの売り方
-# マッチング問題だが貪欲
-T = getN()
+def prime_factorize(n):
+    divisors = []
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
+
+    return divisors
+
+# ABC052 C - Factors of Factorial
 N = getN()
-sell = getList()
-M = getN()
-buy = getList()
 
-# 来る客1, 2に売れるか
-for cus in buy:
-    flag = False
-    for i in range(N):
-        if sell[i] <= cus <= sell[i] + T:
-            flag = True
-            sell[i] = mod
-            break
-    if not flag:
-        print('no')
-        exit()
-print('yes')
+# N!の因数 = (2の因数) + (3の因数)...
+# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
+mod = 10 ** 9 + 7
+ans = 1
+# それぞれの因数となる素数の数をセットする
+dp = [0] * (N + 1)
 
-# ABC080 D - Recording
-# 使ってない録画機は他のチャンネルにスイッチできる
-# 同時にいくつ放送が流れているか
-N, C = getNM()
-query = [getList() for i in range(N)]
-dp = [[0] * (C + 1) for i in range(10 ** 5 + 2)]
-for i in range(N):
-    s, t, c = query[i]
-    dp[s][c] += 1
-    dp[t + 1][c] -= 1
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        if j[0] > 1:
+            dp[j[0]] += j[1]
+# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
+for i in dp:
+    if i > 0:
+        ans = (ans * (i + 1)) % mod
+print(ans % mod)
 
-for i in range(1, 10 ** 5 + 2):
-    for j in range(C + 1):
-        dp[i][j] += dp[i - 1][j]
+# ABC090 D - Remainder Reminder
+# 数え上げ
+N, K = getNM()
+sum = 0
+for b in range(1, N + 1):
+    opt1 = (N // b) * max(0, (b - K))
+    if K == 0:
+        opt2 = N % b
+    else:
+        opt2 = max(0, (N % b) - K + 1)
+    sum += (opt1 + opt2)
+print(sum)
 
-ans = 0
-for i in range(10 ** 5 + 2):
-    cnt = 0
-    for j in dp[i]:
-        if j > 0:
-            cnt += 1
-    ans = max(ans, cnt)
-print(ans)
-
-# ABC085 D - Katana Thrower
-N, H = getNM()
-
-a = []
-b = []
-
-for i in range(N):
-  x, y = map(int, input().split())
-  a.append(x)
-  b.append(y)
-
-# 振った場合の最大値
-max_a = max(a)
-
-ans = 0
-# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
-# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
-# 両方利用することができる
-# 実は投げてしまった刀も振ることができるというルールに変更しても
-# 問題の答えは変わらない
-# 実際のムーブとしては
-# ①最も攻撃力が高い振り刀で攻撃する
-# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
-# という流れになる
-for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
-    H -= x
-    ans += 1
-    if H <= 0: break
-
-ans += max(0, (H + max_a - 1) // max_a)
-print(ans)
-
-# ABC091 C - 2D Plane 2N Points
+# 094 D - Binomial Coefficients
+# combはrを真ん中に設定すると大きくなる
 
 N = getN()
-# Rはループさせるのでソートさせる必要ない
-R = [getList() for i in range(N)]
-R_l = [1] * N
+A = getList()
+A.sort()
 
-B = [getList() for i in range(N)]
-B.sort()
-
-# 貪欲法でペア作りする問題
-# ABC005 C - おいしいたこ焼きの売り方の時と同様に
-# それとしか繋げないもの　を優先的に繋いでいく
-
-# 条件Aの通過が厳しい順に対象bをソートし、
-# たこ焼き　条件A:客が来る前にたこ焼きができてないといけない
-#  　　　　      客を来るのが早い順に並べる（最初から並んでる）
-# 今回     条件A:赤星のx座標が青星のx座標より小さくないといけない
-#  　　　　　　　 青星をx座標が小さい順に並べる
-
-# 条件A, 条件Bをクリアしたものの中で、最も条件Bの通過が厳しい対象aと結ぶ
-# たこ焼き　条件B:たこ焼きが賞味期限より前のものでないといけない
-#  　　　　      できるだけ古いものを売る（最初から並んでる）
-# 今回     条件B:赤星のy座標が青星のy座標より小さくないといけない
-#  　　　　　　　 条件をクリアしたもののうちでできるだけy座標が大きいものを選ぶ
-
-ans = 0
-for b in B:
-    max_y = -1
-    max_index = -1
-    for i, a in enumerate(R):
-        # x, y座標が小さいもののうちでまた使ってないもの
-        if a[0] < b[0] and a[1] < b[1] and R_l[i] == 1:
-            # あるならY座標が最も大きいもの
-            if a[1] > max_y:
-                max_y = a[1]
-                max_index = i
-    if max_y >= 0:
-        R_l[max_index] = 0
-        ans += 1
+max = max(A)
+index = bisect_left(A, max / 2)
+if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
+    ans = [max, A[index]]
+else:
+    ans = [max, A[index - 1]]
+print(*ans)
