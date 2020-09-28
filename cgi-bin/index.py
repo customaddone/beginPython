@@ -49,395 +49,342 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC004 マーブル
-R, G, B = getNM()
+N = 5
+# 木グラフ
+que = [
+[1, 2],
+[1, 4],
+[2, 3],
+[2, 5]
+]
+# 重みつき
+que_dis = [
+[1, 2, 2],
+[1, 4, 1],
+[2, 3, 2],
+[2, 5, 1]
+]
 
-dp = [[float('inf')] * (R + G + B + 1) for i in range(2001)]
-dp[0][R + G + B] = 0
+def build_tree(n, edge_list):
 
-# 残り個数により置くボールの色が変化する
-# ボールを置くコストも変化する
-def judge(point, ball):
-    if ball > G + B:
-        return abs(point - (-100))
-    elif G + B >= ball > B:
-        return abs(point)
-    else:
-        return abs(100 - point)
+    G = [[] for i in range(n)]
 
-for i in range(1, 2001):
-    for j in range(R + G + B, -1, -1):
-        if j == R + G + B:
-            dp[i][j] = dp[i - 1][j]
-        else:
-            # i - 1000の地点にj + 1ボールを置き,残りはj個
-            dp[i][j] = min(dp[i - 1][j], dp[i - 1][j + 1] + judge(i - 1000, j + 1))
-print(dp[2000][0])
+    for a, b in edge_list:
+        G[a - 1].append(b - 1)
+        G[b - 1].append(a - 1)
 
-# ABC017 D - サプリメント
-N, M = getNM()
-F = getArray(N)
+    return G
 
-# 何通り　→ comb or dp
-# O(N)で
-# 同じ味のサプリメントを摂取しない
-# dp[i]:i日目までにサプリを摂取する通りが何通りあるか
-# dp[i]:サプリi個目までにサプリを摂取する通りが何通りあるか
+def build_tree_dis(n, edge_list):
 
-# N, M = 5, 2
-# L = [1, 2, 1, 2, 2]の場合
-# dp[0] = 1
-# dp[1] = 1 1個目を新たに食べた場合、それ以前の通りは1通り
-# dp[2] = 2 2個目を新たに食べた場合、それ以前の通りは2通り
-# (前回1個目を食べたかもしれないし、今回1個目と合わせて2個目を食べたかもしれない)
-# dp[i] += dp[（最後にF[i]が登場した場所）] ~ dp[i - 1]
+    G = [[] for i in range(n)]
 
-dp = [0] * (N + 1) # dpだけ1-index
-dp[0] = 1
-ignore = [0] * (M + 1)
-l = 0
-now = dp[0]
-for r in range(N):
-    # 最初ignoreのフラグが立っていないが,nowにはdp[0]の値が入っている状態
-    while ignore[F[r]]:
-        ignore[F[l]] = 0 # F[l]のフラグを消す
-        now -= dp[l] # lの直前のdpを引く
-        now %= mod
-        l += 1
-    # dpをレコード（範囲の合計を足す）
-    dp[r + 1] = now
-    # rを1個ずらして更新
-    now += dp[r + 1]
-    now %= mod
-    ignore[F[r]] = 1
+    for a, b, c in edge_list:
+        G[a - 1].append([b - 1, c])
+        G[b - 1].append([a - 1, c])
 
-print(dp)
+    return G
 
-# ABC044 C - 高橋君とカード
-# 平均はQ[i] -= Aしとく
-N, A = getNM()
-Q = getList()
-for i in range(N):
-    Q[i] -= A
+# 木の建設
+G1 = build_tree(N, que)
+G2 = build_tree_dis(N, que_dis)
 
-dp = [[0] * 5002 for i in range(N + 1)]
-dp[0][2501] = 1
+# 木を探索
+def search(n, edges, sta):
+    ignore = [0] * N
+    ignore[sta] = 1
+    pos = deque([sta])
+    # 探索
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i] == 0:
+                ignore[i] = 1
+                pos.append(i)
+# [0, 1, 3, 2, 4]
+search(N, G1, 0)
 
-for i in range(1, N + 1):
-    for j in range(5002):
-        dp[i][j] += dp[i - 1][j]
-        if 0 <= j - Q[i - 1] <= 5001:
-            dp[i][j] += dp[i - 1][j - Q[i - 1]]
+# staからの距離
+def distance(n, edges, sta):
+    # 木をKから順にたどる（戻るの禁止）
+    ignore = [-1] * N
+    ignore[sta] = 0
+    pos = deque([sta])
 
-print(dp[-1][2501] - 1)
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+    return ignore
+# [0, 2, 4, 1, 3]
+print(distance(N, G2, 0))
 
-# ABC071 D - Coloring Dominoes
+# ABC067 D - Fennec VS. Snuke
+N = 12
+query = [
+[1, 3],
+[2, 3],
+[3, 4],
+[3, 5],
+[5, 11],
+[6, 12],
+[7, 9],
+[8, 9],
+[9, 10],
+[9, 11],
+[11, 12]
+]
+
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+# nowからNまでのルート
+def router(n, sta, end):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    path[sta] = -1
+
+    while pos[0] != end:
+        u = pos.popleft()
+        ignore[u] = 1
+
+        for i in dist[u]:
+            if ignore[i] != 1:
+                path[i] = u
+                pos.append(i)
+
+    route = deque([end])
+    while True:
+        next = path[route[0]]
+        route.appendleft(next)
+        if route[0] == sta:
+            break
+
+    return list(route)
+
+route = router(N, 0, N - 1)
+print(route)
+
+# NG以外のところで辿れるところの数
+def dfs_ter(sta, ng):
+    pos = deque([sta])
+
+    ignore = [0] * N
+    for i in ng:
+        ignore[i] = 1
+
+    cnt = 0
+    while len(pos) > 0:
+        u = pos.popleft()
+        ignore[u] = 1
+        cnt += 1
+        for i in dist[u]:
+            if ignore[i] != 1:
+                pos.append(i)
+
+    return cnt
+
+L = len(route)
+fen_ter = route[:(L + 2 - 1) // 2]
+snu_ter = route[(L + 2 - 1) // 2:]
+
+fen_ans = dfs_ter(0, snu_ter)
+
+if fen_ans > N - fen_ans:
+    print('Fennec')
+else:
+    print('Snuke')
+
+# ABC070 D - Transit Tree Path
 N = getN()
-S1 = input()
-S2 = input()
-dp = [0 for i in range(N)]
-if S1[0] == S2[0]:
-    dp[0] = 3
-else:
-    dp[0] = 6
-# i - 1個目、i個目が
-# 横ドミノ１個目→横ドミノ２個目
-# 横ドミノ→横ドミノ
-# 横ドミノ→縦ドミノ
-# 縦ドミノ→縦ドミノ
-# 縦ドミノ→横ドミノそれぞれについて場合分け
-# 各回について
-for i in range(1, N):
-    # 横ドミノ２つ目だった場合
-    if S1[i] == S1[i - 1]:
-        dp[i] = dp[i - 1]
-    # 横ドミノ１つめor縦ドミノ１つ目の場合
-    else:
-        # 縦ドミノ１つ目
-        if S1[i] == S2[i]:
-            # 一つ前も縦ドミノ
-            if S1[i - 1] == S2[i - 1]:
-                dp[i] = (dp[i - 1] * 2) % mod
-            # 横ドミノ
-            else:
-                dp[i] = dp[i - 1]
-        # 横ドミノ1つ目
+dist = [[] for i in range(N + 1)]
+for i in range(N - 1):
+    a, b, c = getNM()
+    dist[a].append([b, c])
+    dist[b].append([a, c])
+ignore = [-1] * (N + 1)
+
+# Kからの最短距離をbfsで測る
+def distance(sta):
+    # 木をKから順にたどる（戻るの禁止）
+    pos = deque([sta])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in dist[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+
+Q, K = getNM()
+ignore[K] = 0
+distance(K)
+# 答えはK~xまでの距離+K~yまでの距離
+ans = []
+for i in range(Q):
+    x, y = getNM()
+    ans.append(ignore[x] + ignore[y])
+for i in ans:
+    print(i)
+
+# ABC087 D - People on a Line
+
+N, M = getNM()
+dist = [[] for i in range(N)]
+for i in range(M):
+    l, r, d = getNM()
+    dist[l - 1].append([r - 1, d])
+    dist[r - 1].append([l - 1, -d])
+
+dis = [float('inf')] * N
+
+pos = deque([i for i in range(N)])
+while len(pos) > 0:
+    u = pos.popleft()
+    # 始めの第一歩
+    if dis[u] == float('inf'):
+        dis[u] = 0
+    # 行き先の位置が未確定なら確定させる
+    # 既に確定しているなら判定
+    for to, d in dist[u]:
+        if dis[to] == float('inf'):
+            dis[to] = dis[u] + d
+            # 位置をレコードした頂点を優先的に処理する必要があるためappendleft
+            # 例 que = [0, 2, 1], [1, 2, 3]
+            # pos = [0, 1, 2] の時
+            # dis = [0, -2, 1]でYesになるはず
+            # 0を探索, 1の距離をレコードしてappend disは[0, inf, 1]
+            # pos = [1, 2, 2]のため次は1を探索
+            # dis[1] == infなのでdis[1] = 0にする
+            # dis[1] = 0, dis[2] = 1なのでNo
+            pos.appendleft(to)
         else:
-            # 一つ前が縦ドミノ
-            if S1[i - 1] == S2[i - 1]:
-                dp[i] = (dp[i - 1] * 2) % mod
-            # 一つ前が２つ目横ドミノ
-            else:
-                dp[i] = (dp[i - 1] * 3) % mod
-print(dp[-1])
+            if dis[u] + d != dis[to]:
+                print('No')
+                exit()
+print('Yes')
 
-# ABC074 C - Sugar Water
-# ABが水、CDが砂糖、Eがとけられる量、Fが上限
-A, B, C, D, E, F = getNM()
+# ABC126 D - Even Relation
+# 頂点0からの距離を調べるだけ
+N = getN()
+edges = [[] for i in range(N)]
+for i in range(N - 1):
+    u, v, d = getNM()
+    edges[u - 1].append([v - 1, d])
+    edges[v - 1].append([u - 1, d])
 
-# A,Bを好きな回数使うことでi(0 <= i <= 30)の水を作り出せる
-dp1 = [0] * 31
-dp1[0] = 1
-for i in range(1, 31):
-    if i >= A:
-        dp1[i] = max(dp1[i], dp1[i - A])
-    if i >= B:
-        dp1[i] = max(dp1[i], dp1[i - B])
-waterlist = []
-for i in range(31):
-    if dp1[i] > 0:
-        waterlist.append(i)
+def dij(start):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
 
-# C,Dを好きな回数使うことでi(0 <= i <= 3000)の砂糖を作り出せる
-dp2 = [0] * 3001
-dp2[0] = 1
-for i in range(1, 3001):
-    if i >= C:
-        dp2[i] = max(dp2[i], dp2[i - C])
-    if i >= D:
-        dp2[i] = max(dp2[i], dp2[i - D])
-sugerlist = []
-for i in range(3001):
-    if dp2[i] > 0:
-        sugerlist.append(i)
+    while len(pq) > 0:
+        d, now = heapq.heappop(pq)
+        if (d > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i[0]] > dist[now] + i[1]:
+                dist[i[0]] = dist[now] + i[1]
+                heapq.heappush(pq, (dist[i[0]], i[0]))
+    return dist
 
-ans = [0, 0]
-concent = 0
-
-for water in waterlist[1:]:
-    if 100 * water <= F:
-        left = F - (water * 100)
-        # Fから水をひいた分、溶ける砂糖の限界を超えない量の砂糖を取得する
-        index = bisect_right(sugerlist, min(left, E * water))
-        suger = sugerlist[index - 1]
-        # 濃度計算
-        optconc = (100 * suger) / (100 * water + suger)
-        # ここ>にすると濃度0%に対応できずWAに
-        if optconc >= concent:
-            concent = optconc
-            ans = [100 * water + suger, suger]
-print(*ans)
-
-# ABC082 D - FT Robot
-# grid dpの亜種
-# dpx + x, dpx - xを収納していく
-
-s = input()
-x, y = map(int, input().split())
-
-dpx = {0}
-dpy = {0}
-
-f = s.split("T")
-
-fx = []
-fy = []
-
-for i, fi in enumerate(f):
-    if i % 2:
-        fy.append(len(fi))
+ans = [0] * N
+dij_list = dij(0)
+for i in range(N):
+    if dij_list[i] % 2 == 0:
+        ans[i] = 0
     else:
-        fx.append(len(fi))
+        ans[i] = 1
+for i in ans:
+    print(i)
 
-for i, fxi in enumerate(fx):
-    nex = set([])
-    for j in dpx:
-        nex.add(j+fxi)
-        if i > 0:
-            nex.add(j-fxi)
-    dpx = nex
+# ABC131 E - Friendships
+# スターグラフに線を１本ずつ足していくと
+N, K = getNM()
 
-for fyi in fy:
-    nex = set([])
-    for j in dpy:
-        nex.add(j+fyi)
-        nex.add(j-fyi)
-    dpy = nex
+def cmb_1(n, r):
+    if n < r:
+        return 0
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-print(dpx)
-print(dpy)
+cnt = cmb_1(N - 1, 2) - K
 
-if x in dpx and y in dpy:
-    print('Yes')
-else:
-    print('No')
-
-# ABC113 D - Number of Amidakuji
-H, W, K = getNM()
-
-if W == 1:
-    print(1)
+if cnt < 0:
+    print(-1)
     exit()
 
-# 左からi本目の右、左に橋がかかっている通り、両方に通ってない通り
-bridge_right = [0] * W
-bridge_left = [0] * W
-not_bridge = [0] * W
+dist = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    dist[i][i] = 0
+query = [[1, i] for i in range(2, N + 1)]
 
-for bit in range(1 << (W - 1)):
+for a, b in combinations([i for i in range(2, N + 1)], 2):
+    if cnt == 0:
+        break
+    query.append([a, b])
+    cnt -= 1
+
+print(len(query))
+for i in query:
+    print(*i)
+
+# ARC037 B - バウムテスト
+N, M = 11, 11
+query = [
+[1, 2],
+[1, 3],
+[2, 4],
+[3, 5],
+[4, 6],
+[5, 7],
+[6, 8],
+[7, 9],
+[8, 10],
+[9, 11],
+[10, 11]
+]
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = query[i]
+    a -= 1
+    b -= 1
+    dist[a].append(b)
+    dist[b].append(a)
+
+ignore = [0] * N
+ans = 0
+# 閉路検出
+def search(x, dist):
+    global ans
+    # 現在の位置とparent
+    pos = deque([[x, -1]])
+    ignore[x] = 1
     flag = True
-    for i in range(1, (W - 1)):
-        if bit & (1 << i) and bit & (1 << (i - 1)):
-            flag = False
+
+    while pos:
+        u, parent = pos.popleft()
+        for i in dist[u]:
+            if i != parent:
+                if ignore[i] == 1:
+                    flag = False
+                    continue
+                ignore[i] = 1
+                pos.append([i, u])
     if flag:
-        for i in range(W):
-            if i == 0:
-                if bit & (1 << i):
-                    bridge_right[i] += 1
-                else:
-                    not_bridge[i] += 1
-            elif i == W - 1:
-                if bit & (1 << (i - 1)):
-                    bridge_left[i] += 1
-                else:
-                    not_bridge[i] += 1
-            else:
-                if bit & (1 << i):
-                    bridge_right[i] += 1
-                elif bit & (1 << (i - 1)):
-                    bridge_left[i] += 1
-                else:
-                    not_bridge[i] += 1
+        ans += 1
 
-dp = [[0] * W for i in range(H + 1)]
-
-dp[0][0] = 1
-for i in range(1, W):
-    dp[0][i] = 0
-
-# まっすぐ降りて来た場合、右から降りてきた場合、左から降りてきた場合
-for i in range(1, H + 1):
-    for j in range(W):
-        dp[i][j] += dp[i - 1][j] * not_bridge[j]
-        if j == 0:
-            dp[i][j + 1] += dp[i - 1][j] * bridge_right[j]
-        elif j == W - 1:
-            dp[i][j - 1] += dp[i - 1][j] * bridge_left[j]
-        else:
-            dp[i][j + 1] += dp[i - 1][j] * bridge_right[j]
-            dp[i][j - 1] += dp[i - 1][j] * bridge_left[j]
-
-print(dp[-1][K - 1] % mod)
-
-# ABC118 D - Match Matching
-# まず長さを知りたい
-# dp[i]: マッチN本までに最大何桁の数字ができるか
-# その後、数字を上から回していって各桁の数字を確定させる
-num = [2, 5, 5, 4, 5, 6, 3, 7, 6]
-
-N, M = getNM()
-A = getList()
-
-digit = []
-for i in A:
-    digit.append([i, num[i - 1]])
-digit.sort(key = lambda i: i[1])
-
-dp = [-float('inf')] * (N + 1)
-dp[0] = 0
-
-# 桁数を調べる
-for i in range(1, N + 1):
-    for j in range(M):
-        if i >= digit[j][1]:
-            dp[i] = max(dp[i], dp[i - digit[j][1]] + 1)
-
-# 数字を組み上げる
-ans = ''
-now = N
-digit.sort(reverse = True)
-while now > 0:
-    for j in range(M):
-        if now - digit[j][1] >= 0 and dp[now] == dp[now - digit[j][1]] + 1:
-            now -= digit[j][1]
-            ans += str(digit[j][0])
-            break
+# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+for i in range(N):
+    if ignore[i] == 0:
+        search(i, dist)
 print(ans)
-
-# ABC130 E - Common Subsequence
-N, M = getNM()
-S = getList()
-N_s = len(S)
-T = getList()
-N_t = len(T)
-
-dp = [[0] * (N_s + 1) for i in range(N_t + 1)]
-dp[0][0] = 0
-
-for i in range(N_t):
-    for j in range(N_s):
-        # 基礎 dp[i][j] + Sを伸ばして増えた分 + Tを伸ばして増えた分
-        dp[i + 1][j + 1] = (dp[i + 1][j] + dp[i][j + 1] - dp[i][j]) % mod
-        if S[j] == T[i]:
-            # dp[i][j]の通りのそれぞれの末尾に(S[i], T[i])をつけることで
-            # dp[i][j]通り（と空に(S[i], T[i])をつけた）分新しいのが作れる
-            dp[i + 1][j + 1] = (dp[i + 1][j + 1] + dp[i][j] + 1) % mod
-print((dp[N_t][N_s] + 1) % mod)
-
-# AGC031 B - Reversi
-
-N = getN()
-C = getArray(N)
-"""
-違う場所の組み合わせを選んでも状態がダブル場合がある
-[1, 2, 1, 2, 2]で2, 4番目を選ぶ場合と2, 5番目を選ぶ場合
-ダブルのは含めないか、あとで引くか
-要素2について
-全く選ばない場合, (a, b)を選ぶ場合...
-島にして考える
-[1, 3, 1, 2, 3, 2, 1]の場合
-区間(0, 2), (0, 6), (1, 4), (3, 5)を選べる
-区間をピックアップするのは無理そう
-ダブらないように区間を選びたい
-最大流でできる？
-ソートすると？
-dpっぽい
-"""
-
-alta = []
-for i in range(N):
-    if i == 0 or C[i] != C[i - 1]:
-        alta.append(C[i])
-N = len(alta)
-
-dict = defaultdict(list)
-for i in range(N):
-    dict[alta[i]].append(i)
-
-dp = [0] * (N + 1)
-dp[0] = 1
-for i in range(N):
-    # alta[i]を使わない場合
-    dp[i + 1] += dp[i]
-    # alta[i]を使う場合
-    # alta[i]が最後に登場した位置をsとすると
-    # s ~ alta[i]を使う、もしくはalta[i]を区間延長したパターンが使われる
-    index = bisect_left(dict[alta[i]], i)
-    if index > 0:
-        dp[i + 1] += dp[dict[alta[i]][index - 1] + 1]
-    dp[i + 1] %= mod
-print(dp[N] % mod)
-
-# ACLB D - Flat Subsequence
-# 実家DP
-# Aの要素そのものに着目する(BITで大きい要素から置いていく感覚)
-N, K = getNM()
-A = getArray(N)
-ma = max(A)
-
-# Aの部分列
-# Bの隣り合う要素の絶対値がK以下
-
-# NlogNまでいける
-# セグ木？ dp?
-# 全てにエッジを貼る必要はない？
-# LIS?
-# まあdp
-
-# 数字iの最長はなんぼか
-seg = SegTree([0] * (ma + 1), segfunc, ide_ele)
-dp = [1] * N
-for i in range(N):
-    dp[i] = seg.query(max(0, A[i] - K), min(ma, A[i] + K) + 1) + 1
-    seg.update(A[i], dp[i])
-print(max(dp))
