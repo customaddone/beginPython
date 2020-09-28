@@ -49,95 +49,93 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC098 D - Xor Sum 2
-# 連続する区間の長さを答える　尺取り
-
+# ABC114 C - 755
 N = getN()
-A = getList()
-
-r, tmp = 0, 0
-# l:左端
+rength = len(str(N))
+numlist = [3, 5, 7]
 cnt = 0
-for l in range(N):
-    while r < N and tmp ^ A[r] == tmp + A[r]:
-        # 右端を伸ばす
-        tmp += A[r]
-        r += 1
-    # 計算
-    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
-    # (r - l + 1) - 1
-    cnt += r - l
 
-    if l == r:
-        r += 1
-        tmp -= A[l]
+def sevfivthr(i, strint):
+    global cnt
+    if i == rength:
+        return
     else:
-        tmp -= A[l]
+        for num in numlist:
+            newstr = strint + str(num)
+            if ('3' in newstr) and ('5' in newstr) and ('7' in newstr):
+                if int(newstr) <= N:
+                    cnt += 1
+            sevfivthr(i + 1, newstr)
+for i in numlist:
+    sevfivthr(1, str(i))
 print(cnt)
 
-# ABC117 D - XXOR
-N, K = getNM()
-A = getList()
+# ABC115 D - Christmas
+# レベルNバーガーの下からX層目まで
+N, X = getNM()
 
-# 各X xor Aiについて
-# 各桁について
-# Xにフラグ立つ + Aiにフラグ立たない
-# Xにフラグ立たない + Aiにフラグ立つ　の時 2 ** iだけxorの値が増える
-# Aの各要素の2 ** iのフラグの合計がn本の時
-# Xの2 ** iのフラグを立てるとN - n * 2 ** i、立てないとn * 2 ** i　f(x)の値が増える
+# レベルNバーガーの中間地点、全体のサイズ
+cnt_burger = [[0 for i in range(2)] for i in range(51)]
+cnt_burger[0] = [1, 1]
+for i in range(1, 51):
+    cnt_burger[i][0] = 1 + cnt_burger[i - 1][1] + 1
+    cnt_burger[i][1] = cnt_burger[i][0] + cnt_burger[i - 1][1] + 1
 
-# 各桁のフラグが合計何本あるか
-flag = [0] * 61
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            flag[i] += 1
-for i in range(N):
-    splitbit(A[i])
+# レベルNバーガーにパティが何枚含まれる？
+cnt_patty = [0] * 51
+cnt_patty[0] = 1
+for i in range(1, 51):
+    cnt_patty[i] = 2 * cnt_patty[i - 1] + 1
 
-x = 0
-ans = 0
-for i in range(60, -1, -1):
-    # flag[i] < N - flag[i]ならフラグを立てるほうがお得
-    # だがKの制限があり立てたくても立てられないことがある
-    # Xの2 ** iのフラグを立ててもXがKを超えないか
-    if flag[i] < N - flag[i] and x + 2 ** i <= K:
-        # Xにフラグを立てる
-        x += 2 ** i
-        # f(x)の値が増える
-        ans += 2 ** i * (N - flag[i])
-    # flag[i] < N - flag[i]だがフラグを立てられない場合 +
-    # flag[i] >= N - flag[i]の時
+# レベルNの下からX番目までにパティが何枚含まれるか
+# xが大きいのでdpはできない
+def count(n, x):
+    # レベル0バーガーの場合
+    if n == 0 and x == 1:
+        return 1
+
+    # バーガーの一番下のパンのみ食べる場合
+    if x == 1:
+        return 0
+
+    # 中間地点以前のどこかまで食べる場合
+    elif 1 < x < cnt_burger[n][0]:
+        # レベルn - 1バーガーの下からx - 1層目まで
+        return count(n - 1, x - 1)
+
+    # 中間地点まで食べる
+    elif x == cnt_burger[n][0]:
+        return cnt_patty[n - 1] + 1
+
+    # 中間地点 ~ 最後以前のうちのどこか
+    elif cnt_burger[n][0] < x < cnt_burger[n][1]:
+        return cnt_patty[n - 1] + 1 + count(n - 1, x - cnt_burger[n][0])
+
+    # 最後
     else:
-        ans += 2 ** i * flag[i]
+         return 2 * cnt_patty[n - 1] + 1
 
-print(ans)
+print(count(N, X))
 
-# ABC121 D - XOR World
-A, B = getNM()
-# bit1桁目のフラグの個数
-# 周期は2 ** 1
-# 0と1が交互に
-# bit2桁目のフラグの個数
-# 周期は2 ** 2
-flags1 = [0] * 61
-flags2 = [0] * 61
-# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
-def bitflag(n, flaglist):
-    if n > 0:
-        for i in range(1, 61):
-            split = 2 ** i
-            flag1 = (n // split) * (split // 2)
-            flag2 = max(n % split + 1 - (split // 2), 0)
-            flaglist[i] += flag1 + flag2
-# 1 ~ A - 1について（Aは範囲に入っているため）
-bitflag(A - 1, flags1)
-bitflag(B, flags2)
-for i in range(61):
-    flags2[i] -= flags1[i]
-ans = 0
-# 奇数ならフラグが立つ
-for i in range(61):
-    if flags2[i] % 2 != 0:
-        ans += 2 ** (i - 1)
-print(ans)
+# ABC122 D - We Like AGC 
+N = getN()
+memo = [{} for i in range(N + 1)]
+def ok(last4):
+    for i in range(4):
+        t = list(last4)
+        if i >= 1:
+            t[i - 1],t[i] = t[i], t[i - 1]
+        if ''.join(t).count('AGC') >= 1:
+            return False
+    return True
+def dfs(cur, last3):
+    if last3 in memo[cur]:
+        return memo[cur][last3]
+    if cur == N: return 1
+    res = 0
+    for c in 'ACGT':
+        if ok(last3 + c):
+            res  = (res + dfs(cur + 1, last3[1:] + c)) % mod
+    memo[cur][last3] = res
+    return res
+print(dfs(0,'TTT'))
