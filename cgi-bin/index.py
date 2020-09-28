@@ -49,78 +49,151 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC036 D - 塗り絵
-# 木dp
-# 葉からボトムアップか頂点からdfs
+# ABC006 D - トランプ挿入ソート
+n = getN()
+lista = [getList() for i in range(n)]
+
+# 最長増加部分列問題 (LIS)の問題
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        if a > L[-1]:
+            L.append(a)
+        # このelseに引っかかった時にトランプのソートが必要
+        else:
+            L[bisect_left(L, a)] = a
+    return len(L)
+print(n - lis(lista))
+
+# Donutsプロコンチャレンジ2015 C - 行列のできるドーナツ屋
+# LISの応用
 
 N = getN()
-query = [getList() for i in range(N - 1)]
+H = getList()
 
-dist = [[] for i in range(N)]
+# まあBITだろう
+# 逆から置くBITではない？
+# 累積和？
+# 個数だけ求めればいい
+
+# 地点iからは
+# i - 1起点の単純増加列
+# LIS？
+ans = [0] * N
+L = []
+# 人0 ~ iまでがどのように見えるか これを人i + 1が見る
 for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+    # もしLの一番小さいやつよりH[i]が大きければ
+    while L and L[-1] < H[i]:
+        L.pop()
+    L.append(H[i])
+    ans[i + 1] = len(L)
 
-dp = [[0, 0] for i in range(N)]
-sta = 0
+for i in ans:
+    print(i)
+
+# ABC134 E - Sequence Decomposing
+N = getN()
+A = getArray(N)
+
+def lis(A):
+    L = deque([A[0]])
+    for a in A[1:]:
+        # Lのどの数より小さくければ
+        # 繋げられるものがない
+        if a <= L[0]:
+            L.appendleft(a)
+        else:
+            # L[bisect_left(L, a) - 1]
+            # Lの中のa未満の数字のうちの最大値
+            L[bisect_left(L, a) - 1] = a
+    return len(L)
+
+print(lis(A))
+
+N = 10
+A = [0, 6, 9, 9, 2, 3, 4, 5, 10, 3]
+
+ans = deque([A[0]])
+for i in range(1, N):
+    # ans[index] A[i]が挟みこめる場所
+    # A[0] <= A[i]なら0になる
+    # ans[index - 1]: A[i]未満で一番大きい数字
+    index = bisect_left(ans, A[i])
+    if index == 0:
+        ans.appendleft(A[i])
+    else:
+        # 同じ数が複数ある場合は一番最後の数字が更新される
+        ans[index - 1] = A[i]
+print(len(ans))
+
+# ACLC1 A - Reachable Towns
+
+N = getN()
+Q = [getList() for i in range(N)]
+que = deepcopy(Q)
+que.sort(key = lambda i:i[1], reverse = True)
+que.sort()
+
+# xy座標が共に大きいもの
+# 順列になっている？
+
+"""
+O(n**2)
+U = UnionFind(N)
 for i in range(N):
-    if len(dist[i]) == 1:
-        sta = i
-        break
+    for j in range(i + 1, N):
+        if que[i][1] < que[j][1]:
+            U.union(i, j)
+for i in range(N):
+    print(U.count(i))
+"""
+#　ソート方法はこれでOK
+# やらなくていい探索がある　それを減らす
+# 4 3
+# 4 1
+# 4 2
+# 3 1
+# 3 2
+# 1 2 これだけいる
+
+# 4 3 1 2でi < jになるものをペアに
+# 1とペアにできるのは2, 3, 4
+# 2とペアにできるのは3, 4
+# 3は4
+# それぞれ右側にあれば
+
+# 6 7 5 3 2 4 1
+# グループ１ 6 7
+# グループ2 5
+# グループ3 3 2 4
+# グループ4 1
+# どれか１つのグループに属する
+
+U = UnionFind(N + 1)
+group = []
+
+for x, y in que:
+    # １番目のものは必ずグループのリーダーになれる
+    if not group:
+        group.append(y)
+        continue
+    # リーダーが降順に並ぶように
+    if y < group[-1]:
+        group.append(y)
+        continue
+    opt = float('inf')
+    # グループ再編成
+    while group:
+        # yより小さいものは全てyが所属するグループに入る
+        if y > group[-1]:
+            l = group.pop()
+            U.union(l, y)
+            opt = min(opt, l) # yが所属するグループの中のリーダー　一番最初のものが記録される
+        else:
+            break
+    # リーダー変更
+    group.append(opt)
 
 for i in range(N):
-    if len(dist[i]) == 1 and i != sta:
-        dp[i] = [1, 1]
-
-ignore = [0] * N
-ignore[sta] = 1
-def dfs(now):
-    white = 1
-    black = 1
-    for i in dist[now]:
-        if ignore[i] != 1:
-            ignore[i] = 1
-            w_cnt, b_cnt = dfs(i)
-            white = (white * (w_cnt + b_cnt)) % mod
-            black = (black * w_cnt) % mod
-    dp[now] = [white % mod, black % mod]
-    return dp[now]
-
-print(sum(dfs(sta)) % mod)
-
-# ABC133 E - Virus Tree 2
-# 木dp
-N, K = getNM()
-query = [getList() for i in range(N - 1)]
-
-dist = [[] for i in range(N)]
-for a, b in query:
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-max_root = 0
-max_root_index = 0
-for i in range(N):
-    if len(dist[i]) >= max_root:
-        max_root = len(dist[i])
-        max_root_index = i
-
-pos = deque([max_root_index])
-
-ans = 1
-ignore = [-1] * N
-ignore[max_root_index] = 1
-ans *= cmb(K, max_root + 1) * math.factorial(max_root + 1)
-
-while len(pos) > 0:
-    u = pos.popleft()
-    for i in dist[u]:
-        if ignore[i] == -1:
-            ignore[i] = 1
-            if len(dist[i]) >= 2:
-                ans *= cmb(K - 2, len(dist[i]) - 1) * math.factorial(len(dist[i]) - 1)
-                ans %= mod
-            pos.append(i)
-
-print(ans % mod)
+    print(U.count(Q[i][1])) # yがiのもののサイズの大きさ　uf.funcはインデックスで呼ばなくてもいい
