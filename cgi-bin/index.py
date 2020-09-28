@@ -49,308 +49,263 @@ mod = 998244353
 # Main Code #
 #############
 
-N = 5
-# 木グラフ
-que = [
-[1, 2],
-[1, 4],
-[2, 3],
-[2, 5]
-]
-# 重みつき
-que_dis = [
-[1, 2, 2],
-[1, 4, 1],
-[2, 3, 2],
-[2, 5, 1]
-]
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-def build_tree(n, edge_list):
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-    G = [[] for i in range(n)]
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-    for a, b in edge_list:
-        G[a - 1].append(b - 1)
-        G[b - 1].append(a - 1)
+        if x == y:
+            return
 
-    return G
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
 
-def build_tree_dis(n, edge_list):
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
 
-    G = [[] for i in range(n)]
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
 
-    for a, b, c in edge_list:
-        G[a - 1].append([b - 1, c])
-        G[b - 1].append([a - 1, c])
+    def size(self, x):
+        return -self.parents[self.find(x)]
 
-    return G
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
 
-# 木の建設
-G1 = build_tree(N, que)
-G2 = build_tree_dis(N, que_dis)
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
 
-# 木を探索
-def search(n, edges, sta):
-    ignore = [0] * N
-    ignore[sta] = 1
-    pos = deque([sta])
-    # 探索
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i] == 0:
-                ignore[i] = 1
-                pos.append(i)
-# [0, 1, 3, 2, 4]
-search(N, G1, 0)
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
 
-# staからの距離
-def distance(n, edges, sta):
-    # 木をKから順にたどる（戻るの禁止）
-    ignore = [-1] * N
-    ignore[sta] = 0
-    pos = deque([sta])
+# ABC002 派閥
+# 条件
+# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
+# (i, j)がqueryに含まれる
 
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
-    return ignore
-# [0, 2, 4, 1, 3]
-print(distance(N, G2, 0))
+# この人数nの最大値を求める
 
-# ABC067 D - Fennec VS. Snuke
-N = 12
-query = [
-[1, 3],
-[2, 3],
-[3, 4],
-[3, 5],
-[5, 11],
-[6, 12],
-[7, 9],
-[8, 9],
-[9, 10],
-[9, 11],
-[11, 12]
-]
+# 集合Aの取り方は？
+# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
+N, M = getNM()
+mem = set()
+for i in range(M):
+    a, b = getNM()
+    mem.add((a - 1, b - 1))
 
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+ans = 0
+for bit in range(1 << N):
+    # 任意のi, jについてqueryに含まれているか判定
+    flag = True
+    for i in range(N):
+        for j in range(i + 1, N):
+            # 適当に選んだ２人がbitの中に含まれていれば
+            if bit & (1 << i) and bit & (1 << j):
+                if not (i, j) in mem:
+                    flag = False
+    # もし集合bitが条件を満たすなら人数を調べる
+    if flag:
+        opt = bin(bit).count('1')
+        ans = max(ans, opt)
+print(ans)
 
-# nowからNまでのルート
-def router(n, sta, end):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    path[sta] = -1
-
-    while pos[0] != end:
-        u = pos.popleft()
-        ignore[u] = 1
-
-        for i in dist[u]:
-            if ignore[i] != 1:
-                path[i] = u
-                pos.append(i)
-
-    route = deque([end])
-    while True:
-        next = path[route[0]]
-        route.appendleft(next)
-        if route[0] == sta:
-            break
-
-    return list(route)
-
-route = router(N, 0, N - 1)
-print(route)
-
-# NG以外のところで辿れるところの数
-def dfs_ter(sta, ng):
-    pos = deque([sta])
-
-    ignore = [0] * N
-    for i in ng:
-        ignore[i] = 1
-
-    cnt = 0
-    while len(pos) > 0:
-        u = pos.popleft()
-        ignore[u] = 1
-        cnt += 1
-        for i in dist[u]:
-            if ignore[i] != 1:
-                pos.append(i)
-
-    return cnt
-
-L = len(route)
-fen_ter = route[:(L + 2 - 1) // 2]
-snu_ter = route[(L + 2 - 1) // 2:]
-
-fen_ans = dfs_ter(0, snu_ter)
-
-if fen_ans > N - fen_ans:
-    print('Fennec')
-else:
-    print('Snuke')
-
-# ABC070 D - Transit Tree Path
-N = getN()
-dist = [[] for i in range(N + 1)]
-for i in range(N - 1):
-    a, b, c = getNM()
-    dist[a].append([b, c])
-    dist[b].append([a, c])
-ignore = [-1] * (N + 1)
-
-# Kからの最短距離をbfsで測る
-def distance(sta):
-    # 木をKから順にたどる（戻るの禁止）
-    pos = deque([sta])
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in dist[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
-
-Q, K = getNM()
-ignore[K] = 0
-distance(K)
-# 答えはK~xまでの距離+K~yまでの距離
-ans = []
-for i in range(Q):
-    x, y = getNM()
-    ans.append(ignore[x] + ignore[y])
-for i in ans:
-    print(i)
-
-# ABC087 D - People on a Line
+# ABC040 D - 道路の老朽化対策について
+# 人によって通れる橋が限定される場合がある
+# クエリソートしてUnion Find
 
 N, M = getNM()
+bridge = [getList() for i in range(M)]
+Q = getN()
+resident = []
+for i in range(Q):
+    a, b = getNM()
+    resident.append([a, b, i])
+
+bridge.sort(reverse = True, key = lambda i:i[2])
+resident.sort(reverse = True, key = lambda i:i[1])
+
+U = UnionFind(N)
+
+ans = []
+index = 0
+for i in range(Q):
+    # 建築年が新しい順に橋をかけていく
+    for j in range(index, M):
+        if bridge[j][2] > resident[i][1]:
+            a, b, c = bridge[j]
+            U.union(a - 1, b - 1)
+        else:
+            index = j
+            break
+    # U.sizeで判定
+    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
+
+# 国民を登場順にソート
+ans.sort(key = lambda i: i[0])
+for i in ans:
+    print(i[1])
+
+# ABC097 D - Equals
+# 同じ島のところにしか飛べない
+N, M = getNM()
+# 1 ~ 5の並び替え
+# これを1, 2, 3, 4, 5にしたい
+P = getList()
+# Pのうちのペア
+query = []
+for i in range(M):
+    a, b = getNM()
+    query.append([a, b])
+
+U = UnionFind(N)
+for i in range(M):
+    a, b = query[i]
+    U.union(a - 1, b - 1)
+
+cnt = 0
+for i in range(N):
+    if U.same(P[i] - 1, i):
+        cnt += 1
+
+print(cnt)
+
+# ABC120 D - Decayed Bridges
+# クエリソート
+N, M = getNM()
+query = [getNM() for i in range(M)]
+
+U = UnionFind(N)
+now = cmb_list[N]
+ans = [now]
+
+for i in range(M - 1, 0, -1):
+    a, b = query[i]
+    size_a = 0
+    size_b = 0
+    if not U.same(a - 1, b - 1):
+        size_a = U.size(a - 1)
+        size_b = U.size(b - 1)
+
+        U.union(a - 1, b - 1)
+        size_after = U.size(a - 1)
+
+        now -= (cmb_list[size_after] - cmb_list[size_a] - cmb_list[size_b])
+    else:
+        U.union(a - 1, b - 1)
+    ans.append(now)
+
+for i in range(M - 1, -1, -1):
+    print(ans[i])
+
+# ABC126 E - 1 or 2
+# カードN枚
+# 各カードには1か2が書かれている
+N, M = getNM()
+# A1 + A2 + 1は偶数
+query = []
+
+for i in range(M):
+    a, b, c = getNM()
+    query.append([a, b, c])
+
+U = UnionFind(N)
+for i in query:
+    U.union(i[0] - 1, i[1] - 1)
+
+print(U.group_count())
+
+# 各1 ~ Nに交易所を立てるのを0~Nにエッジを貼るのに見立てる
+N, M = getNM()
+edges = []
+for i in range(N):
+    c = getN()
+    edges.append((c, 0, i + 1))
+for i in range(M):
+    s, t, w = getNM()
+    edges.append((w, s, t))
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(N + 1, edges))
+
+# 駐車場
+N, M, S = getNM()
+S -= 1
 dist = [[] for i in range(N)]
 for i in range(M):
-    l, r, d = getNM()
-    dist[l - 1].append([r - 1, d])
-    dist[r - 1].append([l - 1, -d])
+    v1, v2 = getNM()
+    v1 -= 1
+    v2 -= 1
+    v1, v2 = min(v1, v2), max(v1, v2)
+    dist[v1].append(v2)
 
-dis = [float('inf')] * N
+U = UnionFind(N)
 
-pos = deque([i for i in range(N)])
-while len(pos) > 0:
-    u = pos.popleft()
-    # 始めの第一歩
-    if dis[u] == float('inf'):
-        dis[u] = 0
-    # 行き先の位置が未確定なら確定させる
-    # 既に確定しているなら判定
-    for to, d in dist[u]:
-        if dis[to] == float('inf'):
-            dis[to] = dis[u] + d
-            # 位置をレコードした頂点を優先的に処理する必要があるためappendleft
-            # 例 que = [0, 2, 1], [1, 2, 3]
-            # pos = [0, 1, 2] の時
-            # dis = [0, -2, 1]でYesになるはず
-            # 0を探索, 1の距離をレコードしてappend disは[0, inf, 1]
-            # pos = [1, 2, 2]のため次は1を探索
-            # dis[1] == infなのでdis[1] = 0にする
-            # dis[1] = 0, dis[2] = 1なのでNo
-            pos.appendleft(to)
-        else:
-            if dis[u] + d != dis[to]:
-                print('No')
-                exit()
-print('Yes')
-
-# ABC126 D - Even Relation
-# 頂点0からの距離を調べるだけ
-N = getN()
-edges = [[] for i in range(N)]
-for i in range(N - 1):
-    u, v, d = getNM()
-    edges[u - 1].append([v - 1, d])
-    edges[v - 1].append([u - 1, d])
-
-def dij(start):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-
-    while len(pq) > 0:
-        d, now = heapq.heappop(pq)
-        if (d > dist[now]):
-            continue
-        for i in edges[now]:
-            if dist[i[0]] > dist[now] + i[1]:
-                dist[i[0]] = dist[now] + i[1]
-                heapq.heappush(pq, (dist[i[0]], i[0]))
-    return dist
-
-ans = [0] * N
-dij_list = dij(0)
-for i in range(N):
-    if dij_list[i] % 2 == 0:
-        ans[i] = 0
-    else:
-        ans[i] = 1
+ans = []
+for i in range(N - 1, -1, -1):
+    # 地点iに車を駐める場合、一端がiの道は使えない
+    # → iに車を停める以前であれば,一端がiの道を使える
+    for j in dist[i]:
+        U.union(i, j)
+    if U.same(i, S):
+        ans.append(i + 1)
+ans.sort()
 for i in ans:
     print(i)
 
-# ARC037 B - バウムテスト
-N, M = 11, 11
-query = [
-[1, 2],
-[1, 3],
-[2, 4],
-[3, 5],
-[4, 6],
-[5, 7],
-[6, 8],
-[7, 9],
-[8, 10],
-[9, 11],
-[10, 11]
-]
-dist = [[] for i in range(N)]
-for i in range(M):
-    a, b = query[i]
-    a -= 1
-    b -= 1
-    dist[a].append(b)
-    dist[b].append(a)
-
-ignore = [0] * N
-ans = 0
-# 閉路検出
-def search(x, dist):
-    global ans
-    # 現在の位置とparent
-    pos = deque([[x, -1]])
-    ignore[x] = 1
-    flag = True
-
-    while pos:
-        u, parent = pos.popleft()
-        for i in dist[u]:
-            if i != parent:
-                if ignore[i] == 1:
-                    flag = False
-                    continue
-                ignore[i] = 1
-                pos.append([i, u])
-    if flag:
-        ans += 1
-
-# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+# ABC065 built?
+# xでソート、yでソートし、それぞれ
+# abs(a - b)とabs(c - d)のエッジをそれぞれ加える
+# どちらか短い方が使われる
+N = getN()
+query = []
 for i in range(N):
-    if ignore[i] == 0:
-        search(i, dist)
-print(ans)
+    a, b = getNM()
+    query.append([a, b, i])
+
+q_a = sorted(query, key = lambda i: i[0])
+q_b = sorted(query, key = lambda i: i[1])
+edges = []
+
+a1 = q_a[0]
+b1 = q_b[0]
+for i in range(1, N):
+    a2 = q_a[i]
+    b2 = q_b[i]
+    edges.append([abs(a1[0] - a2[0]), a1[2], a2[2]])
+    edges.append([abs(b1[1] - b2[1]), b1[2], b2[2]])
+    a1, b1 = a2, b2
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+        if U.size(0) == N:
+            break
+    return res
+print(kruskal(N, edges))
