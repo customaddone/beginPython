@@ -165,3 +165,40 @@ elif M >= 2 and K < 2 ** M:
 
 else:
     print(-1)
+
+# ABC129 E - Sum Equals Xor
+# 二進数表記なので桁dpやろ
+
+# L = 01(2)の時
+# l - 0の時
+# a = 0, b = 0(a = 1, b = 1の時 a ^ b = 0になるが a + b > lなのでだめ)
+# l = 1の時
+# a, b = (0, 1), (1, 0)
+# l = 2の時
+# a, b = (0, 2), (2, 0) (a = 11, b = 01でも a ^ b = 10になるがa + b > l)
+# lのi桁目が1の時、aのi桁目は0 or 1だが、lのi桁目が0の時aのi桁目は0のみ
+L = input()
+
+def digit_dp_2(n):
+    l = len(n)
+
+    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        # Lになる可能性があるかないか
+        for j in range(2):
+            # 次の桁が0か1か
+            for d_j in range(2 if j else d + 1):
+                if d_j == 0:
+                    dp[i + 1][j | (d_j < d)][d_j] += (dp[i][j][0] + dp[i][j][1])
+                    dp[i + 1][j | (d_j < d)][d_j] %= mod
+                else:
+                    dp[i + 1][j | (d_j < d)][d_j] += 2 * (dp[i][j][0] + dp[i][j][1])
+                    dp[i + 1][j | (d_j < d)][d_j] %= mod
+
+    return sum(dp[-1][0]) + sum(dp[-1][1])
+
+print(digit_dp_2(L) % mod)
