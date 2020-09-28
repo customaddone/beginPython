@@ -338,6 +338,35 @@ print(len(query))
 for i in query:
     print(*i)
 
+# ABC132 E - Hopscotch Addict
+# 三回移動したい
+
+N, M = getNM()
+query = [getList() for i in range(M)]
+S, T = getNM()
+
+edges = build_tree_dis(N, query)
+
+ignore = [[-1] * 3 for i in range(N)]
+ignore[S - 1][0] = 0
+
+pos = deque([[S - 1, 0]])
+
+while len(pos) > 0:
+    u, t = pos.popleft()
+    t += 1
+    j = t % 3
+    for i in edges[u]:
+        if ignore[i][j] == -1:
+            ignore[i][j] = t
+            pos.append([i, t])
+
+if ignore[T - 1][0] % 3 == 0:
+    print(ignore[T - 1][0] // 3)
+    exit()
+else:
+    print(-1)
+
 # ARC037 B - バウムテスト
 N, M = 11, 11
 query = [
