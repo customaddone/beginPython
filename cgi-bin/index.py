@@ -49,168 +49,221 @@ mod = 998244353
 # Main Code #
 #############
 
-N = 4
-inf = float('inf')
+# ABC005 C - おいしいたこ焼きの売り方
+# マッチング問題だが貪欲
+T = getN()
+N = getN()
+sell = getList()
+M = getN()
+buy = getList()
 
-d = [
-[0, 2, inf, inf],
-[inf, 0, 3, 9],
-[1, inf, 0, 6],
-[inf, inf, 4, 0]
-]
+# 来る客1, 2に売れるか
+for cus in buy:
+    flag = False
+    for i in range(N):
+        if sell[i] <= cus <= sell[i] + T:
+            flag = True
+            sell[i] = mod
+            break
+    if not flag:
+        print('no')
+        exit()
+print('yes')
 
-dp = [[-1] * N for i in range(1 << N)]
+# ABC080 D - Recording
+# 使ってない録画機は他のチャンネルにスイッチできる
+# 同時にいくつ放送が流れているか
+N, C = getNM()
+query = [getList() for i in range(N)]
+dp = [[0] * (C + 1) for i in range(10 ** 5 + 2)]
+for i in range(N):
+    s, t, c = query[i]
+    dp[s][c] += 1
+    dp[t + 1][c] -= 1
 
-def rec(s, v, dp):
-    if dp[s][v] >= 0:
-        return dp[s][v]
-    if s == (1 << N) - 1 and v == 0:
-        dp[s][v] = 0
-        return 0
-    res = float('inf')
-    for u in range(N):
-        if s & (1 << u) == 0:
-            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
-    dp[s][v] = res
-    return res
-# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
-print(rec(0,0,dp))
+for i in range(1, 10 ** 5 + 2):
+    for j in range(C + 1):
+        dp[i][j] += dp[i - 1][j]
 
-# ABC054 C - One-stroke Path
-
-N, M = getNM()
-dist = [[] for i in range(N + 1)]
-for i in range(M):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-cnt = 0
-
-pos = deque([[1 << 0, 0]])
-
-while len(pos) > 0:
-    s, v = pos.popleft()
-    if s == (1 << N) - 1:
-        cnt += 1
-    for u in dist[v]:
-        if s & (1 << u):
-            continue
-        pos.append([s | (1 << u), u])
-print(cnt)
-
-"""
-全ての場所を一度だけ通り巡回する通りの数
-bit(1 << N)を小さい順から探索する
-①bit & (1 << 0)
-最初に0を踏んでないということだから飛ばす
-②現在の場所sを探すためN個探索する
-③次の場所tを探すためN個探索する
-④渡すdpする
-"""
-
-N, M = getNM()
-G = [[0] * N for i in range(N)]
-for i in range(M):
-    a, b = getNM()
-    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
-    G[b - 1][a - 1] = 1
-
-# 状態bitから次の状態へ渡すdpするというのはよくやる
-# [0](001) → [0, 1](011) → [0, 1, 2](111)
-#          → [0, 2](101) → [0, 1, 2](111)
-def counter(sta):
-    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
-    dp = [[0] * N for i in range(1 << N)]
-    dp[1 << sta][sta] = 1
-
-    for bit in range(1, 1 << N):
-        if not bit & (1 << sta):
-            continue
-        # s:現在の場所
-        for s in range(N):
-            # sを踏んだことになっていなければ飛ばす
-            if not bit & (1 << s):
-                continue
-            # t:次の場所
-            for t in range(N):
-                # tを過去踏んでいない and s → tへのエッジがある
-                if (bit & (1 << t)) == 0 and G[s][t]:
-                    dp[bit|(1 << t)][t] += dp[bit][s]
-
-    return sum(dp[(1 << N) - 1])
-
-print(counter(0))
-
-# ABC104 C - All Green
-# 特別ボーナスがある問題は大抵bit dp
-# 目標700点
-D, G = getNM()
-query = []
-for i in range(D):
-    p, c = getNM()
-    query.append([i + 1, p, c])
-
-ans_cnt = float('inf')
-
-for bit in range(1 << D):
-    sum = 0
+ans = 0
+for i in range(10 ** 5 + 2):
     cnt = 0
-    for i in range(D):
-        if bit & (1 << i):
-            sum += query[i][0] * query[i][1] * 100 + query[i][2]
-            cnt += query[i][1]
-
-    if sum < G:
-        for j in range(D - 1, -1, -1):
-            if not bit & (1 << j):
-                left = G - sum
-                fire = query[j][0] * 100
-                opt = min(query[j][1], (left + fire - 1) // fire)
-                sum += opt * query[j][0] * 100
-                cnt += opt
-                break
-
-    if sum >= G:
-        ans_cnt = min(ans_cnt, cnt)
-
-print(ans_cnt)
-
-# ABC119 C - Synthetic Kadomatsu
-N, A, B, C = getNM()
-L = getArray(N)
-
-def counter(array):
-    if (1 in array) and (2 in array) and (3 in array):
-        opt = [0, 0, 0, 0]
-        # 合成に10pかかる
-        cnt = 0
-        for i in range(len(array)):
-            if opt[array[i]] > 0:
-                cnt += 1
-            if array[i] >= 1:
-                opt[array[i]] += L[i]
-
-        res = cnt * 10
-        res += abs(opt[1] - A)
-        res += abs(opt[2] - B)
-        res += abs(opt[3] - C)
-
-        return res
-
-    else:
-        return float('inf')
-
-ans = float('inf')
-def four_pow(i, array):
-    global ans
-    if i == N:
-        ans = min(ans, counter(array))
-        return
-    # 4 ** Nループ
-    for j in range(4):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-
-four_pow(0, [])
+    for j in dp[i]:
+        if j > 0:
+            cnt += 1
+    ans = max(ans, cnt)
 print(ans)
+
+# ABC085 D - Katana Thrower
+N, H = getNM()
+
+a = []
+b = []
+
+for i in range(N):
+  x, y = map(int, input().split())
+  a.append(x)
+  b.append(y)
+
+# 振った場合の最大値
+max_a = max(a)
+
+ans = 0
+# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
+# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
+# 両方利用することができる
+# 実は投げてしまった刀も振ることができるというルールに変更しても
+# 問題の答えは変わらない
+# 実際のムーブとしては
+# ①最も攻撃力が高い振り刀で攻撃する
+# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
+# という流れになる
+for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
+    H -= x
+    ans += 1
+    if H <= 0: break
+
+ans += max(0, (H + max_a - 1) // max_a)
+print(ans)
+
+# ABC091 C - 2D Plane 2N Points
+
+N = getN()
+# Rはループさせるのでソートさせる必要ない
+R = [getList() for i in range(N)]
+R_l = [1] * N
+
+B = [getList() for i in range(N)]
+B.sort()
+
+# 貪欲法でペア作りする問題
+# ABC005 C - おいしいたこ焼きの売り方の時と同様に
+# それとしか繋げないもの　を優先的に繋いでいく
+
+# 条件Aの通過が厳しい順に対象bをソートし、
+# たこ焼き　条件A:客が来る前にたこ焼きができてないといけない
+#  　　　　      客を来るのが早い順に並べる（最初から並んでる）
+# 今回     条件A:赤星のx座標が青星のx座標より小さくないといけない
+#  　　　　　　　 青星をx座標が小さい順に並べる
+
+# 条件A, 条件Bをクリアしたものの中で、最も条件Bの通過が厳しい対象aと結ぶ
+# たこ焼き　条件B:たこ焼きが賞味期限より前のものでないといけない
+#  　　　　      できるだけ古いものを売る（最初から並んでる）
+# 今回     条件B:赤星のy座標が青星のy座標より小さくないといけない
+#  　　　　　　　 条件をクリアしたもののうちでできるだけy座標が大きいものを選ぶ
+
+ans = 0
+for b in B:
+    max_y = -1
+    max_index = -1
+    for i, a in enumerate(R):
+        # x, y座標が小さいもののうちでまた使ってないもの
+        if a[0] < b[0] and a[1] < b[1] and R_l[i] == 1:
+            # あるならY座標が最も大きいもの
+            if a[1] > max_y:
+                max_y = a[1]
+                max_index = i
+    if max_y >= 0:
+        R_l[max_index] = 0
+        ans += 1
+
+# ABC100 D - Patisserie ABC
+# 8パターン全部調べる
+
+N,M = getNM()
+data = [[] for i in range(8)]
+for _ in range(N):
+    x,y,z = getNM()
+    data[0].append(x + y + z)
+    data[1].append(x + y - z)
+    data[2].append(x - y + z)
+    data[3].append(x - y - z)
+    data[4].append(- x + y + z)
+    data[5].append(- x + y - z)
+    data[6].append(- x - y + z)
+    data[7].append(- x - y - z)
+
+ans = -mod
+for i in range(8):
+    data[i].sort(reverse = True)
+    ans = max(ans,sum(data[i][:M]))
+print(ans)
+
+# ABC116 D - Various Sushi
+N, K = getNM()
+various = defaultdict(list)
+que = [getList() for i in range(N)]
+
+ans = 0
+num = []
+var_s = set()
+
+# 美味しい順にK個とった時の幸福度
+que.sort(reverse = True, key = lambda i: i[1])
+for i in range(K):
+    ans += que[i][1]
+    # もし２番手以降ならあとで交換する用にとっておく
+    if que[i][0] in var_s:
+        num.append(que[i][1])
+    var_s.add(que[i][0])
+
+var = len(var_s)
+ans += var ** 2
+
+# 使ってない種類について各種類で一番大きさが大きいもの
+left_l = defaultdict(int)
+for i in range(N):
+    if not que[i][0] in var_s:
+        left_l[que[i][0]] = max(left_l[que[i][0]], que[i][1])
+
+num.sort(reverse = True)
+left_l = [i[1] for i in left_l.items()]
+left_l.sort()
+
+# M回交換する
+opt = ans
+M = min(len(num), len(left_l))
+for i in range(M):
+    u = num.pop()
+    s = left_l.pop()
+    # 寿司単体の幸福度
+    opt -= (u - s)
+    # 種類が増える分
+    opt += 2 * var + 1
+    var += 1
+    ans = max(opt, ans)
+
+print(ans)
+
+# ABC119 D - Lazy Faith
+A, B, Q = getNM()
+# 神社
+S = getArray(A)
+# 寺
+T = getArray(B)
+query = getArray(Q)
+
+S.insert(0, -float('inf'))
+T.insert(0, -float('inf'))
+S.append(float('inf'))
+T.append(float('inf'))
+
+def close(data, point):
+    west = data[bisect_left(data, point) - 1]
+    east = data[bisect_left(data, point)]
+
+    return west, east
+
+for i in range(Q):
+    now = query[i]
+    shrine_west, shrine_east = close(S, now)
+    temple_west, temple_east = close(T, now)
+
+    ww = now - min(shrine_west, temple_west)
+    we_1 = (now - shrine_west) * 2 + (temple_east - now)
+    we_2 = (now - temple_west) * 2 + (shrine_east - now)
+    ee = max(shrine_east, temple_east) - now
+    ew_1 = (shrine_east - now) * 2 + (now - temple_west)
+    ew_2 = (temple_east - now) * 2 + (now - shrine_west)
+
+    print(min(ww, we_1, we_2, ee, ew_1, ew_2))
