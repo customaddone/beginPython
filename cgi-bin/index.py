@@ -49,118 +49,176 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC038 D-プレゼント
-class BIT:
-    def __init__(self, n):
-        self.n = n
-        self.data = [0] * (n + 1)
+# ABC022 C - Blue Bird
+# 自分の家からスタートして同じ道を通らないで家に戻ってくる
+# 違う道を通る、一つ目の家と最後の家は違うということ
+# ワーシャルフロイドで
 
-    def ope(self, x, y):
-        return max(x, y)
+N, M = getNM()
+query = [getList() for i in range(M)]
 
-    def update(self, i, v):
-        j = i
-        while j <= self.n:
-            self.data[j] = self.ope(self.data[j], v)
-            j += j & -j
+dist = [[float('inf')] * N for i in range(N)]
+sec_list = []
 
-    def query(self, i):
-        ret = 0
-        j = i
-        while 0 < j:
-            ret = self.ope(self.data[j], ret)
-            j &= (j - 1)
-        return ret
+for i in range(M):
+    a, b, c = query[i]
+    if a == 1:
+        sec_list.append([b - 1, c])
+    elif b == 1:
+        sec_list.appedn([a - 1, c])
+    if a != 1 and b != 1:
+        dist[a - 1][b - 1] = c
+        dist[b - 1][a - 1] = c
 
-bit = BIT(10 ** 5)
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
 
-for w, h in que:
-    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
-    # 最初は0個
-    q = bit.query(h - 1)
-    # 高さhの時の箱の数を更新
-    bit.update(h, q + 1)
-print(bit.query(10 ** 5))
+warshall_floyd(dist)
 
-# ABC140 E - Second Sum
-# [Pl, Pr]間で２番目に大きいものの総和を
-# l, rについてのnC2通りの全てについて求めよ
+# 高橋くんの家の隣にある家同志について探索
+ans = float('inf')
+for i in range(len(sec_list)):
+    for j in range(i + 1, len(sec_list)):
+        x1 = sec_list[i]
+        x2 = sec_list[j]
+        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
+        ans = min(ans, opt)
 
-# 8 2 7 3 4 5 6 1
-# 8 2: 2
-# 8 2 7: 7
-# 2 7 3: 3
-# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
-# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
+if ans == float('inf'):
+    print(-1)
+else:
+    print(ans)
 
-# N <= 10 ** 5
-# Piが２番目になる通りが何通り　みたいな感じで求められる？
-# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
+# ABC051 D - Candidates of No Shortest Paths
 
-# ヒープキューとか使える？
-# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
-# 尺取り使える？
+N, M = getNM()
+query = [getList() for i in range(M)]
 
-# 累積？　一番
+dist = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    dist[i][i] = 0
+for i in range(M):
+    a, b, c = query[i]
+    dist[a - 1][b - 1] = c
+    dist[b - 1][a - 1] = c
 
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
+warshall_floyd(dist)
+ng_dist = [0] * M
 
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
+# 各エッジについて探索
+# dist(s, i) + edge(i, j) = dist(s, j)ならその辺は最短距離を構成する
+for i in range(N):
+    for j in range(M):
+        s, t, c = query[j]
+        if dist[i][s - 1] + c == dist[i][t - 1]:
+            ng_dist[j] = 1
 
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
+cnt = 0
+for i in ng_dist:
+    if i == 0:
+        cnt += 1
+print(cnt)
 
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
+# ABC073 D - joisino's travel
+# Rが小さいのでpermutationする
+N, M, R = getNM()
 
-    def lowerbound(self,w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
+d = [[float("inf")] * N for i in range(N)]
+list_R = [int(i) - 1 for i in input().split()]
+for i in range(M):
+   x, y, z = getNM()
+   d[x - 1][y - 1] = min(d[x - 1][y - 1], z)
+   d[y - 1][x - 1] = min(d[x - 1][y - 1], z)
+
+warshall_floyd(d)
+
+ans = float('inf')
+for case in permutations(list_R):
+    x1 = case[0]
+    opt = 0
+    for j in range(1, R):
+        x2 = case[j]
+        opt += d[x1][x2]
+        x1 = x2
+    ans = min(ans, opt)
+print(ans)
+
+# ABC074 D - Restoring Road Network
 
 N = getN()
-P = getList()
-dic = {}
-bit = BIT(N)
+query = [getList() for i in range(N)]
+query_before = copy.deepcopy(query)
+
+warshall_floyd(query)
+
+if query != query_before:
+    print(-1)
+    exit()
+
+edges = []
 for i in range(N):
-    dic[P[i]] = i + 1
+    for j in range(i + 1, N):
+        edges.append([query[i][j], i, j])
 
-# 両端に何もない時用
-# [0] + Pの各要素 + [N + 1]みたいになる
-dic[0] = 0
-dic[N + 1] = N + 1
-ans = 0
+cnt = 0
+# それぞれのエッジについてそれが最短路の一部かを判定する
+for i in edges:
+    flag = True
+    w, s, t = i
+    for k in range(N):
+        if k != s and k != t and w >= query[s][k] + query[k][t]:
+            flag = False
+            break
+    if flag:
+        cnt += w
+print(cnt)
 
-for i in range(N, 0, -1):
-    # 8のインデックス、7のインデックス...に1を登録していく
-    bit.add(dic[i], 1)
-    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
-    c = bit.get(dic[i] + 1)
-    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
-    # l2: l1の一つ左側にあるもの
-    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
-    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
-    # r2: r1の一つ右側にあるもの
-    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
-    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
-    ans += S * i
-print(ans)
+# ABC143 E - Travel by Car
+N, M, L = getNM()
+edges = [getList() for i in range(M)]
+Q = getN()
+query = [getList() for i in range(Q)]
+
+dist = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    dist[i][i] = 0
+for i in range(M):
+    a, b, c = edges[i]
+    dist[a - 1][b - 1] = c
+    dist[b - 1][a - 1] = c
+
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
+
+# まず一回回す
+warshall_floyd(dist)
+
+# distの抽象化
+# edgesの張り替え
+dist_alta = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    for j in range(i, N):
+        if i == j:
+            dist_alta[i][j] = 0
+            continue
+        if dist[i][j] <= L:
+            dist_alta[i][j] = 1
+            dist_alta[j][i] = 1
+
+warshall_floyd(dist_alta)
+
+for s, t in query:
+    if dist_alta[s - 1][t - 1] == float('inf'):
+        print(-1)
+        continue
+    print(dist_alta[s - 1][t - 1] - 1)
