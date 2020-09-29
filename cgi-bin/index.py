@@ -49,384 +49,443 @@ mod = 998244353
 # Main Code #
 #############
 
-#####segfunc#####
-def segfunc(x, y):
-    return min(x, y)
-#################
-#####ide_ele#####
-ide_ele = float('inf')
-#################
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-    def query(self, l, r):
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-N, M = getNM()
-seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
-L = [getList() for i in range(N)]
-L.sort()
-seg.update(0, 0)
-# [0, 1, 2, 3, 4, 5]
-# seg.query(0, 2): [0, 1]の最小値
-# seg.query(2, 2 + 1): [2]の最小値
-# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
-for l, r, c in L:
-    opt = seg.query(l, r)
-    vs = seg.query(r, r + 1)
-    seg.update(r, min(vs, opt + c))
-print(seg.query(M, M + 1))
-
-#####segfunc#####
-def segfunc(x, y):
-    return x * y
-#################
-#####ide_ele#####
-ide_ele = 1
-#################
-class SegTree:
-    """
-    init(init_val, ide_ele): 配列init_valで初期化 O(N)
-    update(k, x): k番目の値をxに更新 O(logN)
-    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
-    """
-    def __init__(self, init_val, segfunc, ide_ele):
-        """
-        init_val: 配列の初期値
-        segfunc: 区間にしたい操作
-        ide_ele: 単位元
-        n: 要素数
-        num: n以上の最小の2のべき乗
-        tree: セグメント木(1-index)
-        """
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-    def update(self, k, x):
-        """
-        k番目の値をxに更新
-        k: index(0-index)
-        x: update value
-        """
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-    def query(self, l, r):
-        """
-        [l, r)のsegfuncしたものを得る
-        l: index(0-index)
-        r: index(0-index)
-        """
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-N = 7
-s = 'abcdbbd'
-Q = 6
-query = [
-[2, 3, 6],
-[1, 5, 'z'],
-[2, 1, 1],
-[1, 4, 'a'],
-[1, 7, 'd'],
-[2, 1, 7]
+N = 5
+# 木グラフ
+que = [
+[1, 2],
+[1, 4],
+[2, 3],
+[2, 5]
 ]
-S = []
-for i in s:
-    # 面倒なので文字を数値化
-	S.append(ord(i) - ord("a"))
-seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
-# 入力
-for i in range(N):
-	seg[S[i]].update(i, 0)
+# 重みつき
+que_dis = [
+[1, 2, 2],
+[1, 4, 1],
+[2, 3, 2],
+[2, 5, 1]
+]
+
+def build_tree(n, edge_list):
+
+    G = [[] for i in range(n)]
+
+    for a, b in edge_list:
+        G[a - 1].append(b - 1)
+        G[b - 1].append(a - 1)
+
+    return G
+
+def build_tree_dis(n, edge_list):
+
+    G = [[] for i in range(n)]
+
+    for a, b, c in edge_list:
+        G[a - 1].append([b - 1, c])
+        G[b - 1].append([a - 1, c])
+
+    return G
+
+# 木の建設
+G1 = build_tree(N, que)
+G2 = build_tree_dis(N, que_dis)
+
+# 木を探索
+def search(n, edges, sta):
+    ignore = [0] * N
+    ignore[sta] = 1
+    pos = deque([sta])
+    # 探索
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i] == 0:
+                ignore[i] = 1
+                pos.append(i)
+# [0, 1, 3, 2, 4]
+search(N, G1, 0)
+
+# staからの距離
+def distance(n, edges, sta):
+    # 木をKから順にたどる（戻るの禁止）
+    ignore = [-1] * N
+    ignore[sta] = 0
+    pos = deque([sta])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+    return ignore
+# [0, 2, 4, 1, 3]
+print(distance(N, G2, 0))
+
+# ABC067 D - Fennec VS. Snuke
+N = 12
+query = [
+[1, 3],
+[2, 3],
+[3, 4],
+[3, 5],
+[5, 11],
+[6, 12],
+[7, 9],
+[8, 9],
+[9, 10],
+[9, 11],
+[11, 12]
+]
+
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+# nowからNまでのルート
+def router(n, sta, end):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    path[sta] = -1
+
+    while pos[0] != end:
+        u = pos.popleft()
+        ignore[u] = 1
+
+        for i in dist[u]:
+            if ignore[i] != 1:
+                path[i] = u
+                pos.append(i)
+
+    route = deque([end])
+    while True:
+        next = path[route[0]]
+        route.appendleft(next)
+        if route[0] == sta:
+            break
+
+    return list(route)
+
+route = router(N, 0, N - 1)
+print(route)
+
+# NG以外のところで辿れるところの数
+def dfs_ter(sta, ng):
+    pos = deque([sta])
+
+    ignore = [0] * N
+    for i in ng:
+        ignore[i] = 1
+
+    cnt = 0
+    while len(pos) > 0:
+        u = pos.popleft()
+        ignore[u] = 1
+        cnt += 1
+        for i in dist[u]:
+            if ignore[i] != 1:
+                pos.append(i)
+
+    return cnt
+
+L = len(route)
+fen_ter = route[:(L + 2 - 1) // 2]
+snu_ter = route[(L + 2 - 1) // 2:]
+
+fen_ans = dfs_ter(0, snu_ter)
+
+if fen_ans > N - fen_ans:
+    print('Fennec')
+else:
+    print('Snuke')
+
+# ABC070 D - Transit Tree Path
+N = getN()
+dist = [[] for i in range(N + 1)]
+for i in range(N - 1):
+    a, b, c = getNM()
+    dist[a].append([b, c])
+    dist[b].append([a, c])
+ignore = [-1] * (N + 1)
+
+# Kからの最短距離をbfsで測る
+def distance(sta):
+    # 木をKから順にたどる（戻るの禁止）
+    pos = deque([sta])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in dist[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+
+Q, K = getNM()
+ignore[K] = 0
+distance(K)
+# 答えはK~xまでの距離+K~yまでの距離
+ans = []
 for i in range(Q):
-    a, b, c = query[i]
-    if int(a) == 1:
-        b = int(b) - 1
-        # Sのb番目にある文字をupdate
-        seg[S[b]].update(b, 1)
-        t = ord(c) - ord("a")
-        seg[t].update(b, 0)
-        S[b] = t
+    x, y = getNM()
+    ans.append(ignore[x] + ignore[y])
+for i in ans:
+    print(i)
+
+# ABC087 D - People on a Line
+
+N, M = getNM()
+dist = [[] for i in range(N)]
+for i in range(M):
+    l, r, d = getNM()
+    dist[l - 1].append([r - 1, d])
+    dist[r - 1].append([l - 1, -d])
+
+dis = [float('inf')] * N
+
+pos = deque([i for i in range(N)])
+while len(pos) > 0:
+    u = pos.popleft()
+    # 始めの第一歩
+    if dis[u] == float('inf'):
+        dis[u] = 0
+    # 行き先の位置が未確定なら確定させる
+    # 既に確定しているなら判定
+    for to, d in dist[u]:
+        if dis[to] == float('inf'):
+            dis[to] = dis[u] + d
+            # 位置をレコードした頂点を優先的に処理する必要があるためappendleft
+            # 例 que = [0, 2, 1], [1, 2, 3]
+            # pos = [0, 1, 2] の時
+            # dis = [0, -2, 1]でYesになるはず
+            # 0を探索, 1の距離をレコードしてappend disは[0, inf, 1]
+            # pos = [1, 2, 2]のため次は1を探索
+            # dis[1] == infなのでdis[1] = 0にする
+            # dis[1] = 0, dis[2] = 1なのでNo
+            pos.appendleft(to)
+        else:
+            if dis[u] + d != dis[to]:
+                print('No')
+                exit()
+print('Yes')
+
+# ABC126 D - Even Relation
+# 頂点0からの距離を調べるだけ
+N = getN()
+edges = [[] for i in range(N)]
+for i in range(N - 1):
+    u, v, d = getNM()
+    edges[u - 1].append([v - 1, d])
+    edges[v - 1].append([u - 1, d])
+
+def dij(start):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    while len(pq) > 0:
+        d, now = heapq.heappop(pq)
+        if (d > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i[0]] > dist[now] + i[1]:
+                dist[i[0]] = dist[now] + i[1]
+                heapq.heappush(pq, (dist[i[0]], i[0]))
+    return dist
+
+ans = [0] * N
+dij_list = dij(0)
+for i in range(N):
+    if dij_list[i] % 2 == 0:
+        ans[i] = 0
     else:
-        b = int(b) - 1
-        c = int(c)
-        cnt = 0
-        for se in seg:
-            # 1 * 1 * 0 * 1 *...
-            # 区間内に一つでも0があれば0
-            if se.query(b, c) == 0:
-                cnt += 1
-        print(cnt)
+        ans[i] = 1
+for i in ans:
+    print(i)
 
-# 最短手数k回でクリアできるとすると、
-# 1 ~ M　の内１つをk回選んで合計をNにする
-N, M = getNM()
-S = input()
-trap = set()
-for i in range(len(S)):
-    if S[i] == '1':
-        trap.add(i)
+# ABC131 E - Friendships
+# スターグラフに線を１本ずつ足していくと
+N, K = getNM()
 
-# これABC011 123引き算と同じでは
+def cmb_1(n, r):
+    if n < r:
+        return 0
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-# 案1 dpを使う
-# dp[i]: iマスに止まる時の最短手順
-# dp[i]の時 dp[i + 1] ~ dp[i + M]についてmin(dp[i] + 1, dp[i + j])を見ていく
-# 決まったらdpを前から見ていき最短手順がdp[i] - 1になるものを探す（辞書順）
-# → M <= 10 ** 5より多分無理
+cnt = cmb_1(N - 1, 2) - K
 
-# セグ木使えばいける？
-# dp[i] = dp[i - M] ~ dp[i - 1]の最小値 + 1
-# dp[i - M] ~ dp[i - 1]の最小値はlogNで求められるので全体でNlogN
-
-dp = [float('inf')] * (N + 1)
-dp[0] = 0
-seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
-seg.update(0, 0)
-
-# dp[i]をレコード
-for i in range(1, N + 1):
-    # もしドボンマスなら飛ばす（float('inf')のまま）
-    if i in trap:
-        continue
-    # dp[i - M] ~ dp[i - 1]の最小値をサーチ
-    min_t = seg.query(max(0, i - M), i)
-    seg.update(i, min_t + 1)
-    dp[i] = min_t + 1
-
-# goalに到達できないなら
-if dp[-1] == float('inf'):
+if cnt < 0:
     print(-1)
     exit()
 
-# 何回の試行で到達できるかをグルーピング
-dis = [[] for i in range(dp[-1] + 1)]
-for i in range(len(dp)):
-    if dp[i] == float('inf'):
-        continue
-    dis[dp[i]].append(i)
+dist = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    dist[i][i] = 0
+query = [[1, i] for i in range(2, N + 1)]
 
-# ゴールから巻き戻っていく
-now = dp[-1]
-now_index = N
-ans = []
-# 辞書順で1 4 4 < 3 3 3なので
-# 一番前にできるだけ小さい数が来るようにする
-for i in range(now, 0, -1):
-    # dp[i] - 1回で到達できる
-    # 現在地点からMマス以内
-    # で最も現在地点から遠いところが１つ前のマス
-    index = bisect_left(dis[i - 1], now_index - M)
-    # サイコロの目を決める
-    ans.append(now_index - dis[i - 1][index])
-    # 現在地点更新
-    now_index = dis[i - 1][index]
+for a, b in combinations([i for i in range(2, N + 1)], 2):
+    if cnt == 0:
+        break
+    query.append([a, b])
+    cnt -= 1
 
-for i in ans[::-1]:
-    print(i)
-def getN():
-    return int(input())
-def getNM():
-    return map(int, input().split())
-def getList():
-    return list(map(int, input().split()))
-def getArray(intn):
-    return [int(input()) for i in range(intn)]
-def input():
-    return sys.stdin.readline().rstrip()
-def rand_N(ran1, ran2):
-    return random.randint(ran1, ran2)
-def rand_List(ran1, ran2, rantime):
-    return [random.randint(ran1, ran2) for i in range(rantime)]
-def rand_ints_nodup(ran1, ran2, rantime):
-  ns = []
-  while len(ns) < rantime:
-    n = random.randint(ran1, ran2)
-    if not n in ns:
-      ns.append(n)
-  return sorted(ns)
+print(len(query))
+for i in query:
+    print(*i)
 
-def rand_query(ran1, ran2, rantime):
-  r_query = []
-  while len(r_query) < rantime:
-    n_q = rand_ints_nodup(ran1, ran2, 2)
-    if not n_q in r_query:
-      r_query.append(n_q)
-  return sorted(r_query)
+# ABC132 E - Hopscotch Addict
+# 三回移動したい
 
-from collections import defaultdict, deque, Counter
-from sys import exit
-from decimal import *
-import heapq
-import math
-from fractions import gcd
-import random
-import string
-import copy
-from itertools import combinations, permutations, product
-from operator import mul, itemgetter
-from functools import reduce
-from bisect import bisect_left, bisect_right
-
-import sys
-sys.setrecursionlimit(1000000000)
-mod = 10 ** 9 + 7
-
-#############
-# Main Code #
-#############
-
-def segfunc(x, y):
-    return min(x, y)
-
-ide_ele = float('inf')
-
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-
-    def query(self, l, r):
-        res = self.ide_ele
-
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-
-# ABC146 F - Sugoroku
-# 最短手数k回でクリアできるとすると、
-# 1 ~ M　の内１つをk回選んで合計をNにする
 N, M = getNM()
-S = input()
-trap = set()
-for i in range(len(S)):
-    if S[i] == '1':
-        trap.add(i)
+query = [getList() for i in range(M)]
+S, T = getNM()
 
-# これABC011 123引き算と同じでは
+edges = build_tree_dis(N, query)
 
-# 案1 dpを使う
-# dp[i]: iマスに止まる時の最短手順
-# dp[i]の時 dp[i + 1] ~ dp[i + M]についてmin(dp[i] + 1, dp[i + j])を見ていく
-# 決まったらdpを前から見ていき最短手順がdp[i] - 1になるものを探す（辞書順）
-# → M <= 10 ** 5より多分無理
+ignore = [[-1] * 3 for i in range(N)]
+ignore[S - 1][0] = 0
 
-# セグ木使えばいける？
-# dp[i] = dp[i - M] ~ dp[i - 1]の最小値 + 1
-# dp[i - M] ~ dp[i - 1]の最小値はlogNで求められるので全体でNlogN
+pos = deque([[S - 1, 0]])
 
-dp = [float('inf')] * (N + 1)
-dp[0] = 0
-seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
-seg.update(0, 0)
+while len(pos) > 0:
+    u, t = pos.popleft()
+    t += 1
+    j = t % 3
+    for i in edges[u]:
+        if ignore[i][j] == -1:
+            ignore[i][j] = t
+            pos.append([i, t])
 
-# dp[i]をレコード
-for i in range(1, N + 1):
-    # もしドボンマスなら飛ばす（float('inf')のまま）
-    if i in trap:
-        continue
-    # dp[i - M] ~ dp[i - 1]の最小値をサーチ
-    min_t = seg.query(max(0, i - M), i)
-    seg.update(i, min_t + 1)
-    dp[i] = min_t + 1
-
-# goalに到達できないなら
-if dp[-1] == float('inf'):
-    print(-1)
+if ignore[T - 1][0] % 3 == 0:
+    print(ignore[T - 1][0] // 3)
     exit()
+else:
+    print(-1)
 
-# 何回の試行で到達できるかをグルーピング
-dis = [[] for i in range(dp[-1] + 1)]
-for i in range(len(dp)):
-    if dp[i] == float('inf'):
-        continue
-    dis[dp[i]].append(i)
+# ABC138 D-Ki
+n, q = map(int, input().split())
+dist = [[] for i in range(n)]
+for i in range(n - 1):
+    a, b = map(int, input().split())
+    dist[a - 1].append(b - 1)
+    # aftercontest対策
+    dist[b - 1].append(a - 1)
+value = [0 for i in range(n)]
 
-# ゴールから巻き戻っていく
-now = dp[-1]
-now_index = N
-ans = []
-# 辞書順で1 4 4 < 3 3 3なので
-# 一番前にできるだけ小さい数が来るようにする
-for i in range(now, 0, -1):
-    # dp[i] - 1回で到達できる
-    # 現在地点からMマス以内
-    # で最も現在地点から遠いところが１つ前のマス
-    index = bisect_left(dis[i - 1], now_index - M)
-    # サイコロの目を決める
-    ans.append(now_index - dis[i - 1][index])
-    # 現在地点更新
-    now_index = dis[i - 1][index]
+# 1つ目の[1, 10]と2つ目の[1, 10]混ぜても問題なし
+for i in range(q):
+    p, x = map(int, input().split())
+    value[p - 1] += x
+#  重複を防ぐ
+ignore = [0] * n
+ignore[0] = 1
 
-for i in ans[::-1]:
-    print(i)
+pos = deque([0])
+# 上から順に自身のvalueの値を子のvalueに加算していく
+# value [100, 10, 1, 0]
+# pos.popleft() = 1 → [100, 10 + 100, 1 + 100, 0 + 100]
+# pos.popleft() = 2 → [100, 110, 101 + 10, 100 + 10]
+while len(pos) > 0:
+    u = pos.popleft()
+    for i in dist[u]:
+        if ignore[i] == 0:
+            ignore[i] = 1
+            value[i] += value[u]
+            pos.append(i)
+# 覚える
+print(*value)
+
+# ARC037 B - バウムテスト
+N, M = 11, 11
+query = [
+[1, 2],
+[1, 3],
+[2, 4],
+[3, 5],
+[4, 6],
+[5, 7],
+[6, 8],
+[7, 9],
+[8, 10],
+[9, 11],
+[10, 11]
+]
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = query[i]
+    a -= 1
+    b -= 1
+    dist[a].append(b)
+    dist[b].append(a)
+
+ignore = [0] * N
+ans = 0
+# 閉路検出
+def search(x, dist):
+    global ans
+    # 現在の位置とparent
+    pos = deque([[x, -1]])
+    ignore[x] = 1
+    flag = True
+
+    while pos:
+        u, parent = pos.popleft()
+        for i in dist[u]:
+            if i != parent:
+                if ignore[i] == 1:
+                    flag = False
+                    continue
+                ignore[i] = 1
+                pos.append([i, u])
+    if flag:
+        ans += 1
+
+# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+for i in range(N):
+    if ignore[i] == 0:
+        search(i, dist)
+print(ans)
+
+# ABC148 F - Playing Tag on Tree
+N, U, V = getNM()
+U -= 1
+V -= 1
+# 高橋君はできるだけ遅くゲームが終了するように移動し、青木君はできるだけ早くゲームが終了するように移動します。
+# 高橋君は逃げ、青木君は追いかける
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+taka_d = [-1] * N
+aoki_d = [-1] * N
+
+taka_d[U] = 0
+pos = deque([[U, taka_d[U]]])
+while len(pos) > 0:
+    u, dis = pos.popleft()
+    for i in dist[u]:
+        if taka_d[i] == -1:
+            taka_d[i] = dis + 1
+            pos.append([i, taka_d[i]])
+
+aoki_d[V] = 0
+pos = deque([[V, aoki_d[V]]])
+while len(pos) > 0:
+    u, dis = pos.popleft()
+    for i in dist[u]:
+        if aoki_d[i] == -1:
+            aoki_d[i] = dis + 1
+            pos.append([i, aoki_d[i]])
+
+ans = 0
+for a, b in zip(taka_d, aoki_d):
+    if a < b:
+        ans = max(ans, b - 1)
+print(ans)
