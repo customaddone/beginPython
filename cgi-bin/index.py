@@ -49,443 +49,194 @@ mod = 998244353
 # Main Code #
 #############
 
-N = 5
-# 木グラフ
-que = [
-[1, 2],
-[1, 4],
-[2, 3],
-[2, 5]
-]
-# 重みつき
-que_dis = [
-[1, 2, 2],
-[1, 4, 1],
-[2, 3, 2],
-[2, 5, 1]
-]
+def prime_factorize(n):
+    divisors = []
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
 
-def build_tree(n, edge_list):
+    return divisors
 
-    G = [[] for i in range(n)]
-
-    for a, b in edge_list:
-        G[a - 1].append(b - 1)
-        G[b - 1].append(a - 1)
-
-    return G
-
-def build_tree_dis(n, edge_list):
-
-    G = [[] for i in range(n)]
-
-    for a, b, c in edge_list:
-        G[a - 1].append([b - 1, c])
-        G[b - 1].append([a - 1, c])
-
-    return G
-
-# 木の建設
-G1 = build_tree(N, que)
-G2 = build_tree_dis(N, que_dis)
-
-# 木を探索
-def search(n, edges, sta):
-    ignore = [0] * N
-    ignore[sta] = 1
-    pos = deque([sta])
-    # 探索
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i] == 0:
-                ignore[i] = 1
-                pos.append(i)
-# [0, 1, 3, 2, 4]
-search(N, G1, 0)
-
-# staからの距離
-def distance(n, edges, sta):
-    # 木をKから順にたどる（戻るの禁止）
-    ignore = [-1] * N
-    ignore[sta] = 0
-    pos = deque([sta])
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
-    return ignore
-# [0, 2, 4, 1, 3]
-print(distance(N, G2, 0))
-
-# ABC067 D - Fennec VS. Snuke
-N = 12
-query = [
-[1, 3],
-[2, 3],
-[3, 4],
-[3, 5],
-[5, 11],
-[6, 12],
-[7, 9],
-[8, 9],
-[9, 10],
-[9, 11],
-[11, 12]
-]
-
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-# nowからNまでのルート
-def router(n, sta, end):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    path[sta] = -1
-
-    while pos[0] != end:
-        u = pos.popleft()
-        ignore[u] = 1
-
-        for i in dist[u]:
-            if ignore[i] != 1:
-                path[i] = u
-                pos.append(i)
-
-    route = deque([end])
-    while True:
-        next = path[route[0]]
-        route.appendleft(next)
-        if route[0] == sta:
-            break
-
-    return list(route)
-
-route = router(N, 0, N - 1)
-print(route)
-
-# NG以外のところで辿れるところの数
-def dfs_ter(sta, ng):
-    pos = deque([sta])
-
-    ignore = [0] * N
-    for i in ng:
-        ignore[i] = 1
-
-    cnt = 0
-    while len(pos) > 0:
-        u = pos.popleft()
-        ignore[u] = 1
-        cnt += 1
-        for i in dist[u]:
-            if ignore[i] != 1:
-                pos.append(i)
-
-    return cnt
-
-L = len(route)
-fen_ter = route[:(L + 2 - 1) // 2]
-snu_ter = route[(L + 2 - 1) // 2:]
-
-fen_ans = dfs_ter(0, snu_ter)
-
-if fen_ans > N - fen_ans:
-    print('Fennec')
-else:
-    print('Snuke')
-
-# ABC070 D - Transit Tree Path
+# ABC052 C - Factors of Factorial
 N = getN()
-dist = [[] for i in range(N + 1)]
-for i in range(N - 1):
-    a, b, c = getNM()
-    dist[a].append([b, c])
-    dist[b].append([a, c])
-ignore = [-1] * (N + 1)
 
-# Kからの最短距離をbfsで測る
-def distance(sta):
-    # 木をKから順にたどる（戻るの禁止）
-    pos = deque([sta])
+# N!の因数 = (2の因数) + (3の因数)...
+# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
+mod = 10 ** 9 + 7
+ans = 1
+# それぞれの因数となる素数の数をセットする
+dp = [0] * (N + 1)
 
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in dist[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        if j[0] > 1:
+            dp[j[0]] += j[1]
+# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
+for i in dp:
+    if i > 0:
+        ans = (ans * (i + 1)) % mod
+print(ans % mod)
 
-Q, K = getNM()
-ignore[K] = 0
-distance(K)
-# 答えはK~xまでの距離+K~yまでの距離
-ans = []
-for i in range(Q):
-    x, y = getNM()
-    ans.append(ignore[x] + ignore[y])
-for i in ans:
-    print(i)
-
-# ABC087 D - People on a Line
-
-N, M = getNM()
-dist = [[] for i in range(N)]
-for i in range(M):
-    l, r, d = getNM()
-    dist[l - 1].append([r - 1, d])
-    dist[r - 1].append([l - 1, -d])
-
-dis = [float('inf')] * N
-
-pos = deque([i for i in range(N)])
-while len(pos) > 0:
-    u = pos.popleft()
-    # 始めの第一歩
-    if dis[u] == float('inf'):
-        dis[u] = 0
-    # 行き先の位置が未確定なら確定させる
-    # 既に確定しているなら判定
-    for to, d in dist[u]:
-        if dis[to] == float('inf'):
-            dis[to] = dis[u] + d
-            # 位置をレコードした頂点を優先的に処理する必要があるためappendleft
-            # 例 que = [0, 2, 1], [1, 2, 3]
-            # pos = [0, 1, 2] の時
-            # dis = [0, -2, 1]でYesになるはず
-            # 0を探索, 1の距離をレコードしてappend disは[0, inf, 1]
-            # pos = [1, 2, 2]のため次は1を探索
-            # dis[1] == infなのでdis[1] = 0にする
-            # dis[1] = 0, dis[2] = 1なのでNo
-            pos.appendleft(to)
-        else:
-            if dis[u] + d != dis[to]:
-                print('No')
-                exit()
-print('Yes')
-
-# ABC126 D - Even Relation
-# 頂点0からの距離を調べるだけ
-N = getN()
-edges = [[] for i in range(N)]
-for i in range(N - 1):
-    u, v, d = getNM()
-    edges[u - 1].append([v - 1, d])
-    edges[v - 1].append([u - 1, d])
-
-def dij(start):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-
-    while len(pq) > 0:
-        d, now = heapq.heappop(pq)
-        if (d > dist[now]):
-            continue
-        for i in edges[now]:
-            if dist[i[0]] > dist[now] + i[1]:
-                dist[i[0]] = dist[now] + i[1]
-                heapq.heappush(pq, (dist[i[0]], i[0]))
-    return dist
-
-ans = [0] * N
-dij_list = dij(0)
-for i in range(N):
-    if dij_list[i] % 2 == 0:
-        ans[i] = 0
-    else:
-        ans[i] = 1
-for i in ans:
-    print(i)
-
-# ABC131 E - Friendships
-# スターグラフに線を１本ずつ足していくと
+# ABC090 D - Remainder Reminder
+# 数え上げ
 N, K = getNM()
+sum = 0
+for b in range(1, N + 1):
+    opt1 = (N // b) * max(0, (b - K))
+    if K == 0:
+        opt2 = N % b
+    else:
+        opt2 = max(0, (N % b) - K + 1)
+    sum += (opt1 + opt2)
+print(sum)
 
-def cmb_1(n, r):
-    if n < r:
-        return 0
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+# 094 D - Binomial Coefficients
+# combはrを真ん中に設定すると大きくなる
 
-cnt = cmb_1(N - 1, 2) - K
+N = getN()
+A = getList()
+A.sort()
 
-if cnt < 0:
-    print(-1)
-    exit()
+max = max(A)
+index = bisect_left(A, max / 2)
+if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
+    ans = [max, A[index]]
+else:
+    ans = [max, A[index - 1]]
+print(*ans)
 
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-query = [[1, i] for i in range(2, N + 1)]
+# ABC096 D - Five, Five Everywhere
+# 素数はmod nでグルーピングできる
+N = getN()
 
-for a, b in combinations([i for i in range(2, N + 1)], 2):
-    if cnt == 0:
-        break
-    query.append([a, b])
-    cnt -= 1
+# エラストテネスの篩
+prime = [2]
+max = 55555
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
 
-print(len(query))
-for i in query:
-    print(*i)
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
 
-# ABC132 E - Hopscotch Addict
-# 三回移動したい
+prime = sorted(prime)
+
+prime = [i for i in prime if i % 5 == 1]
+print(*prime[:N])
+
+# ABC114 D - 756
+N = getN()
+
+def prime_factorize(n):
+    divisors = []
+    # 27(2 * 2 * 7)の7を出すためにtemp使う
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == [] and n != 1:
+        divisors.append([n, 1])
+
+    return divisors
+
+primli = [0] * 101
+# N! の因数を計算する
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        primli[j[0]] += j[1]
+# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
+# 75 = 3 * 3 * 5なので例えば
+# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
+alta = []
+for i in primli:
+    if i != 0:
+        alta.append(i + 1)
+
+prim3 = 0
+prim5 = 0
+prim15 = 0
+prim25 = 0
+prim75 = 0
+for i in alta:
+    if i >= 75:
+        prim75 += 1
+    if i >= 25:
+        prim25 += 1
+    if i >= 15:
+        prim15 += 1
+    if i >= 5:
+        prim5 += 1
+    if i >= 3:
+        prim3 += 1
+
+ans = 0
+if prim3 >= 1 and prim5 >= 2:
+    # prim5 C 2
+    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
+if prim15 >= 1 and prim5 >= 1:
+    ans += prim15 * (prim5 - 1)
+if prim25 >= 1 and prim3 >= 1:
+    ans += prim25 * (prim3 - 1)
+if prim75 >= 1:
+    ans += prim75
+print(ans)
 
 N, M = getNM()
-query = [getList() for i in range(M)]
-S, T = getNM()
+A = [int(i) // 2 for i in input().split()]
 
-edges = build_tree_dis(N, query)
+# 4と8の場合
+# 2 6 10 14 18...
+# 4 12 20 28... これを２で割ると
 
-ignore = [[-1] * 3 for i in range(N)]
-ignore[S - 1][0] = 0
+# 1 3 5 7 9...
+# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
 
-pos = deque([[S - 1, 0]])
+# 4と12なら
+# 2 6 10 14 18...
+# 6 18 30 42... これを２で割ると
+# 1 3 5 7 9...
+# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
 
-while len(pos) > 0:
-    u, t = pos.popleft()
-    t += 1
-    j = t % 3
-    for i in edges[u]:
-        if ignore[i][j] == -1:
-            ignore[i][j] = t
-            pos.append([i, t])
+# Aの各要素がどれも2でn回ちょうど割れる必要がある
+def div_2(n):
+    cnt = n
+    res = 0
+    while cnt > 0:
+        if cnt % 2 == 0:
+            cnt //= 2
+            res += 1
+        else:
+            return res
 
-if ignore[T - 1][0] % 3 == 0:
-    print(ignore[T - 1][0] // 3)
+def lcm(x, y):
+    return x * (y // gcd(x, y))
+
+judge = [div_2(i) for i in A]
+
+if min(judge) != max(judge):
+    print(0)
     exit()
-else:
-    print(-1)
-
-# ABC138 D-Ki
-n, q = map(int, input().split())
-dist = [[] for i in range(n)]
-for i in range(n - 1):
-    a, b = map(int, input().split())
-    dist[a - 1].append(b - 1)
-    # aftercontest対策
-    dist[b - 1].append(a - 1)
-value = [0 for i in range(n)]
-
-# 1つ目の[1, 10]と2つ目の[1, 10]混ぜても問題なし
-for i in range(q):
-    p, x = map(int, input().split())
-    value[p - 1] += x
-#  重複を防ぐ
-ignore = [0] * n
-ignore[0] = 1
-
-pos = deque([0])
-# 上から順に自身のvalueの値を子のvalueに加算していく
-# value [100, 10, 1, 0]
-# pos.popleft() = 1 → [100, 10 + 100, 1 + 100, 0 + 100]
-# pos.popleft() = 2 → [100, 110, 101 + 10, 100 + 10]
-while len(pos) > 0:
-    u = pos.popleft()
-    for i in dist[u]:
-        if ignore[i] == 0:
-            ignore[i] = 1
-            value[i] += value[u]
-            pos.append(i)
-# 覚える
-print(*value)
-
-# ARC037 B - バウムテスト
-N, M = 11, 11
-query = [
-[1, 2],
-[1, 3],
-[2, 4],
-[3, 5],
-[4, 6],
-[5, 7],
-[6, 8],
-[7, 9],
-[8, 10],
-[9, 11],
-[10, 11]
-]
-dist = [[] for i in range(N)]
-for i in range(M):
-    a, b = query[i]
-    a -= 1
-    b -= 1
-    dist[a].append(b)
-    dist[b].append(a)
-
-ignore = [0] * N
-ans = 0
-# 閉路検出
-def search(x, dist):
-    global ans
-    # 現在の位置とparent
-    pos = deque([[x, -1]])
-    ignore[x] = 1
-    flag = True
-
-    while pos:
-        u, parent = pos.popleft()
-        for i in dist[u]:
-            if i != parent:
-                if ignore[i] == 1:
-                    flag = False
-                    continue
-                ignore[i] = 1
-                pos.append([i, u])
-    if flag:
-        ans += 1
-
-# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+L = 1
 for i in range(N):
-    if ignore[i] == 0:
-        search(i, dist)
-print(ans)
+    L = lcm(L, A[i])
 
-# ABC148 F - Playing Tag on Tree
-N, U, V = getNM()
-U -= 1
-V -= 1
-# 高橋君はできるだけ遅くゲームが終了するように移動し、青木君はできるだけ早くゲームが終了するように移動します。
-# 高橋君は逃げ、青木君は追いかける
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-taka_d = [-1] * N
-aoki_d = [-1] * N
-
-taka_d[U] = 0
-pos = deque([[U, taka_d[U]]])
-while len(pos) > 0:
-    u, dis = pos.popleft()
-    for i in dist[u]:
-        if taka_d[i] == -1:
-            taka_d[i] = dis + 1
-            pos.append([i, taka_d[i]])
-
-aoki_d[V] = 0
-pos = deque([[V, aoki_d[V]]])
-while len(pos) > 0:
-    u, dis = pos.popleft()
-    for i in dist[u]:
-        if aoki_d[i] == -1:
-            aoki_d[i] = dis + 1
-            pos.append([i, aoki_d[i]])
-
-ans = 0
-for a, b in zip(taka_d, aoki_d):
-    if a < b:
-        ans = max(ans, b - 1)
-print(ans)
+# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
+print(M // L - M // (2 * L))
