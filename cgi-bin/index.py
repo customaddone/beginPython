@@ -49,176 +49,112 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC022 C - Blue Bird
-# 自分の家からスタートして同じ道を通らないで家に戻ってくる
-# 違う道を通る、一つ目の家と最後の家は違うということ
-# ワーシャルフロイドで
-
-N, M = getNM()
-query = [getList() for i in range(M)]
-
-dist = [[float('inf')] * N for i in range(N)]
-sec_list = []
-
-for i in range(M):
-    a, b, c = query[i]
-    if a == 1:
-        sec_list.append([b - 1, c])
-    elif b == 1:
-        sec_list.appedn([a - 1, c])
-    if a != 1 and b != 1:
-        dist[a - 1][b - 1] = c
-        dist[b - 1][a - 1] = c
-
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
-
-warshall_floyd(dist)
-
-# 高橋くんの家の隣にある家同志について探索
-ans = float('inf')
-for i in range(len(sec_list)):
-    for j in range(i + 1, len(sec_list)):
-        x1 = sec_list[i]
-        x2 = sec_list[j]
-        opt = x1[1] + x2[1] + dist[x1[0]][x2[0]]
-        ans = min(ans, opt)
-
-if ans == float('inf'):
-    print(-1)
-else:
-    print(ans)
-
-# ABC051 D - Candidates of No Shortest Paths
-
-N, M = getNM()
-query = [getList() for i in range(M)]
-
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-for i in range(M):
-    a, b, c = query[i]
-    dist[a - 1][b - 1] = c
-    dist[b - 1][a - 1] = c
-
-warshall_floyd(dist)
-ng_dist = [0] * M
-
-# 各エッジについて探索
-# dist(s, i) + edge(i, j) = dist(s, j)ならその辺は最短距離を構成する
-for i in range(N):
-    for j in range(M):
-        s, t, c = query[j]
-        if dist[i][s - 1] + c == dist[i][t - 1]:
-            ng_dist[j] = 1
-
-cnt = 0
-for i in ng_dist:
-    if i == 0:
-        cnt += 1
-print(cnt)
-
-# ABC073 D - joisino's travel
-# Rが小さいのでpermutationする
-N, M, R = getNM()
-
-d = [[float("inf")] * N for i in range(N)]
-list_R = [int(i) - 1 for i in input().split()]
-for i in range(M):
-   x, y, z = getNM()
-   d[x - 1][y - 1] = min(d[x - 1][y - 1], z)
-   d[y - 1][x - 1] = min(d[x - 1][y - 1], z)
-
-warshall_floyd(d)
-
-ans = float('inf')
-for case in permutations(list_R):
-    x1 = case[0]
-    opt = 0
-    for j in range(1, R):
-        x2 = case[j]
-        opt += d[x1][x2]
-        x1 = x2
-    ans = min(ans, opt)
-print(ans)
-
-# ABC074 D - Restoring Road Network
+# ABC036 D - 塗り絵
+# 木dp
+# 葉からボトムアップか頂点からdfs
 
 N = getN()
-query = [getList() for i in range(N)]
-query_before = copy.deepcopy(query)
+query = [getList() for i in range(N - 1)]
 
-warshall_floyd(query)
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-if query != query_before:
-    print(-1)
-    exit()
-
-edges = []
+dp = [[0, 0] for i in range(N)]
+sta = 0
 for i in range(N):
-    for j in range(i + 1, N):
-        edges.append([query[i][j], i, j])
+    if len(dist[i]) == 1:
+        sta = i
+        break
 
-cnt = 0
-# それぞれのエッジについてそれが最短路の一部かを判定する
-for i in edges:
-    flag = True
-    w, s, t = i
-    for k in range(N):
-        if k != s and k != t and w >= query[s][k] + query[k][t]:
-            flag = False
-            break
-    if flag:
-        cnt += w
-print(cnt)
-
-# ABC143 E - Travel by Car
-N, M, L = getNM()
-edges = [getList() for i in range(M)]
-Q = getN()
-query = [getList() for i in range(Q)]
-
-dist = [[float('inf')] * N for i in range(N)]
 for i in range(N):
-    dist[i][i] = 0
-for i in range(M):
-    a, b, c = edges[i]
-    dist[a - 1][b - 1] = c
-    dist[b - 1][a - 1] = c
+    if len(dist[i]) == 1 and i != sta:
+        dp[i] = [1, 1]
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
+ignore = [0] * N
+ignore[sta] = 1
+def dfs(now):
+    white = 1
+    black = 1
+    for i in dist[now]:
+        if ignore[i] != 1:
+            ignore[i] = 1
+            w_cnt, b_cnt = dfs(i)
+            white = (white * (w_cnt + b_cnt)) % mod
+            black = (black * w_cnt) % mod
+    dp[now] = [white % mod, black % mod]
+    return dp[now]
 
-# まず一回回す
-warshall_floyd(dist)
+print(sum(dfs(sta)) % mod)
 
-# distの抽象化
-# edgesの張り替え
-dist_alta = [[float('inf')] * N for i in range(N)]
+# ABC133 E - Virus Tree 2
+# 木dp
+N, K = getNM()
+query = [getList() for i in range(N - 1)]
+
+dist = [[] for i in range(N)]
+for a, b in query:
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+max_root = 0
+max_root_index = 0
 for i in range(N):
-    for j in range(i, N):
-        if i == j:
-            dist_alta[i][j] = 0
+    if len(dist[i]) >= max_root:
+        max_root = len(dist[i])
+        max_root_index = i
+
+pos = deque([max_root_index])
+
+ans = 1
+ignore = [-1] * N
+ignore[max_root_index] = 1
+ans *= cmb(K, max_root + 1) * math.factorial(max_root + 1)
+
+while len(pos) > 0:
+    u = pos.popleft()
+    for i in dist[u]:
+        if ignore[i] == -1:
+            ignore[i] = 1
+            if len(dist[i]) >= 2:
+                ans *= cmb(K - 2, len(dist[i]) - 1) * math.factorial(len(dist[i]) - 1)
+                ans %= mod
+            pos.append(i)
+
+print(ans % mod)
+
+# ABC146 D - Coloring Edges on Tree
+N = getN()
+
+dist = [[] for i in range(N)]
+edges = {}
+for i in range(N - 1):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+    edges[(a - 1, b - 1)] = i
+    edges[(b - 1, a - 1)] = i
+
+color = [-1] * N
+color[0] = 0
+ans = [0] * (N - 1)
+pos = deque([0])
+
+while pos:
+    u = pos.popleft()
+    j = 1
+    for i in dist[u]:
+        if color[i] != -1:
             continue
-        if dist[i][j] <= L:
-            dist_alta[i][j] = 1
-            dist_alta[j][i] = 1
+        if j == color[u]:
+            j += 1
+        color[i] = j
+        ans[edges[(i, u)]] = j
+        pos.append(i)
+        j += 1
 
-warshall_floyd(dist_alta)
-
-for s, t in query:
-    if dist_alta[s - 1][t - 1] == float('inf'):
-        print(-1)
-        continue
-    print(dist_alta[s - 1][t - 1] - 1)
+print(max(ans))
+for i in ans:
+    print(i)
