@@ -49,321 +49,154 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC008 C - コイン
-n = getN()
-c = getArray(n)
-sumans = 0
+# ABC038 D-プレゼント
+class BIT:
+    def __init__(self, n):
+        self.n = n
+        self.data = [0] * (n + 1)
 
-for i in c:
-    lista = [j for j in c if i % j == 0]
-    count = len(lista)
-    sumans += math.ceil(count / 2) / count
-print(sumans)
+    def ope(self, x, y):
+        return max(x, y)
 
-# ABC011 D - 大ジャンプ
-def cmb_1(n, r):
-    r = min(n - r, r)
-    if (r < 0) or (n < r):
-        return 0
+    def update(self, i, v):
+        j = i
+        while j <= self.n:
+            self.data[j] = self.ope(self.data[j], v)
+            j += j & -j
 
-    if n == 0:
-        return 1
+    def query(self, i):
+        ret = 0
+        j = i
+        while 0 < j:
+            ret = self.ope(self.data[j], ret)
+            j &= (j - 1)
+        return ret
 
-    if r == 0:
-        return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+bit = BIT(10 ** 5)
 
-N, D = getNM()
-X, Y = getNM()
-X = abs(X)
-Y = abs(Y)
+for w, h in que:
+    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
+    # 最初は0個
+    q = bit.query(h - 1)
+    # 高さhの時の箱の数を更新
+    bit.update(h, q + 1)
+print(bit.query(10 ** 5))
 
-# X軸に平行に正の向きに飛ぶ回数はx_time + α回
-# X軸に平行に負の向きに飛ぶ回数はα回
-x_time = X // D
-y_time = Y // D
+# ABC140 E - Second Sum
+# [Pl, Pr]間で２番目に大きいものの総和を
+# l, rについてのnC2通りの全てについて求めよ
 
-if X % D != 0 or Y % D != 0 or N < x_time + y_time:
-    print(0)
-    exit()
+# 8 2 7 3 4 5 6 1
+# 8 2: 2
+# 8 2 7: 7
+# 2 7 3: 3
+# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
+# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
 
-N_a = N - (x_time + y_time)
-if N_a % 2 != 0:
-    print(0)
-    exit()
-N_a //= 2
+# N <= 10 ** 5
+# Piが２番目になる通りが何通り　みたいな感じで求められる？
+# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
 
-ans = 0
-for i in range(N_a + 1):
-    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
-print(ans / (4 ** N))
+# ヒープキューとか使える？
+# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
+# 尺取り使える？
 
-# ABC024 D - 動的計画法
-A, B, C = getArray(3)
+# 累積？　一番
 
-# kCc / k+1Cc = k - c + 1 / k + 1
-# k+1Cc+1 / kCc = k + 1 / c + 1
-# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
-x = (C * pow(A, mod - 2, mod)) % mod
-y = (B * pow(A, mod - 2, mod)) % mod
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
-k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
-print((n - k) % mod, k % mod)
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-# ABC058 D - いろはちゃんとマス目
-# 総計する
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
+    def lowerbound(self,w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
-H, W, A, B = getNM()
-
-mother = cmb((H - 1) + (W - 1), (W - 1))
-
-goban = cmb((H - A) + (B - 1), B - 1)
-togoal = cmb((A - 1) + (W - B - 1), (W - B - 1))
-
-for i in range(A):
-    row = H - A + i
-    col = B - 1
-    row_left = A - 1 - i
-    col_left = W - B - 1
-    mother -= cmb(row + col, row) * cmb(row_left + col_left, row_left)
-    mother %= mod
-print(mother)
-
-# ABC057 D - Maximum Average Sets
-N, A, B = getNM()
-V = sorted(getList(), reverse = True)
-
-# 1行目の答え　上からA個
-print(sum(V[:A]) / A)
-
-# Vの各要素の数を数える
-dict = defaultdict(int)
+N = getN()
+P = getList()
+dic = {}
+bit = BIT(N)
 for i in range(N):
-    dict[V[i]] += 1
+    dic[P[i]] = i + 1
 
-r = A
-n = 0
-for i in dict.items():
+# 両端に何もない時用
+# [0] + Pの各要素 + [N + 1]みたいになる
+dic[0] = 0
+dic[N + 1] = N + 1
+ans = 0
+
+for i in range(N, 0, -1):
+    # 8のインデックス、7のインデックス...に1を登録していく
+    bit.add(dic[i], 1)
+    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
+    c = bit.get(dic[i] + 1)
+    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
+    # l2: l1の一つ左側にあるもの
+    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
+    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
+    # r2: r1の一つ右側にあるもの
+    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
+    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
+    ans += S * i
+print(ans)
+
+# ABC174 F - Range Set Query
+# BITは前から置いていく
+# そのためのクエリソート
+N, Q = getNM()
+C = getList()
+que = [getList() for i in range(Q)]
+
+# que[r]に[l(始点), i(queでのインデックス)]をappend
+que_d = defaultdict(list)
+for i in range(Q):
+    que_d[que[i][1]].append([que[i][0], i])
+ans = [0] * Q
+# 色iのうち最も右側にあるものはどこにあるか
+dic = defaultdict(lambda: -float('inf'))
+bit = BIT(N)
+
+for i in range(N):
+    # 既に場所が登録されているならそれを削除する
+    if dic[C[i]] >= 1:
+        bit.add(dic[C[i]], -1)
+    # 新しい「良い球」の場所を登録
+    # 1-indexで!!
+    dic[C[i]] = i + 1
+    bit.add(dic[C[i]], 1)
+
+    # queryに答える
+    if len(que_d[i + 1]) > 0:
+        # 終点rがi + 1であるqueryに答える
+        for l, j in que_d[i + 1]:
+            # cum(l, r):区間[l - 1, r - 2](0-index)についての合計を求める
+            # lは1-indexだがi(r - 1)は0 - index
+            ans[j] = bit.cum(l, i + 2)
+
+for i in ans:
     print(i)
-    if r - i[1] >= 0:
-        r -= i[1]
-    else:
-        n = i[1] # A個まで残りr個であり、そこには要素i[j]がn個入れられる
-        break
-
-ans = 0
-# V[0] == V[A - 1]ならA個を超えても平均値が下がらない
-# 残りr個(合計でA個)決める、残りr + 1個(合計でA + 1個)決める...合計でB個決める
-if r > 0 and V[0] == V[A - 1]:
-    for i in range(r, B + 1):
-        ans += cmb_1(n, i)
-else:
-    ans += cmb_1(n, r) # A個まであとr個残っており、n個のうちr個選ぶ
-
-print(ans)
-
-# ABC066 D - 11
-# 普通にやれば(cmb(N + 1, i)だが、今回ダブりがある
-# 29 19 ~ 19 31 9の場合
-# [29]のうちいくつか + １番目の19 + [31, 9]のうちいくつかと
-# [29]のうちいくつか + ２番目の19 + [31, 9]のうちいくつかはダブル
-# i個要素を選ぶとすると、19を選び、外側の要素からi - 1個選ぶ全通りについてダブルので１回引く
-N = getN()
-A = getList()
-
-lista = [0] * (max(A) + 1)
-double = 0
-# ダブり位置1を決める
-dou_ind_2 = 0
-for i in range(N + 1):
-    if lista[A[i]] > 0:
-        double = A[i]
-        dou_ind_2 = i
-        break
-    lista[A[i]] += 1
-# ダブり位置2を決める
-dou_ind_1 = 0
-for i in range(N + 1):
-    if A[i] == double:
-        dou_ind_1 = i
-        break
-
-outer = dou_ind_1 + (N - dou_ind_2)
-
-for i in range(1, N + 2):
-    if i == 1:
-        print(N)
-        continue
-    print((cmb(N + 1, i) - cmb(outer, i - 1)) % mod)
-
-# ABC105 D - Candy Distribution
-# M人に配る mod M
-N, M = getNM()
-A = getList()
-
-alta = []
-for i in A:
-    alta.append(i % M)
-
-imos = [0]
-for i in range(N):
-    imos.append((alta[i] + imos[i]) % M)
-
-ans = 0
-for i in Counter(imos).values():
-    ans += cmb_1(i, 2)
-print(ans)
-
-# ABC136 E - Max GCD
-N, K = getNM()
-A = getList()
-
-# 操作後のAの要素全てが因数にkを持つ
-
-# 好きな回数操作を行えるとすると、Aの要素全てに因数kを持たせることができるか？
-# 操作前と操作後とではAの総和は変わらない → A = akとするとa個のkをN個の要素に配分する
-# ことでAの要素全てに因数kを持たせることができる。
-# 好きな回数操作を行える、操作後のAの全ての要素を割り切る正の整数は、sum(A)の約数になる
-
-def make_divisors(n):
-    divisors = []
-    for i in range(1, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            divisors.append(i)
-            # √nで無い数についてもう一個プラス
-            if i != n // i:
-                divisors.append(n // i)
-    return sorted(divisors)
-
-# K回以下の操作の条件付きでも題意を満たすか
-# alta % kをし、あまりが小さい順にソートする
-# 前からi番目までをプラス、i + 1番目以降をマイナスにする
-# どちらか大きい方がK以下なら条件を満たす
-
-def judger(x):
-    alta = [i % x for i in A]
-    alta.sort()
-    alta_b = [x - i for i in alta]
-    # 前からi番目までプラスにする
-    imos_f = copy.deepcopy(alta)
-    # 前からi + 1番目以降をマイナスにする
-    imos_b = copy.deepcopy(alta_b)
-
-    for i in range(N - 1):
-        imos_f[i + 1] += imos_f[i]
-        imos_b[-i - 2] += imos_b[-i - 1]
-
-    # 全部マイナス、全部プラスの場合
-    imos_f.insert(0, 0)
-    imos_b.append(0)
-
-    ans = float('inf')
-    for i in range(N + 1):
-        ans = min(ans, max(imos_f[i], imos_b[i]))
-
-    return ans
-
-for i in make_divisors(sum(A))[::-1]:
-    if judger(i) <= K:
-        print(i)
-
-# ABC154 F - Many Many Paths
-"""
-g(r,c) を 0 ≤ i ≤ r かつ 0 ≤ j ≤ c を満たす全ての整数の組 (i,j) に対する f(i,j) の総和とする。
-ここでf(r + 1, c) = f(r, c) + f(r, c - 1)...f(r, 0)
-f(r, c)からr方向へ1つ（一通り）
-f(r, c - 1)からr方向へ1つ, c方向に1つ（一通り）
-...
-つまりf(r2 + 1, c2) = f(r2, c) + f(r2, c - 1) + ... f(r2, 0)
-これをf(0, c2)からf(r2 + 1, c2)まで求めればg(r2, c2)が求まる
-"""
-r1, c1, r2, c2 = getNM()
-
-ans = 0
-for i in range(r1, r2 + 1):
-    ans = (ans + cmb(c2 + i + 1, i + 1) - cmb(c1 + i, i + 1)) % mod
-print(ans)
-
-# ABC171 F - Strivore
-"""
-dp[i][j]を
-「i文字目まででj回Sの文字を使ったか」とする
-
-K = 5
-S = 'oof'
-dp = [[0] * (len(S) + 1) for i in range(K + len(S) + 1)]
-dp[0][0] = 1
-
-for i in range(1, K + len(S) + 1):
-    for j in range(len(S) + 1):
-        if j < len(S):
-            dp[i][j] += dp[i - 1][j] * 25
-        else:
-            dp[i][j] += dp[i - 1][j] * 26 # j回使い切るともうSは関係なくなるので *= 26になる
-        if j >= 1:
-            dp[i][j] += dp[i - 1][j - 1]
-
-l_s = len(S)
-どのタイミングで「この先ずっと*= 26」になるか
-後ろからi文字目にSを使い切る: pow(25, K - k, mod) * cmb(N + K - k - 1, N - 1) * pow(26, k, mod)
-...
-"""
-
-K = getN()
-S = input()
-N = len(S)
-
-ans = 0
-# l_s + i文字目に文字を使い切る
-# 次から *= 26
-for k in range(K + 1):
-    # 逆からやってる
-    ans += cmb(N + K - k - 1, N - 1) * pow(26, k, mod) * pow(25, K - k, mod) % mod
-    ans %= mod
-
-print(ans)
-
-# ARC023 C - タコヤ木
-N = getN()
-A = getList()
-
-def cmb(x,y):
-    r = 1
-    for i in range(1, y + 1):
-        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
-    return r
-
-now = A[0]
-cnt = 0
-ans = 1
-for i in range(1, N):
-    if A[i] > -1:
-        if cnt > 0:
-            ans *= cmb(A[i] - now + cnt, cnt)
-            ans %= mod
-            now = A[i]
-            cnt = 0
-        else:
-            now = A[i]
-    else:
-        cnt += 1
-print(ans)
