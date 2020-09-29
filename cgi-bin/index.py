@@ -49,348 +49,222 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC005 C - おいしいたこ焼きの売り方
-# マッチング問題だが貪欲
-T = getN()
+def prime_factorize(n):
+    divisors = []
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
+
+    return divisors
+
+# ABC052 C - Factors of Factorial
 N = getN()
-sell = getList()
-M = getN()
-buy = getList()
 
-# 来る客1, 2に売れるか
-for cus in buy:
-    flag = False
-    for i in range(N):
-        if sell[i] <= cus <= sell[i] + T:
-            flag = True
-            sell[i] = mod
-            break
-    if not flag:
-        print('no')
-        exit()
-print('yes')
+# N!の因数 = (2の因数) + (3の因数)...
+# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
+mod = 10 ** 9 + 7
+ans = 1
+# それぞれの因数となる素数の数をセットする
+dp = [0] * (N + 1)
 
-# ABC080 D - Recording
-# 使ってない録画機は他のチャンネルにスイッチできる
-# 同時にいくつ放送が流れているか
-N, C = getNM()
-query = [getList() for i in range(N)]
-dp = [[0] * (C + 1) for i in range(10 ** 5 + 2)]
-for i in range(N):
-    s, t, c = query[i]
-    dp[s][c] += 1
-    dp[t + 1][c] -= 1
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        if j[0] > 1:
+            dp[j[0]] += j[1]
+# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
+for i in dp:
+    if i > 0:
+        ans = (ans * (i + 1)) % mod
+print(ans % mod)
 
-for i in range(1, 10 ** 5 + 2):
-    for j in range(C + 1):
-        dp[i][j] += dp[i - 1][j]
-
-ans = 0
-for i in range(10 ** 5 + 2):
-    cnt = 0
-    for j in dp[i]:
-        if j > 0:
-            cnt += 1
-    ans = max(ans, cnt)
-print(ans)
-
-# ABC085 D - Katana Thrower
-N, H = getNM()
-
-a = []
-b = []
-
-for i in range(N):
-  x, y = map(int, input().split())
-  a.append(x)
-  b.append(y)
-
-# 振った場合の最大値
-max_a = max(a)
-
-ans = 0
-# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
-# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
-# 両方利用することができる
-# 実は投げてしまった刀も振ることができるというルールに変更しても
-# 問題の答えは変わらない
-# 実際のムーブとしては
-# ①最も攻撃力が高い振り刀で攻撃する
-# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
-# という流れになる
-for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
-    H -= x
-    ans += 1
-    if H <= 0: break
-
-ans += max(0, (H + max_a - 1) // max_a)
-print(ans)
-
-# ABC091 C - 2D Plane 2N Points
-
-N = getN()
-# Rはループさせるのでソートさせる必要ない
-R = [getList() for i in range(N)]
-R_l = [1] * N
-
-B = [getList() for i in range(N)]
-B.sort()
-
-# 貪欲法でペア作りする問題
-# ABC005 C - おいしいたこ焼きの売り方の時と同様に
-# それとしか繋げないもの　を優先的に繋いでいく
-
-# 条件Aの通過が厳しい順に対象bをソートし、
-# たこ焼き　条件A:客が来る前にたこ焼きができてないといけない
-#  　　　　      客を来るのが早い順に並べる（最初から並んでる）
-# 今回     条件A:赤星のx座標が青星のx座標より小さくないといけない
-#  　　　　　　　 青星をx座標が小さい順に並べる
-
-# 条件A, 条件Bをクリアしたものの中で、最も条件Bの通過が厳しい対象aと結ぶ
-# たこ焼き　条件B:たこ焼きが賞味期限より前のものでないといけない
-#  　　　　      できるだけ古いものを売る（最初から並んでる）
-# 今回     条件B:赤星のy座標が青星のy座標より小さくないといけない
-#  　　　　　　　 条件をクリアしたもののうちでできるだけy座標が大きいものを選ぶ
-
-ans = 0
-for b in B:
-    max_y = -1
-    max_index = -1
-    for i, a in enumerate(R):
-        # x, y座標が小さいもののうちでまた使ってないもの
-        if a[0] < b[0] and a[1] < b[1] and R_l[i] == 1:
-            # あるならY座標が最も大きいもの
-            if a[1] > max_y:
-                max_y = a[1]
-                max_index = i
-    if max_y >= 0:
-        R_l[max_index] = 0
-        ans += 1
-
-# ABC100 D - Patisserie ABC
-# 8パターン全部調べる
-
-N,M = getNM()
-data = [[] for i in range(8)]
-for _ in range(N):
-    x,y,z = getNM()
-    data[0].append(x + y + z)
-    data[1].append(x + y - z)
-    data[2].append(x - y + z)
-    data[3].append(x - y - z)
-    data[4].append(- x + y + z)
-    data[5].append(- x + y - z)
-    data[6].append(- x - y + z)
-    data[7].append(- x - y - z)
-
-ans = -mod
-for i in range(8):
-    data[i].sort(reverse = True)
-    ans = max(ans,sum(data[i][:M]))
-print(ans)
-
-# ABC116 D - Various Sushi
+# ABC090 D - Remainder Reminder
+# 数え上げ
 N, K = getNM()
-various = defaultdict(list)
-que = [getList() for i in range(N)]
+sum = 0
+for b in range(1, N + 1):
+    opt1 = (N // b) * max(0, (b - K))
+    if K == 0:
+        opt2 = N % b
+    else:
+        opt2 = max(0, (N % b) - K + 1)
+    sum += (opt1 + opt2)
+print(sum)
 
-ans = 0
-num = []
-var_s = set()
+# 094 D - Binomial Coefficients
+# combはrを真ん中に設定すると大きくなる
 
-# 美味しい順にK個とった時の幸福度
-que.sort(reverse = True, key = lambda i: i[1])
-for i in range(K):
-    ans += que[i][1]
-    # もし２番手以降ならあとで交換する用にとっておく
-    if que[i][0] in var_s:
-        num.append(que[i][1])
-    var_s.add(que[i][0])
-
-var = len(var_s)
-ans += var ** 2
-
-# 使ってない種類について各種類で一番大きさが大きいもの
-left_l = defaultdict(int)
-for i in range(N):
-    if not que[i][0] in var_s:
-        left_l[que[i][0]] = max(left_l[que[i][0]], que[i][1])
-
-num.sort(reverse = True)
-left_l = [i[1] for i in left_l.items()]
-left_l.sort()
-
-# M回交換する
-opt = ans
-M = min(len(num), len(left_l))
-for i in range(M):
-    u = num.pop()
-    s = left_l.pop()
-    # 寿司単体の幸福度
-    opt -= (u - s)
-    # 種類が増える分
-    opt += 2 * var + 1
-    var += 1
-    ans = max(opt, ans)
-
-print(ans)
-
-# ABC119 D - Lazy Faith
-A, B, Q = getNM()
-# 神社
-S = getArray(A)
-# 寺
-T = getArray(B)
-query = getArray(Q)
-
-S.insert(0, -float('inf'))
-T.insert(0, -float('inf'))
-S.append(float('inf'))
-T.append(float('inf'))
-
-def close(data, point):
-    west = data[bisect_left(data, point) - 1]
-    east = data[bisect_left(data, point)]
-
-    return west, east
-
-for i in range(Q):
-    now = query[i]
-    shrine_west, shrine_east = close(S, now)
-    temple_west, temple_east = close(T, now)
-
-    ww = now - min(shrine_west, temple_west)
-    we_1 = (now - shrine_west) * 2 + (temple_east - now)
-    we_2 = (now - temple_west) * 2 + (shrine_east - now)
-    ee = max(shrine_east, temple_east) - now
-    ew_1 = (shrine_east - now) * 2 + (now - temple_west)
-    ew_2 = (temple_east - now) * 2 + (now - shrine_west)
-
-    print(min(ww, we_1, we_2, ee, ew_1, ew_2))
-
-# ABC137 D - Summer Vacation
-# ヒープ使った貪欲
-N, M = getNM()
-query = [getList() for i in range(N)]
-
-A_list = [[] for i in range(10 ** 5 + 1)]
-for a, b in query:
-    A_list[a].append(b)
-
-job = []
-heapq.heapify(job)
-
-ans = 0
-for i in range(1, M + 1):
-    for j in A_list[i]:
-        heapq.heappush(job, -j)
-    if len(job) > 0:
-        u = heapq.heappop(job)
-        ans += -u
-print(ans)
-
-# ABC169 E - Count Median
-N = getN()
-A = []
-B = []
-for i in range(N):
-    a, b = getNM()
-    A.append(a)
-    B.append(b)
-A.sort()
-B.sort()
-# 範囲がN個ある
-# Xは整数
-# 中央値のmin, maxは？
-# Nが偶数、奇数の場合
-# 奇数の場合 中央値は絶対に整数
-# 中央値のmin: Aの中央値、max: Bの中央値
-# 偶数の場合
-# 中央値のmin: (Ai-1 + Ai) / 2 max: (Bi-1 + Bi) / 2
-# いくつある？
-
-# 中央値は最低でも0.5刻み
-# 偶数の場合は奇数の2N - 1になる？
-# Ai-1とAiを自由にいじることで0.5, 1, 1.5と言う風に中間値を作れそう
-if N % 2 == 0:
-    opt_a = (A[(N // 2) - 1] + A[N // 2]) / 2
-    opt_b = (B[(N // 2) - 1] + B[N // 2]) / 2
-    # opt_b - opt_aを0.5で割って +1
-    # intで出せ
-    print(int((opt_b - opt_a) * 2 + 1))
-else:
-    opt_a = A[N // 2]
-    opt_b = B[N // 2]
-    # 中央値は絶対に整数
-    print(opt_b - opt_a + 1)
-
-# AGC029 B - Powers of two
-# N = getN()
-# A = getList() # ボール
 N = getN()
 A = getList()
 A.sort()
-# ボールからペアを作ってその和が２冪(2 ** iになる)になるようにしたい
 
-# 最大でいくつペアを作れるか
-# 最大流？Nが大きいから無理
+max = max(A)
+index = bisect_left(A, max / 2)
+if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
+    ans = [max, A[index]]
+else:
+    ans = [max, A[index - 1]]
+print(*ans)
 
-# M <= 2 * 10 ** 5
-# 数字aのペアの候補は？
-# 1なら3 (4), 7 (8), 15(16)...
-# 2なら2 (4), 6 (8), 14(16)...
-# 探索して求められるか？
-# 2冪の数はだいたい30個 各要素のペアになるものは求められる
-powers = [1] * 32
-for i in range(1, 32):
-    powers[i] = powers[i - 1] * 2
+# ABC096 D - Five, Five Everywhere
+# 素数はmod nでグルーピングできる
+N = getN()
 
-# Aの中に30個の候補のどれかが含まれているか
-# 二分探索でどのペアかもわかる
+# エラストテネスの篩
+prime = [2]
+max = 55555
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
 
-# ペアとなるbがあったとして、どれにくっつけるのが有効か？
-# 数を絞れば最大流できる Aが同じ数の場合があるのでできない
-# dp?
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
 
-# 実は大きい数の方がペアになる条件は厳しくなる
-# 貪欲ペアは厳しい順からペアにしていく
-flag = [0] * N
+prime = sorted(prime)
+
+prime = [i for i in prime if i % 5 == 1]
+print(*prime[:N])
+
+# ABC114 D - 756
+N = getN()
+
+def prime_factorize(n):
+    divisors = []
+    # 27(2 * 2 * 7)の7を出すためにtemp使う
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == [] and n != 1:
+        divisors.append([n, 1])
+
+    return divisors
+
+primli = [0] * 101
+# N! の因数を計算する
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        primli[j[0]] += j[1]
+# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
+# 75 = 3 * 3 * 5なので例えば
+# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
+alta = []
+for i in primli:
+    if i != 0:
+        alta.append(i + 1)
+
+prim3 = 0
+prim5 = 0
+prim15 = 0
+prim25 = 0
+prim75 = 0
+for i in alta:
+    if i >= 75:
+        prim75 += 1
+    if i >= 25:
+        prim25 += 1
+    if i >= 15:
+        prim15 += 1
+    if i >= 5:
+        prim5 += 1
+    if i >= 3:
+        prim3 += 1
+
 ans = 0
-while A:
-    u = A.pop() # 自身とペアにならないようにpop
-    if flag[len(A)]: # uのフラグが立っていたなら飛ばす
-        continue
-    # 自身より大きい２冪の数の中で最も小さいもの
-    # これがAの中に存在するか
-    opt = powers[bisect_right(powers, u)] - u
-    # 存在するか二分探索
-    left = bisect_left(A, opt)
-    right = bisect_left(A, opt + 1)
-    # 存在する'1, 1, 1...'のうちフラグが立っていないものとペアに
-    # 後ろから探索する
-    for i in range(right - 1, left - 1, -1):
-        if not flag[i]:
-            ans += 1
-            flag[i] = 1
-            break
+if prim3 >= 1 and prim5 >= 2:
+    # prim5 C 2
+    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
+if prim15 >= 1 and prim5 >= 1:
+    ans += prim15 * (prim5 - 1)
+if prim25 >= 1 and prim3 >= 1:
+    ans += prim25 * (prim3 - 1)
+if prim75 >= 1:
+    ans += prim75
 print(ans)
 
-# キーエンス プログラミング コンテスト 2020 B - Robot Arms
-# 区間スケジューリング問題
-# 終点をソート
-N = getN()
-query = [getList() for i in range(N)]
+N, M = getNM()
+A = [int(i) // 2 for i in input().split()]
 
-r_l = []
-for x, l in query:
-    r_l.append([x - l, x + l])
-r_l.sort(key = lambda i:i[1])
+# 4と8の場合
+# 2 6 10 14 18...
+# 4 12 20 28... これを２で割ると
 
-cnt = 0
-last = r_l[0][1]
-for i in range(1, N):
-    if r_l[i][0] < last:
-        cnt += 1
-    else:
-        last = r_l[i][1]
-print(N - cnt)
+# 1 3 5 7 9...
+# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
+
+# 4と12なら
+# 2 6 10 14 18...
+# 6 18 30 42... これを２で割ると
+# 1 3 5 7 9...
+# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
+
+# Aの各要素がどれも2でn回ちょうど割れる必要がある
+def div_2(n):
+    cnt = n
+    res = 0
+    while cnt > 0:
+        if cnt % 2 == 0:
+            cnt //= 2
+            res += 1
+        else:
+            return res
+
+def lcm(x, y):
+    return x * (y // gcd(x, y))
+
+judge = [div_2(i) for i in A]
+
+if min(judge) != max(judge):
+    print(0)
+    exit()
+L = 1
+for i in range(N):
+    L = lcm(L, A[i])
+
+# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
+print(M // L - M // (2 * L))
+
+# 三井住友信託銀行プログラミングコンテスト2019 F - Interval Running
+
+T1, T2 = 12000, 15700
+A1, A2 = 3390000000, 3810000000
+B1, B2 = 5550000000, 2130000000
+
+# グラフにして考える
+# 周期は同じT1, T2
+# T1の時とT2の時とで順位が入れ替わっているなら出会っている
+t1_diff = (A1 - B1) * T1
+t2_diff = (A1 - B1) * T1 + (A2 - B2) * T2
+if t1_diff == 0 or t2_diff == 0: # 無限に出会う
+    print('infinity')
+    exit()
+if t1_diff * t2_diff > 0: # ずっとどちらかが前にいる
+    print(0)
+    exit()
+
+# t2_diff分ずつずれていく
+
+# 順位が逆転する場合
+# クロスする時とちょうど接する時を考える
+if abs(t1_diff) % abs(t2_diff) == 0:
+    # 最後の１回は１回しかクロスしない
+    print((abs(t1_diff) // abs(t2_diff)) * 2)
+else:
+    print((abs(t1_diff) // abs(t2_diff)) * 2 + 1)
