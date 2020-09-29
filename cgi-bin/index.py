@@ -240,3 +240,35 @@ for i in range(N):
 
 # Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
 print(M // L - M // (2 * L))
+
+# ABC152 E - Flatten
+# 大きい数は因数で持つ
+N = getN()
+A = getList()
+prime_list = defaultdict(int)
+
+for i in range(N):
+    prime = prime_factorize(A[i])
+    for j in prime:
+        prime_list[j[0]] = max(prime_list[j[0]], j[1])
+
+num = 1
+for key, value in prime_list.items():
+    num *= key ** value
+    num %= mod
+
+# 1/A[i]のmod
+lim = 10 ** 6 + 1
+fact = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+
+ans = 0
+for i in A:
+    opt = (num * inv[i]) % mod
+    ans += opt
+    ans %= mod
+print(ans % mod)
