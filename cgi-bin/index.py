@@ -341,3 +341,29 @@ for k in range(K + 1):
     ans %= mod
 
 print(ans)
+
+# ARC023 C - タコヤ木
+N = getN()
+A = getList()
+
+def cmb(x,y):
+    r = 1
+    for i in range(1, y + 1):
+        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
+    return r
+
+now = A[0]
+cnt = 0
+ans = 1
+for i in range(1, N):
+    if A[i] > -1:
+        if cnt > 0:
+            ans *= cmb(A[i] - now + cnt, cnt)
+            ans %= mod
+            now = A[i]
+            cnt = 0
+        else:
+            now = A[i]
+    else:
+        cnt += 1
+print(ans)
