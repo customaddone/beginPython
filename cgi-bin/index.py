@@ -241,6 +241,84 @@ for i in range(N):
 # Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
 print(M // L - M // (2 * L))
 
+# ABC152 E - Flatten
+# 大きい数は因数で持つ
+N = getN()
+A = getList()
+prime_list = defaultdict(int)
+
+for i in range(N):
+    prime = prime_factorize(A[i])
+    for j in prime:
+        prime_list[j[0]] = max(prime_list[j[0]], j[1])
+
+num = 1
+for key, value in prime_list.items():
+    num *= key ** value
+    num %= mod
+
+# 1/A[i]のmod
+lim = 10 ** 6 + 1
+fact = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+
+ans = 0
+for i in A:
+    opt = (num * inv[i]) % mod
+    ans += opt
+    ans %= mod
+print(ans % mod)
+
+# ABC161 F - Division or Subtraction
+N = getN()
+
+# 手順としては
+# ①　kで出来るだけ割る
+# ②　kで引いていく　N = mk + d(d = 1, 2, 3...)とすると,　引いて残る数はm(k - 1) + d
+# つまりkで割り切れず、引いても引いても永遠に①に戻ることはない
+
+# N = k ** i * (mk + 1)となるkの数を求める
+# i == 0の時
+# kがなんであれk ** iは１になるので
+# N = mk + 1、つまりN - 1がkの倍数であればそのkは条件を満たす
+# N - 1の約数（１以外）が候補
+
+ans = set()
+for i in make_divisors(N - 1):
+    if i != 1:
+        ans.add(i)
+
+# 割れるだけ割る関数
+def dividor(x, k):
+    if k == 1:
+        return 0
+    n = x
+    while True:
+        if n % k == 0:
+            n //= k
+        else:
+            break
+    return n
+
+# i >= 1の時
+# 候補はNの約数
+for prim in make_divisors(N):
+    if prim == 1:
+        continue
+    # Nを割れるだけ割る
+    alta = dividor(N, prim)
+    if alta == 1:
+        ans.add(prim)
+        continue
+    if alta >= prim and alta % prim == 1:
+        ans.add(prim)
+
+print(len(ans))
+
 # 三井住友信託銀行プログラミングコンテスト2019 F - Interval Running
 
 T1, T2 = 12000, 15700
