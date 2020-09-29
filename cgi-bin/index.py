@@ -49,277 +49,94 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC005 C - おいしいたこ焼きの売り方
-# マッチング問題だが貪欲
-T = getN()
-N = getN()
-sell = getList()
-M = getN()
-buy = getList()
-
-# 来る客1, 2に売れるか
-for cus in buy:
-    flag = False
-    for i in range(N):
-        if sell[i] <= cus <= sell[i] + T:
-            flag = True
-            sell[i] = mod
-            break
-    if not flag:
-        print('no')
-        exit()
-print('yes')
-
-# ABC080 D - Recording
-# 使ってない録画機は他のチャンネルにスイッチできる
-# 同時にいくつ放送が流れているか
-N, C = getNM()
-query = [getList() for i in range(N)]
-dp = [[0] * (C + 1) for i in range(10 ** 5 + 2)]
-for i in range(N):
-    s, t, c = query[i]
-    dp[s][c] += 1
-    dp[t + 1][c] -= 1
-
-for i in range(1, 10 ** 5 + 2):
-    for j in range(C + 1):
-        dp[i][j] += dp[i - 1][j]
-
-ans = 0
-for i in range(10 ** 5 + 2):
-    cnt = 0
-    for j in dp[i]:
-        if j > 0:
-            cnt += 1
-    ans = max(ans, cnt)
-print(ans)
-
-# ABC085 D - Katana Thrower
-N, H = getNM()
-
-a = []
-b = []
-
-for i in range(N):
-  x, y = map(int, input().split())
-  a.append(x)
-  b.append(y)
-
-# 振った場合の最大値
-max_a = max(a)
-
-ans = 0
-# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
-# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
-# 両方利用することができる
-# 実は投げてしまった刀も振ることができるというルールに変更しても
-# 問題の答えは変わらない
-# 実際のムーブとしては
-# ①最も攻撃力が高い振り刀で攻撃する
-# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
-# という流れになる
-for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
-    H -= x
-    ans += 1
-    if H <= 0: break
-
-ans += max(0, (H + max_a - 1) // max_a)
-print(ans)
-
-# ABC091 C - 2D Plane 2N Points
-
-N = getN()
-# Rはループさせるのでソートさせる必要ない
-R = [getList() for i in range(N)]
-R_l = [1] * N
-
-B = [getList() for i in range(N)]
-B.sort()
-
-# 貪欲法でペア作りする問題
-# ABC005 C - おいしいたこ焼きの売り方の時と同様に
-# それとしか繋げないもの　を優先的に繋いでいく
-
-# 条件Aの通過が厳しい順に対象bをソートし、
-# たこ焼き　条件A:客が来る前にたこ焼きができてないといけない
-#  　　　　      客を来るのが早い順に並べる（最初から並んでる）
-# 今回     条件A:赤星のx座標が青星のx座標より小さくないといけない
-#  　　　　　　　 青星をx座標が小さい順に並べる
-
-# 条件A, 条件Bをクリアしたものの中で、最も条件Bの通過が厳しい対象aと結ぶ
-# たこ焼き　条件B:たこ焼きが賞味期限より前のものでないといけない
-#  　　　　      できるだけ古いものを売る（最初から並んでる）
-# 今回     条件B:赤星のy座標が青星のy座標より小さくないといけない
-#  　　　　　　　 条件をクリアしたもののうちでできるだけy座標が大きいものを選ぶ
-
-ans = 0
-for b in B:
-    max_y = -1
-    max_index = -1
-    for i, a in enumerate(R):
-        # x, y座標が小さいもののうちでまた使ってないもの
-        if a[0] < b[0] and a[1] < b[1] and R_l[i] == 1:
-            # あるならY座標が最も大きいもの
-            if a[1] > max_y:
-                max_y = a[1]
-                max_index = i
-    if max_y >= 0:
-        R_l[max_index] = 0
-        ans += 1
-
-# ABC100 D - Patisserie ABC
-# 8パターン全部調べる
-
-N,M = getNM()
-data = [[] for i in range(8)]
-for _ in range(N):
-    x,y,z = getNM()
-    data[0].append(x + y + z)
-    data[1].append(x + y - z)
-    data[2].append(x - y + z)
-    data[3].append(x - y - z)
-    data[4].append(- x + y + z)
-    data[5].append(- x + y - z)
-    data[6].append(- x - y + z)
-    data[7].append(- x - y - z)
-
-ans = -mod
-for i in range(8):
-    data[i].sort(reverse = True)
-    ans = max(ans,sum(data[i][:M]))
-print(ans)
-
-# ABC116 D - Various Sushi
-N, K = getNM()
-various = defaultdict(list)
-que = [getList() for i in range(N)]
-
-ans = 0
-num = []
-var_s = set()
-
-# 美味しい順にK個とった時の幸福度
-que.sort(reverse = True, key = lambda i: i[1])
-for i in range(K):
-    ans += que[i][1]
-    # もし２番手以降ならあとで交換する用にとっておく
-    if que[i][0] in var_s:
-        num.append(que[i][1])
-    var_s.add(que[i][0])
-
-var = len(var_s)
-ans += var ** 2
-
-# 使ってない種類について各種類で一番大きさが大きいもの
-left_l = defaultdict(int)
-for i in range(N):
-    if not que[i][0] in var_s:
-        left_l[que[i][0]] = max(left_l[que[i][0]], que[i][1])
-
-num.sort(reverse = True)
-left_l = [i[1] for i in left_l.items()]
-left_l.sort()
-
-# M回交換する
-opt = ans
-M = min(len(num), len(left_l))
-for i in range(M):
-    u = num.pop()
-    s = left_l.pop()
-    # 寿司単体の幸福度
-    opt -= (u - s)
-    # 種類が増える分
-    opt += 2 * var + 1
-    var += 1
-    ans = max(opt, ans)
-
-print(ans)
-
-# ABC119 D - Lazy Faith
-A, B, Q = getNM()
-# 神社
-S = getArray(A)
-# 寺
-T = getArray(B)
-query = getArray(Q)
-
-S.insert(0, -float('inf'))
-T.insert(0, -float('inf'))
-S.append(float('inf'))
-T.append(float('inf'))
-
-def close(data, point):
-    west = data[bisect_left(data, point) - 1]
-    east = data[bisect_left(data, point)]
-
-    return west, east
-
-for i in range(Q):
-    now = query[i]
-    shrine_west, shrine_east = close(S, now)
-    temple_west, temple_east = close(T, now)
-
-    ww = now - min(shrine_west, temple_west)
-    we_1 = (now - shrine_west) * 2 + (temple_east - now)
-    we_2 = (now - temple_west) * 2 + (shrine_east - now)
-    ee = max(shrine_east, temple_east) - now
-    ew_1 = (shrine_east - now) * 2 + (now - temple_west)
-    ew_2 = (temple_east - now) * 2 + (now - shrine_west)
-
-    print(min(ww, we_1, we_2, ee, ew_1, ew_2))
-
-# ABC137 D - Summer Vacation
-# ヒープ使った貪欲
+# ABC061 D - Score Attack
 N, M = getNM()
-query = [getList() for i in range(N)]
+edges = []
+for i in range(M):
+    a, b, c = getNM()
+    edges.append([a - 1, b - 1, c])
 
-A_list = [[] for i in range(10 ** 5 + 1)]
-for a, b in query:
-    A_list[a].append(b)
+def bellman(edges, num_v):
+    dist = [-float('inf') for i in range(num_v)]
+    dist[0] = 0
 
-job = []
-heapq.heapify(job)
+    # 一回目のループ
+    for i in range(N - 1):
+        for edge in edges:
+            if dist[edge[1]] < dist[edge[0]] + edge[2]:
+                dist[edge[1]] = dist[edge[0]] + edge[2]
 
-ans = 0
-for i in range(1, M + 1):
-    for j in A_list[i]:
-        heapq.heappush(job, -j)
-    if len(job) > 0:
-        u = heapq.heappop(job)
-        ans += -u
-print(ans)
+    # 負閉路検出
+    nega = [0] * N
+    for i in range(N):
+        for edge in edges:
+            # rootが既に更新されているなら行く際も更新される
+            if nega[edge[0]] == 1:
+                nega[edge[1]] = 1
+            if dist[edge[1]] < dist[edge[0]] + edge[2]:
+                dist[edge[1]] = dist[edge[0]] + edge[2]
+                nega[edge[1]] = 1
 
-# ABC169 E - Count Median
-N = getN()
-A = []
-B = []
-for i in range(N):
-    a, b = getNM()
-    A.append(a)
-    B.append(b)
-A.sort()
-B.sort()
-# 範囲がN個ある
-# Xは整数
-# 中央値のmin, maxは？
-# Nが偶数、奇数の場合
-# 奇数の場合 中央値は絶対に整数
-# 中央値のmin: Aの中央値、max: Bの中央値
-# 偶数の場合
-# 中央値のmin: (Ai-1 + Ai) / 2 max: (Bi-1 + Bi) / 2
-# いくつある？
+    if nega[N - 1]:
+        print('inf')
+        exit()
 
-# 中央値は最低でも0.5刻み
-# 偶数の場合は奇数の2N - 1になる？
-# Ai-1とAiを自由にいじることで0.5, 1, 1.5と言う風に中間値を作れそう
-if N % 2 == 0:
-    opt_a = (A[(N // 2) - 1] + A[N // 2]) / 2
-    opt_b = (B[(N // 2) - 1] + B[N // 2]) / 2
-    # opt_b - opt_aを0.5で割って +1
-    # intで出せ
-    print(int((opt_b - opt_a) * 2 + 1))
+    return dist
+
+print(bellman(edges, N)[N - 1])
+
+# ABC137 E - Coins Respawn
+N, M, P = getNM()
+que = [getList() for i in range(M)]
+
+edges = []
+for a, b, c in que:
+    # 次の点に行った時に獲得できる点 - 支払うコインP
+    # 重みが負になることもある　→　ベルマンフォード
+    edges.append([a - 1, b - 1, c - P])
+
+# どのようにNに到達すればいいか
+# 最長距離を求める
+
+
+# after contest
+# 1 → 2 1
+# 2 → 3 1
+# 3 → 2 1
+# 3 → 4 1
+# 1 → 4 100000の場合
+# 2 ~ 3間でループがあるため値を無限に増やせるが、N - 1のループでは検出できない
+# 1 → 4 100000 が十分大きいため
+def bellman(edges, num_v):
+    dist = [-float('inf') for i in range(num_v)]
+    dist[0] = 0
+
+    # 一回目のループ
+    for i in range(N - 1):
+        for edge in edges:
+            if dist[edge[1]] < dist[edge[0]] + edge[2]:
+                dist[edge[1]] = dist[edge[0]] + edge[2]
+
+    # 負閉路検出
+    nega = [0] * N
+    for i in range(N):
+        for edge in edges:
+            # rootの頂点が既に更新されている（ループ検出）されていたなら
+            # 行先にも無条件で「更新される」フラグを立てる
+            if nega[edge[0]] == 1:
+                nega[edge[1]] = 1
+            if dist[edge[1]] < dist[edge[0]] + edge[2]:
+                dist[edge[1]] = dist[edge[0]] + edge[2]
+                nega[edge[1]] = 1
+
+    if nega[N - 1]:
+        print('-1')
+        exit()
+
+    return dist
+
+ans = bellman(edges, N)[N - 1]
+if ans <= 0:
+    print(0)
 else:
-    opt_a = A[N // 2]
-    opt_b = B[N // 2]
-    # 中央値は絶対に整数
-    print(opt_b - opt_a + 1)
+    print(ans)
