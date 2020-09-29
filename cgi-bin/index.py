@@ -49,94 +49,118 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC061 D - Score Attack
-N, M = getNM()
-edges = []
-for i in range(M):
-    a, b, c = getNM()
-    edges.append([a - 1, b - 1, c])
+# ABC038 D-プレゼント
+class BIT:
+    def __init__(self, n):
+        self.n = n
+        self.data = [0] * (n + 1)
 
-def bellman(edges, num_v):
-    dist = [-float('inf') for i in range(num_v)]
-    dist[0] = 0
+    def ope(self, x, y):
+        return max(x, y)
 
-    # 一回目のループ
-    for i in range(N - 1):
-        for edge in edges:
-            if dist[edge[1]] < dist[edge[0]] + edge[2]:
-                dist[edge[1]] = dist[edge[0]] + edge[2]
+    def update(self, i, v):
+        j = i
+        while j <= self.n:
+            self.data[j] = self.ope(self.data[j], v)
+            j += j & -j
 
-    # 負閉路検出
-    nega = [0] * N
-    for i in range(N):
-        for edge in edges:
-            # rootが既に更新されているなら行く際も更新される
-            if nega[edge[0]] == 1:
-                nega[edge[1]] = 1
-            if dist[edge[1]] < dist[edge[0]] + edge[2]:
-                dist[edge[1]] = dist[edge[0]] + edge[2]
-                nega[edge[1]] = 1
+    def query(self, i):
+        ret = 0
+        j = i
+        while 0 < j:
+            ret = self.ope(self.data[j], ret)
+            j &= (j - 1)
+        return ret
 
-    if nega[N - 1]:
-        print('inf')
-        exit()
+bit = BIT(10 ** 5)
 
-    return dist
+for w, h in que:
+    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
+    # 最初は0個
+    q = bit.query(h - 1)
+    # 高さhの時の箱の数を更新
+    bit.update(h, q + 1)
+print(bit.query(10 ** 5))
 
-print(bellman(edges, N)[N - 1])
+# ABC140 E - Second Sum
+# [Pl, Pr]間で２番目に大きいものの総和を
+# l, rについてのnC2通りの全てについて求めよ
 
-# ABC137 E - Coins Respawn
-N, M, P = getNM()
-que = [getList() for i in range(M)]
+# 8 2 7 3 4 5 6 1
+# 8 2: 2
+# 8 2 7: 7
+# 2 7 3: 3
+# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
+# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
 
-edges = []
-for a, b, c in que:
-    # 次の点に行った時に獲得できる点 - 支払うコインP
-    # 重みが負になることもある　→　ベルマンフォード
-    edges.append([a - 1, b - 1, c - P])
+# N <= 10 ** 5
+# Piが２番目になる通りが何通り　みたいな感じで求められる？
+# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
 
-# どのようにNに到達すればいいか
-# 最長距離を求める
+# ヒープキューとか使える？
+# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
+# 尺取り使える？
 
+# 累積？　一番
 
-# after contest
-# 1 → 2 1
-# 2 → 3 1
-# 3 → 2 1
-# 3 → 4 1
-# 1 → 4 100000の場合
-# 2 ~ 3間でループがあるため値を無限に増やせるが、N - 1のループでは検出できない
-# 1 → 4 100000 が十分大きいため
-def bellman(edges, num_v):
-    dist = [-float('inf') for i in range(num_v)]
-    dist[0] = 0
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-    # 一回目のループ
-    for i in range(N - 1):
-        for edge in edges:
-            if dist[edge[1]] < dist[edge[0]] + edge[2]:
-                dist[edge[1]] = dist[edge[0]] + edge[2]
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-    # 負閉路検出
-    nega = [0] * N
-    for i in range(N):
-        for edge in edges:
-            # rootの頂点が既に更新されている（ループ検出）されていたなら
-            # 行先にも無条件で「更新される」フラグを立てる
-            if nega[edge[0]] == 1:
-                nega[edge[1]] = 1
-            if dist[edge[1]] < dist[edge[0]] + edge[2]:
-                dist[edge[1]] = dist[edge[0]] + edge[2]
-                nega[edge[1]] = 1
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-    if nega[N - 1]:
-        print('-1')
-        exit()
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-    return dist
+    def lowerbound(self,w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
-ans = bellman(edges, N)[N - 1]
-if ans <= 0:
-    print(0)
-else:
-    print(ans)
+N = getN()
+P = getList()
+dic = {}
+bit = BIT(N)
+for i in range(N):
+    dic[P[i]] = i + 1
+
+# 両端に何もない時用
+# [0] + Pの各要素 + [N + 1]みたいになる
+dic[0] = 0
+dic[N + 1] = N + 1
+ans = 0
+
+for i in range(N, 0, -1):
+    # 8のインデックス、7のインデックス...に1を登録していく
+    bit.add(dic[i], 1)
+    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
+    c = bit.get(dic[i] + 1)
+    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
+    # l2: l1の一つ左側にあるもの
+    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
+    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
+    # r2: r1の一つ右側にあるもの
+    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
+    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
+    ans += S * i
+print(ans)
