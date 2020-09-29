@@ -49,226 +49,166 @@ mod = 998244353
 # Main Code #
 #############
 
-def prime_factorize(n):
-    divisors = []
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == []:
-        divisors.append([n, 1])
+#####segfunc#####
+def segfunc(x, y):
+    return min(x, y)
+#################
 
-    return divisors
+#####ide_ele#####
+ide_ele = 2**31 - 1
+#################
 
-# ABC052 C - Factors of Factorial
-N = getN()
+class LazySegmentTree:
+    """
+    init(init_val, ide_ele): 配列init_valで初期化 O(N)
+    add(l, r, x): 区間[l, r)にxを加算 O(logN)
+    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
+    """
+    def __init__(self, init_val, segfunc, ide_ele):
+        """
+        init_val: 配列の初期値
+        segfunc: 区間にしたい操作
+        ide_ele: 単位元
+        num: n以上の最小の2のべき乗
+        data: 値配列(1-index)
+        lazy: 遅延配列(1-index)
+        """
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.data = [ide_ele] * 2 * self.num
+        self.lazy = [0] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.data[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
 
-# N!の因数 = (2の因数) + (3の因数)...
-# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
-mod = 10 ** 9 + 7
-ans = 1
-# それぞれの因数となる素数の数をセットする
-dp = [0] * (N + 1)
+    def gindex(self, l, r):
+            """
+            伝搬する対象の区間を求める
+            lm: 伝搬する必要のある最大の左閉区間
+            rm: 伝搬する必要のある最大の右開区間
+            """
+            l += self.num
+            r += self.num
+            lm = l >> (l & -l).bit_length()
+            rm = r >> (r & -r).bit_length()
 
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        if j[0] > 1:
-            dp[j[0]] += j[1]
-# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
-for i in dp:
-    if i > 0:
-        ans = (ans * (i + 1)) % mod
-print(ans % mod)
+            while r > l:
+                if l <= lm:
+                    yield l
+                if r <= rm:
+                    yield r
+                r >>= 1
+                l >>= 1
+            while l:
+                yield l
+                l >>= 1
 
-# ABC090 D - Remainder Reminder
-# 数え上げ
-N, K = getNM()
-sum = 0
-for b in range(1, N + 1):
-    opt1 = (N // b) * max(0, (b - K))
-    if K == 0:
-        opt2 = N % b
+    def propagates(self, *ids):
+        """
+        遅延伝搬処理
+        ids: 伝搬する対象の区間
+        """
+        for i in reversed(ids):
+            v = self.lazy[i]
+            if not v:
+                continue
+            self.lazy[2 * i] += v
+            self.lazy[2 * i + 1] += v
+            self.data[2 * i] += v
+            self.data[2 * i + 1] += v
+            self.lazy[i] = 0
+
+    def add(self, l, r, x):
+        """
+        区間[l, r)の値にxを加算
+        l, r: index(0-index)
+        x: additional value
+        """
+        *ids, = self.gindex(l, r)
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                self.lazy[l] += x
+                self.data[l] += x
+                l += 1
+            if r & 1:
+                self.lazy[r - 1] += x
+                self.data[r - 1] += x
+            r >>= 1
+            l >>= 1
+        for i in ids:
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1]) + self.lazy[i]
+
+
+    def query(self, l, r):
+        """
+        [l, r)のsegfuncしたものを得る
+        l: index(0-index)
+        r: index(0-index)
+        """
+        *ids, = self.gindex(l, r)
+        self.propagates(*ids)
+
+        res = self.ide_ele
+
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.data[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.data[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
+
+def or_less(array, x):
+    # arrayの中のx以下のもののインデックス
+    # arrayの中のx以下のもののうちの最大値
+    index = bisect_right(array, x)
+    if index == 0:
+        or_less_int = -float('inf')
     else:
-        opt2 = max(0, (N % b) - K + 1)
-    sum += (opt1 + opt2)
-print(sum)
+        or_less_int = array[index - 1]
+    return index - 1
 
-# 094 D - Binomial Coefficients
-# combはrを真ん中に設定すると大きくなる
+# ABC153 F - Silver Fox vs Monster
+# 区間加算の遅延セグ木
+N, D, A = getNM()
+que = [getList() for i in range(N)]
+que.sort()
 
-N = getN()
-A = getList()
-A.sort()
+HP = [i[1] for i in que]
+dis = [i[0] for i in que]
 
-max = max(A)
-index = bisect_left(A, max / 2)
-if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
-    ans = [max, A[index]]
-else:
-    ans = [max, A[index - 1]]
-print(*ans)
-
-# ABC096 D - Five, Five Everywhere
-# 素数はmod nでグルーピングできる
-N = getN()
-
-# エラストテネスの篩
-prime = [2]
-max = 55555
-limit = int(math.sqrt(max))
-data = [i + 1 for i in range(2, max, 2)]
-
-while limit > data[0]:
-    prime.append(data[0])
-    data = [j for j in data if j % data[0] != 0]
-prime = prime + data
-
-prime = sorted(prime)
-
-prime = [i for i in prime if i % 5 == 1]
-print(*prime[:N])
-
-# ABC114 D - 756
-N = getN()
-
-def prime_factorize(n):
-    divisors = []
-    # 27(2 * 2 * 7)の7を出すためにtemp使う
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == [] and n != 1:
-        divisors.append([n, 1])
-
-    return divisors
-
-primli = [0] * 101
-# N! の因数を計算する
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        primli[j[0]] += j[1]
-# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
-# 75 = 3 * 3 * 5なので例えば
-# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
-alta = []
-for i in primli:
-    if i != 0:
-        alta.append(i + 1)
-
-prim3 = 0
-prim5 = 0
-prim15 = 0
-prim25 = 0
-prim75 = 0
-for i in alta:
-    if i >= 75:
-        prim75 += 1
-    if i >= 25:
-        prim25 += 1
-    if i >= 15:
-        prim15 += 1
-    if i >= 5:
-        prim5 += 1
-    if i >= 3:
-        prim3 += 1
+seg = LazySegmentTree([0] * (N + 1), segfunc, ide_ele)
+# 現在のインデックス
+now = 0
+# 現在の場所
+now_dis = dis[now]
 
 ans = 0
-if prim3 >= 1 and prim5 >= 2:
-    # prim5 C 2
-    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
-if prim15 >= 1 and prim5 >= 1:
-    ans += prim15 * (prim5 - 1)
-if prim25 >= 1 and prim3 >= 1:
-    ans += prim25 * (prim3 - 1)
-if prim75 >= 1:
-    ans += prim75
+while now < N:
+    # 爆発範囲
+    range = or_less(dis, now_dis + 2 * D)
+    left_hp = HP[now] - seg.query(now, now + 1)
+    # 爆発回数
+    explo = (left_hp + A - 1) // A
+    seg.add(now, range + 1, explo * A)
+    ans += explo
+
+    while True:
+        if now >= N or seg.query(now, now + 1) < HP[now]:
+            break
+        now += 1
+    if now < N:
+        now_dis = dis[now]
+
 print(ans)
-
-N, M = getNM()
-A = [int(i) // 2 for i in input().split()]
-
-# 4と8の場合
-# 2 6 10 14 18...
-# 4 12 20 28... これを２で割ると
-
-# 1 3 5 7 9...
-# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
-
-# 4と12なら
-# 2 6 10 14 18...
-# 6 18 30 42... これを２で割ると
-# 1 3 5 7 9...
-# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
-
-# Aの各要素がどれも2でn回ちょうど割れる必要がある
-def div_2(n):
-    cnt = n
-    res = 0
-    while cnt > 0:
-        if cnt % 2 == 0:
-            cnt //= 2
-            res += 1
-        else:
-            return res
-
-def lcm(x, y):
-    return x * (y // gcd(x, y))
-
-judge = [div_2(i) for i in A]
-
-if min(judge) != max(judge):
-    print(0)
-    exit()
-L = 1
-for i in range(N):
-    L = lcm(L, A[i])
-
-# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
-print(M // L - M // (2 * L))
-
-# ABC152 E - Flatten
-# 大きい数は因数で持つ
-N = getN()
-A = getList()
-prime_list = defaultdict(int)
-
-for i in range(N):
-    prime = prime_factorize(A[i])
-    for j in prime:
-        prime_list[j[0]] = max(prime_list[j[0]], j[1])
-
-num = 1
-for key, value in prime_list.items():
-    num *= key ** value
-    num %= mod
-
-# 1/A[i]のmod
-lim = 10 ** 6 + 1
-fact = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-
-ans = 0
-for i in A:
-    opt = (num * inv[i]) % mod
-    ans += opt
-    ans %= mod
-print(ans % mod)
