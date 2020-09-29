@@ -49,112 +49,123 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC036 D - 塗り絵
-# 木dp
-# 葉からボトムアップか頂点からdfs
+# ABC098 D - Xor Sum 2
+# 連続する区間の長さを答える　尺取り
 
 N = getN()
-query = [getList() for i in range(N - 1)]
+A = getList()
 
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+r, tmp = 0, 0
+# l:左端
+cnt = 0
+for l in range(N):
+    while r < N and tmp ^ A[r] == tmp + A[r]:
+        # 右端を伸ばす
+        tmp += A[r]
+        r += 1
+    # 計算
+    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
+    # (r - l + 1) - 1
+    cnt += r - l
 
-dp = [[0, 0] for i in range(N)]
-sta = 0
-for i in range(N):
-    if len(dist[i]) == 1:
-        sta = i
-        break
+    if l == r:
+        r += 1
+        tmp -= A[l]
+    else:
+        tmp -= A[l]
+print(cnt)
 
-for i in range(N):
-    if len(dist[i]) == 1 and i != sta:
-        dp[i] = [1, 1]
-
-ignore = [0] * N
-ignore[sta] = 1
-def dfs(now):
-    white = 1
-    black = 1
-    for i in dist[now]:
-        if ignore[i] != 1:
-            ignore[i] = 1
-            w_cnt, b_cnt = dfs(i)
-            white = (white * (w_cnt + b_cnt)) % mod
-            black = (black * w_cnt) % mod
-    dp[now] = [white % mod, black % mod]
-    return dp[now]
-
-print(sum(dfs(sta)) % mod)
-
-# ABC133 E - Virus Tree 2
-# 木dp
+# ABC117 D - XXOR
 N, K = getNM()
-query = [getList() for i in range(N - 1)]
+A = getList()
 
-dist = [[] for i in range(N)]
-for a, b in query:
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+# 各X xor Aiについて
+# 各桁について
+# Xにフラグ立つ + Aiにフラグ立たない
+# Xにフラグ立たない + Aiにフラグ立つ　の時 2 ** iだけxorの値が増える
+# Aの各要素の2 ** iのフラグの合計がn本の時
+# Xの2 ** iのフラグを立てるとN - n * 2 ** i、立てないとn * 2 ** i　f(x)の値が増える
 
-max_root = 0
-max_root_index = 0
+# 各桁のフラグが合計何本あるか
+flag = [0] * 61
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            flag[i] += 1
 for i in range(N):
-    if len(dist[i]) >= max_root:
-        max_root = len(dist[i])
-        max_root_index = i
+    splitbit(A[i])
 
-pos = deque([max_root_index])
+x = 0
+ans = 0
+for i in range(60, -1, -1):
+    # flag[i] < N - flag[i]ならフラグを立てるほうがお得
+    # だがKの制限があり立てたくても立てられないことがある
+    # Xの2 ** iのフラグを立ててもXがKを超えないか
+    if flag[i] < N - flag[i] and x + 2 ** i <= K:
+        # Xにフラグを立てる
+        x += 2 ** i
+        # f(x)の値が増える
+        ans += 2 ** i * (N - flag[i])
+    # flag[i] < N - flag[i]だがフラグを立てられない場合 +
+    # flag[i] >= N - flag[i]の時
+    else:
+        ans += 2 ** i * flag[i]
 
-ans = 1
-ignore = [-1] * N
-ignore[max_root_index] = 1
-ans *= cmb(K, max_root + 1) * math.factorial(max_root + 1)
+print(ans)
 
-while len(pos) > 0:
-    u = pos.popleft()
-    for i in dist[u]:
-        if ignore[i] == -1:
-            ignore[i] = 1
-            if len(dist[i]) >= 2:
-                ans *= cmb(K - 2, len(dist[i]) - 1) * math.factorial(len(dist[i]) - 1)
-                ans %= mod
-            pos.append(i)
+# ABC121 D - XOR World
+A, B = getNM()
+# bit1桁目のフラグの個数
+# 周期は2 ** 1
+# 0と1が交互に
+# bit2桁目のフラグの個数
+# 周期は2 ** 2
+flags1 = [0] * 61
+flags2 = [0] * 61
+# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
+def bitflag(n, flaglist):
+    if n > 0:
+        for i in range(1, 61):
+            split = 2 ** i
+            flag1 = (n // split) * (split // 2)
+            flag2 = max(n % split + 1 - (split // 2), 0)
+            flaglist[i] += flag1 + flag2
+# 1 ~ A - 1について（Aは範囲に入っているため）
+bitflag(A - 1, flags1)
+bitflag(B, flags2)
+for i in range(61):
+    flags2[i] -= flags1[i]
+ans = 0
+# 奇数ならフラグが立つ
+for i in range(61):
+    if flags2[i] % 2 != 0:
+        ans += 2 ** (i - 1)
+print(ans)
 
-print(ans % mod)
+# ABC147 D - Xor Sum 4
 
-# ABC146 D - Coloring Edges on Tree
 N = getN()
-
-dist = [[] for i in range(N)]
-edges = {}
-for i in range(N - 1):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-    edges[(a - 1, b - 1)] = i
-    edges[(b - 1, a - 1)] = i
-
-color = [-1] * N
-color[0] = 0
-ans = [0] * (N - 1)
-pos = deque([0])
-
-while pos:
-    u = pos.popleft()
-    j = 1
-    for i in dist[u]:
-        if color[i] != -1:
-            continue
-        if j == color[u]:
-            j += 1
-        color[i] = j
-        ans[edges[(i, u)]] = j
-        pos.append(i)
-        j += 1
-
-print(max(ans))
-for i in ans:
-    print(i)
+A = getList()
+# Aの各数字の（２進数における）各桁ごとに分解して排他的論理和を求める
+# 例
+# 3
+# 1 2 3 →
+# 1, 10, 11
+# 2 ** 0の桁について(1 ^ 2) 1 ^ 0 = 1,(1 ^ 3) 1 ^ 1 = 0,(2 ^ 3) 0 ^ 1 = 1
+# 2 ** 1の桁について 0(1の2 ** 1の桁は0) ^ 1 = 1, 0 ^ 1 = 1, 1 ^ 1 = 0
+# 各桁について2 ** iの桁が1の数字の選び方 * 2 ** iの桁が0の数字の選び方 * 2 ** iを
+# 足し合わせる
+lista = [[0, 0] for i in range(61)]
+# bitの各桁が１か０かをlistaに収納
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            lista[i][1] += 1
+        else:
+            lista[i][0] += 1
+for i in A:
+    splitbit(i)
+ans = 0
+for i in range(61):
+    ans += ((lista[i][0] * lista[i][1]) * (2 ** i)) % mod
+print(ans % mod)
