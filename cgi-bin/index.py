@@ -49,117 +49,272 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC161 E - Yutori
-"""
-N日間のうちK日選んで働く
-働いたらそれからC日間は働かない
-Sにxがついていたら働かない
+def prime_factorize(n):
+    divisors = []
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
 
-oの付いてる日のみ働く
-全ての通りを求めてみよう
+    return divisors
 
-N, K, C = 11, 3, 2
-S = ooxxxoxxxoo の時
-働けるのは[1, 2, 6, 10, 11]日目
-ここから3つ以上間が空く条件で3つ選ぶと条件を満たす
-全ての通りでi日目に働く必要がある
+# ABC052 C - Factors of Factorial
+N = getN()
 
-A = [1, 2, 5, 7, 11, 13, 16]
-M = 4
-C = 3
+# N!の因数 = (2の因数) + (3の因数)...
+# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
+mod = 10 ** 9 + 7
+ans = 1
+# それぞれの因数となる素数の数をセットする
+dp = [0] * (N + 1)
 
-for bit in range(1 << len(A)):
-    cnt = []
-    for i in range(len(A)):
-        if bit & (1 << i):
-            cnt.append(A[i])
-    if len(cnt) == 4:
-        for i in range(1, len(cnt)):
-            if cnt[i] - cnt[i - 1] <= C:
-                break
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        if j[0] > 1:
+            dp[j[0]] += j[1]
+# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
+for i in dp:
+    if i > 0:
+        ans = (ans * (i + 1)) % mod
+print(ans % mod)
+
+# ABC090 D - Remainder Reminder
+# 数え上げ
+N, K = getNM()
+sum = 0
+for b in range(1, N + 1):
+    opt1 = (N // b) * max(0, (b - K))
+    if K == 0:
+        opt2 = N % b
+    else:
+        opt2 = max(0, (N % b) - K + 1)
+    sum += (opt1 + opt2)
+print(sum)
+
+# 094 D - Binomial Coefficients
+# combはrを真ん中に設定すると大きくなる
+
+N = getN()
+A = getList()
+A.sort()
+
+max = max(A)
+index = bisect_left(A, max / 2)
+if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
+    ans = [max, A[index]]
+else:
+    ans = [max, A[index - 1]]
+print(*ans)
+
+# ABC096 D - Five, Five Everywhere
+# 素数はmod nでグルーピングできる
+N = getN()
+
+# エラストテネスの篩
+prime = [2]
+max = 55555
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
+
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
+
+prime = sorted(prime)
+
+prime = [i for i in prime if i % 5 == 1]
+print(*prime[:N])
+
+# ABC114 D - 756
+N = getN()
+
+def prime_factorize(n):
+    divisors = []
+    # 27(2 * 2 * 7)の7を出すためにtemp使う
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == [] and n != 1:
+        divisors.append([n, 1])
+
+    return divisors
+
+primli = [0] * 101
+# N! の因数を計算する
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        primli[j[0]] += j[1]
+# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
+# 75 = 3 * 3 * 5なので例えば
+# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
+alta = []
+for i in primli:
+    if i != 0:
+        alta.append(i + 1)
+
+prim3 = 0
+prim5 = 0
+prim15 = 0
+prim25 = 0
+prim75 = 0
+for i in alta:
+    if i >= 75:
+        prim75 += 1
+    if i >= 25:
+        prim25 += 1
+    if i >= 15:
+        prim15 += 1
+    if i >= 5:
+        prim5 += 1
+    if i >= 3:
+        prim3 += 1
+
+ans = 0
+if prim3 >= 1 and prim5 >= 2:
+    # prim5 C 2
+    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
+if prim15 >= 1 and prim5 >= 1:
+    ans += prim15 * (prim5 - 1)
+if prim25 >= 1 and prim3 >= 1:
+    ans += prim25 * (prim3 - 1)
+if prim75 >= 1:
+    ans += prim75
+print(ans)
+
+N, M = getNM()
+A = [int(i) // 2 for i in input().split()]
+
+# 4と8の場合
+# 2 6 10 14 18...
+# 4 12 20 28... これを２で割ると
+
+# 1 3 5 7 9...
+# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
+
+# 4と12なら
+# 2 6 10 14 18...
+# 6 18 30 42... これを２で割ると
+# 1 3 5 7 9...
+# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
+
+# Aの各要素がどれも2でn回ちょうど割れる必要がある
+def div_2(n):
+    cnt = n
+    res = 0
+    while cnt > 0:
+        if cnt % 2 == 0:
+            cnt //= 2
+            res += 1
         else:
-            print(cnt)
+            return res
 
-# python index.py
-[1, 5, 11, 16]
-[1, 7, 11, 16]
-[2, 7, 11, 16]
+def lcm(x, y):
+    return x * (y // gcd(x, y))
 
-A = [1, 2, 5, 10, 24]
-M = 3
-C = 2
-[1, 5, 10]
-[2, 5, 10]
-[1, 5, 24]
-[2, 5, 24]
-[1, 10, 24]
-[2, 10, 24]
-[5, 10, 24]
-[1, 5, 10, 24] M + 1回以上ジャンプできる場合には答えが[]になる
-A[0]から頑張ってもM回しかジャンプできない
+judge = [div_2(i) for i in A]
 
-間がC + 1以上離れたM個の集合はどのように求める？
-必ず働く日の特性は？
-動かすと？
-場所は固定？
-"""
-# N, K, C = getNM()
-# S = getN()
-
-N, K, C = getNM()
-S = input()
-
-# i回目に選べる要素の上限と下限を比べる
-place = []
-for i in range(N):
-    if S[i] == 'o':
-        place.append(i)
-
-# 下限 出来るだけ前の仕事を選べるように
-fore = [place[0]]
-for i in place[1:]:
-    if i - fore[-1] > C:
-        fore.append(i)
-
-# 上限 出来るだけ後ろの仕事を選ぶように
-back = deque([])
-back.append(place[-1])
-for i in place[::-1]:
-    if back[0] - i > C:
-        back.appendleft(i)
-back = list(back)
-
-if len(fore) != K:
-    print()
+if min(judge) != max(judge):
+    print(0)
     exit()
+L = 1
+for i in range(N):
+    L = lcm(L, A[i])
 
-ans = []
-for a, b in zip(fore, back):
-    if a == b:
-        ans.append(a + 1)
+# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
+print(M // L - M // (2 * L))
 
-for i in ans:
-    print(i)
+# ABC152 E - Flatten
+# 大きい数は因数で持つ
+N = getN()
+A = getList()
+prime_list = defaultdict(int)
 
+for i in range(N):
+    prime = prime_factorize(A[i])
+    for j in prime:
+        prime_list[j[0]] = max(prime_list[j[0]], j[1])
 
-"""
-fore = [0] * N
-if S[0] == 'o':
-    fore[0] = 1
+num = 1
+for key, value in prime_list.items():
+    num *= key ** value
+    num %= mod
 
-for i in range(1, N):
-    fore[i] = fore[i - 1]
-    if S[i] == 'o' and i - C - 1 >= 0:
-        fore[i] = max(fore[i], fore[i - C - 1] + 1)
+# 1/A[i]のmod
+lim = 10 ** 6 + 1
+fact = [1, 1]
+inv = [0, 1]
 
-back = [float('inf')] * N
-ma = max(fore)
-if S[N - 1] == 'o':
-    back[N - 1] = ma
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
 
-for i in range(N - 2, -1, -1):
-    back[i] = min(ma, back[i + 1])
-    if S[i] == 'o' and i + C + 1 < N:
-        back[i] = min(back[i], back[i + C + 1] - 1)
-print(back)
-"""
+ans = 0
+for i in A:
+    opt = (num * inv[i]) % mod
+    ans += opt
+    ans %= mod
+print(ans % mod)
+
+# ABC161 F - Division or Subtraction
+N = getN()
+
+# 手順としては
+# ①　kで出来るだけ割る
+# ②　kで引いていく　N = mk + d(d = 1, 2, 3...)とすると,　引いて残る数はm(k - 1) + d
+# つまりkで割り切れず、引いても引いても永遠に①に戻ることはない
+
+# N = k ** i * (mk + 1)となるkの数を求める
+# i == 0の時
+# kがなんであれk ** iは１になるので
+# N = mk + 1、つまりN - 1がkの倍数であればそのkは条件を満たす
+# N - 1の約数（１以外）が候補
+
+ans = set()
+for i in make_divisors(N - 1):
+    if i != 1:
+        ans.add(i)
+
+# 割れるだけ割る関数
+def dividor(x, k):
+    if k == 1:
+        return 0
+    n = x
+    while True:
+        if n % k == 0:
+            n //= k
+        else:
+            break
+    return n
+
+# i >= 1の時
+# 候補はNの約数
+for prim in make_divisors(N):
+    if prim == 1:
+        continue
+    # Nを割れるだけ割る
+    alta = dividor(N, prim)
+    if alta == 1:
+        ans.add(prim)
+        continue
+    if alta >= prim and alta % prim == 1:
+        ans.add(prim)
+
+print(len(ans))
