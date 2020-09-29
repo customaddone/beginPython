@@ -49,269 +49,117 @@ mod = 998244353
 # Main Code #
 #############
 
-#####segfunc#####
-def segfunc(x, y):
-    return min(x, y)
-#################
-#####ide_ele#####
-ide_ele = float('inf')
-#################
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-    def query(self, l, r):
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-N, M = getNM()
-seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
-L = [getList() for i in range(N)]
-L.sort()
-seg.update(0, 0)
-# [0, 1, 2, 3, 4, 5]
-# seg.query(0, 2): [0, 1]の最小値
-# seg.query(2, 2 + 1): [2]の最小値
-# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
-for l, r, c in L:
-    opt = seg.query(l, r)
-    vs = seg.query(r, r + 1)
-    seg.update(r, min(vs, opt + c))
-print(seg.query(M, M + 1))
+# ABC161 E - Yutori
+"""
+N日間のうちK日選んで働く
+働いたらそれからC日間は働かない
+Sにxがついていたら働かない
 
-#####segfunc#####
-def segfunc(x, y):
-    return x * y
-#################
-#####ide_ele#####
-ide_ele = 1
-#################
-class SegTree:
-    """
-    init(init_val, ide_ele): 配列init_valで初期化 O(N)
-    update(k, x): k番目の値をxに更新 O(logN)
-    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
-    """
-    def __init__(self, init_val, segfunc, ide_ele):
-        """
-        init_val: 配列の初期値
-        segfunc: 区間にしたい操作
-        ide_ele: 単位元
-        n: 要素数
-        num: n以上の最小の2のべき乗
-        tree: セグメント木(1-index)
-        """
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-    def update(self, k, x):
-        """
-        k番目の値をxに更新
-        k: index(0-index)
-        x: update value
-        """
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-    def query(self, l, r):
-        """
-        [l, r)のsegfuncしたものを得る
-        l: index(0-index)
-        r: index(0-index)
-        """
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+oの付いてる日のみ働く
+全ての通りを求めてみよう
 
-#ABC157 E - Simple String Queries 
-N = 7
-s = 'abcdbbd'
-Q = 6
-query = [
-[2, 3, 6],
-[1, 5, 'z'],
-[2, 1, 1],
-[1, 4, 'a'],
-[1, 7, 'd'],
-[2, 1, 7]
-]
-S = []
-for i in s:
-    # 面倒なので文字を数値化
-	S.append(ord(i) - ord("a"))
-seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
-# 入力
-for i in range(N):
-	seg[S[i]].update(i, 0)
-for i in range(Q):
-    a, b, c = query[i]
-    if int(a) == 1:
-        b = int(b) - 1
-        # Sのb番目にある文字をupdate
-        seg[S[b]].update(b, 1)
-        t = ord(c) - ord("a")
-        seg[t].update(b, 0)
-        S[b] = t
-    else:
-        b = int(b) - 1
-        c = int(c)
-        cnt = 0
-        for se in seg:
-            # 1 * 1 * 0 * 1 *...
-            # 区間内に一つでも0があれば0
-            if se.query(b, c) == 0:
-                cnt += 1
-        print(cnt)
+N, K, C = 11, 3, 2
+S = ooxxxoxxxoo の時
+働けるのは[1, 2, 6, 10, 11]日目
+ここから3つ以上間が空く条件で3つ選ぶと条件を満たす
+全ての通りでi日目に働く必要がある
 
+A = [1, 2, 5, 7, 11, 13, 16]
+M = 4
+C = 3
 
-def segfunc(x, y):
-    return min(x, y)
+for bit in range(1 << len(A)):
+    cnt = []
+    for i in range(len(A)):
+        if bit & (1 << i):
+            cnt.append(A[i])
+    if len(cnt) == 4:
+        for i in range(1, len(cnt)):
+            if cnt[i] - cnt[i - 1] <= C:
+                break
+        else:
+            print(cnt)
 
-ide_ele = float('inf')
+# python index.py
+[1, 5, 11, 16]
+[1, 7, 11, 16]
+[2, 7, 11, 16]
 
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+A = [1, 2, 5, 10, 24]
+M = 3
+C = 2
+[1, 5, 10]
+[2, 5, 10]
+[1, 5, 24]
+[2, 5, 24]
+[1, 10, 24]
+[2, 10, 24]
+[5, 10, 24]
+[1, 5, 10, 24] M + 1回以上ジャンプできる場合には答えが[]になる
+A[0]から頑張ってもM回しかジャンプできない
 
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
+間がC + 1以上離れたM個の集合はどのように求める？
+必ず働く日の特性は？
+動かすと？
+場所は固定？
+"""
+# N, K, C = getNM()
+# S = getN()
 
-    def query(self, l, r):
-        res = self.ide_ele
-
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-
-# ABC146 F - Sugoroku
-# 最短手数k回でクリアできるとすると、
-# 1 ~ M　の内１つをk回選んで合計をNにする
-N, M = getNM()
+N, K, C = getNM()
 S = input()
-trap = set()
-for i in range(len(S)):
-    if S[i] == '1':
-        trap.add(i)
 
-# これABC011 123引き算と同じでは
+# i回目に選べる要素の上限と下限を比べる
+place = []
+for i in range(N):
+    if S[i] == 'o':
+        place.append(i)
 
-# 案1 dpを使う
-# dp[i]: iマスに止まる時の最短手順
-# dp[i]の時 dp[i + 1] ~ dp[i + M]についてmin(dp[i] + 1, dp[i + j])を見ていく
-# 決まったらdpを前から見ていき最短手順がdp[i] - 1になるものを探す（辞書順）
-# → M <= 10 ** 5より多分無理
+# 下限 出来るだけ前の仕事を選べるように
+fore = [place[0]]
+for i in place[1:]:
+    if i - fore[-1] > C:
+        fore.append(i)
 
-# セグ木使えばいける？
-# dp[i] = dp[i - M] ~ dp[i - 1]の最小値 + 1
-# dp[i - M] ~ dp[i - 1]の最小値はlogNで求められるので全体でNlogN
+# 上限 出来るだけ後ろの仕事を選ぶように
+back = deque([])
+back.append(place[-1])
+for i in place[::-1]:
+    if back[0] - i > C:
+        back.appendleft(i)
+back = list(back)
 
-dp = [float('inf')] * (N + 1)
-dp[0] = 0
-seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
-seg.update(0, 0)
-
-# dp[i]をレコード
-for i in range(1, N + 1):
-    # もしドボンマスなら飛ばす（float('inf')のまま）
-    if i in trap:
-        continue
-    # dp[i - M] ~ dp[i - 1]の最小値をサーチ
-    min_t = seg.query(max(0, i - M), i)
-    seg.update(i, min_t + 1)
-    dp[i] = min_t + 1
-
-# goalに到達できないなら
-if dp[-1] == float('inf'):
-    print(-1)
+if len(fore) != K:
+    print()
     exit()
 
-# 何回の試行で到達できるかをグルーピング
-dis = [[] for i in range(dp[-1] + 1)]
-for i in range(len(dp)):
-    if dp[i] == float('inf'):
-        continue
-    dis[dp[i]].append(i)
-
-# ゴールから巻き戻っていく
-now = dp[-1]
-now_index = N
 ans = []
-# 辞書順で1 4 4 < 3 3 3なので
-# 一番前にできるだけ小さい数が来るようにする
-for i in range(now, 0, -1):
-    # dp[i] - 1回で到達できる
-    # 現在地点からMマス以内
-    # で最も現在地点から遠いところが１つ前のマス
-    index = bisect_left(dis[i - 1], now_index - M)
-    # サイコロの目を決める
-    ans.append(now_index - dis[i - 1][index])
-    # 現在地点更新
-    now_index = dis[i - 1][index]
+for a, b in zip(fore, back):
+    if a == b:
+        ans.append(a + 1)
 
-for i in ans[::-1]:
+for i in ans:
     print(i)
+
+
+"""
+fore = [0] * N
+if S[0] == 'o':
+    fore[0] = 1
+
+for i in range(1, N):
+    fore[i] = fore[i - 1]
+    if S[i] == 'o' and i - C - 1 >= 0:
+        fore[i] = max(fore[i], fore[i - C - 1] + 1)
+
+back = [float('inf')] * N
+ma = max(fore)
+if S[N - 1] == 'o':
+    back[N - 1] = ma
+
+for i in range(N - 2, -1, -1):
+    back[i] = min(ma, back[i + 1])
+    if S[i] == 'o' and i + C + 1 < N:
+        back[i] = min(back[i], back[i + C + 1] - 1)
+print(back)
+"""
