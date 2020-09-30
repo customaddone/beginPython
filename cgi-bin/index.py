@@ -49,155 +49,300 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC038 D-プレゼント
-class BIT:
+class UnionFind():
     def __init__(self, n):
         self.n = n
-        self.data = [0] * (n + 1)
+        self.parents = [-1] * n
 
-    def ope(self, x, y):
-        return max(x, y)
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-    def update(self, i, v):
-        j = i
-        while j <= self.n:
-            self.data[j] = self.ope(self.data[j], v)
-            j += j & -j
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-    def query(self, i):
-        ret = 0
-        j = i
-        while 0 < j:
-            ret = self.ope(self.data[j], ret)
-            j &= (j - 1)
-        return ret
+        if x == y:
+            return
 
-bit = BIT(10 ** 5)
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
 
-for w, h in que:
-    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
-    # 最初は0個
-    q = bit.query(h - 1)
-    # 高さhの時の箱の数を更新
-    bit.update(h, q + 1)
-print(bit.query(10 ** 5))
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
 
-# ABC140 E - Second Sum
-# [Pl, Pr]間で２番目に大きいものの総和を
-# l, rについてのnC2通りの全てについて求めよ
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
 
-# 8 2 7 3 4 5 6 1
-# 8 2: 2
-# 8 2 7: 7
-# 2 7 3: 3
-# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
-# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
+    def size(self, x):
+        return -self.parents[self.find(x)]
 
-# N <= 10 ** 5
-# Piが２番目になる通りが何通り　みたいな感じで求められる？
-# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
 
-# ヒープキューとか使える？
-# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
-# 尺取り使える？
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
 
-# 累積？　一番
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
 
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
+# ABC002 派閥
+# 条件
+# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
+# (i, j)がqueryに含まれる
 
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
+# この人数nの最大値を求める
 
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
+# 集合Aの取り方は？
+# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
+N, M = getNM()
+mem = set()
+for i in range(M):
+    a, b = getNM()
+    mem.add((a - 1, b - 1))
 
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self,w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
-N = getN()
-P = getList()
-dic = {}
-bit = BIT(N)
-for i in range(N):
-    dic[P[i]] = i + 1
-
-# 両端に何もない時用
-# [0] + Pの各要素 + [N + 1]みたいになる
-dic[0] = 0
-dic[N + 1] = N + 1
 ans = 0
-
-for i in range(N, 0, -1):
-    # 8のインデックス、7のインデックス...に1を登録していく
-    bit.add(dic[i], 1)
-    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
-    c = bit.get(dic[i] + 1)
-    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
-    # l2: l1の一つ左側にあるもの
-    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
-    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
-    # r2: r1の一つ右側にあるもの
-    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
-    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
-    ans += S * i
+for bit in range(1 << N):
+    # 任意のi, jについてqueryに含まれているか判定
+    flag = True
+    for i in range(N):
+        for j in range(i + 1, N):
+            # 適当に選んだ２人がbitの中に含まれていれば
+            if bit & (1 << i) and bit & (1 << j):
+                if not (i, j) in mem:
+                    flag = False
+    # もし集合bitが条件を満たすなら人数を調べる
+    if flag:
+        opt = bin(bit).count('1')
+        ans = max(ans, opt)
 print(ans)
 
-# ABC174 F - Range Set Query
+# ABC040 D - 道路の老朽化対策について
+# 人によって通れる橋が限定される場合がある
+# クエリソートしてUnion Find
 
-# 色の種類
-# 同じ色のボールがある場合、どの情報があれば良いか
-# 最もrに近いボールの位置がわかればいい
-N, Q = getNM()
-C = getList()
-que = []
+N, M = getNM()
+bridge = [getList() for i in range(M)]
+Q = getN()
+resident = []
 for i in range(Q):
-    l, r = getNM()
-    que.append([i, l, r])
+    a, b = getNM()
+    resident.append([a, b, i])
 
-que_list = [[] for i in range(N + 1)]
+bridge.sort(reverse = True, key = lambda i:i[2])
+resident.sort(reverse = True, key = lambda i:i[1])
+
+U = UnionFind(N)
+
+ans = []
+index = 0
 for i in range(Q):
-    que_list[que[i][2]].append(que[i])
+    # 建築年が新しい順に橋をかけていく
+    for j in range(index, M):
+        if bridge[j][2] > resident[i][1]:
+            a, b, c = bridge[j]
+            U.union(a - 1, b - 1)
+        else:
+            index = j
+            break
+    # U.sizeで判定
+    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
 
-c_place = [-1] * (max(C) + 1)
-bit = BIT(N + 1)
+# 国民を登場順にソート
+ans.sort(key = lambda i: i[0])
+for i in ans:
+    print(i[1])
 
-ans = [0] * Q
-for i in range(1, N + 1):# 1-indexなので　配列参照する際はi - 1
+# ABC097 D - Equals
+# 同じ島のところにしか飛べない
+N, M = getNM()
+# 1 ~ 5の並び替え
+# これを1, 2, 3, 4, 5にしたい
+P = getList()
+# Pのうちのペア
+query = []
+for i in range(M):
+    a, b = getNM()
+    query.append([a, b])
 
-    if c_place[C[i - 1]] == -1: # 新規
-        c_place[C[i - 1]] = i
-        bit.add(i, 1)
-    else: # 更新
-        bit.add(c_place[C[i - 1]], -1)
-        c_place[C[i - 1]] = i
-        bit.add(i, 1)
+U = UnionFind(N)
+for i in range(M):
+    a, b = query[i]
+    U.union(a - 1, b - 1)
 
-    if len(que_list[i]) > 0: # i == rのqueryに答える
-        for index, l, r in que_list[i]:
-            ans[index] = bit.cum(l, r + 1)
+cnt = 0
+for i in range(N):
+    if U.same(P[i] - 1, i):
+        cnt += 1
 
+print(cnt)
+
+# ABC120 D - Decayed Bridges
+# クエリソート
+N, M = getNM()
+query = [getNM() for i in range(M)]
+
+U = UnionFind(N)
+now = cmb_list[N]
+ans = [now]
+
+for i in range(M - 1, 0, -1):
+    a, b = query[i]
+    size_a = 0
+    size_b = 0
+    if not U.same(a - 1, b - 1):
+        size_a = U.size(a - 1)
+        size_b = U.size(b - 1)
+
+        U.union(a - 1, b - 1)
+        size_after = U.size(a - 1)
+
+        now -= (cmb_list[size_after] - cmb_list[size_a] - cmb_list[size_b])
+    else:
+        U.union(a - 1, b - 1)
+    ans.append(now)
+
+for i in range(M - 1, -1, -1):
+    print(ans[i])
+
+# ABC126 E - 1 or 2
+# カードN枚
+# 各カードには1か2が書かれている
+N, M = getNM()
+# A1 + A2 + 1は偶数
+query = []
+
+for i in range(M):
+    a, b, c = getNM()
+    query.append([a, b, c])
+
+U = UnionFind(N)
+for i in query:
+    U.union(i[0] - 1, i[1] - 1)
+
+print(U.group_count())
+
+# ABC157 D - Friend Suggestions
+N, M, K = getNM()
+F = [getList() for i in range(M)]
+B = [getList() for i in range(K)]
+
+# 友人候補の数を答える
+# 各人につきO(1)で答える
+
+# 集合の足し引きで答える
+# U.same(a) = {aと友人関係にあるもの、aとブロック関係、その他}
+# U.same(a) - aと友人関係にあるもの - aとブロック関係が答え
+# まずUnionfind
+
+U = UnionFind(N)
+for a, b in F:
+    U.union(a - 1, b - 1)
+
+# U.same(i)の人数を答える
+ans = [0] * N
+for i in range(N):
+    ans[i] = U.size(i)
+
+# U.same内のaと友人関係にあるもの, aとブロック関係にあるものを引く
+# 同じグループ内にいる時だけ関係する
+for a, b in F:
+    if U.same(a - 1, b - 1):
+        ans[a - 1] -= 1
+        ans[b - 1] -= 1
+
+for c, d in B:
+    if U.same(c - 1, d - 1):
+        ans[c - 1] -= 1
+        ans[d - 1] -= 1
+
+ans = [i - 1 for i in ans] # 自身を引く
+print(*ans)
+
+# 各1 ~ Nに交易所を立てるのを0~Nにエッジを貼るのに見立てる
+N, M = getNM()
+edges = []
+for i in range(N):
+    c = getN()
+    edges.append((c, 0, i + 1))
+for i in range(M):
+    s, t, w = getNM()
+    edges.append((w, s, t))
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(N + 1, edges))
+
+# 駐車場
+N, M, S = getNM()
+S -= 1
+dist = [[] for i in range(N)]
+for i in range(M):
+    v1, v2 = getNM()
+    v1 -= 1
+    v2 -= 1
+    v1, v2 = min(v1, v2), max(v1, v2)
+    dist[v1].append(v2)
+
+U = UnionFind(N)
+
+ans = []
+for i in range(N - 1, -1, -1):
+    # 地点iに車を駐める場合、一端がiの道は使えない
+    # → iに車を停める以前であれば,一端がiの道を使える
+    for j in dist[i]:
+        U.union(i, j)
+    if U.same(i, S):
+        ans.append(i + 1)
+ans.sort()
 for i in ans:
     print(i)
+
+# ABC065 built?
+# xでソート、yでソートし、それぞれ
+# abs(a - b)とabs(c - d)のエッジをそれぞれ加える
+# どちらか短い方が使われる
+N = getN()
+query = []
+for i in range(N):
+    a, b = getNM()
+    query.append([a, b, i])
+
+q_a = sorted(query, key = lambda i: i[0])
+q_b = sorted(query, key = lambda i: i[1])
+edges = []
+
+a1 = q_a[0]
+b1 = q_b[0]
+for i in range(1, N):
+    a2 = q_a[i]
+    b2 = q_b[i]
+    edges.append([abs(a1[0] - a2[0]), a1[2], a2[2]])
+    edges.append([abs(b1[1] - b2[1]), b1[2], b2[2]])
+    a1, b1 = a2, b2
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+        if U.size(0) == N:
+            break
+    return res
+print(kruskal(N, edges))
