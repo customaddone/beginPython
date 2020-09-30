@@ -49,82 +49,155 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC007 幅優先探索
-r, c = map(int, input().split())
-sy, sx = map(int, input().split())
-gx, gy = map(int, input().split())
-sy -= 1
-sx -= 1
-gx -= 1
-gy -= 1
+# ABC038 D-プレゼント
+class BIT:
+    def __init__(self, n):
+        self.n = n
+        self.data = [0] * (n + 1)
 
-maze = []
-ans = float('inf')
+    def ope(self, x, y):
+        return max(x, y)
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+    def update(self, i, v):
+        j = i
+        while j <= self.n:
+            self.data[j] = self.ope(self.data[j], v)
+            j += j & -j
 
-pos = deque([[sx, sy, 0]])
-dp = [[-1] * (c + 1) for i in range(r + 1)]
-dp[sx][sy] = 0
+    def query(self, i):
+        ret = 0
+        j = i
+        while 0 < j:
+            ret = self.ope(self.data[j], ret)
+            j &= (j - 1)
+        return ret
 
-for i in range(r):
-    c = input()
-    maze.append(list(c))
+bit = BIT(10 ** 5)
 
-while len(pos) > 0:
-    x, y, depth = pos.popleft()
-    if x == gx and y == gy:
-        break
-    maze[x][y] = '#'
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if maze[nx][ny] == "." and dp[nx][ny] == -1:
-            pos.append([nx, ny, depth + 1])
-            dp[nx][ny] = dp[x][y] + 1
-print(dp[gx][gy])
+for w, h in que:
+    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
+    # 最初は0個
+    q = bit.query(h - 1)
+    # 高さhの時の箱の数を更新
+    bit.update(h, q + 1)
+print(bit.query(10 ** 5))
 
-# ABC176 D - Wizard in Maze
-H, W = getNM()
-Ch, Cw = getNM()
-Dh, Dw = getNM()
-maze = [input() for i in range(H)]
-Ch -= 1
-Cw -= 1
-Dh -= 1
-Dw -= 1
+# ABC140 E - Second Sum
+# [Pl, Pr]間で２番目に大きいものの総和を
+# l, rについてのnC2通りの全てについて求めよ
 
-# ワープを最低で何回使うか
-# 上下左右2つ向こうまでの範囲内でワープできる
-# 隣接する'.'が領域
+# 8 2 7 3 4 5 6 1
+# 8 2: 2
+# 8 2 7: 7
+# 2 7 3: 3
+# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
+# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+# N <= 10 ** 5
+# Piが２番目になる通りが何通り　みたいな感じで求められる？
+# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
 
-pos = deque([[Ch, Cw]])
-dp = [[-1] * W for i in range(H)]
-dp[Ch][Cw] = 0
+# ヒープキューとか使える？
+# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
+# 尺取り使える？
 
-while len(pos) > 0:
-    y, x = pos.popleft()
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        # 歩いて移動
-        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] == "." and (dp[ny][nx] == -1 or dp[y][x] < dp[ny][nx]):
-            # 0-1 bfs
-            # 先頭に置く
-            pos.appendleft([ny, nx])
-            dp[ny][nx] = dp[y][x]
-    # ワープ
-    for i in range(-2, 3):
-        for j in range(-2, 3):
-            wy = y + i
-            wx = x + j
-            # 歩いて移動不可能でないと使わない
-            if 0 <= wx < W and 0 <= wy < H and maze[wy][wx] == "." and dp[wy][wx] == -1:
-                pos.append([wy, wx])
-                dp[wy][wx] = dp[y][x] + 1
+# 累積？　一番
 
-print(dp[Dh][Dw])
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
+
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
+
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
+
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
+
+    def lowerbound(self,w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
+
+N = getN()
+P = getList()
+dic = {}
+bit = BIT(N)
+for i in range(N):
+    dic[P[i]] = i + 1
+
+# 両端に何もない時用
+# [0] + Pの各要素 + [N + 1]みたいになる
+dic[0] = 0
+dic[N + 1] = N + 1
+ans = 0
+
+for i in range(N, 0, -1):
+    # 8のインデックス、7のインデックス...に1を登録していく
+    bit.add(dic[i], 1)
+    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
+    c = bit.get(dic[i] + 1)
+    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
+    # l2: l1の一つ左側にあるもの
+    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
+    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
+    # r2: r1の一つ右側にあるもの
+    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
+    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
+    ans += S * i
+print(ans)
+
+# ABC174 F - Range Set Query
+
+# 色の種類
+# 同じ色のボールがある場合、どの情報があれば良いか
+# 最もrに近いボールの位置がわかればいい
+N, Q = getNM()
+C = getList()
+que = []
+for i in range(Q):
+    l, r = getNM()
+    que.append([i, l, r])
+
+que_list = [[] for i in range(N + 1)]
+for i in range(Q):
+    que_list[que[i][2]].append(que[i])
+
+c_place = [-1] * (max(C) + 1)
+bit = BIT(N + 1)
+
+ans = [0] * Q
+for i in range(1, N + 1):# 1-indexなので　配列参照する際はi - 1
+
+    if c_place[C[i - 1]] == -1: # 新規
+        c_place[C[i - 1]] = i
+        bit.add(i, 1)
+    else: # 更新
+        bit.add(c_place[C[i - 1]], -1)
+        c_place[C[i - 1]] = i
+        bit.add(i, 1)
+
+    if len(que_list[i]) > 0: # i == rのqueryに答える
+        for index, l, r in que_list[i]:
+            ans[index] = bit.cum(l, r + 1)
+
+for i in ans:
+    print(i)
