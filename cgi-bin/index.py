@@ -49,300 +49,334 @@ mod = 998244353
 # Main Code #
 #############
 
-def prime_factorize(n):
-    divisors = []
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == []:
-        divisors.append([n, 1])
+A = [3, 4, -8]
+# array内の連続する区間の総和
+def imos_sum(A):
+    n = len(A)
+    imos = [0]
+    for i in range(n):
+        imos.append(imos[i] + A[i])
+    for i in range(n):
+        for j in range(i + 1, n + 1):
+            print(imos[j] - imos[i])
+imos_sum(A)
 
-    return divisors
+# roopする配列の長さk以下の区間和
+def roop_imos(array, k):
+    n = len(array)
+    alta = copy.deepcopy(array)
+    alta += alta
+    imos = [0]
+    for i in range(len(alta)):
+        imos.append(imos[i] + alta[i])
+    for i in range(n):
+        for j in range(1, k + 1):
+            print(imos[i + j] - imos[i])
+# roop_imos(A, 2)
 
-# ABC052 C - Factors of Factorial
+# ABC005 D - おいしいたこ焼きの焼き方
 N = getN()
+maze = [getList() for i in range(N)]
+Q = getN()
+query = getArray(Q)
 
-# N!の因数 = (2の因数) + (3の因数)...
-# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
-mod = 10 ** 9 + 7
-ans = 1
-# それぞれの因数となる素数の数をセットする
-dp = [0] * (N + 1)
+# 二次元累積和
+dp = [[0] * N for i in range(N)]
+# 縦１行目、横１行目
+for i in range(N):
+    dp[i][0] = maze[i][0]
+for i in range(N):
+    for j in range(1, N):
+        dp[i][j] = dp[i][j - 1] + maze[i][j]
+# 全て
+for i in range(1, N):
+    for j in range(N):
+        dp[i][j] += dp[i - 1][j]
 
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        if j[0] > 1:
-            dp[j[0]] += j[1]
-# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
-for i in dp:
-    if i > 0:
-        ans = (ans * (i + 1)) % mod
-print(ans % mod)
+# 採点マシーン
+def judge(sx, sy, ex, ey):
+    mother = dp[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
 
-# ABC090 D - Remainder Reminder
-# 数え上げ
-N, K = getNM()
-sum = 0
-for b in range(1, N + 1):
-    opt1 = (N // b) * max(0, (b - K))
-    if K == 0:
-        opt2 = N % b
-    else:
-        opt2 = max(0, (N % b) - K + 1)
-    sum += (opt1 + opt2)
-print(sum)
+# 「大きさNの時の美味しさ」のリスト
+anslist = [0] * (N ** 2 + 1)
+for nsx in range(N):
+    for nex in range(nsx, N):
+        for nsy in range(N):
+            for ney in range(nsy, N):
+                opt = judge(nsx, nsy, nex, ney)
+                #print(opt, [nsx, nsy, nex, ney])
+                index = (nex - nsx + 1) * (ney - nsy + 1)
+                anslist[index] = max(anslist[index], opt)
 
-# 094 D - Binomial Coefficients
-# combはrを真ん中に設定すると大きくなる
+# 「大きさN以下の時の美味しさ」のリスト
+ans_alta = [0] * (N ** 2 + 1)
+for i in range(1, len(ans_alta)):
+    ans_alta[i] = max(ans_alta[i - 1], anslist[i])
 
-N = getN()
-A = getList()
-A.sort()
+for i in query:
+    print(ans_alta[i])
 
-max = max(A)
-index = bisect_left(A, max / 2)
-if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
-    ans = [max, A[index]]
-else:
-    ans = [max, A[index - 1]]
-print(*ans)
+# ABC014 atcolor
+n = int(input())
+lista = []
+for i in range(n):
+    a, b = map(int, input().split())
+    lista.append([a, b])
+listb = [0] * (10 ** 6 + 2)
+for i in lista:
+    listb[i[0]] += 1
+    listb[i[1] + 1] -= 1
+listc = [0]
+for i in range(10 ** 6 + 2):
+    listc.append(listb[i] + listc[i])
+print(max(listc))
 
-# ABC096 D - Five, Five Everywhere
-# 素数はmod nでグルーピングできる
-N = getN()
+# ABC017 C - ハイスコア
 
-# エラストテネスの篩
-prime = [2]
-max = 55555
-limit = int(math.sqrt(max))
-data = [i + 1 for i in range(2, max, 2)]
+# 全ての区間を選ばないように
+# 二次元累積?
+# 区間累積
 
-while limit > data[0]:
-    prime.append(data[0])
-    data = [j for j in data if j % data[0] != 0]
-prime = prime + data
+# queryを「lでスタートするもの」と「rでゴールするもの」という２つの捉え方をする
 
-prime = sorted(prime)
+# N:遺跡(query) M:宝石
+N, M = getNM()
+query = [getList() for i in range(N)]
+if M == 1:
+    print(0)
+    exit()
 
-prime = [i for i in prime if i % 5 == 1]
-print(*prime[:N])
+# r以前の宝石を獲得する遺跡を探索する累積和
+imos_up = [0] * M
+# l以降の宝石を獲得する遺跡を探索する累積和
+imos_down = [0] * M
 
-# ABC114 D - 756
-N = getN()
+for l, r, s in query:
+    imos_up[r - 1] += s
+    imos_down[l - 1] += s
 
-def prime_factorize(n):
-    divisors = []
-    # 27(2 * 2 * 7)の7を出すためにtemp使う
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == [] and n != 1:
-        divisors.append([n, 1])
-
-    return divisors
-
-primli = [0] * 101
-# N! の因数を計算する
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        primli[j[0]] += j[1]
-# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
-# 75 = 3 * 3 * 5なので例えば
-# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
-alta = []
-for i in primli:
-    if i != 0:
-        alta.append(i + 1)
-
-prim3 = 0
-prim5 = 0
-prim15 = 0
-prim25 = 0
-prim75 = 0
-for i in alta:
-    if i >= 75:
-        prim75 += 1
-    if i >= 25:
-        prim25 += 1
-    if i >= 15:
-        prim15 += 1
-    if i >= 5:
-        prim5 += 1
-    if i >= 3:
-        prim3 += 1
+for i in range(1, M):
+    imos_up[i] += imos_up[i - 1]
+    imos_down[M - i - 1] += imos_down[M - i]
 
 ans = 0
-if prim3 >= 1 and prim5 >= 2:
-    # prim5 C 2
-    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
-if prim15 >= 1 and prim5 >= 1:
-    ans += prim15 * (prim5 - 1)
-if prim25 >= 1 and prim3 >= 1:
-    ans += prim25 * (prim3 - 1)
-if prim75 >= 1:
-    ans += prim75
+for i in range(M):
+    # i - 1個以前の宝石を獲得する遺跡、i + 1個以降の遺跡を獲得する遺跡を探索する
+    if i == 0:
+        opt = imos_down[i + 1]
+    elif i == M - 1:
+        opt = imos_up[i - 1]
+    else:
+        opt = imos_up[i - 1] + imos_down[i + 1]
+    ans = max(ans, opt)
 print(ans)
 
-N, M = getNM()
-A = [int(i) // 2 for i in input().split()]
+H, W = 3, 4
+# maze = [getList() for i in range(H)]
+maze = [
+[1, 2, 1, 2],
+[2, 3, 2, 3],
+[1, 3, 1, 3]
+]
 
-# 4と8の場合
-# 2 6 10 14 18...
-# 4 12 20 28... これを２で割ると
+# 二次元累積和
+dp_sum = [[0] * W for i in range(H)]
+dp_1 = [[0] * W for i in range(H)]
+dp_2 = [[0] * W for i in range(H)]
+dp_3 = [[0] * W for i in range(H)]
 
-# 1 3 5 7 9...
-# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
+# x = 0 ~ i, y = 0 ~ j までの数の合計
+def bi_cumul_sum(dp_n):
+    # 縦１行目、横１行目
+    for i in range(H):
+        dp_n[i][0] = maze[i][0]
+    for i in range(H):
+        for j in range(1, W):
+            dp_n[i][j] = dp_n[i][j - 1] + maze[i][j]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_n[i][j] += dp_n[i - 1][j]
+bi_cumul_sum(dp_sum)
+# print(dp_sum)
 
-# 4と12なら
-# 2 6 10 14 18...
-# 6 18 30 42... これを２で割ると
-# 1 3 5 7 9...
-# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
+# x = 0 ~ i, y = 0 ~ j までに出るnumの回数の合計
+def bi_cumul_cnt(num, dp_m):
+    # 縦１行目、横１行目
+    for i in range(H):
+        if maze[i][0] == num:
+            dp_m[i][0] = 1
+    for i in range(H):
+        for j in range(1, W):
+            if maze[i][j] == num:
+                dp_m[i][j] = dp_m[i][j - 1] + 1
+            else:
+                dp_m[i][j] = dp_m[i][j - 1]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_m[i][j] += dp_m[i - 1][j]
+bi_cumul_cnt(3, dp_3)
+# print(dp_1)
 
-# Aの各要素がどれも2でn回ちょうど割れる必要がある
-def div_2(n):
-    cnt = n
-    res = 0
-    while cnt > 0:
-        if cnt % 2 == 0:
-            cnt //= 2
-            res += 1
+# x = sx ~ ex y = sy ~ eyまで
+def judge(sx, sy, ex, ey, dp_l):
+    mother = dp_l[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp_l[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp_l[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp_l[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
+
+print(judge(1, 1, 3, 2, dp_sum))
+print(judge(2, 1, 3, 2, dp_3))
+
+N, M, Q = 10, 3, 2
+query = [
+[1, 5],
+[2, 8],
+[7, 10],
+[1, 7],
+[3, 10]
+]
+
+# l から rまで行く鉄道の数
+lr = [[0 for i in range(N + 1)] for j in range(N + 1)]
+# l から r以前のどこかまで行く鉄道の数
+imos = [[0 for i in range(N + 1)] for j in range(N + 1)]
+imos2 = [[0 for i in range(N + 1)] for j in range(N + 1)]
+
+for i in query:
+    l, r = i
+    lr[l][r] += 1
+
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # j - 1以前のどこかまで行くもの　+ jまで行くもの
+        imos[i][j] = imos[i][j - 1] + lr[i][j]
+
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # i - 1以前のどこかからスタート + iスタート
+        imos2[i][j] = imos2[i - 1][j] + lr[i][j]
+
+print(imos2)
+
+"""
+# 飛ばし累積和
+N = 10
+num = [i for i in range(1, N + 1)]
+D = 2
+lista = [0] * N
+for i in range(D):
+    for j in range(i, N, D):
+        if j == i:
+            lista[j] = num[j]
         else:
-            return res
+            lista[j] = num[j] + lista[j - D]
+# [1, 2, 4, 6, 9, 12, 16, 20, 25, 30]
+print(lista)
+# 9番目までの奇数の数字の合計 - 1番目までの奇数の数字の合計
+# 3 + 5 + 7 + 9
+print(lista[8] - lista[0])
+"""
 
-def lcm(x, y):
-    return x * (y // gcd(x, y))
+# Dかそれぞれのqueryで固定なのでこの問題は解ける
+H, W, D = getNM()
+maze = []
+for i in range(H):
+    a = getList()
+    maze.append(a)
+Q = getN()
+# piece[0]からpiece[1]まで
+# 4 → 6　→ 8
+piece = []
+for i in range(Q):
+    l, r = getNM()
+    piece.append([l, r])
 
-judge = [div_2(i) for i in A]
+place_list = [[-1, -1] for i in range(H * W)]
 
-if min(judge) != max(judge):
-    print(0)
-    exit()
-L = 1
-for i in range(N):
-    L = lcm(L, A[i])
+for y in range(H):
+    for x in range(W):
+        place_list[maze[y][x] - 1] = [x, y]
 
-# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
-print(M // L - M // (2 * L))
-
-# ABC152 E - Flatten
-# 大きい数は因数で持つ
-N = getN()
-A = getList()
-prime_list = defaultdict(int)
-
-for i in range(N):
-    prime = prime_factorize(A[i])
-    for j in prime:
-        prime_list[j[0]] = max(prime_list[j[0]], j[1])
-
-num = 1
-for key, value in prime_list.items():
-    num *= key ** value
-    num %= mod
-
-# 1/A[i]のmod
-lim = 10 ** 6 + 1
-fact = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-
-ans = 0
-for i in A:
-    opt = (num * inv[i]) % mod
-    ans += opt
-    ans %= mod
-print(ans % mod)
-
-# ABC161 F - Division or Subtraction
-N = getN()
-
-# 手順としては
-# ①　kで出来るだけ割る
-# ②　kで引いていく　N = mk + d(d = 1, 2, 3...)とすると,　引いて残る数はm(k - 1) + d
-# つまりkで割り切れず、引いても引いても永遠に①に戻ることはない
-
-# N = k ** i * (mk + 1)となるkの数を求める
-# i == 0の時
-# kがなんであれk ** iは１になるので
-# N = mk + 1、つまりN - 1がkの倍数であればそのkは条件を満たす
-# N - 1の約数（１以外）が候補
-
-ans = set()
-for i in make_divisors(N - 1):
-    if i != 1:
-        ans.add(i)
-
-# 割れるだけ割る関数
-def dividor(x, k):
-    if k == 1:
-        return 0
-    n = x
-    while True:
-        if n % k == 0:
-            n //= k
+# 飛ばし累積和
+x_plus = [0] * (H * W)
+y_plus = [0] * (H * W)
+for i in range(D):
+    for j in range(i, H * W, D):
+        if j == i:
+            opt_x = 0
+            opt_y = 0
         else:
-            break
-    return n
+            opt_x = abs(place_list[j][0] - place_list[j - D][0])
+            opt_y = abs(place_list[j][1] - place_list[j - D][1])
+            x_plus[j] = opt_x + x_plus[j - D]
+            y_plus[j] = opt_y + y_plus[j - D]
 
-# i >= 1の時
-# 候補はNの約数
-for prim in make_divisors(N):
-    if prim == 1:
-        continue
-    # Nを割れるだけ割る
-    alta = dividor(N, prim)
-    if alta == 1:
-        ans.add(prim)
-        continue
-    if alta >= prim and alta % prim == 1:
-        ans.add(prim)
+def past_exam(piece_query):
+    start = piece_query[0]
+    goal = piece_query[1]
 
-print(len(ans))
+    x_point = x_plus[goal - 1] - x_plus[start - 1]
+    y_point = y_plus[goal - 1] - y_plus[start - 1]
+    return x_point + y_point
 
-# 三井住友信託銀行プログラミングコンテスト2019 F - Interval Running
+for i in range(Q):
+    print(past_exam(piece[i]))
 
-T1, T2 = 12000, 15700
-A1, A2 = 3390000000, 3810000000
-B1, B2 = 5550000000, 2130000000
+# ABC179 D - Leaping Tak
+# 遅延セグ木
+N, K = getNM()
+que = [getList() for i in range(K)]
 
-# グラフにして考える
-# 周期は同じT1, T2
-# T1の時とT2の時とで順位が入れ替わっているなら出会っている
-t1_diff = (A1 - B1) * T1
-t2_diff = (A1 - B1) * T1 + (A2 - B2) * T2
-if t1_diff == 0 or t2_diff == 0: # 無限に出会う
-    print('infinity')
-    exit()
-if t1_diff * t2_diff > 0: # ずっとどちらかが前にいる
-    print(0)
-    exit()
+dp = [0] * (N + 1) # dp[i] iの時の通りの数
+imos = [0] * (N + 1) # imos[i]: dp[1] ~ dp[i]までの累計
+dp[1] = 1
+imos[1] = 1
 
-# t2_diff分ずつずれていく
+# 貰うdp
+# dp += dp[l] - dp[r]
 
-# 順位が逆転する場合
-# クロスする時とちょうど接する時を考える
-if abs(t1_diff) % abs(t2_diff) == 0:
-    # 最後の１回は１回しかクロスしない
-    print((abs(t1_diff) // abs(t2_diff)) * 2)
-else:
-    print((abs(t1_diff) // abs(t2_diff)) * 2 + 1)
+for i in range(2, N + 1):
+    for l, r in que:
+        if i - l >= 0:
+            dp[i] += imos[i - l] - imos[max((i - r - 1), 0)]
+            dp[i] %= mod
+    imos[i] = dp[i]
+    imos[i] += imos[i - 1]
+    imos[i] %= mod
+
+print(dp[N] % mod)
+
+# 配るdp
+
+dp = [0] * (N + 1)
+dp[1] = 1
+dp[2] = -1
+
+for i in range(1, N + 1):
+    dp[i] += dp[i - 1]
+    dp[i] %= mod
+    for l, r in que:
+        if i + l <= N:
+            dp[i + l] += dp[i]
+        if i + r + 1 <= N:
+            dp[i + r + 1] -= dp[i]
+print(dp[N] % mod)
