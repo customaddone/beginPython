@@ -49,331 +49,358 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC008 C - コイン
-n = getN()
-c = getArray(n)
-sumans = 0
+def prime_factorize(n):
+    divisors = []
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
 
-for i in c:
-    lista = [j for j in c if i % j == 0]
-    count = len(lista)
-    sumans += math.ceil(count / 2) / count
-print(sumans)
+    return divisors
 
-# ABC011 D - 大ジャンプ
-def cmb_1(n, r):
-    r = min(n - r, r)
-    if (r < 0) or (n < r):
-        return 0
+# ABC052 C - Factors of Factorial
+N = getN()
 
-    if n == 0:
-        return 1
+# N!の因数 = (2の因数) + (3の因数)...
+# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
+mod = 10 ** 9 + 7
+ans = 1
+# それぞれの因数となる素数の数をセットする
+dp = [0] * (N + 1)
 
-    if r == 0:
-        return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        if j[0] > 1:
+            dp[j[0]] += j[1]
+# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
+for i in dp:
+    if i > 0:
+        ans = (ans * (i + 1)) % mod
+print(ans % mod)
 
-N, D = getNM()
-X, Y = getNM()
-X = abs(X)
-Y = abs(Y)
+# ABC090 D - Remainder Reminder
+# 数え上げ
+N, K = getNM()
+sum = 0
+for b in range(1, N + 1):
+    opt1 = (N // b) * max(0, (b - K))
+    if K == 0:
+        opt2 = N % b
+    else:
+        opt2 = max(0, (N % b) - K + 1)
+    sum += (opt1 + opt2)
+print(sum)
 
-# X軸に平行に正の向きに飛ぶ回数はx_time + α回
-# X軸に平行に負の向きに飛ぶ回数はα回
-x_time = X // D
-y_time = Y // D
+# 094 D - Binomial Coefficients
+# combはrを真ん中に設定すると大きくなる
 
-if X % D != 0 or Y % D != 0 or N < x_time + y_time:
-    print(0)
-    exit()
+N = getN()
+A = getList()
+A.sort()
 
-N_a = N - (x_time + y_time)
-if N_a % 2 != 0:
-    print(0)
-    exit()
-N_a //= 2
+max = max(A)
+index = bisect_left(A, max / 2)
+if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
+    ans = [max, A[index]]
+else:
+    ans = [max, A[index - 1]]
+print(*ans)
+
+# ABC096 D - Five, Five Everywhere
+# 素数はmod nでグルーピングできる
+N = getN()
+
+# エラストテネスの篩
+prime = [2]
+max = 55555
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
+
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
+
+prime = sorted(prime)
+
+prime = [i for i in prime if i % 5 == 1]
+print(*prime[:N])
+
+# ABC114 D - 756
+N = getN()
+
+def prime_factorize(n):
+    divisors = []
+    # 27(2 * 2 * 7)の7を出すためにtemp使う
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == [] and n != 1:
+        divisors.append([n, 1])
+
+    return divisors
+
+primli = [0] * 101
+# N! の因数を計算する
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        primli[j[0]] += j[1]
+# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
+# 75 = 3 * 3 * 5なので例えば
+# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
+alta = []
+for i in primli:
+    if i != 0:
+        alta.append(i + 1)
+
+prim3 = 0
+prim5 = 0
+prim15 = 0
+prim25 = 0
+prim75 = 0
+for i in alta:
+    if i >= 75:
+        prim75 += 1
+    if i >= 25:
+        prim25 += 1
+    if i >= 15:
+        prim15 += 1
+    if i >= 5:
+        prim5 += 1
+    if i >= 3:
+        prim3 += 1
 
 ans = 0
-for i in range(N_a + 1):
-    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
-print(ans / (4 ** N))
+if prim3 >= 1 and prim5 >= 2:
+    # prim5 C 2
+    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
+if prim15 >= 1 and prim5 >= 1:
+    ans += prim15 * (prim5 - 1)
+if prim25 >= 1 and prim3 >= 1:
+    ans += prim25 * (prim3 - 1)
+if prim75 >= 1:
+    ans += prim75
+print(ans)
 
-# ABC024 D - 動的計画法
-A, B, C = getArray(3)
+N, M = getNM()
+A = [int(i) // 2 for i in input().split()]
 
-# kCc / k+1Cc = k - c + 1 / k + 1
-# k+1Cc+1 / kCc = k + 1 / c + 1
-# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
-x = (C * pow(A, mod - 2, mod)) % mod
-y = (B * pow(A, mod - 2, mod)) % mod
+"""
+全てのAの要素について
+X = ai * (p + 0.5)を満たす負でない整数pが存在する
+1 ~ Mまでに何個あるか M <= 10 ** 9
+M // なんかの数だろ
 
-n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
-k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
-print((n - k) % mod, k % mod)
+N, M = 2, 50
+A = [6, 10]の時
+15 6 * (2 + 0.5)
+   10 * (1 + 0.5)
 
-# ABC058 D - いろはちゃんとマス目
-# 総計する
+45 6 * (7 + 0.5)
+   10 * (4 + 0.5)
+
+X - (ai // 2)がaiの倍数になる
+1 -2, -4
+2 -1, -3
+3 0, -2
+4 1, -1
+5 2, 0...
+
+13 10, 8
+14 11, 9
+15 12, 10 12は6の倍数、10は5の倍数
+
+9 6, 4
+15 12, 10
+21 18, 16
+27 24, 22
+33
+39
+45 42, 40
+51
+57
+
+Xが ai // 2の奇数倍になればいい
+ai // 2 = aとすると
+X = pa
+  = (2n + 1)a
+  = 2na + a となる整数nが存在する
+
+A = [a1, a2, a3]の時半公倍数Xが存在するか ⇆
+alta = [a1 // 2, a2 // 2...]とすると
+a, 3a, 5a...
+b, 3b, 5b...
+c, 3c, 5c...の全てに含まれるXが存在するか
+
+2系列問題
+a, 3a, 5a...
+b, 3b, 5b...
+の両方に含まれる数Xを探す
+pa = qbとなる奇数p, qがそれぞれ存在する
+左右の2の因数は一致しないといけないので
+aとbの2の因数の数が一致しないといけない
+各要素を２で割れる回数が同じならXが存在する
+
+# 4と8の場合
+# 2 6 10 14 18...
+# 4 12 20 28... これを２で割ると
+
+# 1 3 5 7 9...
+# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
+
+# 4と12なら
+# 2 6 10 14 18...
+# 6 18 30 42... これを２で割ると
+
+# 1 3 5 7 9...
+# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
+"""
+
+# Aの各要素がどれも2でn回ちょうど割れる必要がある
+def div_2(n):
+    cnt = n
+    res = 0
+    while cnt > 0:
+        if cnt % 2 == 0:
+            cnt //= 2
+            res += 1
+        else:
+            return res
+
+def lcm(x, y):
+    return x * (y // gcd(x, y))
+
+judge = [div_2(i) for i in A]
+
+if min(judge) != max(judge):
+    print(0)
+    exit()
+L = 1
+for i in range(N):
+    L = lcm(L, A[i])
+
+# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
+print(M // L - M // (2 * L))
+
+# ABC152 E - Flatten
+# 大きい数は因数で持つ
+N = getN()
+A = getList()
+prime_list = defaultdict(int)
+
+for i in range(N):
+    prime = prime_factorize(A[i])
+    for j in prime:
+        prime_list[j[0]] = max(prime_list[j[0]], j[1])
+
+num = 1
+for key, value in prime_list.items():
+    num *= key ** value
+    num %= mod
+
+# 1/A[i]のmod
 lim = 10 ** 6 + 1
 fact = [1, 1]
-factinv = [1, 1]
 inv = [0, 1]
 
 for i in range(2, lim + 1):
     fact.append((fact[-1] * i) % mod)
     inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
-
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-
-H, W, A, B = getNM()
-
-mother = cmb((H - 1) + (W - 1), (W - 1))
-
-goban = cmb((H - A) + (B - 1), B - 1)
-togoal = cmb((A - 1) + (W - B - 1), (W - B - 1))
-
-for i in range(A):
-    row = H - A + i
-    col = B - 1
-    row_left = A - 1 - i
-    col_left = W - B - 1
-    mother -= cmb(row + col, row) * cmb(row_left + col_left, row_left)
-    mother %= mod
-print(mother)
-
-# ABC057 D - Maximum Average Sets
-N, A, B = getNM()
-V = sorted(getList(), reverse = True)
-
-# 1行目の答え　上からA個
-print(sum(V[:A]) / A)
-
-# Vの各要素の数を数える
-dict = defaultdict(int)
-for i in range(N):
-    dict[V[i]] += 1
-
-r = A
-n = 0
-for i in dict.items():
-    print(i)
-    if r - i[1] >= 0:
-        r -= i[1]
-    else:
-        n = i[1] # A個まで残りr個であり、そこには要素i[j]がn個入れられる
-        break
 
 ans = 0
-# V[0] == V[A - 1]ならA個を超えても平均値が下がらない
-# 残りr個(合計でA個)決める、残りr + 1個(合計でA + 1個)決める...合計でB個決める
-if r > 0 and V[0] == V[A - 1]:
-    for i in range(r, B + 1):
-        ans += cmb_1(n, i)
-else:
-    ans += cmb_1(n, r) # A個まであとr個残っており、n個のうちr個選ぶ
-
-print(ans)
-
-# ABC066 D - 11
-# 普通にやれば(cmb(N + 1, i)だが、今回ダブりがある
-# 29 19 ~ 19 31 9の場合
-# [29]のうちいくつか + １番目の19 + [31, 9]のうちいくつかと
-# [29]のうちいくつか + ２番目の19 + [31, 9]のうちいくつかはダブル
-# i個要素を選ぶとすると、19を選び、外側の要素からi - 1個選ぶ全通りについてダブルので１回引く
-N = getN()
-A = getList()
-
-lista = [0] * (max(A) + 1)
-double = 0
-# ダブり位置1を決める
-dou_ind_2 = 0
-for i in range(N + 1):
-    if lista[A[i]] > 0:
-        double = A[i]
-        dou_ind_2 = i
-        break
-    lista[A[i]] += 1
-# ダブり位置2を決める
-dou_ind_1 = 0
-for i in range(N + 1):
-    if A[i] == double:
-        dou_ind_1 = i
-        break
-
-outer = dou_ind_1 + (N - dou_ind_2)
-
-for i in range(1, N + 2):
-    if i == 1:
-        print(N)
-        continue
-    print((cmb(N + 1, i) - cmb(outer, i - 1)) % mod)
-
-# ABC105 D - Candy Distribution
-# M人に配る mod M
-N, M = getNM()
-A = getList()
-
-alta = []
 for i in A:
-    alta.append(i % M)
-
-imos = [0]
-for i in range(N):
-    imos.append((alta[i] + imos[i]) % M)
-
-ans = 0
-for i in Counter(imos).values():
-    ans += cmb_1(i, 2)
-print(ans)
-
-# ABC136 E - Max GCD
-N, K = getNM()
-A = getList()
-
-# 操作後のAの要素全てが因数にkを持つ
-
-# 好きな回数操作を行えるとすると、Aの要素全てに因数kを持たせることができるか？
-# 操作前と操作後とではAの総和は変わらない → A = akとするとa個のkをN個の要素に配分する
-# ことでAの要素全てに因数kを持たせることができる。
-# 好きな回数操作を行える、操作後のAの全ての要素を割り切る正の整数は、sum(A)の約数になる
-
-def make_divisors(n):
-    divisors = []
-    for i in range(1, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            divisors.append(i)
-            # √nで無い数についてもう一個プラス
-            if i != n // i:
-                divisors.append(n // i)
-    return sorted(divisors)
-
-# K回以下の操作の条件付きでも題意を満たすか
-# alta % kをし、あまりが小さい順にソートする
-# 前からi番目までをプラス、i + 1番目以降をマイナスにする
-# どちらか大きい方がK以下なら条件を満たす
-
-def judger(x):
-    alta = [i % x for i in A]
-    alta.sort()
-    alta_b = [x - i for i in alta]
-    # 前からi番目までプラスにする
-    imos_f = copy.deepcopy(alta)
-    # 前からi + 1番目以降をマイナスにする
-    imos_b = copy.deepcopy(alta_b)
-
-    for i in range(N - 1):
-        imos_f[i + 1] += imos_f[i]
-        imos_b[-i - 2] += imos_b[-i - 1]
-
-    # 全部マイナス、全部プラスの場合
-    imos_f.insert(0, 0)
-    imos_b.append(0)
-
-    ans = float('inf')
-    for i in range(N + 1):
-        ans = min(ans, max(imos_f[i], imos_b[i]))
-
-    return ans
-
-for i in make_divisors(sum(A))[::-1]:
-    if judger(i) <= K:
-        print(i)
-
-# ABC154 F - Many Many Paths
-"""
-経路の個数
-D - いろはちゃんとマス目を参考に
-        x
-o o o o o 各oからxに移動する通りは1通りずつ
-
-o x 各oからxに移動する通りは1通りずつ
-o
-o
-o
-o
-
-g(r,c) を 0 ≤ i ≤ r かつ 0 ≤ j ≤ c を満たす全ての整数の組 (i,j) に対する f(i,j) の総和とする。
-ここでf(r + 1, c) = f(r, c) + f(r, c - 1)...f(r, 0)
-f(r, c)からr方向へ1つ（一通り）
-f(r, c - 1)からr方向へ1つ, c方向に1つ（一通り）
-...
-
-つまりf(r2 + 1, c2) = f(r2, c) + f(r2, c - 1) + ... f(r2, 0)
-これをf(0, c2)からf(r2 + 1, c2)まで求めればg(r2, c2)が求まる
-"""
-
-r1, c1, r2, c2 = getNM()
-
-ans = 0
-for i in range(r1, r2 + 1):
-    ans = (ans + cmb(c2 + i + 1, i + 1) - cmb(c1 + i, i + 1)) % mod
-print(ans)
-
-# ABC171 F - Strivore
-"""
-dp[i][j]を
-「i文字目まででj回Sの文字を使ったか」とする
-K = 5
-S = 'oof'
-dp = [[0] * (len(S) + 1) for i in range(K + len(S) + 1)]
-dp[0][0] = 1
-for i in range(1, K + len(S) + 1):
-    for j in range(len(S) + 1):
-        if j < len(S):
-            dp[i][j] += dp[i - 1][j] * 25
-        else:
-            dp[i][j] += dp[i - 1][j] * 26 # j回使い切るともうSは関係なくなるので *= 26になる
-        if j >= 1:
-            dp[i][j] += dp[i - 1][j - 1]
-l_s = len(S)
-どのタイミングで「この先ずっと*= 26」になるか
-後ろからi文字目にSを使い切る: pow(25, K - k, mod) * cmb(N + K - k - 1, N - 1) * pow(26, k, mod)
-...
-"""
-
-K = getN()
-S = input()
-N = len(S)
-
-ans = 0
-# l_s + i文字目に文字を使い切る
-# 次から *= 26
-for k in range(K + 1):
-    # 逆からやってる
-    ans += cmb(N + K - k - 1, N - 1) * pow(26, k, mod) * pow(25, K - k, mod) % mod
+    opt = (num * inv[i]) % mod
+    ans += opt
     ans %= mod
+print(ans % mod)
 
-print(ans)
-
-# ARC023 C - タコヤ木
+# ABC161 F - Division or Subtraction
 N = getN()
-A = getList()
 
-def cmb(x,y):
-    r = 1
-    for i in range(1, y + 1):
-        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
-    return r
+# 手順としては
+# ①　kで出来るだけ割る
+# ②　kで引いていく　N = mk + d(d = 1, 2, 3...)とすると,　引いて残る数はm(k - 1) + d
+# つまりkで割り切れず、引いても引いても永遠に①に戻ることはない
 
-now = A[0]
-cnt = 0
-ans = 1
-for i in range(1, N):
-    if A[i] > -1:
-        if cnt > 0:
-            ans *= cmb(A[i] - now + cnt, cnt)
-            ans %= mod
-            now = A[i]
-            cnt = 0
+# N = k ** i * (mk + 1)となるkの数を求める
+# i == 0の時
+# kがなんであれk ** iは１になるので
+# N = mk + 1、つまりN - 1がkの倍数であればそのkは条件を満たす
+# N - 1の約数（１以外）が候補
+
+ans = set()
+for i in make_divisors(N - 1):
+    if i != 1:
+        ans.add(i)
+
+# 割れるだけ割る関数
+def dividor(x, k):
+    if k == 1:
+        return 0
+    n = x
+    while True:
+        if n % k == 0:
+            n //= k
         else:
-            now = A[i]
-    else:
-        cnt += 1
-print(ans)
+            break
+    return n
+
+# i >= 1の時
+# 候補はNの約数
+for prim in make_divisors(N):
+    if prim == 1:
+        continue
+    # Nを割れるだけ割る
+    alta = dividor(N, prim)
+    if alta == 1:
+        ans.add(prim)
+        continue
+    if alta >= prim and alta % prim == 1:
+        ans.add(prim)
+
+print(len(ans))
+
+# 三井住友信託銀行プログラミングコンテスト2019 F - Interval Running
+
+T1, T2 = 12000, 15700
+A1, A2 = 3390000000, 3810000000
+B1, B2 = 5550000000, 2130000000
+
+# グラフにして考える
+# 周期は同じT1, T2
+# T1の時とT2の時とで順位が入れ替わっているなら出会っている
+t1_diff = (A1 - B1) * T1
+t2_diff = (A1 - B1) * T1 + (A2 - B2) * T2
+if t1_diff == 0 or t2_diff == 0: # 無限に出会う
+    print('infinity')
+    exit()
+if t1_diff * t2_diff > 0: # ずっとどちらかが前にいる
+    print(0)
+    exit()
+
+# t2_diff分ずつずれていく
+
+# 順位が逆転する場合
+# クロスする時とちょうど接する時を考える
+if abs(t1_diff) % abs(t2_diff) == 0:
+    # 最後の１回は１回しかクロスしない
+    print((abs(t1_diff) // abs(t2_diff)) * 2)
+else:
+    print((abs(t1_diff) // abs(t2_diff)) * 2 + 1)
