@@ -49,358 +49,264 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def prime_factorize(n):
-    divisors = []
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == []:
-        divisors.append([n, 1])
+# 基本の二分探索
+lista = [i for i in range(10)]
 
-    return divisors
+def binary_search_loop(data, target):
+    imin = 0
+    imax = len(data) - 1
+    while imin <= imax:
+        imid = imin + (imax - imin) // 2
+        if target == data[imid]:
+            return imid
+        elif target < data[imid]:
+            imax = imid - 1
+        else:
+            imin = imid + 1
+    return False
+print(binary_search_loop(lista, 4))
 
-# ABC052 C - Factors of Factorial
-N = getN()
+# 三分探索
+# ARC054 ムーアの法則
+def f(x):
+    return x + p / pow(2, 2 * x / 3)
 
-# N!の因数 = (2の因数) + (3の因数)...
-# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
-mod = 10 ** 9 + 7
-ans = 1
-# それぞれの因数となる素数の数をセットする
-dp = [0] * (N + 1)
+p = float(input())
+left, right = 0, 100
 
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        if j[0] > 1:
-            dp[j[0]] += j[1]
-# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
-for i in dp:
-    if i > 0:
-        ans = (ans * (i + 1)) % mod
-print(ans % mod)
-
-# ABC090 D - Remainder Reminder
-# 数え上げ
-N, K = getNM()
-sum = 0
-for b in range(1, N + 1):
-    opt1 = (N // b) * max(0, (b - K))
-    if K == 0:
-        opt2 = N % b
+while right > left + 10 ** -10:
+    # mid二つ
+    mid1 = (right * 2 + left) / 3
+    mid2 = (right + left * 2) / 3
+    if f(mid1) >= f(mid2):
+        right = mid1
     else:
-        opt2 = max(0, (N % b) - K + 1)
-    sum += (opt1 + opt2)
-print(sum)
+        left = mid2
+print(f(right))
 
-# 094 D - Binomial Coefficients
-# combはrを真ん中に設定すると大きくなる
+# 三分探索整数ver
+num = []
+for i in range(100):
+    if i < 50:
+        num.append(i)
+    else:
+        num.append(100 - i)
 
-N = getN()
+left, right = 0, len(num) - 1
+while abs(right - left) > 3:
+    mid1 = (right * 2 + left) // 3 + 1
+    mid2 = (right + left * 2) // 3
+    # 最小値を求める場合は矢印逆になる
+    if num[mid1] <= num[mid2]:
+        right = mid1
+    else:
+        left = mid2
+print(right)
+print(left)
+
+# ARC050 B - 花束
+R, B = getNM()
+x, y = getNM()
+# 赤い花束をr束, 青い花束をb束とすると
+# R >= xr + b
+# B >= r + yb
+# を満たしながらk = r + bを最大化せよ
+# r = k - b
+# R >= x(k - b) + b = xk - (x - 1)b
+# B >= (k - b) + yb = k + (y - 1)b
+# (y - 1)R >= (y - 1)xk - (x - 1)(y - 1)b
+# (x - 1)B >= (x - 1)k + (x - 1)(y - 1)b
+# (y - 1)R + (x - 1)B >= ((y - 1)x + (x - 1))k
+# 二分探索?
+
+def judge(k):
+    # あるkを決めた時に
+
+    # ①r >= 0, b >= 0
+    # ②r + b = k
+    # ③R >= xr + b = (x - 1)b
+    # ④B >= r + yb = (y - 1)b
+    # となるr, bが存在するか
+
+    # R - k >= (x - 1)r
+    # (R - k) / (x - 1) >= r
+    # B - k >= (y - 1)b
+    # (B - k) / (y - 1) >= b
+    # (R - k) // (x - 1) + (B - k) // (y - 1) >= kになるか
+    if R - k >= 0 and B - k >= 0 and (R - k) // (x - 1) + (B - k) // (y - 1) >= k:
+        return True
+    else:
+        return False
+
+ok = -1
+ng = 10 ** 18 + 1
+
+while abs(ok - ng) > 1:
+    mid = (ok + ng) // 2
+    if judge(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
+
+# AGC041 B - Voting Judges
+
+"""
+# 問題:N問、ジャッジ:M人
+# M人のジャッジがそれぞれV問を選び、問題のスコアを１ずつあげる
+# M人の投票の後、大きい方からP問が選ばれる
+# 問題セットに選ばれる可能性があるのは何問あるか
+M人全員が投票すれば選ばれやすくなる
+選ばれるとは？
+可能性がないものを数えた方が早いのでは
+P番目以内にあれば無条件で通過
+現在のP番目 <= A[i] + M
+V <= Pなら
+上からP - 1番目までのどれか + A[i]を加算させることでA[i]を強くできる　
+V > Pなら？
+上からP - 1番目までとA[i]を強化するとして、残りのV - P個は小さいものから順に選ぶ
+A[i]を抜かせないようにしたい
+A[i]より大きい数字も一緒に足される場合にはP以内に入れない
+"""
+N, M, V, P = getNM()
 A = getList()
-A.sort()
+A.sort(reverse = True)
 
-max = max(A)
-index = bisect_left(A, max / 2)
-if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
-    ans = [max, A[index]]
-else:
-    ans = [max, A[index - 1]]
-print(*ans)
+def judge(x):
+    if x < P:
+        return True
+    if A[P - 1] > A[x] + M:
+        return False
+    # P - 1番目まで + 自身以降の数字についてはM個足す
+    left = (V - (P - 1) - (N - x)) * M
+    # P個目からx-1まで A[x] + Mを超えない分足す
+    for i in range(P - 1, x):
+        left -= A[x] + M - A[i]
 
-# ABC096 D - Five, Five Everywhere
-# 素数はmod nでグルーピングできる
+    return left <= 0
+
+ok = -1
+ng = N
+
+while abs(ok - ng) > 1:
+    mid = (ok + ng) // 2
+    if judge(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok + 1)
+
+# ABC023 D - 射撃王
 N = getN()
+listh = []
+lists = []
+for i in range(N):
+    h, s = getNM()
+    listh.append(h)
+    lists.append(s)
+left = 0
+right = 10 ** 15
 
-# エラストテネスの篩
-prime = [2]
-max = 55555
-limit = int(math.sqrt(max))
-data = [i + 1 for i in range(2, max, 2)]
+for _ in range(50):
+    flag = True
+    mid = (left + right) // 2
+    costtime = [0] * N
+    for i in range(N):
+        costtime[i] = (mid - listh[i]) / lists[i]
+    costtime.sort()
+    for i in range(N):
+        if costtime[i] - i < 0:
+            flag = False
+    if flag:
+        right = mid
+    else:
+        left = mid
+print(right)
 
-while limit > data[0]:
-    prime.append(data[0])
-    data = [j for j in data if j % data[0] != 0]
-prime = prime + data
+# ABC034 D - 食塩水
 
-prime = sorted(prime)
+N, K = getNM()
+query = [getList() for i in range(N)]
 
-prime = [i for i in prime if i % 5 == 1]
-print(*prime[:N])
+def judge(target):
+    alta = []
+    for i in range(N):
+        salt = query[i][0] * (query[i][1] - target)
+        alta.append(salt)
+    alta.sort(reverse = True)
+    return sum(alta[:K]) >= 0
 
-# ABC114 D - 756
-N = getN()
+left = -1
+right = 101
 
-def prime_factorize(n):
-    divisors = []
-    # 27(2 * 2 * 7)の7を出すためにtemp使う
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == [] and n != 1:
-        divisors.append([n, 1])
+for i in range(100):
+    mid = left + (right - left) / 2
+    if judge(mid):
+        left = mid
+    else:
+        right = mid
+print(left)
 
-    return divisors
+# ABC063 D - Widespread
+# 最小で何回の　二分探索
+# 通常攻撃time回を全員に食らわせる→爆発time回を食らわせる
+# 魔物は生き残ることができるか
+N, A, B = getNM()
+H = getArray(N)
 
-primli = [0] * 101
-# N! の因数を計算する
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        primli[j[0]] += j[1]
-# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
-# 75 = 3 * 3 * 5なので例えば
-# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
-alta = []
-for i in primli:
-    if i != 0:
-        alta.append(i + 1)
+def judge(time, main, sub, hp):
+    diff = main - sub
+    cnt = 0
+    for i in range(len(hp)):
+        left = hp[i] - time * sub
+        if left > 0:
+            cnt += (left + diff - 1) // diff
 
-prim3 = 0
-prim5 = 0
-prim15 = 0
-prim25 = 0
-prim75 = 0
-for i in alta:
-    if i >= 75:
-        prim75 += 1
-    if i >= 25:
-        prim25 += 1
-    if i >= 15:
-        prim15 += 1
-    if i >= 5:
-        prim5 += 1
-    if i >= 3:
-        prim3 += 1
+    return cnt
 
-ans = 0
-if prim3 >= 1 and prim5 >= 2:
-    # prim5 C 2
-    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
-if prim15 >= 1 and prim5 >= 1:
-    ans += prim15 * (prim5 - 1)
-if prim25 >= 1 and prim3 >= 1:
-    ans += prim25 * (prim3 - 1)
-if prim75 >= 1:
-    ans += prim75
-print(ans)
+ok = 10 ** 12 + 1
+ng = -1
 
+while ok - ng > 1:
+    mid = (ok + ng) // 2
+    opt = judge(mid, A, B, H)
+
+    # mid:仮のの回数
+    # opt:midを定めた時必要な爆発の回数
+    # 仮の回数が必要な回数より多ければokを緩和
+    if mid >= opt:
+        ok = mid
+    else:
+        ng = mid
+print(ok)
+
+# 範囲指定してエッジを引く最短路問題は大体セグ木
+# seg解
+# M = 3の時、1から2, 3, 4に行ける
+# dp[i]: iまで行く最短の通り
+# dp[i] = seg.query(i - M, i) + 1
+# dpが出来上がったらdp = [1, 1, 2, inf, inf, 3, 3...]みたいなのを
+# 1がある位置、2がある位置...[[0, 1], [2], [5, 6]...]としていき各子要素の一番最初の数字をとる
+
+# 現在地点 - Mまでで最も大きく戻れる地点を探す
+# 最も大きく戻っていけば最初の1 ~ i間を最小にできる
 N, M = getNM()
-A = [int(i) // 2 for i in input().split()]
+S = input()
+opt = []
+for i in range(N + 1):
+    if S[i] == '0':
+        opt.append(i)
 
-"""
-全てのAの要素について
-X = ai * (p + 0.5)を満たす負でない整数pが存在する
-1 ~ Mまでに何個あるか M <= 10 ** 9
-M // なんかの数だろ
+now = opt.pop()
+ans = []
+while opt:
+    index = bisect_left(opt, now - M) # 現在地点 - Mまでで最も大きく戻れる地点を探す
+    if index == len(opt): # なければ-1
+        print(-1)
+        exit()
+    ans.append(now - opt[index])
+    while len(opt) - 1 != index: # indexの場所まで掘る
+        opt.pop()
+    now = opt.pop()
 
-N, M = 2, 50
-A = [6, 10]の時
-15 6 * (2 + 0.5)
-   10 * (1 + 0.5)
-
-45 6 * (7 + 0.5)
-   10 * (4 + 0.5)
-
-X - (ai // 2)がaiの倍数になる
-1 -2, -4
-2 -1, -3
-3 0, -2
-4 1, -1
-5 2, 0...
-
-13 10, 8
-14 11, 9
-15 12, 10 12は6の倍数、10は5の倍数
-
-9 6, 4
-15 12, 10
-21 18, 16
-27 24, 22
-33
-39
-45 42, 40
-51
-57
-
-Xが ai // 2の奇数倍になればいい
-ai // 2 = aとすると
-X = pa
-  = (2n + 1)a
-  = 2na + a となる整数nが存在する
-
-A = [a1, a2, a3]の時半公倍数Xが存在するか ⇆
-alta = [a1 // 2, a2 // 2...]とすると
-a, 3a, 5a...
-b, 3b, 5b...
-c, 3c, 5c...の全てに含まれるXが存在するか
-
-2系列問題
-a, 3a, 5a...
-b, 3b, 5b...
-の両方に含まれる数Xを探す
-pa = qbとなる奇数p, qがそれぞれ存在する
-左右の2の因数は一致しないといけないので
-aとbの2の因数の数が一致しないといけない
-各要素を２で割れる回数が同じならXが存在する
-
-# 4と8の場合
-# 2 6 10 14 18...
-# 4 12 20 28... これを２で割ると
-
-# 1 3 5 7 9...
-# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
-
-# 4と12なら
-# 2 6 10 14 18...
-# 6 18 30 42... これを２で割ると
-
-# 1 3 5 7 9...
-# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
-"""
-
-# Aの各要素がどれも2でn回ちょうど割れる必要がある
-def div_2(n):
-    cnt = n
-    res = 0
-    while cnt > 0:
-        if cnt % 2 == 0:
-            cnt //= 2
-            res += 1
-        else:
-            return res
-
-def lcm(x, y):
-    return x * (y // gcd(x, y))
-
-judge = [div_2(i) for i in A]
-
-if min(judge) != max(judge):
-    print(0)
-    exit()
-L = 1
-for i in range(N):
-    L = lcm(L, A[i])
-
-# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
-print(M // L - M // (2 * L))
-
-# ABC152 E - Flatten
-# 大きい数は因数で持つ
-N = getN()
-A = getList()
-prime_list = defaultdict(int)
-
-for i in range(N):
-    prime = prime_factorize(A[i])
-    for j in prime:
-        prime_list[j[0]] = max(prime_list[j[0]], j[1])
-
-num = 1
-for key, value in prime_list.items():
-    num *= key ** value
-    num %= mod
-
-# 1/A[i]のmod
-lim = 10 ** 6 + 1
-fact = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-
-ans = 0
-for i in A:
-    opt = (num * inv[i]) % mod
-    ans += opt
-    ans %= mod
-print(ans % mod)
-
-# ABC161 F - Division or Subtraction
-N = getN()
-
-# 手順としては
-# ①　kで出来るだけ割る
-# ②　kで引いていく　N = mk + d(d = 1, 2, 3...)とすると,　引いて残る数はm(k - 1) + d
-# つまりkで割り切れず、引いても引いても永遠に①に戻ることはない
-
-# N = k ** i * (mk + 1)となるkの数を求める
-# i == 0の時
-# kがなんであれk ** iは１になるので
-# N = mk + 1、つまりN - 1がkの倍数であればそのkは条件を満たす
-# N - 1の約数（１以外）が候補
-
-ans = set()
-for i in make_divisors(N - 1):
-    if i != 1:
-        ans.add(i)
-
-# 割れるだけ割る関数
-def dividor(x, k):
-    if k == 1:
-        return 0
-    n = x
-    while True:
-        if n % k == 0:
-            n //= k
-        else:
-            break
-    return n
-
-# i >= 1の時
-# 候補はNの約数
-for prim in make_divisors(N):
-    if prim == 1:
-        continue
-    # Nを割れるだけ割る
-    alta = dividor(N, prim)
-    if alta == 1:
-        ans.add(prim)
-        continue
-    if alta >= prim and alta % prim == 1:
-        ans.add(prim)
-
-print(len(ans))
-
-# 三井住友信託銀行プログラミングコンテスト2019 F - Interval Running
-
-T1, T2 = 12000, 15700
-A1, A2 = 3390000000, 3810000000
-B1, B2 = 5550000000, 2130000000
-
-# グラフにして考える
-# 周期は同じT1, T2
-# T1の時とT2の時とで順位が入れ替わっているなら出会っている
-t1_diff = (A1 - B1) * T1
-t2_diff = (A1 - B1) * T1 + (A2 - B2) * T2
-if t1_diff == 0 or t2_diff == 0: # 無限に出会う
-    print('infinity')
-    exit()
-if t1_diff * t2_diff > 0: # ずっとどちらかが前にいる
-    print(0)
-    exit()
-
-# t2_diff分ずつずれていく
-
-# 順位が逆転する場合
-# クロスする時とちょうど接する時を考える
-if abs(t1_diff) % abs(t2_diff) == 0:
-    # 最後の１回は１回しかクロスしない
-    print((abs(t1_diff) // abs(t2_diff)) * 2)
-else:
-    print((abs(t1_diff) // abs(t2_diff)) * 2 + 1)
+print(*ans[::-1])
