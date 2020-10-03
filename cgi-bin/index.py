@@ -49,156 +49,35 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC036 D - 塗り絵
-# 木dp
-# 葉からボトムアップか頂点からdfs
+# JOI本戦 B - IOI饅頭（IOI Manju）
+M, N = getNM() # M:饅頭 N:箱
+sweets = getArray(M)
+box = [getList() for i in range(N)] # 最大C個, E円　1個ずつ
+# 菓子の価格 - 箱の価格 の最大値
+# M <= 10000, N <= 500
+# dp?
 
-N = getN()
-query = [getList() for i in range(N - 1)]
+sweets.sort(reverse = True)
+imos = [0]
+for i in range(M):
+    imos.append(imos[i] + sweets[i])
 
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+# 箱に詰める饅頭の価格を大きく、箱の価格を小さくする
+# 合計でi個詰められる箱を用意した時の箱の価格の最小値
+# 貪欲に前から?
+# grid dp無理め? M <= 10000なのでそこまで求めるだけでいい
+# 500 * 10000
+prev = [float('inf')] * 10001
+prev[0] = 0
 
-dp = [[0, 0] for i in range(N)]
-sta = 0
-for i in range(N):
-    if len(dist[i]) == 1:
-        sta = i
-        break
+for c, e in box:
+    for j in range(10000, -1, -1): # 逆順に
+        if j - c >= 0:
+            prev[j] = min(prev[j], prev[j - c] + e)
+        else:
+            prev[j] = min(prev[j], prev[0] + e)
 
-for i in range(N):
-    if len(dist[i]) == 1 and i != sta:
-        dp[i] = [1, 1]
-
-ignore = [0] * N
-ignore[sta] = 1
-def dfs(now):
-    white = 1
-    black = 1
-    for i in dist[now]:
-        if ignore[i] != 1:
-            ignore[i] = 1
-            w_cnt, b_cnt = dfs(i)
-            white = (white * (w_cnt + b_cnt)) % mod
-            black = (black * w_cnt) % mod
-    dp[now] = [white % mod, black % mod]
-    return dp[now]
-
-print(sum(dfs(sta)) % mod)
-
-# ABC133 E - Virus Tree 2
-# 木dp
-
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
-
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-    
-N, K = getNM()
-query = [getList() for i in range(N - 1)]
-
-dist = [[] for i in range(N)]
-for a, b in query:
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-max_root = 0
-max_root_index = 0
-for i in range(N):
-    if len(dist[i]) >= max_root:
-        max_root = len(dist[i])
-        max_root_index = i
-
-pos = deque([max_root_index])
-
-ans = 1
-ignore = [-1] * N
-ignore[max_root_index] = 1
-ans *= cmb(K, max_root + 1) * math.factorial(max_root + 1)
-
-while len(pos) > 0:
-    u = pos.popleft()
-    for i in dist[u]:
-        if ignore[i] == -1:
-            ignore[i] = 1
-            if len(dist[i]) >= 2:
-                ans *= cmb(K - 2, len(dist[i]) - 1) * math.factorial(len(dist[i]) - 1)
-                ans %= mod
-            pos.append(i)
-
-print(ans % mod)
-
-# dfs
-
-N, K = getNM()
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-# 木dp的な
-# 上から子ノードの塗り分け方、その子ノードの塗り分け方...をかけていく
-def dfs(now, root): # 子ノードの塗り分け方は親がいればK-2Pr通り
-    res = 1
-    for i in dist[now]:
-        if i != root:
-            res *= dfs(i, now)
-            res %= mod
-
-    vari = (root != -1) + 1 # 親 + 自身 roots[u] == -1 なら親なし
-    r = len(dist[now]) - (root != -1)
-    res *= cmb(K - vari, r) * math.factorial(r)
-
-    return res % mod
-
-print((dfs(0, -1) * K) % mod)
-
-# ABC146 D - Coloring Edges on Tree
-N = getN()
-
-dist = [[] for i in range(N)]
-edges = {}
-for i in range(N - 1):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-    edges[(a - 1, b - 1)] = i
-    edges[(b - 1, a - 1)] = i
-
-color = [-1] * N
-color[0] = 0
-ans = [0] * (N - 1)
-pos = deque([0])
-
-while pos:
-    u = pos.popleft()
-    j = 1
-    for i in dist[u]:
-        if color[i] != -1:
-            continue
-        if j == color[u]:
-            j += 1
-        color[i] = j
-        ans[edges[(i, u)]] = j
-        pos.append(i)
-        j += 1
-
-print(max(ans))
-for i in ans:
-    print(i)
+ans = 0
+for i in range(1, M + 1):
+    ans = max(ans, imos[i] - prev[i])
+print(ans)
