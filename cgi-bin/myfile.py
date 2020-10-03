@@ -69,59 +69,31 @@ mod = 10 ** 9 + 7
 #############
 # Main Code #
 #############
-# nが小さい場合に
-if N % 2 == 0:
-    alta_f = deepcopy(A) # 前から1個目、3個目...を累積和
-    alta_b = deepcopy(A) # 後ろから1個目、3個目...を累積和
+# 2N階までのタワー
+# 部分的にどこで乗ったか、降りたかがわからない
+# 同時に乗ってた人について、
+# 判定する問題
+# 条件は？
 
-    for i in range(1, N):
-        if i % 2 == 0:
-            alta_f[i] += alta_f[i - 2]
-        else:
-            alta_f[i] = 0
+N = getN()
+que = []
+for i in range(N):
+    a, b = getNM()
+    if (a >= 1 and b >= 1) and b <= a:
+        print('No')
+        exit()
 
-    for i in range(1, N):
-        if i % 2 == 0:
-            alta_b[-i - 1] += alta_b[-i + 1]
-        else:
-            alta_b[-i - 1] = 0
+# 各階について、乗った人 + 降りた人はただ一人
+# -1があれば、猶予がある
+# 区間で乗り降りした人 = b - a - 1
+# これが同時に乗っている人との間で一致すればいい
 
-    ans = alta_b[1]
-    for i in range(0, N, 2):
-        if i + 3 < N:
-            ans = max(ans, alta_f[i] + alta_b[i + 3])
-        else:
-            ans = max(ans, alta_f[i])
-    print(ans)
-else:
-    # 奇数の場合
-    # 3つ飛ばしを１回もやらない
-    opt_l = [A[i] for i in range(N) if i % 2 == 0]
-    ans = sum(opt_l) - min(opt_l)
+# 一番簡単なのは1 ~ 3, 2 ~ 4とか
+# なんか最大流みたいにならない？
 
-    alta_f = deepcopy(A) # 前から1個目、3個目...を累積和
-    alta_b = deepcopy(A) # 後ろから2個目、4個目...を累積和
+# a ~ b間が大きい場合どうする？
+# 間を配分する
+# 階数的に 1 ~ 4, 3 ~ 6みたいなのは無理
+# 1 ~ 4がいた場合関係するのは2, 3スタートの人
 
-    # 2回3つ飛ばしができる
-
-    for i in range(1, N):
-        if i % 2 == 0:
-            alta_f[i] += alta_f[i - 2]
-        else:
-            alta_f[i] = 0
-
-    for i in range(2, N):
-        if i % 2 == 1:
-            alta_b[-i - 1] += alta_b[-i + 1]
-        else:
-            alta_b[-i - 1] = 0
-    print(alta_f)
-    print(alta_b)
-    # 偶数個目だけ取るのを判定
-    ans = max(ans, alta_b[1])
-    for i in range(0, N - 2, 2):
-        if i + 3 < N:
-            ans = max(ans, alta_f[i] + alta_b[i + 3])
-        else:
-            ans = max(ans, alta_f[i])
-    print(ans)
+# セグ木かもしれない

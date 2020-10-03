@@ -81,3 +81,57 @@ ans = 0
 for i in range(1, M + 1):
     ans = max(ans, imos[i] - prev[i])
 print(ans)
+
+# JOI11予選 D - パスタ (Pasta)
+N, K = getNM()
+pasta = [[] for i in range(N)]
+for i in range(K):
+    a, b = getNM()
+    pasta[a - 1].append(b - 1)
+
+# 通りの数を求める: dp, 数え上げ組み合わせ
+# n日前のことが関係する: n次元のdpを作れる
+
+# modが10000
+# パスタは3種類
+# dp[j][k]: 本日jのパスタで、前日kのパスタの通り
+
+prev = [[0] * 3 for i in range(3)]
+# 1日目
+if pasta[0]:
+    prev[pasta[0][0]][(pasta[0][0] + 1) % 3] = 1
+else:
+    for i in range(3):
+        prev[i][(i + 1) % 3] = 1
+
+# 2日目以降
+for p in pasta[1:]:
+    next = [[0] * 3 for i in range(3)]
+    # すでに決められているなら
+    if p:
+        j = p[0]
+        # 本日のパスタjは確定
+        # その前の日のパスタnext[]j[k]のk, prev[j][k]のjは3通り
+        # そのまた前日のパスタprev[j][k]のkは3通り
+        for k in range(3):
+            for p_k in range(3):
+                if j == k and k == p_k:
+                    continue
+                next[j][k] += prev[k][p_k]
+                next[j][k] %= 10000
+    else:
+        for j in range(3):
+            for k in range(3):
+                for p_k in range(3):
+                    if j == k and k == p_k:
+                        continue
+                    next[j][k] += prev[k][p_k]
+                    next[j][k] %= 10000
+    prev = next
+
+ans = 0
+for i in range(3):
+    for j in range(3):
+        ans += prev[i][j]
+        ans %= 10000
+print(ans)
