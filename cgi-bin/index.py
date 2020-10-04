@@ -49,89 +49,183 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# JOI本戦 B - IOI饅頭（IOI Manju）
-M, N = getNM() # M:饅頭 N:箱
-sweets = getArray(M)
-box = [getList() for i in range(N)] # 最大C個, E円　1個ずつ
-# 菓子の価格 - 箱の価格 の最大値
-# M <= 10000, N <= 500
-# dp?
+# ABC154 E - Almost Everywhere Zero
+N = '9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999'
+K = 3
+L = len(N)
 
-sweets.sort(reverse = True)
-imos = [0]
-for i in range(M):
-    imos.append(imos[i] + sweets[i])
+def judge(a):
+    return a != 0
 
-# 箱に詰める饅頭の価格を大きく、箱の価格を小さくする
-# 合計でi個詰められる箱を用意した時の箱の価格の最小値
-# 貪欲に前から?
-# grid dp無理め? M <= 10000なのでそこまで求めるだけでいい
-# 500 * 10000
-prev = [float('inf')] * 10001
-prev[0] = 0
+# N以下の数字で条件を満たす桁がk個のもの
+def digit_dp(n, k):
+    l = len(n)
 
-for c, e in box:
-    for j in range(10000, -1, -1): # 逆順に
-        if j - c >= 0:
-            prev[j] = min(prev[j], prev[j - c] + e)
-        else:
-            prev[j] = min(prev[j], prev[0] + e)
+    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
 
-ans = 0
-for i in range(1, M + 1):
-    ans = max(ans, imos[i] - prev[i])
-print(ans)
+    for i in range(l):
+        d = int(n[i])
 
-# JOI11予選 D - パスタ (Pasta)
-N, K = getNM()
-pasta = [[] for i in range(N)]
-for i in range(K):
-    a, b = getNM()
-    pasta[a - 1].append(b - 1)
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                for k_j in range(k + 1):
+                    if judge(d_j):
+                        if k_j + 1 <= k:
+                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
 
-# 通りの数を求める: dp, 数え上げ組み合わせ
-# n日前のことが関係する: n次元のdpを作れる
+    return dp
 
-# modが10000
-# パスタは3種類
-# dp[j][k]: 本日jのパスタで、前日kのパスタの通り
+dp = digit_dp(N, K)
+print(dp[L][0][K] + dp[L][1][K])
 
-prev = [[0] * 3 for i in range(3)]
-# 1日目
-if pasta[0]:
-    prev[pasta[0][0]][(pasta[0][0] + 1) % 3] = 1
-else:
-    for i in range(3):
-        prev[i][(i + 1) % 3] = 1
+# ABC029 D - 1
+N = '999999999'
+L = len(N)
 
-# 2日目以降
-for p in pasta[1:]:
-    next = [[0] * 3 for i in range(3)]
-    # すでに決められているなら
-    if p:
-        j = p[0]
-        # 本日のパスタjは確定
-        # その前の日のパスタnext[]j[k]のk, prev[j][k]のjは3通り
-        # そのまた前日のパスタprev[j][k]のkは3通り
-        for k in range(3):
-            for p_k in range(3):
-                if j == k and k == p_k:
-                    continue
-                next[j][k] += prev[k][p_k]
-                next[j][k] %= 10000
-    else:
-        for j in range(3):
-            for k in range(3):
-                for p_k in range(3):
-                    if j == k and k == p_k:
-                        continue
-                    next[j][k] += prev[k][p_k]
-                    next[j][k] %= 10000
-    prev = next
+def judge_2(a):
+    return a == 1
+
+# N以下の数字の中で「1が書いてある桁がk個ある数字」がいくつあるか
+# 上のものと関数の中身自体は変えていない
+def digit_dp_2(n, k):
+    l = len(n)
+
+    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                for k_j in range(k + 1):
+                    if judge_2(d_j):
+                        if k_j + 1 <= k:
+                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+
+    return dp
+
+dp = digit_dp_2(N, L)
 
 ans = 0
-for i in range(3):
-    for j in range(3):
-        ans += prev[i][j]
-        ans %= 10000
+for j in range(L + 1):
+    # dp[l]について各j(1のカウント)の通りの数 * j
+    ans += (dp[L][0][j] + dp[L][1][j]) * j
 print(ans)
+
+A, B = 1, 1000000000000000000
+
+# 4, 9の個数については求めない簡易版
+def judge_3(a):
+    return a in [4, 9]
+
+def digit_dp(n):
+    l = len(n)
+
+    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                # 0:4,9が含まれない　1:4,9が含まれる
+                for k_j in range(2):
+                    if k_j == 0 and judge_3(d_j):
+                        dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
+                    else:
+                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+    return dp[l][0][1] + dp[l][1][1]
+
+print(digit_dp(str(B)) - digit_dp(str(A - 1)))
+
+# ABC129 E - Sum Equals Xor
+# 通りの数を求める
+
+L = '1111111111111111111'
+
+def digit_dp_3(n):
+    l = len(n)
+
+    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
+    dp[0][0][0] = 1
+
+    for i in range(l):
+        d = int(n[i])
+
+        # Lになる可能性があるかないか
+        for j in range(2):
+            # 次の桁が0か1か
+            for d_j in range(2 if j else d + 1):
+                if d_j == 0:
+                    dp[i + 1][j | (d_j < d)][d_j] += (dp[i][j][0] + dp[i][j][1])
+                    dp[i + 1][j | (d_j < d)][d_j] %= mod
+                else:
+                    dp[i + 1][j | (d_j < d)][d_j] += 2 * (dp[i][j][0] + dp[i][j][1])
+                    dp[i + 1][j | (d_j < d)][d_j] %= mod
+
+    return sum(dp[-1][0]) + sum(dp[-1][1])
+
+print(digit_dp_3(L) % mod)
+
+# JOI11予選 F - ジグザグ数 (Zig-Zag Numbers)
+
+# 桁dpかヒープキューか
+# A以上B以下 :0 ~ Aと0 ~ B両方出す
+# Mの倍数を出そう
+
+# 多分桁dp
+A = input()
+B = input()
+M = getN()
+
+# prev[j][z][l_d][m]: 前回z(増加/減少/前なし)して最後尾がl_dでmの倍数のもの
+def digit_dp(x):
+    n = len(x)
+    prev = [[[[0] * M for _ in range(10)] for i in range(3)] for i in range(2)]
+    prev[0][2][0][0] = 1
+
+    for i in range(n):
+        d = int(x[i])
+        next = [[[[0] * M for _ in range(10)] for i in range(3)] for i in range(2)]
+        for j in range(2):
+            for l_d in range(10): # prevの最後尾
+                for d_j in range(10 if j else d + 1): # nextの最後尾
+                    for m in range(M): # mod Mのもの
+                        if d_j == 0 and d_j == 0: # 前なしなら無条件で足す
+                            next[j | (d_j < d)][2][d_j][(m * 10 + d_j) % M] += prev[j][2][l_d][m]
+                        else: # 前なしなら無条件で足す
+                            next[j | (d_j < d)][0][d_j][(m * 10 + d_j) % M] += prev[j][2][l_d][m]
+                            next[j | (d_j < d)][1][d_j][(m * 10 + d_j) % M] += prev[j][2][l_d][m]
+                        if d_j > l_d: # 0:増加 1:減少
+                            # (m(prevのm) * 10 + d_j) % M
+                            next[j | (d_j < d)][0][d_j][(m * 10 + d_j) % M] += prev[j][1][l_d][m]
+                        elif d_j < l_d:
+                            next[j | (d_j < d)][1][d_j][(m * 10 + d_j) % M] += prev[j][0][l_d][m]
+
+                        for z in range(3):
+                            next[j | (d_j < d)][z][d_j][(m * 10 + d_j) % M] %= 10000
+
+        prev = next
+
+    # 00000が混じっているがA - Bするので問題なし
+    return prev
+
+opt1 = digit_dp(B)
+opt1_diff = min(int(B), 9) // M # 1 ~ 9まではダブルカウントされているので修正
+opt2 = digit_dp(str(int(A) - 1))
+opt2_diff = min(int(A) - 1, 9) // M
+
+ans = 0
+for j in range(2):
+    for z in range(3):
+        for l_d in range(10):
+            ans += opt1[j][z][l_d][0] - opt2[j][z][l_d][0]
+
+print((ans - opt1_diff + opt2_diff) % 10000)

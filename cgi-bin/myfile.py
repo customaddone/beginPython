@@ -69,31 +69,21 @@ mod = 10 ** 9 + 7
 #############
 # Main Code #
 #############
-# 2N階までのタワー
-# 部分的にどこで乗ったか、降りたかがわからない
-# 同時に乗ってた人について、
-# 判定する問題
-# 条件は？
 
-N = getN()
-que = []
-for i in range(N):
-    a, b = getNM()
-    if (a >= 1 and b >= 1) and b <= a:
-        print('No')
-        exit()
+def digit_dp(x):
+    n = len(x)
+    prev = [[0] * M for _ in range(2)]
+    prev[0][0] = 1
 
-# 各階について、乗った人 + 降りた人はただ一人
-# -1があれば、猶予がある
-# 区間で乗り降りした人 = b - a - 1
-# これが同時に乗っている人との間で一致すればいい
+    for i in range(n):
+        d = int(x[i])
+        next = [[0] * 10 for _ in range(2)]
+        for j in range(2):
+            for d_j in range(10 if j else d + 1):
+                for m in range(M):
+                    # (m(prevのm) * 10 + d_j) % M
+                    next[j | (d_j < d)][(m * 10 + d_j) % M] += prev[j][m]
+        prev = next
 
-# 一番簡単なのは1 ~ 3, 2 ~ 4とか
-# なんか最大流みたいにならない？
-
-# a ~ b間が大きい場合どうする？
-# 間を配分する
-# 階数的に 1 ~ 4, 3 ~ 6みたいなのは無理
-# 1 ~ 4がいた場合関係するのは2, 3スタートの人
-
-# セグ木かもしれない
+    # 00000が混じっているがA - Bするので問題なし
+    return prev
