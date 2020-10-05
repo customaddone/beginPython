@@ -49,183 +49,290 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC154 E - Almost Everywhere Zero
-N = '9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999'
-K = 3
-L = len(N)
+N = 4
+inf = float('inf')
 
-def judge(a):
-    return a != 0
+d = [
+[0, 2, inf, inf],
+[inf, 0, 3, 9],
+[1, inf, 0, 6],
+[inf, inf, 4, 0]
+]
 
-# N以下の数字で条件を満たす桁がk個のもの
-def digit_dp(n, k):
-    l = len(n)
+dp = [[-1] * N for i in range(1 << N)]
 
-    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
+def rec(s, v, dp):
+    if dp[s][v] >= 0:
+        return dp[s][v]
+    if s == (1 << N) - 1 and v == 0:
+        dp[s][v] = 0
+        return 0
+    res = float('inf')
+    for u in range(N):
+        if s & (1 << u) == 0:
+            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
+    dp[s][v] = res
+    return res
+# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
+print(rec(0,0,dp))
 
-    for i in range(l):
-        d = int(n[i])
+# ABC054 C - One-stroke Path
 
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                for k_j in range(k + 1):
-                    if judge(d_j):
-                        if k_j + 1 <= k:
-                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+N, M = getNM()
+dist = [[] for i in range(N + 1)]
+for i in range(M):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-    return dp
+cnt = 0
 
-dp = digit_dp(N, K)
-print(dp[L][0][K] + dp[L][1][K])
+pos = deque([[1 << 0, 0]])
 
-# ABC029 D - 1
-N = '999999999'
-L = len(N)
+while len(pos) > 0:
+    s, v = pos.popleft()
+    if s == (1 << N) - 1:
+        cnt += 1
+    for u in dist[v]:
+        if s & (1 << u):
+            continue
+        pos.append([s | (1 << u), u])
+print(cnt)
 
-def judge_2(a):
-    return a == 1
+"""
+全ての場所を一度だけ通り巡回する通りの数
+bit(1 << N)を小さい順から探索する
+①bit & (1 << 0)
+最初に0を踏んでないということだから飛ばす
+②現在の場所sを探すためN個探索する
+③次の場所tを探すためN個探索する
+④渡すdpする
+"""
 
-# N以下の数字の中で「1が書いてある桁がk個ある数字」がいくつあるか
-# 上のものと関数の中身自体は変えていない
-def digit_dp_2(n, k):
-    l = len(n)
+N, M = getNM()
+G = [[0] * N for i in range(N)]
+for i in range(M):
+    a, b = getNM()
+    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
+    G[b - 1][a - 1] = 1
 
-    dp = [[[0] * (k + 1) for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
+# 状態bitから次の状態へ渡すdpするというのはよくやる
+# [0](001) → [0, 1](011) → [0, 1, 2](111)
+#          → [0, 2](101) → [0, 1, 2](111)
+def counter(sta):
+    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
+    dp = [[0] * N for i in range(1 << N)]
+    dp[1 << sta][sta] = 1
 
-    for i in range(l):
-        d = int(n[i])
+    for bit in range(1, 1 << N):
+        if not bit & (1 << sta):
+            continue
+        # s:現在の場所
+        for s in range(N):
+            # sを踏んだことになっていなければ飛ばす
+            if not bit & (1 << s):
+                continue
+            # t:次の場所
+            for t in range(N):
+                # tを過去踏んでいない and s → tへのエッジがある
+                if (bit & (1 << t)) == 0 and G[s][t]:
+                    dp[bit|(1 << t)][t] += dp[bit][s]
 
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                for k_j in range(k + 1):
-                    if judge_2(d_j):
-                        if k_j + 1 <= k:
-                            dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
+    return sum(dp[(1 << N) - 1])
 
-    return dp
+print(counter(0))
 
-dp = digit_dp_2(N, L)
+# ABC104 C - All Green
+# 特別ボーナスがある問題は大抵bit dp
+# 目標700点
+D, G = getNM()
+query = []
+for i in range(D):
+    p, c = getNM()
+    query.append([i + 1, p, c])
 
-ans = 0
-for j in range(L + 1):
-    # dp[l]について各j(1のカウント)の通りの数 * j
-    ans += (dp[L][0][j] + dp[L][1][j]) * j
+ans_cnt = float('inf')
+
+for bit in range(1 << D):
+    sum = 0
+    cnt = 0
+    for i in range(D):
+        if bit & (1 << i):
+            sum += query[i][0] * query[i][1] * 100 + query[i][2]
+            cnt += query[i][1]
+
+    if sum < G:
+        for j in range(D - 1, -1, -1):
+            if not bit & (1 << j):
+                left = G - sum
+                fire = query[j][0] * 100
+                opt = min(query[j][1], (left + fire - 1) // fire)
+                sum += opt * query[j][0] * 100
+                cnt += opt
+                break
+
+    if sum >= G:
+        ans_cnt = min(ans_cnt, cnt)
+
+print(ans_cnt)
+
+# ABC119 C - Synthetic Kadomatsu
+N, A, B, C = getNM()
+L = getArray(N)
+
+def counter(array):
+    if (1 in array) and (2 in array) and (3 in array):
+        opt = [0, 0, 0, 0]
+        # 合成に10pかかる
+        cnt = 0
+        for i in range(len(array)):
+            if opt[array[i]] > 0:
+                cnt += 1
+            if array[i] >= 1:
+                opt[array[i]] += L[i]
+
+        res = cnt * 10
+        res += abs(opt[1] - A)
+        res += abs(opt[2] - B)
+        res += abs(opt[3] - C)
+
+        return res
+
+    else:
+        return float('inf')
+
+ans = float('inf')
+def four_pow(i, array):
+    global ans
+    if i == N:
+        ans = min(ans, counter(array))
+        return
+    # 4 ** Nループ
+    for j in range(4):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+
+four_pow(0, [])
 print(ans)
 
-A, B = 1, 1000000000000000000
+N, M = 4, 6
+weight = [67786, 3497, 44908, 2156, 26230, 86918]
+value = [[1, 3, 4], [2], [2, 3, 4], [2, 3, 4], [2], [3]]
 
-# 4, 9の個数については求めない簡易版
-def judge_3(a):
-    return a in [4, 9]
+# N個のものを全て手に入れるのに必要なコストの最小値
+# コストを1にすれば最小個数がわかる
+# Nの数が十分に小さいと使用可能
+# Mの数が十分小さければMをbitdpする
+def get_everything(n, weight, value):
+    m = len(weight)
+    dp = [float("inf")] * (1 << n)
+    dp[0] = 0
 
-def digit_dp(n):
-    l = len(n)
+    for i in range(m):
+        bit = 0
+        for item in value[i]:
+            bit |= (1 << (item - 1))
 
-    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
+        for j in range(1 << n):
+            dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
 
-    for i in range(l):
-        d = int(n[i])
+    return dp[(1 << N) - 1]
 
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                # 0:4,9が含まれない　1:4,9が含まれる
-                for k_j in range(2):
-                    if k_j == 0 and judge_3(d_j):
-                        dp[i + 1][j | (d_j < d)][k_j + 1] += dp[i][j][k_j]
-                    else:
-                        dp[i + 1][j | (d_j < d)][k_j] += dp[i][j][k_j]
-    return dp[l][0][1] + dp[l][1][1]
+ans = get_everything(N, weight, value)
+if ans == float("inf"):
+    print(-1)
+else:
+    print(ans)
 
-print(digit_dp(str(B)) - digit_dp(str(A - 1)))
-
-# ABC129 E - Sum Equals Xor
-# 通りの数を求める
-
-L = '1111111111111111111'
-
-def digit_dp_3(n):
-    l = len(n)
-
-    dp = [[[0] * 2 for _ in range(2)] for i in range(l + 1)]
-    dp[0][0][0] = 1
-
-    for i in range(l):
-        d = int(n[i])
-
-        # Lになる可能性があるかないか
-        for j in range(2):
-            # 次の桁が0か1か
-            for d_j in range(2 if j else d + 1):
-                if d_j == 0:
-                    dp[i + 1][j | (d_j < d)][d_j] += (dp[i][j][0] + dp[i][j][1])
-                    dp[i + 1][j | (d_j < d)][d_j] %= mod
-                else:
-                    dp[i + 1][j | (d_j < d)][d_j] += 2 * (dp[i][j][0] + dp[i][j][1])
-                    dp[i + 1][j | (d_j < d)][d_j] %= mod
-
-    return sum(dp[-1][0]) + sum(dp[-1][1])
-
-print(digit_dp_3(L) % mod)
-
-# JOI11予選 F - ジグザグ数 (Zig-Zag Numbers)
-
-# 桁dpかヒープキューか
-# A以上B以下 :0 ~ Aと0 ~ B両方出す
-# Mの倍数を出そう
-
-# 多分桁dp
-A = input()
+# N:ブロックの個数 M;ブロックの色 Y:コンボボーナス Z:全色ボーナス
+# N <= 5000, M <= 10
+N, M, Y, Z = getNM()
+# 色ボーナス
+d = dict()
+for i in range(M):
+    c, p = input().split()
+    d[c] = (i, int(p))
+# 落ちてくるブロックの種類
 B = input()
-M = getN()
 
-# prev[j][z][l_d][m]: 前回z(増加/減少/前なし)して最後尾がl_dでmの倍数のもの
-def digit_dp(x):
-    n = len(x)
-    prev = [[[[0] * M for _ in range(10)] for i in range(3)] for i in range(2)]
-    prev[0][2][0][0] = 1
+# 全通り出してみよう
+# 2 ** N通り
+# 単色でやってみる?
+# どれを取ればいいか
+# 前から順に＾
+# どの色をコンボしても点数は同じ
 
-    for i in range(n):
-        d = int(x[i])
-        next = [[[[0] * M for _ in range(10)] for i in range(3)] for i in range(2)]
-        for j in range(2):
-            for l_d in range(10): # prevの最後尾
-                for d_j in range(10 if j else d + 1): # nextの最後尾
-                    for m in range(M): # mod Mのもの
-                        if d_j == 0 and d_j == 0: # 前なしなら無条件で足す
-                            next[j | (d_j < d)][2][d_j][(m * 10 + d_j) % M] += prev[j][2][l_d][m]
-                        else: # 前なしなら無条件で足す
-                            next[j | (d_j < d)][0][d_j][(m * 10 + d_j) % M] += prev[j][2][l_d][m]
-                            next[j | (d_j < d)][1][d_j][(m * 10 + d_j) % M] += prev[j][2][l_d][m]
-                        if d_j > l_d: # 0:増加 1:減少
-                            # (m(prevのm) * 10 + d_j) % M
-                            next[j | (d_j < d)][0][d_j][(m * 10 + d_j) % M] += prev[j][1][l_d][m]
-                        elif d_j < l_d:
-                            next[j | (d_j < d)][1][d_j][(m * 10 + d_j) % M] += prev[j][0][l_d][m]
+# dp?
 
-                        for z in range(3):
-                            next[j | (d_j < d)][z][d_j][(m * 10 + d_j) % M] %= 10000
+# dp[i][j]: 直前の色がi, 全部でjの色を使った
+dp = [[-float('inf')] * (1 << M) for _ in range(M + 1)]
+dp[M][0] = 0
 
-        prev = next
+# 交換するdpの要領
+for e in B:
+    # B[i]番目の色ポイント
+    i, p = d[e]
+    # 色iを含む状態について調べる
+    # 色が少ないものから順に巻き込んでいく感じ
+    for j in range((1 << M) - 1, -1, -1):
+        if j & (1 << i) == 0:
+            continue
 
-    # 00000が混じっているがA - Bするので問題なし
-    return prev
+        # 候補1: 直前の色が違うものだった and 以前に使った色を使った
+        num1 = max(dp[k][j] for k in range(M + 1) if k != i) + p
+        # 候補2: 直前の色が同じものだった
+        num2 = dp[i][j] + p + Y
+        # 候補3: 直前の色が違うものだった and 以前に使っってない色を使った
+        num3 = max(dp[k][j ^ (1 << i)] for k in range(M + 1) if k != i) + p
+        dp[i][j] = max(dp[i][j], num1, num2, num3)
 
-opt1 = digit_dp(B)
-opt1_diff = min(int(B), 9) // M # 1 ~ 9まではダブルカウントされているので修正
-opt2 = digit_dp(str(int(A) - 1))
-opt2_diff = min(int(A) - 1, 9) // M
+# 全色ボーナス
+for i in range(M):
+    dp[i][(1 << M) - 1] += Z
 
 ans = 0
-for j in range(2):
-    for z in range(3):
-        for l_d in range(10):
-            ans += opt1[j][z][l_d][0] - opt2[j][z][l_d][0]
+for row in dp:
+    ans = max(ans, max(row))
+print(ans)
 
-print((ans - opt1_diff + opt2_diff) % 10000)
+# JOI16 D-ぬいぐるみの整理 (Plush Toys)
+
+# N個のぬいぐるみはM種類のうちのどれか
+# 同じ種類のぬいぐるみが全て連続するように
+N, M = getNM()
+T = getArray(N)
+T = [i - 1 for i in T]
+
+# 20!は間に合わないが2 ** 20は間に合う
+# 取り出すぬいぐるみの最小値
+# ai, a2...と決めていった時
+# 違う場所にあるものを全て取り出せばOK
+
+# 20!を2 ** 20に改善する
+
+cnt_toys = [0] * M # 種類iのぬいぐるみの数
+cnt_acc = [[0] * (N + 1) for i in range(M)] # [l, r]の区間で種類iを指定した時に変えないといけないぬいぐるみの数
+
+
+for i in range(M): # 種類
+    for j in range(N): # 左から何番目のぬいぐるみ
+        if T[j] != i:
+            cnt_acc[i][j + 1] = 1
+        cnt_acc[i][j + 1] += cnt_acc[i][j]
+    cnt_toys[i] = N - cnt_acc[i][-1]
+
+dp = [float('inf')] * (1 << M)
+dp[0] = 0
+# bit dpする
+for s in range(1 << M):
+    # 今まで置いてきたぬいぐるみの総計 左側に詰めて置く
+    left = sum([cnt_toys[i] for i in range(M) if s & (1 << i)])
+    # 種類jを新たにその右に置く
+    for j in range(M):
+        if s & (1 << j):
+            continue
+        length = cnt_toys[j]
+        cnt = cnt_acc[j][left + length] - cnt_acc[j][left] # 今まで置いてきたぬいぐるみの右側に種類jのぬいぐるみを指定する
+        dp[s | (1 << j)] = min(dp[s | (1 << j)], dp[s] + cnt)
+
+print(dp[-1])
