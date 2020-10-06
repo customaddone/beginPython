@@ -49,290 +49,386 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N = 4
-inf = float('inf')
+# ABC005 C - おいしいたこ焼きの売り方
+# マッチング問題だが貪欲
+T = getN()
+N = getN()
+sell = getList()
+M = getN()
+buy = getList()
 
-d = [
-[0, 2, inf, inf],
-[inf, 0, 3, 9],
-[1, inf, 0, 6],
-[inf, inf, 4, 0]
-]
+# 来る客1, 2に売れるか
+for cus in buy:
+    flag = False
+    for i in range(N):
+        if sell[i] <= cus <= sell[i] + T:
+            flag = True
+            sell[i] = mod
+            break
+    if not flag:
+        print('no')
+        exit()
+print('yes')
 
-dp = [[-1] * N for i in range(1 << N)]
+# ABC080 D - Recording
+# 使ってない録画機は他のチャンネルにスイッチできる
+# 同時にいくつ放送が流れているか
+N, C = getNM()
+query = [getList() for i in range(N)]
+dp = [[0] * (C + 1) for i in range(10 ** 5 + 2)]
+for i in range(N):
+    s, t, c = query[i]
+    dp[s][c] += 1
+    dp[t + 1][c] -= 1
 
-def rec(s, v, dp):
-    if dp[s][v] >= 0:
-        return dp[s][v]
-    if s == (1 << N) - 1 and v == 0:
-        dp[s][v] = 0
-        return 0
-    res = float('inf')
-    for u in range(N):
-        if s & (1 << u) == 0:
-            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
-    dp[s][v] = res
-    return res
-# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
-print(rec(0,0,dp))
-
-# ABC054 C - One-stroke Path
-
-N, M = getNM()
-dist = [[] for i in range(N + 1)]
-for i in range(M):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-cnt = 0
-
-pos = deque([[1 << 0, 0]])
-
-while len(pos) > 0:
-    s, v = pos.popleft()
-    if s == (1 << N) - 1:
-        cnt += 1
-    for u in dist[v]:
-        if s & (1 << u):
-            continue
-        pos.append([s | (1 << u), u])
-print(cnt)
-
-"""
-全ての場所を一度だけ通り巡回する通りの数
-bit(1 << N)を小さい順から探索する
-①bit & (1 << 0)
-最初に0を踏んでないということだから飛ばす
-②現在の場所sを探すためN個探索する
-③次の場所tを探すためN個探索する
-④渡すdpする
-"""
-
-N, M = getNM()
-G = [[0] * N for i in range(N)]
-for i in range(M):
-    a, b = getNM()
-    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
-    G[b - 1][a - 1] = 1
-
-# 状態bitから次の状態へ渡すdpするというのはよくやる
-# [0](001) → [0, 1](011) → [0, 1, 2](111)
-#          → [0, 2](101) → [0, 1, 2](111)
-def counter(sta):
-    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
-    dp = [[0] * N for i in range(1 << N)]
-    dp[1 << sta][sta] = 1
-
-    for bit in range(1, 1 << N):
-        if not bit & (1 << sta):
-            continue
-        # s:現在の場所
-        for s in range(N):
-            # sを踏んだことになっていなければ飛ばす
-            if not bit & (1 << s):
-                continue
-            # t:次の場所
-            for t in range(N):
-                # tを過去踏んでいない and s → tへのエッジがある
-                if (bit & (1 << t)) == 0 and G[s][t]:
-                    dp[bit|(1 << t)][t] += dp[bit][s]
-
-    return sum(dp[(1 << N) - 1])
-
-print(counter(0))
-
-# ABC104 C - All Green
-# 特別ボーナスがある問題は大抵bit dp
-# 目標700点
-D, G = getNM()
-query = []
-for i in range(D):
-    p, c = getNM()
-    query.append([i + 1, p, c])
-
-ans_cnt = float('inf')
-
-for bit in range(1 << D):
-    sum = 0
-    cnt = 0
-    for i in range(D):
-        if bit & (1 << i):
-            sum += query[i][0] * query[i][1] * 100 + query[i][2]
-            cnt += query[i][1]
-
-    if sum < G:
-        for j in range(D - 1, -1, -1):
-            if not bit & (1 << j):
-                left = G - sum
-                fire = query[j][0] * 100
-                opt = min(query[j][1], (left + fire - 1) // fire)
-                sum += opt * query[j][0] * 100
-                cnt += opt
-                break
-
-    if sum >= G:
-        ans_cnt = min(ans_cnt, cnt)
-
-print(ans_cnt)
-
-# ABC119 C - Synthetic Kadomatsu
-N, A, B, C = getNM()
-L = getArray(N)
-
-def counter(array):
-    if (1 in array) and (2 in array) and (3 in array):
-        opt = [0, 0, 0, 0]
-        # 合成に10pかかる
-        cnt = 0
-        for i in range(len(array)):
-            if opt[array[i]] > 0:
-                cnt += 1
-            if array[i] >= 1:
-                opt[array[i]] += L[i]
-
-        res = cnt * 10
-        res += abs(opt[1] - A)
-        res += abs(opt[2] - B)
-        res += abs(opt[3] - C)
-
-        return res
-
-    else:
-        return float('inf')
-
-ans = float('inf')
-def four_pow(i, array):
-    global ans
-    if i == N:
-        ans = min(ans, counter(array))
-        return
-    # 4 ** Nループ
-    for j in range(4):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-
-four_pow(0, [])
-print(ans)
-
-N, M = 4, 6
-weight = [67786, 3497, 44908, 2156, 26230, 86918]
-value = [[1, 3, 4], [2], [2, 3, 4], [2, 3, 4], [2], [3]]
-
-# N個のものを全て手に入れるのに必要なコストの最小値
-# コストを1にすれば最小個数がわかる
-# Nの数が十分に小さいと使用可能
-# Mの数が十分小さければMをbitdpする
-def get_everything(n, weight, value):
-    m = len(weight)
-    dp = [float("inf")] * (1 << n)
-    dp[0] = 0
-
-    for i in range(m):
-        bit = 0
-        for item in value[i]:
-            bit |= (1 << (item - 1))
-
-        for j in range(1 << n):
-            dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
-
-    return dp[(1 << N) - 1]
-
-ans = get_everything(N, weight, value)
-if ans == float("inf"):
-    print(-1)
-else:
-    print(ans)
-
-# N:ブロックの個数 M;ブロックの色 Y:コンボボーナス Z:全色ボーナス
-# N <= 5000, M <= 10
-N, M, Y, Z = getNM()
-# 色ボーナス
-d = dict()
-for i in range(M):
-    c, p = input().split()
-    d[c] = (i, int(p))
-# 落ちてくるブロックの種類
-B = input()
-
-# 全通り出してみよう
-# 2 ** N通り
-# 単色でやってみる?
-# どれを取ればいいか
-# 前から順に＾
-# どの色をコンボしても点数は同じ
-
-# dp?
-
-# dp[i][j]: 直前の色がi, 全部でjの色を使った
-dp = [[-float('inf')] * (1 << M) for _ in range(M + 1)]
-dp[M][0] = 0
-
-# 交換するdpの要領
-for e in B:
-    # B[i]番目の色ポイント
-    i, p = d[e]
-    # 色iを含む状態について調べる
-    # 色が少ないものから順に巻き込んでいく感じ
-    for j in range((1 << M) - 1, -1, -1):
-        if j & (1 << i) == 0:
-            continue
-
-        # 候補1: 直前の色が違うものだった and 以前に使った色を使った
-        num1 = max(dp[k][j] for k in range(M + 1) if k != i) + p
-        # 候補2: 直前の色が同じものだった
-        num2 = dp[i][j] + p + Y
-        # 候補3: 直前の色が違うものだった and 以前に使っってない色を使った
-        num3 = max(dp[k][j ^ (1 << i)] for k in range(M + 1) if k != i) + p
-        dp[i][j] = max(dp[i][j], num1, num2, num3)
-
-# 全色ボーナス
-for i in range(M):
-    dp[i][(1 << M) - 1] += Z
+for i in range(1, 10 ** 5 + 2):
+    for j in range(C + 1):
+        dp[i][j] += dp[i - 1][j]
 
 ans = 0
-for row in dp:
-    ans = max(ans, max(row))
+for i in range(10 ** 5 + 2):
+    cnt = 0
+    for j in dp[i]:
+        if j > 0:
+            cnt += 1
+    ans = max(ans, cnt)
 print(ans)
 
-# JOI16 D-ぬいぐるみの整理 (Plush Toys)
+# ABC085 D - Katana Thrower
+N, H = getNM()
 
-# N個のぬいぐるみはM種類のうちのどれか
-# 同じ種類のぬいぐるみが全て連続するように
+a = []
+b = []
+
+for i in range(N):
+  x, y = map(int, input().split())
+  a.append(x)
+  b.append(y)
+
+# 振った場合の最大値
+max_a = max(a)
+
+ans = 0
+# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
+# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
+# 両方利用することができる
+# 実は投げてしまった刀も振ることができるというルールに変更しても
+# 問題の答えは変わらない
+# 実際のムーブとしては
+# ①最も攻撃力が高い振り刀で攻撃する
+# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
+# という流れになる
+for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
+    H -= x
+    ans += 1
+    if H <= 0: break
+
+ans += max(0, (H + max_a - 1) // max_a)
+print(ans)
+
+# ABC091 C - 2D Plane 2N Points
+
+N = getN()
+# Rはループさせるのでソートさせる必要ない
+R = [getList() for i in range(N)]
+R_l = [1] * N
+
+B = [getList() for i in range(N)]
+B.sort()
+
+# 貪欲法でペア作りする問題
+# ABC005 C - おいしいたこ焼きの売り方の時と同様に
+# それとしか繋げないもの　を優先的に繋いでいく
+
+# 条件Aの通過が厳しい順に対象bをソートし、
+# たこ焼き　条件A:客が来る前にたこ焼きができてないといけない
+#  　　　　      客を来るのが早い順に並べる（最初から並んでる）
+# 今回     条件A:赤星のx座標が青星のx座標より小さくないといけない
+#  　　　　　　　 青星をx座標が小さい順に並べる
+
+# 条件A, 条件Bをクリアしたものの中で、最も条件Bの通過が厳しい対象aと結ぶ
+# たこ焼き　条件B:たこ焼きが賞味期限より前のものでないといけない
+#  　　　　      できるだけ古いものを売る（最初から並んでる）
+# 今回     条件B:赤星のy座標が青星のy座標より小さくないといけない
+#  　　　　　　　 条件をクリアしたもののうちでできるだけy座標が大きいものを選ぶ
+
+ans = 0
+for b in B:
+    max_y = -1
+    max_index = -1
+    for i, a in enumerate(R):
+        # x, y座標が小さいもののうちでまた使ってないもの
+        if a[0] < b[0] and a[1] < b[1] and R_l[i] == 1:
+            # あるならY座標が最も大きいもの
+            if a[1] > max_y:
+                max_y = a[1]
+                max_index = i
+    if max_y >= 0:
+        R_l[max_index] = 0
+        ans += 1
+
+# ABC100 D - Patisserie ABC
+# 8パターン全部調べる
+
+N,M = getNM()
+data = [[] for i in range(8)]
+for _ in range(N):
+    x,y,z = getNM()
+    data[0].append(x + y + z)
+    data[1].append(x + y - z)
+    data[2].append(x - y + z)
+    data[3].append(x - y - z)
+    data[4].append(- x + y + z)
+    data[5].append(- x + y - z)
+    data[6].append(- x - y + z)
+    data[7].append(- x - y - z)
+
+ans = -mod
+for i in range(8):
+    data[i].sort(reverse = True)
+    ans = max(ans,sum(data[i][:M]))
+print(ans)
+
+# ABC103 D - Islands War
 N, M = getNM()
-T = getArray(N)
-T = [i - 1 for i in T]
+que = []
+for i in range(M):
+    a, b = getNM()
+    que.append([a - 1, b - 1])
 
-# 20!は間に合わないが2 ** 20は間に合う
-# 取り出すぬいぐるみの最小値
-# ai, a2...と決めていった時
-# 違う場所にあるものを全て取り出せばOK
+# N個の島　各島間には橋がある
+# 要望が1 ~ 5, 1 ~ 3の時
+# 例えば1 - 2間を取り除けばいい
+# 要望が1 ~ 2, 1 ~ 3, 1 ~ 4の時
+# 1 - 2間の橋を取り除く
+# 逆に言えば1 ~ 2の時は1 ~ 2間の橋を取り除くしかない
 
-# 20!を2 ** 20に改善する
+# 間隔が狭いものから調べていく
+# 間隔1の橋を取り除く、間隔2の橋を取り除く...
+# 間隔2のどちらの橋を取り除く
 
-cnt_toys = [0] * M # 種類iのぬいぐるみの数
-cnt_acc = [[0] * (N + 1) for i in range(M)] # [l, r]の区間で種類iを指定した時に変えないといけないぬいぐるみの数
+# 1 ~ 2, 1 ~ 3, 1 ~ 4の時
+# 1 - 2間の橋を取り除く
+# 2 ~ 3, 1 ~ 3, 1 ~ 4の時
+# 1 - 2の橋は取り除かなくていい
+# するとこれは2スタートの2 ~ 3, 2 ~ 3, 2 ~ 4の要望に答える問題に変換できる
+# 終点をソートして左側から順に橋を落とすか落とさないか決めていく
+
+que.sort(key = lambda i:i[1])
+# a ~ bで繋がっているならb - 1 ~ b間の橋を取り除く
+# queryの区間は左にスライドしていき、次のqueryに最も関係あるのは右の方の橋なので
+
+ans = 0
+destroy = -1 # 最後に落とした橋
+for a, b in que:
+    if destroy <= a: # 範囲外なら橋を新しく落とす
+        ans += 1
+        destroy = b
+print(ans)
 
 
-for i in range(M): # 種類
-    for j in range(N): # 左から何番目のぬいぐるみ
-        if T[j] != i:
-            cnt_acc[i][j + 1] = 1
-        cnt_acc[i][j + 1] += cnt_acc[i][j]
-    cnt_toys[i] = N - cnt_acc[i][-1]
+# ABC116 D - Various Sushi
+N, K = getNM()
+various = defaultdict(list)
+que = [getList() for i in range(N)]
 
-dp = [float('inf')] * (1 << M)
-dp[0] = 0
-# bit dpする
-for s in range(1 << M):
-    # 今まで置いてきたぬいぐるみの総計 左側に詰めて置く
-    left = sum([cnt_toys[i] for i in range(M) if s & (1 << i)])
-    # 種類jを新たにその右に置く
-    for j in range(M):
-        if s & (1 << j):
-            continue
-        length = cnt_toys[j]
-        cnt = cnt_acc[j][left + length] - cnt_acc[j][left] # 今まで置いてきたぬいぐるみの右側に種類jのぬいぐるみを指定する
-        dp[s | (1 << j)] = min(dp[s | (1 << j)], dp[s] + cnt)
+ans = 0
+num = []
+var_s = set()
 
-print(dp[-1])
+# 美味しい順にK個とった時の幸福度
+que.sort(reverse = True, key = lambda i: i[1])
+for i in range(K):
+    ans += que[i][1]
+    # もし２番手以降ならあとで交換する用にとっておく
+    if que[i][0] in var_s:
+        num.append(que[i][1])
+    var_s.add(que[i][0])
+
+var = len(var_s)
+ans += var ** 2
+
+# 使ってない種類について各種類で一番大きさが大きいもの
+left_l = defaultdict(int)
+for i in range(N):
+    if not que[i][0] in var_s:
+        left_l[que[i][0]] = max(left_l[que[i][0]], que[i][1])
+
+num.sort(reverse = True)
+left_l = [i[1] for i in left_l.items()]
+left_l.sort()
+
+# M回交換する
+opt = ans
+M = min(len(num), len(left_l))
+for i in range(M):
+    u = num.pop()
+    s = left_l.pop()
+    # 寿司単体の幸福度
+    opt -= (u - s)
+    # 種類が増える分
+    opt += 2 * var + 1
+    var += 1
+    ans = max(opt, ans)
+
+print(ans)
+
+# ABC119 D - Lazy Faith
+A, B, Q = getNM()
+# 神社
+S = getArray(A)
+# 寺
+T = getArray(B)
+query = getArray(Q)
+
+S.insert(0, -float('inf'))
+T.insert(0, -float('inf'))
+S.append(float('inf'))
+T.append(float('inf'))
+
+def close(data, point):
+    west = data[bisect_left(data, point) - 1]
+    east = data[bisect_left(data, point)]
+
+    return west, east
+
+for i in range(Q):
+    now = query[i]
+    shrine_west, shrine_east = close(S, now)
+    temple_west, temple_east = close(T, now)
+
+    ww = now - min(shrine_west, temple_west)
+    we_1 = (now - shrine_west) * 2 + (temple_east - now)
+    we_2 = (now - temple_west) * 2 + (shrine_east - now)
+    ee = max(shrine_east, temple_east) - now
+    ew_1 = (shrine_east - now) * 2 + (now - temple_west)
+    ew_2 = (temple_east - now) * 2 + (now - shrine_west)
+
+    print(min(ww, we_1, we_2, ee, ew_1, ew_2))
+
+# ABC137 D - Summer Vacation
+# ヒープ使った貪欲
+N, M = getNM()
+query = [getList() for i in range(N)]
+
+A_list = [[] for i in range(10 ** 5 + 1)]
+for a, b in query:
+    A_list[a].append(b)
+
+job = []
+heapq.heapify(job)
+
+ans = 0
+for i in range(1, M + 1):
+    for j in A_list[i]:
+        heapq.heappush(job, -j)
+    if len(job) > 0:
+        u = heapq.heappop(job)
+        ans += -u
+print(ans)
+
+# ABC169 E - Count Median
+N = getN()
+A = []
+B = []
+for i in range(N):
+    a, b = getNM()
+    A.append(a)
+    B.append(b)
+A.sort()
+B.sort()
+# 範囲がN個ある
+# Xは整数
+# 中央値のmin, maxは？
+# Nが偶数、奇数の場合
+# 奇数の場合 中央値は絶対に整数
+# 中央値のmin: Aの中央値、max: Bの中央値
+# 偶数の場合
+# 中央値のmin: (Ai-1 + Ai) / 2 max: (Bi-1 + Bi) / 2
+# いくつある？
+
+# 中央値は最低でも0.5刻み
+# 偶数の場合は奇数の2N - 1になる？
+# Ai-1とAiを自由にいじることで0.5, 1, 1.5と言う風に中間値を作れそう
+if N % 2 == 0:
+    opt_a = (A[(N // 2) - 1] + A[N // 2]) / 2
+    opt_b = (B[(N // 2) - 1] + B[N // 2]) / 2
+    # opt_b - opt_aを0.5で割って +1
+    # intで出せ
+    print(int((opt_b - opt_a) * 2 + 1))
+else:
+    opt_a = A[N // 2]
+    opt_b = B[N // 2]
+    # 中央値は絶対に整数
+    print(opt_b - opt_a + 1)
+
+# AGC029 B - Powers of two
+# N = getN()
+# A = getList() # ボール
+N = getN()
+A = getList()
+A.sort()
+# ボールからペアを作ってその和が２冪(2 ** iになる)になるようにしたい
+
+# 最大でいくつペアを作れるか
+# 最大流？Nが大きいから無理
+
+# M <= 2 * 10 ** 5
+# 数字aのペアの候補は？
+# 1なら3 (4), 7 (8), 15(16)...
+# 2なら2 (4), 6 (8), 14(16)...
+# 探索して求められるか？
+# 2冪の数はだいたい30個 各要素のペアになるものは求められる
+powers = [1] * 32
+for i in range(1, 32):
+    powers[i] = powers[i - 1] * 2
+
+# Aの中に30個の候補のどれかが含まれているか
+# 二分探索でどのペアかもわかる
+
+# ペアとなるbがあったとして、どれにくっつけるのが有効か？
+# 数を絞れば最大流できる Aが同じ数の場合があるのでできない
+# dp?
+
+# 実は大きい数の方がペアになる条件は厳しくなる
+# 貪欲ペアは厳しい順からペアにしていく
+flag = [0] * N
+ans = 0
+while A:
+    u = A.pop() # 自身とペアにならないようにpop
+    if flag[len(A)]: # uのフラグが立っていたなら飛ばす
+        continue
+    # 自身より大きい２冪の数の中で最も小さいもの
+    # これがAの中に存在するか
+    opt = powers[bisect_right(powers, u)] - u
+    # 存在するか二分探索
+    left = bisect_left(A, opt)
+    right = bisect_left(A, opt + 1)
+    # 存在する'1, 1, 1...'のうちフラグが立っていないものとペアに
+    # 後ろから探索する
+    for i in range(right - 1, left - 1, -1):
+        if not flag[i]:
+            ans += 1
+            flag[i] = 1
+            break
+print(ans)
+
+# キーエンス プログラミング コンテスト 2020 B - Robot Arms
+# 区間スケジューリング問題
+# 終点をソート
+N = getN()
+query = [getList() for i in range(N)]
+
+r_l = []
+for x, l in query:
+    r_l.append([x - l, x + l])
+r_l.sort(key = lambda i:i[1])
+
+cnt = 0
+last = r_l[0][1]
+for i in range(1, N):
+    if r_l[i][0] < last:
+        cnt += 1
+    else:
+        last = r_l[i][1]
+print(N - cnt)
