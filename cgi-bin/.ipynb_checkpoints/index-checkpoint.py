@@ -50,28 +50,9 @@ mod = 10 ** 9 + 7
 #############
 
 N = getN()
+A = getList()
 
-memo = [{} for i in range(N + 1)]
-
-def ok(last4):
-    for i in range(4):
-        t = list(last4)
-        if i >= 1:
-            t[i - 1], t[i] = t[i], t[i - 1]
-        if ''.join(t).count('AGC') >= 1:
-            return False
-    return True
-
-def dfs(cur, last3):
-    if last3 in memo[cur]:
-        return memo[cur][last3]
-
-    if cur == N:
-        return 1
-    res = 0
-    for s in 'AGCT':
-        if ok(last3 + s):
-            res = (res + dfs(cur + 1, last3[1:] + s)) % mod
-    memo[cur][last3] = res
-    return res
-print(dfs(0, 'TTT'))
+acc_f = deepcopy(A)
+for i in range(1, N):
+    acc_f[i] += acc_f[i - 1]
+print(acc_f)
