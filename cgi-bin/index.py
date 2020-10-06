@@ -49,6 +49,35 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+# 蟻本
+
+N = 5
+K = 3
+A = [1, 3, 5, 4, 2]
+# [1, 3, 5]の最小値
+# [2, 5, 4]の最小値
+# [5, 4, 2]の最小値
+pos = deque([0])
+
+# posの内部のa1, a2...についてa1 < a2...かつ
+# A[a1] < A[a2]...になるように
+for i in range(1, K):
+    if A[pos[-1]] < A[i]:
+        pos.append(i)
+    else:
+        pos[-1] = i
+
+for i in range(N - K):
+    # iを削除してi + Kを入れる
+    # もしposの先頭がiなら
+    if pos[0] == i:
+        pos.popleft()
+
+    if A[pos[-1]] < A[i + K]:
+        pos.append(i + K)
+    else:
+        pos[-1] = i + K
+
 # AGC038 B - Sorting a Segment
 N, K = getNM()
 P = getList()
@@ -83,7 +112,6 @@ rev = [] # P[i](大), P[i + 1](小)の時、iを範囲に含まなければい�
 for i in range(K):
     if P[i + 1] < P[i]:
         rev.append(i)
-
 
 rev_group = set()
 for i in range(N - K + 1):
