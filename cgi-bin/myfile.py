@@ -17,73 +17,54 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def getN():
-    return int(input())
-def getNM():
-    return map(int, input().split())
-def getList():
-    return list(map(int, input().split()))
-def getArray(intn):
-    return [int(input()) for i in range(intn)]
-def input():
-    return sys.stdin.readline().rstrip()
-def rand_N(ran1, ran2):
-    return random.randint(ran1, ran2)
-def rand_List(ran1, ran2, rantime):
-    return [random.randint(ran1, ran2) for i in range(rantime)]
-def rand_ints_nodup(ran1, ran2, rantime):
-  ns = []
-  while len(ns) < rantime:
-    n = random.randint(ran1, ran2)
-    if not n in ns:
-      ns.append(n)
-  return sorted(ns)
+N, M = getNM()
+B = [getList() for i in range(N)]
+S = [getList() for i in range(M)]
 
-def rand_query(ran1, ran2, rantime):
-  r_query = []
-  while len(r_query) < rantime:
-    n_q = rand_ints_nodup(ran1, ran2, 2)
-    if not n_q in r_query:
-      r_query.append(n_q)
-  return sorted(r_query)
+# どの大きい塔からどの大きい塔へいけるように
+# Unionfindかmaxflowか
 
-from collections import defaultdict, deque, Counter
-from sys import exit
-from decimal import *
-import heapq
-import math
-from fractions import gcd
-import random
-import string
-import copy
-from itertools import combinations, permutations, product
-from operator import mul
-from functools import reduce
-from bisect import bisect_left, bisect_right
+def cnt(x1, y1, x2, y2, c1, c2):
+    if c1 == c2:
+        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    else:
+        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) * 10
 
-import sys
-sys.setrecursionlimit(1000000000)
-mod = 10 ** 9 + 7
+dist1 = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    for j in range(N):
+        x1, y1, c1 = B[i]
+        x2, y2, c2 = B[j]
+        dist1[i][j] = cnt(x1, y1, x2, y2, c1, c2)
+dist2 = [[float('inf')] * M for i in range(M)]
+for i in range(M):
+    for j in range(M):
+        x1, y1, c1 = S[i]
+        x2, y2, c2 = S[j]
+        dist2[i][j] = cnt(x1, y1, x2, y2, c1, c2)
 
+def warshall_floyd(dist, n):
+    for k in range(n):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(n):
+            for j in range(n):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
 
-#############
-# Main Code #
-#############
+warshall_floyd(dist1, N)
+warshall_floyd(dist2, M)
+d1_2 = [[float('inf')] * M for i in range(N)]
+for i in range(N):
+    for j in range(M):
+        x1, y1, c1 = B[i]
+        x2, y2, c2 = S[j]
+        d1_2[i][j] = cnt(x1, y1, x2, y2, c1, c2)
 
-def digit_dp(x):
-    n = len(x)
-    prev = [[0] * M for _ in range(2)]
-    prev[0][0] = 1
+for b1 in range(N):
+    for b2 in range(N):
+        for s1 in range(M):
+            for s2 in range(M):
+                dist1[b1][b2] = min(dist1[b1][b2], d1_2[b1][s1] + dist2[s1][s2] + d1_2[b2][s2])
 
-    for i in range(n):
-        d = int(x[i])
-        next = [[0] * 10 for _ in range(2)]
-        for j in range(2):
-            for d_j in range(10 if j else d + 1):
-                for m in range(M):
-                    # (m(prevのm) * 10 + d_j) % M
-                    next[j | (d_j < d)][(m * 10 + d_j) % M] += prev[j][m]
-        prev = next
+warshall_floyd(dist1, N)
 
-    # 00000が混じっているがA - Bするので問題なし
-    return prev
+print(dist1)
