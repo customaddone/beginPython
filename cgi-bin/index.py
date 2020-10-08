@@ -49,223 +49,361 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-#####segfunc#####
-def segfunc(x, y):
-    return min(x, y)
-#################
+# ABC013 D-阿弥陀
+N, M, D = getNM()
+A = getList()
+A = [x - 1 for x in A]
 
-#####ide_ele#####
-ide_ele = 2**31 - 1
-#################
+# 1回阿弥陀を試してみる
+amida = [i for i in range(N)]
+for i in range(M):
+    a1 = amida[A[i]]
+    a2 = amida[A[i] + 1]
+    amida[A[i]] = a2
+    amida[A[i] + 1] = a1
 
-class LazySegmentTree:
-    """
-    init(init_val, ide_ele): 配列init_valで初期化 O(N)
-    add(l, r, x): 区間[l, r)にxを加算 O(logN)
-    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
-    """
-    def __init__(self, init_val, segfunc, ide_ele):
-        """
-        init_val: 配列の初期値
-        segfunc: 区間にしたい操作
-        ide_ele: 単位元
-        num: n以上の最小の2のべき乗
-        data: 値配列(1-index)
-        lazy: 遅延配列(1-index)
-        """
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.data = [ide_ele] * 2 * self.num
-        self.lazy = [0] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.data[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
+# 逆にする
+amida_alta = [0] * N
+for i in range(N):
+    amida_alta[amida[i]] = i
 
-    def gindex(self, l, r):
-            """
-            伝搬する対象の区間を求める
-            lm: 伝搬する必要のある最大の左閉区間
-            rm: 伝搬する必要のある最大の右開区間
-            """
-            l += self.num
-            r += self.num
-            lm = l >> (l & -l).bit_length()
-            rm = r >> (r & -r).bit_length()
+# ダブリング
+logk = D.bit_length()
 
-            while r > l:
-                if l <= lm:
-                    yield l
-                if r <= rm:
-                    yield r
-                r >>= 1
-                l >>= 1
-            while l:
-                yield l
-                l >>= 1
+doubling = [[-1] * N for _ in range(logk)]
 
-    def propagates(self, *ids):
-        """
-        遅延伝搬処理
-        ids: 伝搬する対象の区間
-        """
-        for i in reversed(ids):
-            v = self.lazy[i]
-            if not v:
-                continue
-            self.lazy[2 * i] += v
-            self.lazy[2 * i + 1] += v
-            self.data[2 * i] += v
-            self.data[2 * i + 1] += v
-            self.lazy[i] = 0
+for i in range(N):
+    doubling[0][i] = amida_alta[i]
 
-    def add(self, l, r, x):
-        """
-        区間[l, r)の値にxを加算
-        l, r: index(0-index)
-        x: additional value
-        """
-        *ids, = self.gindex(l, r)
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                self.lazy[l] += x
-                self.data[l] += x
-                l += 1
-            if r & 1:
-                self.lazy[r - 1] += x
-                self.data[r - 1] += x
-            r >>= 1
-            l >>= 1
-        for i in ids:
-            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1]) + self.lazy[i]
+for i in range(1, logk):
+    for j in range(N):
+        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
 
+ans = [i for i in range(N)]
+for i in range(logk):
+    for j in range(N):
+        if D & (1 << i):
+            ans[j] = doubling[i][ans[j]]
 
-    def query(self, l, r):
-        """
-        [l, r)のsegfuncしたものを得る
-        l: index(0-index)
-        r: index(0-index)
-        """
-        *ids, = self.gindex(l, r)
-        self.propagates(*ids)
+for i in range(N):
+    print(ans[i] + 1)
 
-        res = self.ide_ele
+# ABC167 teleporter
+N, K = 6, 727202214173249351
+A = [6, 5, 2, 5, 3, 2]
+A = [i - 1 for i in A]
 
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.data[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.data[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+logk = K.bit_length()
+doubling = [[-1] * N for _ in range(logk)]
 
-def or_less(array, x):
-    # arrayの中のx以下のもののインデックス
-    # arrayの中のx以下のもののうちの最大値
-    index = bisect_right(array, x)
-    if index == 0:
-        or_less_int = -float('inf')
+# ダブリング
+# 2 ** 0は１つ後の行き先
+for i in range(N):
+    doubling[0][i] = A[i]
+for i in range(1, logk):
+    for j in range(N):
+        # doubling[i]はdoubling[i - 1]を２回行えばいい
+        # doubling[i - 1][j]移動してその座標からまたdoubling[i - 1]移動
+        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+
+index = 0
+# 各bitごとに移動を行う
+for i in range(logk):
+    if K & (1 << i):
+        index = doubling[i][index]
+print(index + 1)
+
+S = 'RRLLLLRLRRLL'
+N = len(S)
+logk = (10 ** 5).bit_length()
+
+doubling = [[-1] * N for _ in range(logk)]
+
+# １回目の移動
+for i in range(N):
+    doubling[0][i] = i + 1 if S[i] == "R" else i - 1
+
+# 2 ** k回目の移動
+for i in range(1, logk):
+    for j in range(N):
+        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+
+ans = [0] * N
+
+# 10 ** 5回ぐらい回せば十分
+for i in range(N):
+    ans[doubling[logk - 1][i]] += 1
+
+print(*ans)
+
+# p307 ダブリング
+N = 3
+M = 10
+que = [
+[0, 3],
+[3, 7],
+[7, 0]
+]
+
+alta = []
+for i in range(N):
+    s, t =  que[i]
+    if s < t:
+        alta.append([s, t])
+        alta.append([s + M, t + M])
     else:
-        or_less_int = array[index - 1]
-    return index - 1
+        alta.append([s, t + M])
+alta.sort(key = lambda i: i[1])
 
-# ABC153 F - Silver Fox vs Monster
-# 区間加算の遅延セグ木
-N, D, A = getNM()
-que = [getList() for i in range(N)]
-que.sort()
+N = len(alta)
 
-HP = [i[1] for i in que]
-dis = [i[0] for i in que]
+logk = (10 ** 6).bit_length()
+doubling = [[-1] * N for _ in range(logk)]
+for i in range(N):
+    s, t = alta[i]
+    for j in range(i + 1, N):
+        opt_s, opt_t = alta[j]
+        if t <= opt_s:
+            doubling[0][i] = j
+            break
 
-seg = LazySegmentTree([0] * (N + 1), segfunc, ide_ele)
-# 現在のインデックス
-now = 0
-# 現在の場所
-now_dis = dis[now]
+for i in range(1, logk):
+    for j in range(N):
+        # 欄外に飛ぶようなら-1
+        if doubling[i - 1][j] == -1:
+            doubling[i][j] = -1
+        else:
+            doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
 
 ans = 0
-while now < N:
-    # 爆発範囲
-    range = or_less(dis, now_dis + 2 * D)
-    left_hp = HP[now] - seg.query(now, now + 1)
-    # 爆発回数
-    explo = (left_hp + A - 1) // A
-    seg.add(now, range + 1, explo * A)
-    ans += explo
-
-    while True:
-        if now >= N or seg.query(now, now + 1) < HP[now]:
-            break
-        now += 1
-    if now < N:
-        now_dis = dis[now]
-
+# 区間iからスタート
+for i in range(N):
+    s, t = alta[i]
+    now = i
+    cnt = 1
+    # 超過しないよう大きいものから加算していく
+    for j in range(logk - 1, -1, -1):
+        opt_index = doubling[j][now]
+        # 欄内に収まるかつ始点から距離M以内
+        if opt_index >= 0 and alta[opt_index][1] <= M:
+            now = opt_index
+            cnt += 1 << j
+    ans = max(ans, cnt)
 print(ans)
 
-# PAST1 H - まとめ売り
-# 奇数のもののみ抽出する
-# 奇数番目のセグ木、偶数番目のセグ木を立てる
-N = getN() # カードの種類数
-C = getList() # 在庫数
+# ヘンテコ辞書
+# ダブリング不使用ループ
+N, A = getNM()
+K = getN()
+B = getList()
+A -= 1
+B = [i - 1 for i in B]
+
+visited = [-1] * N
+visited[A] = 1
+
+cnt = 1
+to = B[A]
+
+while cnt < K:
+    cnt += 1
+    if visited[to] >= 0:
+        cnt += ((K - cnt) // (cnt - visited[to])) * (cnt - visited[to])
+        visited = [-1] * N
+    visited[to] = cnt
+    to = B[to]
+
+print(to + 1)
+
+# PAST1 K - 巨大企業
+# LCS
+
+N = getN()
+P = getArray(N)
+P = [i - 1 for i in P]
 Q = getN()
-S = [getList() for i in range(Q)] # クエリ
+que = []
+for i in range(Q):
+    a, b = getNM()
+    que.append([a - 1, b - 1])
 
-# 遅延セグ木
-# セグ木を2つ立てる
-
-odd = []
-even = []
+# dist構成
+president = -1
+dist = [[] for i in range(N)]
 for i in range(N):
-    if i % 2 == 0:
-        odd.append(C[i])
-    else:
-        even.append(C[i])
+    if P[i] == -2:
+        president = i
+        continue
+    dist[P[i]].append(i)
 
-Odd = LazySegmentTree(odd, segfunc, ide_ele)
-o_n = len(odd)
-Even = LazySegmentTree(even, segfunc, ide_ele)
-e_n = len(even)
+# 深さを求める
+depth = [0] * N
+pos = deque([president])
+while pos:
+    u = pos.popleft()
+    for i in dist[u]:
+        depth[i] = depth[u] + 1
+        pos.append(i)
 
-cnt = 0
-for q in S:
-    if q[0] == 1:
-        x = q[1] - 1
-        a = q[2]
-        if x % 2 == 0:
-            x //= 2
-            if Odd.query(x, x + 1) >= a:
-                Odd.add(x, x + 1, -a)
-                cnt += a
+# ダブリング
+logk = max(depth).bit_length()
+
+doubling = [[-1] * N for _ in range(logk)]
+for i in range(N):
+    doubling[0][i] = P[i]
+
+for i in range(1, logk):
+    for j in range(N):
+        if doubling[i - 1][j] == -2:
+            doubling[i][j] = -2
         else:
-            x //= 2
-            if Even.query(x, x + 1) >= a:
-                Even.add(x, x + 1, -a)
-                cnt += a
-    elif q[0] == 2:
-        a = q[1]
-        if Odd.query(0, o_n) >= a:
-            Odd.add(0, o_n, -a)
-            cnt += a * o_n
+            doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+
+# aからdep_diffだけ遡るとbになるか
+for a, b in que:
+    dep_diff = depth[a] - depth[b]
+    if dep_diff < 0:
+        print('No')
+        continue
+    now = a
+    for i in range(logk):
+        if dep_diff & (1 << i):
+            now = doubling[i][now]
+    if now == b:
+        print('Yes')
     else:
-        a = q[1]
-        if N == 1:
-            if Odd.query(0, o_n) >= a:
-                Odd.add(0, o_n, -a)
-                cnt += a * (o_n + e_n)
-        else:
-            if Odd.query(0, o_n) >= a and Even.query(0, e_n) >= a:
-                Odd.add(0, o_n, -a)
-                Even.add(0, e_n, -a)
-                cnt += a * (o_n + e_n)
-print(cnt)
+        print('No')
+
+class Roop:
+    def __init__(self, array):
+        self.n = len(array)
+        self.array = array
+        # ループ検出
+        self.roops = []
+        # iはどのループのものか
+        self.roop_dict = [-1] * self.n
+        # ループ内の何番目にあるか
+        self.opt_dic = [-1] * self.n
+        ignore = [-1] * self.n
+        cnt = 0
+        for i in range(self.n):
+            if ignore[i] >= 0:
+                continue
+            opt = [i]
+            # opt内の何番目にあるか
+            self.opt_dic[i] = 0
+            c = 1
+            # 探索したらフラグを立てる
+            ignore[i] = cnt
+            # i → array[i]
+            to = array[i]
+            # ループが詰まるまで回す
+            while True:
+                if ignore[to] == cnt:
+                    # 作成してないならループ作成
+                    for j in range(self.opt_dic[to], len(opt)):
+                        self.roop_dict[opt[j]] = cnt
+                    self.roops.append(opt[self.opt_dic[to]:])
+                    # 次のループはcnt + 1番
+                    cnt += 1
+                    break
+                opt.append(to)
+                ignore[to] = cnt
+                self.opt_dic[to] = c
+                c += 1
+                to = array[to]
+
+    # xがどの番号のループにあるか
+    def roop_n(self, x):
+        return self.roop_dict[x]
+
+    # xが入っているループは何か
+    # ループ内になければFalse
+    def inspect(self, x):
+        if self.roop_n(x) == -1:
+            return False
+        return self.roops[self.roop_dict(x)]
+
+    # ループの大きさ
+    def roop_len(self, x):
+        return len(self.roops[self.roop_n(x)])
+
+    # xからk回移動してどの場所に行けるか
+    def move(self, x, k):
+        cnt = k
+        to = x
+        # ループに入る前にどのルートを通ったか
+        # スタート地点から既にループに入っていた場合、headは空になる
+        head = []
+        # ループ脱出後どのルートを通るか
+        tail = []
+        # 何回ループしたか
+        time = -1
+        res = 0
+        while cnt > 0:
+            to = self.array[to]
+            cnt -= 1
+            # まだループしておらず、踏んだ場所がループ内にある場合
+            if time == -1 and self.roop_n(to) >= 0:
+                r = self.roops[self.roop_n(to)]
+                time = (cnt // len(r))
+                cnt -= time * len(r)
+            # ループ前なら
+            if time == -1:
+                head.append(to)
+            # ループ後なら
+            else:
+                tail.append(to)
+        # 例: N, K = 6 727202214173249351
+        # A = [6, 5, 2, 5, 3, 2]の時
+        # 1回目の移動 1 → 6
+        # 2回目の移動 6 → ### ここからループが始まる ### → 2
+        # ... 242400738057749783回ループ
+        # 727202214173249351回目の移動 3 → 2
+        # to, head, tail, time = (1, [5], [1], 242400738057749783)
+        return to
+
+N, A = getNM()
+A -= 1
+K = getN()
+B = [i - 1 for i in getList()]
+roop = Roop(B)
+print(roop.move(A, K) + 1)
+
+# ABC167 D - Teleporter
+N, K = getNM()
+N -= 1
+A = [i - 1 for i in getList()]
+roop = Roop(A)
+print(roop.move(0, K) + 1)
+
+# ABC175 D - Moving Piece
+N, K = getNM()
+P = [i - 1 for i in getList()]
+C = getList()
+# ループ検出
+roop = Roop(P)
+# 各ループごと調べる
+ans = -float('inf')
+for r in roop.roops:
+    n = len(r)
+    # ループに対応するスコアリストを用意
+    alta = []
+    for i in range(n):
+        alta.append(C[r[i]])
+    # １回ループすると何点getできるか
+    one_roop = sum(alta)
+    alta += alta
+    imos = [0]
+    for i in range(len(alta)):
+        imos.append(imos[i] + alta[i])
+    t = min(n, K)
+    for i in range(n):
+        # 長さ1からtまでの区間の総和の最大値を探索
+        for j in range(1, t + 1):
+            if one_roop >= 0:
+                opt = (imos[i + j] - imos[i]) + ((K - j) // n) * one_roop
+            else:
+                opt = imos[i + j] - imos[i]
+            ans = max(ans, opt)
+print(ans)
