@@ -17,54 +17,120 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-N, M = getNM()
-B = [getList() for i in range(N)]
-S = [getList() for i in range(M)]
+Q = getN()
+que = [getList() for i in range(Q)]
 
-# どの大きい塔からどの大きい塔へいけるように
-# Unionfindかmaxflowか
+"""
+回文である 01010 偶数と奇数に分けられるかも
+長さN 転倒数K
+転倒数　各1について、その1より右にある0の数の総和
+01010 転倒数3
+考えるのはN / 2まででいい
+i番目に1を置く
+左側の1: 今まで置いた0の数 + (今から置いていく0の数 * 2)
+右側の1: 今まで置いた0の数
+合計:今まで置いた0の数 * 2 + 今から置いていく0の数
+= 0の数の合計 * 2
 
-def cnt(x1, y1, x2, y2, c1, c2):
-    if c1 == c2:
-        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+通りの数を考える
+dp? 数え上げcombo?
+Kの作りかたを考える
+0と1の数がわかればどうなる
+0 * 0, 1 * 3 111111 (0)
+0 * 1, 1 * 2 110011(4), 101101(4), 011110(4)
+0 * 2, 1 * 1 100001(4), 010010(4), 001100(4)
+0 * 3, 1 * 0 000000 (0)
+
+どのタイミングで0を置くかは関係ない
+0と1の組み合わせにより転倒数の個数が決まる
+転倒数は1の数 * 0の数（n - 1の数）* 2 2i(n - i) = k
+2i ** 2 - 2ni + k = 0
+これは偶数の場合
+奇数の場合は
+最後の一つが0か1か
+0の時
+各1について転倒数 0の数の合計 * 2 + 1
+総和 1の数 * 0の数（n - 1の数） * 2 + 1の数
+i(n - i) * 2 + i
+i(2n - 2i + 1) = k
+2i ** 2 - (2n - 1)i + k = 0
+1の時
+各1について転倒数 0の数の合計 * 2
++ 中央の1について0の数
+総和 1の数 * 0の数（n - 1の数） * 2
+2i(n - i) + (n - i)= k
+"""
+
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+# a + b = n
+# a * b = kとなるa, bを求める
+def binary_combo(n, k):
+    left = 0
+    right = int(math.sqrt(k)) + 1
+    while left <= right:
+        mid = (left + right) // 2
+        if mid * (n - mid) == k:
+            return mid # aの値がかえる(b = n - a)
+        elif mid * (n - mid) < k:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return False
+
+def solv_quadratic_equation(a, b, c):
+    """ 2次方程式を解く  """
+    D = (b ** 2 - 4 * a * c) ** (1 / 2)
+    x_1 = (-b + D) / (2 * a)
+    x_2 = (-b - D) / (2 * a)
+
+    return x_1, x_2
+
+for n, k in que:
+    if k == 0:
+        print(2)
+        continue
+    if n % 2 == 0:
+        if k % 2 != 0:
+            print(0)
+            continue
+        res = 0
+        n //= 2
+        x1, x2 = solv_quadratic_equation(2, -2 * n, -k)
+        if isinstance(x1, float) and x1.is_integer() and x1 > 0:
+            res += cmb(n, int(x1))
+        if isinstance(x2, float) and x2.is_integer() and x2 > 0:
+            res += cmb(n, int(x2))
+        print(res)
     else:
-        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) * 10
+        res = 0
+        n //= 2
+        # 中央は0
+        x1, x2 = solv_quadratic_equation(2, -(2 * n + 1), k)
+        if isinstance(x1, float) and x1.is_integer() and x1 > 0:
+            res += cmb(n, int(x1))
+        if isinstance(x2, float) and x2.is_integer() and x2 > 0:
+            res += cmb(n, int(x2))
+        # 中央は1
+        x1, x2 = solv_quadratic_equation(2, -(2 * n - 1), k - n)
+        if isinstance(x1, float) and x1.is_integer() and x1 > 0:
+            res += cmb(n, int(x1))
+        if isinstance(x2, float) and x2.is_integer() and x2 > 0:
+            res += cmb(n, int(x2))
 
-dist1 = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    for j in range(N):
-        x1, y1, c1 = B[i]
-        x2, y2, c2 = B[j]
-        dist1[i][j] = cnt(x1, y1, x2, y2, c1, c2)
-dist2 = [[float('inf')] * M for i in range(M)]
-for i in range(M):
-    for j in range(M):
-        x1, y1, c1 = S[i]
-        x2, y2, c2 = S[j]
-        dist2[i][j] = cnt(x1, y1, x2, y2, c1, c2)
-
-def warshall_floyd(dist, n):
-    for k in range(n):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(n):
-            for j in range(n):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-
-warshall_floyd(dist1, N)
-warshall_floyd(dist2, M)
-d1_2 = [[float('inf')] * M for i in range(N)]
-for i in range(N):
-    for j in range(M):
-        x1, y1, c1 = B[i]
-        x2, y2, c2 = S[j]
-        d1_2[i][j] = cnt(x1, y1, x2, y2, c1, c2)
-
-for b1 in range(N):
-    for b2 in range(N):
-        for s1 in range(M):
-            for s2 in range(M):
-                dist1[b1][b2] = min(dist1[b1][b2], d1_2[b1][s1] + dist2[s1][s2] + d1_2[b2][s2])
-
-warshall_floyd(dist1, N)
-
-print(dist1)
+        print(res)

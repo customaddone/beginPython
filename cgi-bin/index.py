@@ -49,361 +49,473 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC013 D-阿弥陀
-N, M, D = getNM()
-A = getList()
-A = [x - 1 for x in A]
+def prime_factorize(n):
+    divisors = []
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
 
-# 1回阿弥陀を試してみる
-amida = [i for i in range(N)]
-for i in range(M):
-    a1 = amida[A[i]]
-    a2 = amida[A[i] + 1]
-    amida[A[i]] = a2
-    amida[A[i] + 1] = a1
+    return divisors
 
-# 逆にする
-amida_alta = [0] * N
-for i in range(N):
-    amida_alta[amida[i]] = i
+# ABC052 C - Factors of Factorial
+N = getN()
 
-# ダブリング
-logk = D.bit_length()
+# N!の因数 = (2の因数) + (3の因数)...
+# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
+mod = 10 ** 9 + 7
+ans = 1
+# それぞれの因数となる素数の数をセットする
+dp = [0] * (N + 1)
 
-doubling = [[-1] * N for _ in range(logk)]
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        if j[0] > 1:
+            dp[j[0]] += j[1]
+# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
+for i in dp:
+    if i > 0:
+        ans = (ans * (i + 1)) % mod
+print(ans % mod)
 
-for i in range(N):
-    doubling[0][i] = amida_alta[i]
-
-for i in range(1, logk):
-    for j in range(N):
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-ans = [i for i in range(N)]
-for i in range(logk):
-    for j in range(N):
-        if D & (1 << i):
-            ans[j] = doubling[i][ans[j]]
-
-for i in range(N):
-    print(ans[i] + 1)
-
-# ABC167 teleporter
-N, K = 6, 727202214173249351
-A = [6, 5, 2, 5, 3, 2]
-A = [i - 1 for i in A]
-
-logk = K.bit_length()
-doubling = [[-1] * N for _ in range(logk)]
-
-# ダブリング
-# 2 ** 0は１つ後の行き先
-for i in range(N):
-    doubling[0][i] = A[i]
-for i in range(1, logk):
-    for j in range(N):
-        # doubling[i]はdoubling[i - 1]を２回行えばいい
-        # doubling[i - 1][j]移動してその座標からまたdoubling[i - 1]移動
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-index = 0
-# 各bitごとに移動を行う
-for i in range(logk):
-    if K & (1 << i):
-        index = doubling[i][index]
-print(index + 1)
-
-S = 'RRLLLLRLRRLL'
-N = len(S)
-logk = (10 ** 5).bit_length()
-
-doubling = [[-1] * N for _ in range(logk)]
-
-# １回目の移動
-for i in range(N):
-    doubling[0][i] = i + 1 if S[i] == "R" else i - 1
-
-# 2 ** k回目の移動
-for i in range(1, logk):
-    for j in range(N):
-        doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-ans = [0] * N
-
-# 10 ** 5回ぐらい回せば十分
-for i in range(N):
-    ans[doubling[logk - 1][i]] += 1
-
-print(*ans)
-
-# p307 ダブリング
-N = 3
-M = 10
-que = [
-[0, 3],
-[3, 7],
-[7, 0]
-]
-
-alta = []
-for i in range(N):
-    s, t =  que[i]
-    if s < t:
-        alta.append([s, t])
-        alta.append([s + M, t + M])
+# ABC090 D - Remainder Reminder
+# 数え上げ
+N, K = getNM()
+sum = 0
+for b in range(1, N + 1):
+    opt1 = (N // b) * max(0, (b - K))
+    if K == 0:
+        opt2 = N % b
     else:
-        alta.append([s, t + M])
-alta.sort(key = lambda i: i[1])
+        opt2 = max(0, (N % b) - K + 1)
+    sum += (opt1 + opt2)
+print(sum)
 
-N = len(alta)
-
-logk = (10 ** 6).bit_length()
-doubling = [[-1] * N for _ in range(logk)]
-for i in range(N):
-    s, t = alta[i]
-    for j in range(i + 1, N):
-        opt_s, opt_t = alta[j]
-        if t <= opt_s:
-            doubling[0][i] = j
-            break
-
-for i in range(1, logk):
-    for j in range(N):
-        # 欄外に飛ぶようなら-1
-        if doubling[i - 1][j] == -1:
-            doubling[i][j] = -1
-        else:
-            doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
-
-ans = 0
-# 区間iからスタート
-for i in range(N):
-    s, t = alta[i]
-    now = i
-    cnt = 1
-    # 超過しないよう大きいものから加算していく
-    for j in range(logk - 1, -1, -1):
-        opt_index = doubling[j][now]
-        # 欄内に収まるかつ始点から距離M以内
-        if opt_index >= 0 and alta[opt_index][1] <= M:
-            now = opt_index
-            cnt += 1 << j
-    ans = max(ans, cnt)
-print(ans)
-
-# ヘンテコ辞書
-# ダブリング不使用ループ
-N, A = getNM()
-K = getN()
-B = getList()
-A -= 1
-B = [i - 1 for i in B]
-
-visited = [-1] * N
-visited[A] = 1
-
-cnt = 1
-to = B[A]
-
-while cnt < K:
-    cnt += 1
-    if visited[to] >= 0:
-        cnt += ((K - cnt) // (cnt - visited[to])) * (cnt - visited[to])
-        visited = [-1] * N
-    visited[to] = cnt
-    to = B[to]
-
-print(to + 1)
-
-# PAST1 K - 巨大企業
-# LCS
+# 094 D - Binomial Coefficients
+# combはrを真ん中に設定すると大きくなる
 
 N = getN()
-P = getArray(N)
-P = [i - 1 for i in P]
-Q = getN()
-que = []
-for i in range(Q):
-    a, b = getNM()
-    que.append([a - 1, b - 1])
+A = getList()
+A.sort()
 
-# dist構成
-president = -1
-dist = [[] for i in range(N)]
-for i in range(N):
-    if P[i] == -2:
-        president = i
-        continue
-    dist[P[i]].append(i)
+max = max(A)
+index = bisect_left(A, max / 2)
+if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
+    ans = [max, A[index]]
+else:
+    ans = [max, A[index - 1]]
+print(*ans)
 
-# 深さを求める
-depth = [0] * N
-pos = deque([president])
-while pos:
-    u = pos.popleft()
-    for i in dist[u]:
-        depth[i] = depth[u] + 1
-        pos.append(i)
+# ABC096 D - Five, Five Everywhere
+# 素数はmod nでグルーピングできる
+N = getN()
 
-# ダブリング
-logk = max(depth).bit_length()
+# エラストテネスの篩
+prime = [2]
+max = 55555
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
 
-doubling = [[-1] * N for _ in range(logk)]
-for i in range(N):
-    doubling[0][i] = P[i]
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
 
-for i in range(1, logk):
-    for j in range(N):
-        if doubling[i - 1][j] == -2:
-            doubling[i][j] = -2
-        else:
-            doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+prime = sorted(prime)
 
-# aからdep_diffだけ遡るとbになるか
-for a, b in que:
-    dep_diff = depth[a] - depth[b]
-    if dep_diff < 0:
-        print('No')
-        continue
-    now = a
-    for i in range(logk):
-        if dep_diff & (1 << i):
-            now = doubling[i][now]
-    if now == b:
-        print('Yes')
-    else:
-        print('No')
+prime = [i for i in prime if i % 5 == 1]
+print(*prime[:N])
 
-class Roop:
-    def __init__(self, array):
-        self.n = len(array)
-        self.array = array
-        # ループ検出
-        self.roops = []
-        # iはどのループのものか
-        self.roop_dict = [-1] * self.n
-        # ループ内の何番目にあるか
-        self.opt_dic = [-1] * self.n
-        ignore = [-1] * self.n
-        cnt = 0
-        for i in range(self.n):
-            if ignore[i] >= 0:
-                continue
-            opt = [i]
-            # opt内の何番目にあるか
-            self.opt_dic[i] = 0
-            c = 1
-            # 探索したらフラグを立てる
-            ignore[i] = cnt
-            # i → array[i]
-            to = array[i]
-            # ループが詰まるまで回す
-            while True:
-                if ignore[to] == cnt:
-                    # 作成してないならループ作成
-                    for j in range(self.opt_dic[to], len(opt)):
-                        self.roop_dict[opt[j]] = cnt
-                    self.roops.append(opt[self.opt_dic[to]:])
-                    # 次のループはcnt + 1番
-                    cnt += 1
-                    break
-                opt.append(to)
-                ignore[to] = cnt
-                self.opt_dic[to] = c
-                c += 1
-                to = array[to]
+# ABC114 D - 756
+N = getN()
 
-    # xがどの番号のループにあるか
-    def roop_n(self, x):
-        return self.roop_dict[x]
+def prime_factorize(n):
+    divisors = []
+    # 27(2 * 2 * 7)の7を出すためにtemp使う
+    temp = n
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                # 素因数を見つけるたびにtempを割っていく
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == [] and n != 1:
+        divisors.append([n, 1])
 
-    # xが入っているループは何か
-    # ループ内になければFalse
-    def inspect(self, x):
-        if self.roop_n(x) == -1:
-            return False
-        return self.roops[self.roop_dict(x)]
+    return divisors
 
-    # ループの大きさ
-    def roop_len(self, x):
-        return len(self.roops[self.roop_n(x)])
+primli = [0] * 101
+# N! の因数を計算する
+for i in range(1, N + 1):
+    for j in prime_factorize(i):
+        primli[j[0]] += j[1]
+# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
+# 75 = 3 * 3 * 5なので例えば
+# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
+alta = []
+for i in primli:
+    if i != 0:
+        alta.append(i + 1)
 
-    # xからk回移動してどの場所に行けるか
-    def move(self, x, k):
-        cnt = k
-        to = x
-        # ループに入る前にどのルートを通ったか
-        # スタート地点から既にループに入っていた場合、headは空になる
-        head = []
-        # ループ脱出後どのルートを通るか
-        tail = []
-        # 何回ループしたか
-        time = -1
-        res = 0
-        while cnt > 0:
-            to = self.array[to]
-            cnt -= 1
-            # まだループしておらず、踏んだ場所がループ内にある場合
-            if time == -1 and self.roop_n(to) >= 0:
-                r = self.roops[self.roop_n(to)]
-                time = (cnt // len(r))
-                cnt -= time * len(r)
-            # ループ前なら
-            if time == -1:
-                head.append(to)
-            # ループ後なら
-            else:
-                tail.append(to)
-        # 例: N, K = 6 727202214173249351
-        # A = [6, 5, 2, 5, 3, 2]の時
-        # 1回目の移動 1 → 6
-        # 2回目の移動 6 → ### ここからループが始まる ### → 2
-        # ... 242400738057749783回ループ
-        # 727202214173249351回目の移動 3 → 2
-        # to, head, tail, time = (1, [5], [1], 242400738057749783)
-        return to
+prim3 = 0
+prim5 = 0
+prim15 = 0
+prim25 = 0
+prim75 = 0
+for i in alta:
+    if i >= 75:
+        prim75 += 1
+    if i >= 25:
+        prim25 += 1
+    if i >= 15:
+        prim15 += 1
+    if i >= 5:
+        prim5 += 1
+    if i >= 3:
+        prim3 += 1
 
-N, A = getNM()
-A -= 1
-K = getN()
-B = [i - 1 for i in getList()]
-roop = Roop(B)
-print(roop.move(A, K) + 1)
-
-# ABC167 D - Teleporter
-N, K = getNM()
-N -= 1
-A = [i - 1 for i in getList()]
-roop = Roop(A)
-print(roop.move(0, K) + 1)
-
-# ABC175 D - Moving Piece
-N, K = getNM()
-P = [i - 1 for i in getList()]
-C = getList()
-# ループ検出
-roop = Roop(P)
-# 各ループごと調べる
-ans = -float('inf')
-for r in roop.roops:
-    n = len(r)
-    # ループに対応するスコアリストを用意
-    alta = []
-    for i in range(n):
-        alta.append(C[r[i]])
-    # １回ループすると何点getできるか
-    one_roop = sum(alta)
-    alta += alta
-    imos = [0]
-    for i in range(len(alta)):
-        imos.append(imos[i] + alta[i])
-    t = min(n, K)
-    for i in range(n):
-        # 長さ1からtまでの区間の総和の最大値を探索
-        for j in range(1, t + 1):
-            if one_roop >= 0:
-                opt = (imos[i + j] - imos[i]) + ((K - j) // n) * one_roop
-            else:
-                opt = imos[i + j] - imos[i]
-            ans = max(ans, opt)
+ans = 0
+if prim3 >= 1 and prim5 >= 2:
+    # prim5 C 2
+    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
+if prim15 >= 1 and prim5 >= 1:
+    ans += prim15 * (prim5 - 1)
+if prim25 >= 1 and prim3 >= 1:
+    ans += prim25 * (prim3 - 1)
+if prim75 >= 1:
+    ans += prim75
 print(ans)
+
+N, M = getNM()
+A = [int(i) // 2 for i in input().split()]
+
+"""
+全てのAの要素について
+X = ai * (p + 0.5)を満たす負でない整数pが存在する
+1 ~ Mまでに何個あるか M <= 10 ** 9
+M // なんかの数だろ
+N, M = 2, 50
+A = [6, 10]の時
+15 6 * (2 + 0.5)
+   10 * (1 + 0.5)
+45 6 * (7 + 0.5)
+   10 * (4 + 0.5)
+X - (ai // 2)がaiの倍数になる
+1 -2, -4
+2 -1, -3
+3 0, -2
+4 1, -1
+5 2, 0...
+13 10, 8
+14 11, 9
+15 12, 10 12は6の倍数、10は5の倍数
+9 6, 4
+15 12, 10
+21 18, 16
+27 24, 22
+33
+39
+45 42, 40
+51
+57
+Xが ai // 2の奇数倍になればいい
+ai // 2 = aとすると
+X = pa
+  = (2n + 1)a
+  = 2na + a となる整数nが存在する
+A = [a1, a2, a3]の時半公倍数Xが存在するか ⇆
+alta = [a1 // 2, a2 // 2...]とすると
+a, 3a, 5a...
+b, 3b, 5b...
+c, 3c, 5c...の全てに含まれるXが存在するか
+2系列問題
+a, 3a, 5a...
+b, 3b, 5b...
+の両方に含まれる数Xを探す
+pa = qbとなる奇数p, qがそれぞれ存在する
+左右の2の因数は一致しないといけないので
+aとbの2の因数の数が一致しないといけない
+各要素を２で割れる回数が同じならXが存在する
+# 4と8の場合
+# 2 6 10 14 18...
+# 4 12 20 28... これを２で割ると
+# 1 3 5 7 9...
+# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
+# 4と12なら
+# 2 6 10 14 18...
+# 6 18 30 42... これを２で割ると
+# 1 3 5 7 9...
+# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
+"""
+
+# Aの各要素がどれも2でn回ちょうど割れる必要がある
+def div_2(n):
+    cnt = n
+    res = 0
+    while cnt > 0:
+        if cnt % 2 == 0:
+            cnt //= 2
+            res += 1
+        else:
+            return res
+
+def lcm(x, y):
+    return x * (y // gcd(x, y))
+
+judge = [div_2(i) for i in A]
+
+if min(judge) != max(judge):
+    print(0)
+    exit()
+L = 1
+for i in range(N):
+    L = lcm(L, A[i])
+
+# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
+print(M // L - M // (2 * L))
+
+# ABC152 E - Flatten
+# 大きい数は因数で持つ
+N = getN()
+A = getList()
+prime_list = defaultdict(int)
+
+for i in range(N):
+    prime = prime_factorize(A[i])
+    for j in prime:
+        prime_list[j[0]] = max(prime_list[j[0]], j[1])
+
+num = 1
+for key, value in prime_list.items():
+    num *= key ** value
+    num %= mod
+
+# 1/A[i]のmod
+lim = 10 ** 6 + 1
+fact = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+
+ans = 0
+for i in A:
+    opt = (num * inv[i]) % mod
+    ans += opt
+    ans %= mod
+print(ans % mod)
+
+# ABC161 F - Division or Subtraction
+N = getN()
+
+# 手順としては
+# ①　kで出来るだけ割る
+# ②　kで引いていく　N = mk + d(d = 1, 2, 3...)とすると,　引いて残る数はm(k - 1) + d
+# つまりkで割り切れず、引いても引いても永遠に①に戻ることはない
+
+# N = k ** i * (mk + 1)となるkの数を求める
+# i == 0の時
+# kがなんであれk ** iは１になるので
+# N = mk + 1、つまりN - 1がkの倍数であればそのkは条件を満たす
+# N - 1の約数（１以外）が候補
+
+ans = set()
+for i in make_divisors(N - 1):
+    if i != 1:
+        ans.add(i)
+
+# 割れるだけ割る関数
+def dividor(x, k):
+    if k == 1:
+        return 0
+    n = x
+    while True:
+        if n % k == 0:
+            n //= k
+        else:
+            break
+    return n
+
+# i >= 1の時
+# 候補はNの約数
+for prim in make_divisors(N):
+    if prim == 1:
+        continue
+    # Nを割れるだけ割る
+    alta = dividor(N, prim)
+    if alta == 1:
+        ans.add(prim)
+        continue
+    if alta >= prim and alta % prim == 1:
+        ans.add(prim)
+
+print(len(ans))
+
+# 三井住友信託銀行プログラミングコンテスト2019 F - Interval Running
+
+T1, T2 = 12000, 15700
+A1, A2 = 3390000000, 3810000000
+B1, B2 = 5550000000, 2130000000
+
+# グラフにして考える
+# 周期は同じT1, T2
+# T1の時とT2の時とで順位が入れ替わっているなら出会っている
+t1_diff = (A1 - B1) * T1
+t2_diff = (A1 - B1) * T1 + (A2 - B2) * T2
+if t1_diff == 0 or t2_diff == 0: # 無限に出会う
+    print('infinity')
+    exit()
+if t1_diff * t2_diff > 0: # ずっとどちらかが前にいる
+    print(0)
+    exit()
+
+# t2_diff分ずつずれていく
+
+# 順位が逆転する場合
+# クロスする時とちょうど接する時を考える
+if abs(t1_diff) % abs(t2_diff) == 0:
+    # 最後の１回は１回しかクロスしない
+    print((abs(t1_diff) // abs(t2_diff)) * 2)
+else:
+    print((abs(t1_diff) // abs(t2_diff)) * 2 + 1)
+
+Q = getN()
+que = [getList() for i in range(Q)]
+
+"""
+回文である 01010 偶数と奇数に分けられるかも
+長さN 転倒数K
+転倒数　各1について、その1より右にある0の数の総和
+01010 転倒数3
+考えるのはN / 2まででいい
+i番目に1を置く
+左側の1: 今まで置いた0の数 + (今から置いていく0の数 * 2)
+右側の1: 今まで置いた0の数
+合計:今まで置いた0の数 * 2 + 今から置いていく0の数
+= 0の数の合計 * 2
+
+通りの数を考える
+dp? 数え上げcombo?
+Kの作りかたを考える
+0と1の数がわかればどうなる
+0 * 0, 1 * 3 111111 (0)
+0 * 1, 1 * 2 110011(4), 101101(4), 011110(4)
+0 * 2, 1 * 1 100001(4), 010010(4), 001100(4)
+0 * 3, 1 * 0 000000 (0)
+
+どのタイミングで0を置くかは関係ない
+0と1の組み合わせにより転倒数の個数が決まる
+転倒数は1の数 * 0の数（n - 1の数）* 2 2i(n - i) = k
+2i ** 2 - 2ni + k = 0
+これは偶数の場合
+奇数の場合は
+最後の一つが0か1か
+0の時
+各1について転倒数 0の数の合計 * 2 + 1
+総和 1の数 * 0の数（n - 1の数） * 2 + 1の数
+i(n - i) * 2 + i
+i(2n - 2i + 1) = k
+2i ** 2 - (2n - 1)i + k = 0
+1の時
+各1について転倒数 0の数の合計 * 2
++ 中央の1について0の数
+総和 1の数 * 0の数（n - 1の数） * 2
+2i(n - i) + (n - i)= k
+"""
+
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+# a + b = n
+# a * b = kとなるa, bを求める
+def binary_combo(n, k):
+    left = 0
+    right = int(math.sqrt(k)) + 1
+    while left <= right:
+        mid = (left + right) // 2
+        if mid * (n - mid) == k:
+            return mid # aの値がかえる(b = n - a)
+        elif mid * (n - mid) < k:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return False
+
+def solv_quadratic_equation(a, b, c):
+    """ 2次方程式を解く  """
+    D = (b ** 2 - 4 * a * c) ** (1 / 2)
+    x_1 = (-b + D) / (2 * a)
+    x_2 = (-b - D) / (2 * a)
+
+    return x_1, x_2
+
+def is_integer_num(n):
+    if isinstance(n, int):
+        return n
+    if isinstance(n, float):
+        if n.is_integer():
+            return int(n)
+    return False
+
+for n, k in que:
+    if k == 0:
+        print(2)
+        continue
+    if n % 2 == 0:
+        if k % 2 != 0:
+            print(0)
+            continue
+        res = 0
+        n //= 2
+        x1, x2 = solv_quadratic_equation(2, -2 * n, k)
+        if x1 == 0 or (is_integer_num(x1) and x1 > 0):
+            res += cmb(n, int(x1))
+        if x2 == 0 or (is_integer_num(x2) and x2 > 0 and x1 != x2):
+            res += cmb(n, int(x2))
+
+        print(res % mod)
+    else:
+        res = 0
+        n //= 2
+        # 中央は0
+        x1, x2 = solv_quadratic_equation(2, -(2 * n + 1), k)
+        if x1 == 0 or (is_integer_num(x1) and x1 > 0):
+            res += cmb(n, int(x1))
+        if x2 == 0 or (is_integer_num(x2) and x2 > 0 and x1 != x2):
+            res += cmb(n, int(x2))
+        # 中央は1
+        x1, x2 = solv_quadratic_equation(2, -(2 * n - 1), k - n)
+        if x1 == 0 or (is_integer_num(x1) and x1 > 0):
+            res += cmb(n, int(x1))
+        if x2 == 0 or (is_integer_num(x2) and x2 > 0 and x1 != x2):
+            res += cmb(n, int(x2))
+
+        print(res % mod)
