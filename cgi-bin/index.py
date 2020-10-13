@@ -49,473 +49,235 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-def prime_factorize(n):
-    divisors = []
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == []:
-        divisors.append([n, 1])
+class Multiset:
+    def __init__(self):
+        self.h = []
+        self.d = dict()
 
-    return divisors
-
-# ABC052 C - Factors of Factorial
-N = getN()
-
-# N!の因数 = (2の因数) + (3の因数)...
-# 約数の個数 = (因数の個数 + 1) * (因数の個数 + 1)...
-mod = 10 ** 9 + 7
-ans = 1
-# それぞれの因数となる素数の数をセットする
-dp = [0] * (N + 1)
-
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        if j[0] > 1:
-            dp[j[0]] += j[1]
-# 約数の数:それぞれの因数の(因数の数 + 1)を掛け合わせたもの
-for i in dp:
-    if i > 0:
-        ans = (ans * (i + 1)) % mod
-print(ans % mod)
-
-# ABC090 D - Remainder Reminder
-# 数え上げ
-N, K = getNM()
-sum = 0
-for b in range(1, N + 1):
-    opt1 = (N // b) * max(0, (b - K))
-    if K == 0:
-        opt2 = N % b
-    else:
-        opt2 = max(0, (N % b) - K + 1)
-    sum += (opt1 + opt2)
-print(sum)
-
-# 094 D - Binomial Coefficients
-# combはrを真ん中に設定すると大きくなる
-
-N = getN()
-A = getList()
-A.sort()
-
-max = max(A)
-index = bisect_left(A, max / 2)
-if abs((max / 2) - A[index]) < abs((max / 2) - A[index - 1]):
-    ans = [max, A[index]]
-else:
-    ans = [max, A[index - 1]]
-print(*ans)
-
-# ABC096 D - Five, Five Everywhere
-# 素数はmod nでグルーピングできる
-N = getN()
-
-# エラストテネスの篩
-prime = [2]
-max = 55555
-limit = int(math.sqrt(max))
-data = [i + 1 for i in range(2, max, 2)]
-
-while limit > data[0]:
-    prime.append(data[0])
-    data = [j for j in data if j % data[0] != 0]
-prime = prime + data
-
-prime = sorted(prime)
-
-prime = [i for i in prime if i % 5 == 1]
-print(*prime[:N])
-
-# ABC114 D - 756
-N = getN()
-
-def prime_factorize(n):
-    divisors = []
-    # 27(2 * 2 * 7)の7を出すためにtemp使う
-    temp = n
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if temp % i == 0:
-            cnt = 0
-            while temp % i == 0:
-                cnt += 1
-                # 素因数を見つけるたびにtempを割っていく
-                temp //= i
-            divisors.append([i, cnt])
-    if temp != 1:
-        divisors.append([temp, 1])
-    if divisors == [] and n != 1:
-        divisors.append([n, 1])
-
-    return divisors
-
-primli = [0] * 101
-# N! の因数を計算する
-for i in range(1, N + 1):
-    for j in prime_factorize(i):
-        primli[j[0]] += j[1]
-# 約数を75個持つとは(因数 + 1)をかけ合わせると75になるということ
-# 75 = 3 * 3 * 5なので例えば
-# (因数aが2個 + 1) * (因数bが2個 + 1) * (因数cが4個 + 1)なら約数が75個になる
-alta = []
-for i in primli:
-    if i != 0:
-        alta.append(i + 1)
-
-prim3 = 0
-prim5 = 0
-prim15 = 0
-prim25 = 0
-prim75 = 0
-for i in alta:
-    if i >= 75:
-        prim75 += 1
-    if i >= 25:
-        prim25 += 1
-    if i >= 15:
-        prim15 += 1
-    if i >= 5:
-        prim5 += 1
-    if i >= 3:
-        prim3 += 1
-
-ans = 0
-if prim3 >= 1 and prim5 >= 2:
-    # prim5 C 2
-    ans += prim5 * (prim5 - 1) // 2 * (prim3 - 2)
-if prim15 >= 1 and prim5 >= 1:
-    ans += prim15 * (prim5 - 1)
-if prim25 >= 1 and prim3 >= 1:
-    ans += prim25 * (prim3 - 1)
-if prim75 >= 1:
-    ans += prim75
-print(ans)
-
-N, M = getNM()
-A = [int(i) // 2 for i in input().split()]
-
-"""
-全てのAの要素について
-X = ai * (p + 0.5)を満たす負でない整数pが存在する
-1 ~ Mまでに何個あるか M <= 10 ** 9
-M // なんかの数だろ
-N, M = 2, 50
-A = [6, 10]の時
-15 6 * (2 + 0.5)
-   10 * (1 + 0.5)
-45 6 * (7 + 0.5)
-   10 * (4 + 0.5)
-X - (ai // 2)がaiの倍数になる
-1 -2, -4
-2 -1, -3
-3 0, -2
-4 1, -1
-5 2, 0...
-13 10, 8
-14 11, 9
-15 12, 10 12は6の倍数、10は5の倍数
-9 6, 4
-15 12, 10
-21 18, 16
-27 24, 22
-33
-39
-45 42, 40
-51
-57
-Xが ai // 2の奇数倍になればいい
-ai // 2 = aとすると
-X = pa
-  = (2n + 1)a
-  = 2na + a となる整数nが存在する
-A = [a1, a2, a3]の時半公倍数Xが存在するか ⇆
-alta = [a1 // 2, a2 // 2...]とすると
-a, 3a, 5a...
-b, 3b, 5b...
-c, 3c, 5c...の全てに含まれるXが存在するか
-2系列問題
-a, 3a, 5a...
-b, 3b, 5b...
-の両方に含まれる数Xを探す
-pa = qbとなる奇数p, qがそれぞれ存在する
-左右の2の因数は一致しないといけないので
-aとbの2の因数の数が一致しないといけない
-各要素を２で割れる回数が同じならXが存在する
-# 4と8の場合
-# 2 6 10 14 18...
-# 4 12 20 28... これを２で割ると
-# 1 3 5 7 9...
-# 2 4 10 14... 起点が偶数と奇数なため永遠に一致しない
-# 4と12なら
-# 2 6 10 14 18...
-# 6 18 30 42... これを２で割ると
-# 1 3 5 7 9...
-# 3 9 15 21...　になり、起点が奇数と奇数になるためどこかで一致する
-"""
-
-# Aの各要素がどれも2でn回ちょうど割れる必要がある
-def div_2(n):
-    cnt = n
-    res = 0
-    while cnt > 0:
-        if cnt % 2 == 0:
-            cnt //= 2
-            res += 1
+    def insert(self,x):
+        heappush(self.h,x)
+        if x not in self.d:
+            self.d[x] = 1
         else:
-            return res
+            self.d[x] += 1
 
-def lcm(x, y):
-    return x * (y // gcd(x, y))
+    def erase(self,x):
+        if x not in self.d or self.d[x] == 0:
+            return 'not found'
+        else:
+            self.d[x] -= 1
 
-judge = [div_2(i) for i in A]
+        while len(self.h) != 0:
+            if self.d[self.h[0]] == 0:
+                heappop(self.h)
+            else:
+                break
 
-if min(judge) != max(judge):
-    print(0)
-    exit()
-L = 1
+    def erase_all(self,x):
+        if x not in self.d or self.d[x] == 0:
+            return 'not found'
+        else:
+            self.d[x] = 0
+
+        while len(self.h) != 0:
+            if self.d[self.h[0]] == 0:
+                heappop(self.h)
+            else:
+                break
+
+    def is_exist(self,x):
+        if x in self.d and self.d[x] != 0:
+            return True
+        else:
+            return False
+
+    def get_min(self):
+        if len(self.h) == 0:
+            return 'enpty'
+        return self.h[0]
+
+
+N, Q = getNM()
+limit = 2 * (10 ** 5) + 1
+
+infants = [getList() for i in range(N)]
+trans = [getList() for i in range(Q)]
+belong = [0] * N
+rate = [0] * N
+
+school = [Multiset() for i in range(limit)]
+purity = Multiset()
+
+# 各学校にいる生徒を記録する
 for i in range(N):
-    L = lcm(L, A[i])
+    a, b = infants[i]
+    b -= 1
+    belong[i] = b
+    rate[i] = -a
+    school[b].insert(-a)
 
-# Ai * 0.5, Ai * 1, Ai * 1.5...の個数 - Ai * 1, Ai * 2...の個数
-print(M // L - M // (2 * L))
+# 各学校の最強園児を求める
+for i in range(limit):
+    if len(school[i].d) > 0:
+        purity.insert(-school[i].get_min())
 
-# ABC152 E - Flatten
-# 大きい数は因数で持つ
+# 転園させる
+for c, d in trans:
+    c -= 1
+    d -= 1
+    ### 転園前処理 ###
+    prev = belong[c] # 所属変更
+    purity.erase(-1 * school[prev].get_min()) # 最強リストから削除
+    school[prev].erase(rate[c]) # 前の学校から削除
+    if len(school[prev].h) > 0:
+        purity.insert(-1 * school[prev].get_min()) # 最強リストを更新
+    ################
+
+    ### 転園後処理 ###
+    belong[c] = d
+    after = belong[c] # 所属変更
+    if len(school[after].h) > 0:
+        purity.erase(-1 * school[after].get_min()) # 最強リストから削除
+    school[after].insert(rate[c]) # 次の学校に追加
+    purity.insert(-1 * school[after].get_min()) # 最強リストを更新
+    #################
+
+    print(purity.get_min())
+
+# PAST3 L - スーパーマーケット
+# 配列ver
+class Multiset:
+    def __init__(self):
+        # x: [value, index]
+        self.h = [] # 配列を入れる
+        self.d = dict() # 値を入れる
+
+    def insert(self, x):
+        heappush(self.h, x)
+        if x[0] not in self.d:
+            self.d[x[0]] = 1
+        else:
+            self.d[x[0]] += 1
+
+    def erase(self, x): # x: [value, index]で
+        if x[0] not in self.d or self.d[x[0]] == 0:
+            return 'not found'
+        else:
+            self.d[x[0]] -= 1
+
+        while len(self.h) != 0:
+            if self.d[self.h[0][0]] == 0:
+                heappop(self.h)
+            else:
+                break
+
+    def erase_all(self,x):
+        if x[0] not in self.d or self.d[x[0]] == 0:
+            return 'not found'
+        else:
+            self.d[x[0]] = 0
+
+        while len(self.h) != 0:
+            if self.d[self.h[0][0]] == 0:
+                heappop(self.h)
+            else:
+                break
+
+    def is_exist(self,x): # x: [value, index]で
+        if x[0] in self.d and self.d[x[0]] != 0:
+            return True
+        else:
+            return False
+
+    def get_min(self):
+        if len(self.h) == 0:
+            return 'enpty'
+        return self.h[0]
+
 N = getN()
-A = getList()
-prime_list = defaultdict(int)
+K = [deque(getList()[1:]) for i in range(N)] # 商品の棚
+M = getN()
+A = getList() # 客 全ての列についてAi番目まで見て値の大きいものを選ぶ
+# それぞれの客について購入した商品の値を求める
 
+"""
+ヒープキュー？　aが小さいのでdequeでできる
+列が一個しかない場合は？
+1 ~ iのうち最大　をどのように求める？
+一個取る　一個appendする
+セグ木をK個立てるの無理なので、最大値をholdする
+aが1か2
+1 1の時
+取る、取る
+1 2の時
+取る、（取る + 見る）
+2 1の時
+（取る + 見る）、見る
+１番目の商品についてヒープキュー + ２番目の商品についてヒープキュー
+
+1番目のものを取った　
+2番目のものを1番目にappendする
+2番目のものについてどう処理する
+
+firについてheappop
+Kについてpopleft
+
+2つ目取ったらpop pop appendleft
+
+multiset2つとis_number2があればOK
+できる
+"""
+
+S1, S2 = Multiset(), Multiset()
+# 番兵
 for i in range(N):
-    prime = prime_factorize(A[i])
-    for j in prime:
-        prime_list[j[0]] = max(prime_list[j[0]], j[1])
+    K[i].append(-mod)
+# 2番目の数字は？
+is_number2 = {}
+for i in range(N):
+    s1 = -K[i].popleft()
+    # is_number1[i] = s1
+    S1.insert([s1, i])
 
-num = 1
-for key, value in prime_list.items():
-    num *= key ** value
-    num %= mod
+    if K[i]:
+        s2 = -K[i].popleft()
+        is_number2[i] = s2
+        S2.insert([s2, i])
 
-# 1/A[i]のmod
-lim = 10 ** 6 + 1
-fact = [1, 1]
-inv = [0, 1]
+def pop_first():
+    r1, index = S1.get_min()
+    print(-r1)
+    # S1から値を消す
+    S1.erase([r1, index])
+    # S2のものをS1に移動させる
+    # S1にfloat('inf')が滞留するけど選ばないのでOK
+    S1.insert([is_number2[index], index])
+    S2.erase([is_number2[index], index])
+    # S2に数字を入れる
+    if K[index]:
+        r2 = K[index].popleft()
+        S2.insert([-r2, index])
+        is_number2[index] = -r2
 
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
+def pop_second():
+    r2, index = S2.get_min()
+    print(-r2)
+    # S2の値を消す
+    S2.erase([r2, index])
+    # S2に数字を入れる
+    # !K[index]だとis_numberにfloat('inf')が滞留するけど選ばないのでOK
+    if K[index]:
+        r2 = K[index].popleft()
+        S2.insert([-r2, index])
+        is_number2[index] = -r2
 
-ans = 0
 for i in A:
-    opt = (num * inv[i]) % mod
-    ans += opt
-    ans %= mod
-print(ans % mod)
-
-# ABC161 F - Division or Subtraction
-N = getN()
-
-# 手順としては
-# ①　kで出来るだけ割る
-# ②　kで引いていく　N = mk + d(d = 1, 2, 3...)とすると,　引いて残る数はm(k - 1) + d
-# つまりkで割り切れず、引いても引いても永遠に①に戻ることはない
-
-# N = k ** i * (mk + 1)となるkの数を求める
-# i == 0の時
-# kがなんであれk ** iは１になるので
-# N = mk + 1、つまりN - 1がkの倍数であればそのkは条件を満たす
-# N - 1の約数（１以外）が候補
-
-ans = set()
-for i in make_divisors(N - 1):
-    if i != 1:
-        ans.add(i)
-
-# 割れるだけ割る関数
-def dividor(x, k):
-    if k == 1:
-        return 0
-    n = x
-    while True:
-        if n % k == 0:
-            n //= k
-        else:
-            break
-    return n
-
-# i >= 1の時
-# 候補はNの約数
-for prim in make_divisors(N):
-    if prim == 1:
-        continue
-    # Nを割れるだけ割る
-    alta = dividor(N, prim)
-    if alta == 1:
-        ans.add(prim)
-        continue
-    if alta >= prim and alta % prim == 1:
-        ans.add(prim)
-
-print(len(ans))
-
-# 三井住友信託銀行プログラミングコンテスト2019 F - Interval Running
-
-T1, T2 = 12000, 15700
-A1, A2 = 3390000000, 3810000000
-B1, B2 = 5550000000, 2130000000
-
-# グラフにして考える
-# 周期は同じT1, T2
-# T1の時とT2の時とで順位が入れ替わっているなら出会っている
-t1_diff = (A1 - B1) * T1
-t2_diff = (A1 - B1) * T1 + (A2 - B2) * T2
-if t1_diff == 0 or t2_diff == 0: # 無限に出会う
-    print('infinity')
-    exit()
-if t1_diff * t2_diff > 0: # ずっとどちらかが前にいる
-    print(0)
-    exit()
-
-# t2_diff分ずつずれていく
-
-# 順位が逆転する場合
-# クロスする時とちょうど接する時を考える
-if abs(t1_diff) % abs(t2_diff) == 0:
-    # 最後の１回は１回しかクロスしない
-    print((abs(t1_diff) // abs(t2_diff)) * 2)
-else:
-    print((abs(t1_diff) // abs(t2_diff)) * 2 + 1)
-
-Q = getN()
-que = [getList() for i in range(Q)]
-
-"""
-回文である 01010 偶数と奇数に分けられるかも
-長さN 転倒数K
-転倒数　各1について、その1より右にある0の数の総和
-01010 転倒数3
-考えるのはN / 2まででいい
-i番目に1を置く
-左側の1: 今まで置いた0の数 + (今から置いていく0の数 * 2)
-右側の1: 今まで置いた0の数
-合計:今まで置いた0の数 * 2 + 今から置いていく0の数
-= 0の数の合計 * 2
-
-通りの数を考える
-dp? 数え上げcombo?
-Kの作りかたを考える
-0と1の数がわかればどうなる
-0 * 0, 1 * 3 111111 (0)
-0 * 1, 1 * 2 110011(4), 101101(4), 011110(4)
-0 * 2, 1 * 1 100001(4), 010010(4), 001100(4)
-0 * 3, 1 * 0 000000 (0)
-
-どのタイミングで0を置くかは関係ない
-0と1の組み合わせにより転倒数の個数が決まる
-転倒数は1の数 * 0の数（n - 1の数）* 2 2i(n - i) = k
-2i ** 2 - 2ni + k = 0
-これは偶数の場合
-奇数の場合は
-最後の一つが0か1か
-0の時
-各1について転倒数 0の数の合計 * 2 + 1
-総和 1の数 * 0の数（n - 1の数） * 2 + 1の数
-i(n - i) * 2 + i
-i(2n - 2i + 1) = k
-2i ** 2 - (2n - 1)i + k = 0
-1の時
-各1について転倒数 0の数の合計 * 2
-+ 中央の1について0の数
-総和 1の数 * 0の数（n - 1の数） * 2
-2i(n - i) + (n - i)= k
-"""
-
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
-
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-
-# a + b = n
-# a * b = kとなるa, bを求める
-def binary_combo(n, k):
-    left = 0
-    right = int(math.sqrt(k)) + 1
-    while left <= right:
-        mid = (left + right) // 2
-        if mid * (n - mid) == k:
-            return mid # aの値がかえる(b = n - a)
-        elif mid * (n - mid) < k:
-            left = mid + 1
-        else:
-            right = mid - 1
-    return False
-
-def solv_quadratic_equation(a, b, c):
-    """ 2次方程式を解く  """
-    D = (b ** 2 - 4 * a * c) ** (1 / 2)
-    x_1 = (-b + D) / (2 * a)
-    x_2 = (-b - D) / (2 * a)
-
-    return x_1, x_2
-
-def is_integer_num(n):
-    if isinstance(n, int):
-        return n
-    if isinstance(n, float):
-        if n.is_integer():
-            return int(n)
-    return False
-
-for n, k in que:
-    if k == 0:
-        print(2)
-        continue
-    if n % 2 == 0:
-        if k % 2 != 0:
-            print(0)
-            continue
-        res = 0
-        n //= 2
-        x1, x2 = solv_quadratic_equation(2, -2 * n, k)
-        if x1 == 0 or (is_integer_num(x1) and x1 > 0):
-            res += cmb(n, int(x1))
-        if x2 == 0 or (is_integer_num(x2) and x2 > 0 and x1 != x2):
-            res += cmb(n, int(x2))
-
-        print(res % mod)
+    if i == 1:
+        # 値をprint
+        pop_first()
     else:
-        res = 0
-        n //= 2
-        # 中央は0
-        x1, x2 = solv_quadratic_equation(2, -(2 * n + 1), k)
-        if x1 == 0 or (is_integer_num(x1) and x1 > 0):
-            res += cmb(n, int(x1))
-        if x2 == 0 or (is_integer_num(x2) and x2 > 0 and x1 != x2):
-            res += cmb(n, int(x2))
-        # 中央は1
-        x1, x2 = solv_quadratic_equation(2, -(2 * n - 1), k - n)
-        if x1 == 0 or (is_integer_num(x1) and x1 > 0):
-            res += cmb(n, int(x1))
-        if x2 == 0 or (is_integer_num(x2) and x2 > 0 and x1 != x2):
-            res += cmb(n, int(x2))
-
-        print(res % mod)
+        # -opt1の方が値が大きかったら
+        if S1.get_min()[0] < S2.get_min()[0]:
+            pop_first()
+        else:
+            pop_second()
