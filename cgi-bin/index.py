@@ -49,235 +49,430 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-class Multiset:
-    def __init__(self):
-        self.h = []
-        self.d = dict()
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-    def insert(self,x):
-        heappush(self.h,x)
-        if x not in self.d:
-            self.d[x] = 1
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
         else:
-            self.d[x] += 1
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-    def erase(self,x):
-        if x not in self.d or self.d[x] == 0:
-            return 'not found'
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+
+        if x == y:
+            return
+
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def size(self, x):
+        return -self.parents[self.find(x)]
+
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
+
+# ABC002 派閥
+# 条件
+# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
+# (i, j)がqueryに含まれる
+
+# この人数nの最大値を求める
+
+# 集合Aの取り方は？
+# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
+N, M = getNM()
+mem = set()
+for i in range(M):
+    a, b = getNM()
+    mem.add((a - 1, b - 1))
+
+ans = 0
+for bit in range(1 << N):
+    # 任意のi, jについてqueryに含まれているか判定
+    flag = True
+    for i in range(N):
+        for j in range(i + 1, N):
+            # 適当に選んだ２人がbitの中に含まれていれば
+            if bit & (1 << i) and bit & (1 << j):
+                if not (i, j) in mem:
+                    flag = False
+    # もし集合bitが条件を満たすなら人数を調べる
+    if flag:
+        opt = bin(bit).count('1')
+        ans = max(ans, opt)
+print(ans)
+
+# ABC040 D - 道路の老朽化対策について
+# 人によって通れる橋が限定される場合がある
+# クエリソートしてUnion Find
+
+N, M = getNM()
+bridge = [getList() for i in range(M)]
+Q = getN()
+resident = []
+for i in range(Q):
+    a, b = getNM()
+    resident.append([a, b, i])
+
+bridge.sort(reverse = True, key = lambda i:i[2])
+resident.sort(reverse = True, key = lambda i:i[1])
+
+U = UnionFind(N)
+
+ans = []
+index = 0
+for i in range(Q):
+    # 建築年が新しい順に橋をかけていく
+    for j in range(index, M):
+        if bridge[j][2] > resident[i][1]:
+            a, b, c = bridge[j]
+            U.union(a - 1, b - 1)
         else:
-            self.d[x] -= 1
+            index = j
+            break
+    # U.sizeで判定
+    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
 
-        while len(self.h) != 0:
-            if self.d[self.h[0]] == 0:
-                heappop(self.h)
-            else:
-                break
+# 国民を登場順にソート
+ans.sort(key = lambda i: i[0])
+for i in ans:
+    print(i[1])
 
-    def erase_all(self,x):
-        if x not in self.d or self.d[x] == 0:
-            return 'not found'
-        else:
-            self.d[x] = 0
+# ABC097 D - Equals
+# 同じ島のところにしか飛べない
+N, M = getNM()
+# 1 ~ 5の並び替え
+# これを1, 2, 3, 4, 5にしたい
+P = getList()
+# Pのうちのペア
+query = []
+for i in range(M):
+    a, b = getNM()
+    query.append([a, b])
 
-        while len(self.h) != 0:
-            if self.d[self.h[0]] == 0:
-                heappop(self.h)
-            else:
-                break
+U = UnionFind(N)
+for i in range(M):
+    a, b = query[i]
+    U.union(a - 1, b - 1)
 
-    def is_exist(self,x):
-        if x in self.d and self.d[x] != 0:
-            return True
-        else:
-            return False
-
-    def get_min(self):
-        if len(self.h) == 0:
-            return 'enpty'
-        return self.h[0]
-
-
-N, Q = getNM()
-limit = 2 * (10 ** 5) + 1
-
-infants = [getList() for i in range(N)]
-trans = [getList() for i in range(Q)]
-belong = [0] * N
-rate = [0] * N
-
-school = [Multiset() for i in range(limit)]
-purity = Multiset()
-
-# 各学校にいる生徒を記録する
+cnt = 0
 for i in range(N):
-    a, b = infants[i]
-    b -= 1
-    belong[i] = b
-    rate[i] = -a
-    school[b].insert(-a)
+    if U.same(P[i] - 1, i):
+        cnt += 1
 
-# 各学校の最強園児を求める
-for i in range(limit):
-    if len(school[i].d) > 0:
-        purity.insert(-school[i].get_min())
+print(cnt)
 
-# 転園させる
-for c, d in trans:
-    c -= 1
-    d -= 1
-    ### 転園前処理 ###
-    prev = belong[c] # 所属変更
-    purity.erase(-1 * school[prev].get_min()) # 最強リストから削除
-    school[prev].erase(rate[c]) # 前の学校から削除
-    if len(school[prev].h) > 0:
-        purity.insert(-1 * school[prev].get_min()) # 最強リストを更新
+# ABC120 D - Decayed Bridges
+# クエリソート
+N, M = getNM()
+query = [getNM() for i in range(M)]
+
+U = UnionFind(N)
+now = cmb_list[N]
+ans = [now]
+
+for i in range(M - 1, 0, -1):
+    a, b = query[i]
+    size_a = 0
+    size_b = 0
+    if not U.same(a - 1, b - 1):
+        size_a = U.size(a - 1)
+        size_b = U.size(b - 1)
+
+        U.union(a - 1, b - 1)
+        size_after = U.size(a - 1)
+
+        now -= (cmb_list[size_after] - cmb_list[size_a] - cmb_list[size_b])
+    else:
+        U.union(a - 1, b - 1)
+    ans.append(now)
+
+for i in range(M - 1, -1, -1):
+    print(ans[i])
+
+# ABC126 E - 1 or 2
+# カードN枚
+# 各カードには1か2が書かれている
+N, M = getNM()
+# A1 + A2 + 1は偶数
+query = []
+
+for i in range(M):
+    a, b, c = getNM()
+    query.append([a, b, c])
+
+U = UnionFind(N)
+for i in query:
+    U.union(i[0] - 1, i[1] - 1)
+
+print(U.group_count())
+
+# ABC157 D - Friend Suggestions
+N, M, K = getNM()
+F = [getList() for i in range(M)]
+B = [getList() for i in range(K)]
+
+# 友人候補の数を答える
+# 各人につきO(1)で答える
+
+# 集合の足し引きで答える
+# U.same(a) = {aと友人関係にあるもの、aとブロック関係、その他}
+# U.same(a) - aと友人関係にあるもの - aとブロック関係が答え
+# まずUnionfind
+
+U = UnionFind(N)
+for a, b in F:
+    U.union(a - 1, b - 1)
+
+# U.same(i)の人数を答える
+ans = [0] * N
+for i in range(N):
+    ans[i] = U.size(i)
+
+# U.same内のaと友人関係にあるもの, aとブロック関係にあるものを引く
+# 同じグループ内にいる時だけ関係する
+for a, b in F:
+    if U.same(a - 1, b - 1):
+        ans[a - 1] -= 1
+        ans[b - 1] -= 1
+
+for c, d in B:
+    if U.same(c - 1, d - 1):
+        ans[c - 1] -= 1
+        ans[d - 1] -= 1
+
+ans = [i - 1 for i in ans] # 自身を引く
+print(*ans)
+
+# 各1 ~ Nに交易所を立てるのを0~Nにエッジを貼るのに見立てる
+N, M = getNM()
+edges = []
+for i in range(N):
+    c = getN()
+    edges.append((c, 0, i + 1))
+for i in range(M):
+    s, t, w = getNM()
+    edges.append((w, s, t))
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(N + 1, edges))
+
+# 駐車場
+N, M, S = getNM()
+S -= 1
+dist = [[] for i in range(N)]
+for i in range(M):
+    v1, v2 = getNM()
+    v1 -= 1
+    v2 -= 1
+    v1, v2 = min(v1, v2), max(v1, v2)
+    dist[v1].append(v2)
+
+U = UnionFind(N)
+
+ans = []
+for i in range(N - 1, -1, -1):
+    # 地点iに車を駐める場合、一端がiの道は使えない
+    # → iに車を停める以前であれば,一端がiの道を使える
+    for j in dist[i]:
+        U.union(i, j)
+    if U.same(i, S):
+        ans.append(i + 1)
+ans.sort()
+for i in ans:
+    print(i)
+
+# ABC065 built?
+# xでソート、yでソートし、それぞれ
+# abs(a - b)とabs(c - d)のエッジをそれぞれ加える
+# どちらか短い方が使われる
+N = getN()
+query = []
+for i in range(N):
+    a, b = getNM()
+    query.append([a, b, i])
+
+q_a = sorted(query, key = lambda i: i[0])
+q_b = sorted(query, key = lambda i: i[1])
+edges = []
+
+a1 = q_a[0]
+b1 = q_b[0]
+for i in range(1, N):
+    a2 = q_a[i]
+    b2 = q_b[i]
+    edges.append([abs(a1[0] - a2[0]), a1[2], a2[2]])
+    edges.append([abs(b1[1] - b2[1]), b1[2], b2[2]])
+    a1, b1 = a2, b2
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+        if U.size(0) == N:
+            break
+    return res
+print(kruskal(N, edges))
+
+# CODE FESTIVAL 2016 Final C - Interpretation
+N, M = getNM() # N人、M種類の言語
+que = []
+for i in range(N):
+    q = getList()
+    q = [i - 1 for i in q[1:]]
+    que.append(q)
+
+lang = [[] for i in range(M)]
+for i in range(N):
+    for j in que[i]:
+        lang[j].append(i)
+"""
+N人全ての参加者が他の全ての参加者と通話できるか
+共通の言語を使える or 通訳が存在する
+Unionfindする？
+条件を言い換えると
+他の全ての参加者と通話できるという判定は？
+上から順に？
+最大流？
+ツリーがどうなっていればいい？
+通訳が間に何人も挟まっていいなら木が１つなら条件を満たす
+そもそも木が2つ以上あればアウト
+unionfindのエッジを貼る方法
+1と2が同じグループか
+N + M でunionfind
+まとめてunionfind
+i:ユーザー j + N:言語
+"""
+
+U = UnionFind(N + M)
+for i in range(N):
+    for j in que[i]:
+        U.union(i, j + N)
+
+non_user = 0
+for i in range(M):
+    if not lang[i]:
+        non_user += 1
+
+# 使われてない言語を除くと木が1本ならYES
+if len(U.roots()) - non_user == 1:
+    print('YES')
+else:
+    print('NO')
+
+# PAST3 K - コンテナの移動
+# LISか？
+N, Q = getNM()
+que = [getList() for i in range(Q)]
+
+"""
+Q個のクエリが与えられるので、順番に処理してください。
+
+机 1 2 3 4
+コ 1 2 3 4
+
+机fにあるxから上を机tに移動させる
+すでにtにコンテナがある場合はその上に載せる
+
+それぞれのコンテナがどこにあるか
+最終的に一箇所になるのでは
+
+UnionFindかセグ木か
+~から上をどう求めるか　dictを使う？O(N)かかる
+セグ木か？　全てにtのコンテナの数を加算
+
+普通にappendにぶたんでいいのでは　pop, appendにO(N)かかるのでだめ
+
+・iの上のものをどう求めるか
+・iより上のものを移動させる方法　移動するとはどういうことか
+parentsを変えること
+最後尾につなぐ
+
+上のコンテナは下のコンテナに従う
+f t x 机fにあるxから上を机tに移動させる
+
+iはどこに属するか
+位置情報を保持する方法
+
+全てのコンテナについてrootsは保持できる
+どのコンテナがどこに属しているかは問題の条件からわかる
+"""
+
+# UnionFindの亜種
+# 一番最初は使わない
+roots = [-i for i in range(N + 1)] # コンテナiはどこに連なるか
+last = [i for i in range(N + 1)] # 机iの最後尾を保持
+
+for f, t, x in que:
+    ### fから消す ###
+    # xの下にあるもの(xのroots)が最後尾に
+    # その際位置情報を渡す
+    appe_last = last[f] # 移動元の最後尾
+    if last[f] > 0: # 下のものがあれば
+        last[f] = roots[x] # 最後尾変更
+    else: # 空なら
+        last[f] = -1 # 最後尾変更
+    ###############
+
+    ### tに加える　###
+    # xのrootを変更する　tの最後尾につける
+    if last[t] > 0: # tになんかあれば
+        roots[x] = last[t] # root変更
+        last[t] = appe_last # 最後尾変更
+    else: # 空っぽなら
+        roots[x] = -t
+        last[t] = appe_last
     ################
 
-    ### 転園後処理 ###
-    belong[c] = d
-    after = belong[c] # 所属変更
-    if len(school[after].h) > 0:
-        purity.erase(-1 * school[after].get_min()) # 最強リストから削除
-    school[after].insert(rate[c]) # 次の学校に追加
-    purity.insert(-1 * school[after].get_min()) # 最強リストを更新
-    #################
+ans = [-1] * (N + 1)
+def dfs(x):
+    global ans
+    res = 0
+    if ans[x] > 0:
+        return ans[x]
 
-    print(purity.get_min())
+    if roots[x] < 0:
+        ans[x] = -roots[x]
+        return ans[x]
 
-# PAST3 L - スーパーマーケット
-# 配列ver
-class Multiset:
-    def __init__(self):
-        # x: [value, index]
-        self.h = [] # 配列を入れる
-        self.d = dict() # 値を入れる
+    ans[x] = dfs(roots[x])
+    return ans[x]
 
-    def insert(self, x):
-        heappush(self.h, x)
-        if x[0] not in self.d:
-            self.d[x[0]] = 1
-        else:
-            self.d[x[0]] += 1
+for i in range(1, N + 1):
+    dfs(i)
 
-    def erase(self, x): # x: [value, index]で
-        if x[0] not in self.d or self.d[x[0]] == 0:
-            return 'not found'
-        else:
-            self.d[x[0]] -= 1
-
-        while len(self.h) != 0:
-            if self.d[self.h[0][0]] == 0:
-                heappop(self.h)
-            else:
-                break
-
-    def erase_all(self,x):
-        if x[0] not in self.d or self.d[x[0]] == 0:
-            return 'not found'
-        else:
-            self.d[x[0]] = 0
-
-        while len(self.h) != 0:
-            if self.d[self.h[0][0]] == 0:
-                heappop(self.h)
-            else:
-                break
-
-    def is_exist(self,x): # x: [value, index]で
-        if x[0] in self.d and self.d[x[0]] != 0:
-            return True
-        else:
-            return False
-
-    def get_min(self):
-        if len(self.h) == 0:
-            return 'enpty'
-        return self.h[0]
-
-N = getN()
-K = [deque(getList()[1:]) for i in range(N)] # 商品の棚
-M = getN()
-A = getList() # 客 全ての列についてAi番目まで見て値の大きいものを選ぶ
-# それぞれの客について購入した商品の値を求める
-
-"""
-ヒープキュー？　aが小さいのでdequeでできる
-列が一個しかない場合は？
-1 ~ iのうち最大　をどのように求める？
-一個取る　一個appendする
-セグ木をK個立てるの無理なので、最大値をholdする
-aが1か2
-1 1の時
-取る、取る
-1 2の時
-取る、（取る + 見る）
-2 1の時
-（取る + 見る）、見る
-１番目の商品についてヒープキュー + ２番目の商品についてヒープキュー
-
-1番目のものを取った　
-2番目のものを1番目にappendする
-2番目のものについてどう処理する
-
-firについてheappop
-Kについてpopleft
-
-2つ目取ったらpop pop appendleft
-
-multiset2つとis_number2があればOK
-できる
-"""
-
-S1, S2 = Multiset(), Multiset()
-# 番兵
-for i in range(N):
-    K[i].append(-mod)
-# 2番目の数字は？
-is_number2 = {}
-for i in range(N):
-    s1 = -K[i].popleft()
-    # is_number1[i] = s1
-    S1.insert([s1, i])
-
-    if K[i]:
-        s2 = -K[i].popleft()
-        is_number2[i] = s2
-        S2.insert([s2, i])
-
-def pop_first():
-    r1, index = S1.get_min()
-    print(-r1)
-    # S1から値を消す
-    S1.erase([r1, index])
-    # S2のものをS1に移動させる
-    # S1にfloat('inf')が滞留するけど選ばないのでOK
-    S1.insert([is_number2[index], index])
-    S2.erase([is_number2[index], index])
-    # S2に数字を入れる
-    if K[index]:
-        r2 = K[index].popleft()
-        S2.insert([-r2, index])
-        is_number2[index] = -r2
-
-def pop_second():
-    r2, index = S2.get_min()
-    print(-r2)
-    # S2の値を消す
-    S2.erase([r2, index])
-    # S2に数字を入れる
-    # !K[index]だとis_numberにfloat('inf')が滞留するけど選ばないのでOK
-    if K[index]:
-        r2 = K[index].popleft()
-        S2.insert([-r2, index])
-        is_number2[index] = -r2
-
-for i in A:
-    if i == 1:
-        # 値をprint
-        pop_first()
-    else:
-        # -opt1の方が値が大きかったら
-        if S1.get_min()[0] < S2.get_min()[0]:
-            pop_first()
-        else:
-            pop_second()
+for i in ans[1:]:
+    print(i)
