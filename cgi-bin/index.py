@@ -49,266 +49,143 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 文字列を整数に変換
-N = 26
+# ABC098 D - Xor Sum 2
+# 連続する区間の長さを答える　尺取り
 
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
-    else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
+N = getN()
+A = getList()
 
-# z
-print(num2alpha(N))
-
-n = N
-lista = []
-digit = 26
-i = 0
-
-while n != 0:
-    opt = n % digit
-    lista.insert(0, opt)
-    if n % digit == 0:
-        n = n // digit - 1
-    else:
-        n = n // digit
-    i += 1
-
-str_list = 'abcdefghijklmnopqrstuvwxyz'
-ans = ''
-for i in range(len(lista)):
-    ans += str_list[lista[i] - 1]
-
-# z
-print(ans)
-
-#  最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
-
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
-
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# ABC009 C - 辞書式順序ふたたび
-
-N,K = getNM()
-S = list(input())
-T = sorted(S)
-diff = 0
-ans = ""
-
-for i in range(N):
-    s = S[i]
-    # 残りの文字を全ループさせる
-    for t in T:
-        # tを追加して良いか確かめる
-        diff1 = diff + (s != t)
-        count = Counter(T)
-        count[t] -= 1
-        diff2 = sum((Counter(S[i + 1:]) - count).values())
-        # 追加していいなら
-        if diff1 + diff2 <= K:
-            diff = diff1
-            ans += t
-            T.remove(t)
-            break
-print(ans)
-
-# ABC031 語呂合わせ
-
-# 1 ~ Kまでの数字がどの単語に当てはまるか
-# 1 ~ Kに対し文字の候補は26 ** 3通り?
-
-# 文字列は総文字数、アルファベットの種類（２６種類、定数倍）で捉えられる
-
-N, M = getNM()
-que = []
-for i in range(M):
-    v, w = input().split()
-    que.append([v, w])
-root = 3
-
-def judge(array):
-    # 1 ~ Kに割り当てた文字数が正しいか
-    for v, w in que:
-        cnt = 0
-        for i in range(len(v)):
-            cnt += array[int(v[i]) - 1]
-        if cnt != len(w):
-            return
-    # 文字数が適合するなら
-    str_list = [''] * N
-    for v, w in que:
-        cnt = 0
-        # 文字を区切っていく
-        for i in range(len(v)):
-            str_len = array[int(v[i]) - 1]
-            opt = w[cnt: cnt + str_len]
-            if str_list[int(v[i]) - 1] == '':
-                str_list[int(v[i]) - 1] = opt
-            else:
-                if str_list[int(v[i]) - 1] != opt:
-                    return
-            cnt += str_len
-
-    # 全て適合するなら
-    for i in str_list:
-        print(i)
-    exit()
-
-# 1 ~ Kの文字数が何文字かについて3 ** Kを全探索
-def four_pow(i, array):
-    global cnt
-    if i == N:
-        judge(array)
-        return
-    for j in range(1, root + 1):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-four_pow(0, [])
-
-K, N = getNM()
-G = []
-for i in range(N):
-    v, w = map(str, input().split())
-    # 桁ごとに数字を分ける
-    v = list(v)
-    v = [int(d) - 1 for d in v]
-    G.append((v, w))
-
-# それぞれの語呂数に対して長さ1 ~ 3を割り当てる
-for p in product(range(1, 4), repeat = K):
-    S = [[] for _ in range(K)]
-    for v, w in G:
-        c = 0
-        # 長さが正しいか判定するパート
-        for d in v:
-            # 使われた語呂数の長さを足し合わせる
-            c += p[d]
-        if c != len(w):
-            break
-        # 文字列を割り当てるパート
-        else:
-            cur = 0
-            for d in v:
-                # 長さごとに文字列を切っていく
-                S[d].append(w[cur: cur + p[d]])
-                cur += p[d]
-    # 長さが整合したものが見つかれば
-    else:
-        for i in range(K):
-            # 任意の語呂数に対する文字列が一意に定まらなければ
-            # 112: abcで 1 = a, 1 = B, 2 = cになるみたいなケース
-            if len(set(S[i])) != 1:
-                break
-        else:
-            for i in range(K):
-                print(S[i][0])
-            exit()
-
-# ABC043 D - アンバランス
-# i文字目を見る場合
-# i - 1文字目が同じ文字ならアウト
-# i - 2文字目が同じでもアウト
-S = input()
-N = len(S)
-
-ans = [-1, -1]
-for i in range(1, N):
-    if S[i] == S[i - 1]:
-        ans = [i, i + 1]
-        break
-    if i > 1 and S[i] == S[i - 2]:
-        ans = [i - 1, i + 1]
-        break
-print(*ans)
-
-# ABC049 C - 白昼夢
-
-S = input()
-
-while len(S) >= 5:
-    # Sを４つの単語で順に調べて刈っていく
-    if len(S) >= 7 and S[-7:] == "dreamer":
-        S = S[:-7]
-        continue
-
-    if len(S) >= 6 and S[-6:] == "eraser":
-        S = S[:-6]
-        continue
-
-    elif S[-5:] == "dream" or S[-5:] == "erase":
-        S = S[:-5]
-        continue
-
-    else:
-        break
-
-if len(S) == 0:
-    print("YES")
-else:
-    print("NO")
-
-# ARC019 B - こだわりの名前
-S = input()
-N = len(S)
-bi = N // 2
-str_f = []
-for i in range(bi):
-    str_f.append(S[i])
-str_b = []
-for i in range(bi):
-    str_b.append(S[-i - 1])
-
+r, tmp = 0, 0
+# l:左端
 cnt = 0
-for i in range(bi):
-    if str_f[i] != str_b[i]:
-        cnt += 1
+for l in range(N):
+    while r < N and tmp ^ A[r] == tmp + A[r]:
+        # 右端を伸ばす
+        tmp += A[r]
+        r += 1
+    # 計算
+    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
+    # (r - l + 1) - 1
+    cnt += r - l
 
-# 全て一致
-if cnt == 0:
-    # 真ん中以外は何に変えても回文にならない
-    # 真ん中は何に変えても回文になる
-    print(2 * bi * 25)
-elif cnt == 1:
-    if N % 2 == 0:
-        print(25 * bi * 2 - 2)
+    if l == r:
+        r += 1
+        tmp -= A[l]
     else:
-        # 真ん中は何に変えても回文にならない
-        print(25 * bi * 2 - 2 + 25)
+        tmp -= A[l]
+print(cnt)
+
+# ABC117 D - XXOR
+N, K = getNM()
+A = getList()
+
+# 各X xor Aiについて
+# 各桁について
+# Xにフラグ立つ + Aiにフラグ立たない
+# Xにフラグ立たない + Aiにフラグ立つ　の時 2 ** iだけxorの値が増える
+# Aの各要素の2 ** iのフラグの合計がn本の時
+# Xの2 ** iのフラグを立てるとN - n * 2 ** i、立てないとn * 2 ** i　f(x)の値が増える
+
+# 各桁のフラグが合計何本あるか
+flag = [0] * 61
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            flag[i] += 1
+for i in range(N):
+    splitbit(A[i])
+
+x = 0
+ans = 0
+for i in range(60, -1, -1):
+    # flag[i] < N - flag[i]ならフラグを立てるほうがお得
+    # だがKの制限があり立てたくても立てられないことがある
+    # Xの2 ** iのフラグを立ててもXがKを超えないか
+    if flag[i] < N - flag[i] and x + 2 ** i <= K:
+        # Xにフラグを立てる
+        x += 2 ** i
+        # f(x)の値が増える
+        ans += 2 ** i * (N - flag[i])
+    # flag[i] < N - flag[i]だがフラグを立てられない場合 +
+    # flag[i] >= N - flag[i]の時
+    else:
+        ans += 2 ** i * flag[i]
+
+print(ans)
+
+# ABC121 D - XOR World
+A, B = getNM()
+# bit1桁目のフラグの個数
+# 周期は2 ** 1
+# 0と1が交互に
+# bit2桁目のフラグの個数
+# 周期は2 ** 2
+flags1 = [0] * 61
+flags2 = [0] * 61
+# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
+def bitflag(n, flaglist):
+    if n > 0:
+        for i in range(1, 61):
+            split = 2 ** i
+            flag1 = (n // split) * (split // 2)
+            flag2 = max(n % split + 1 - (split // 2), 0)
+            flaglist[i] += flag1 + flag2
+# 1 ~ A - 1について（Aは範囲に入っているため）
+bitflag(A - 1, flags1)
+bitflag(B, flags2)
+for i in range(61):
+    flags2[i] -= flags1[i]
+ans = 0
+# 奇数ならフラグが立つ
+for i in range(61):
+    if flags2[i] % 2 != 0:
+        ans += 2 ** (i - 1)
+print(ans)
+
+# ABC147 D - Xor Sum 4
+
+N = getN()
+A = getList()
+# Aの各数字の（２進数における）各桁ごとに分解して排他的論理和を求める
+# 例
+# 3
+# 1 2 3 →
+# 1, 10, 11
+# 2 ** 0の桁について(1 ^ 2) 1 ^ 0 = 1,(1 ^ 3) 1 ^ 1 = 0,(2 ^ 3) 0 ^ 1 = 1
+# 2 ** 1の桁について 0(1の2 ** 1の桁は0) ^ 1 = 1, 0 ^ 1 = 1, 1 ^ 1 = 0
+# 各桁について2 ** iの桁が1の数字の選び方 * 2 ** iの桁が0の数字の選び方 * 2 ** iを
+# 足し合わせる
+lista = [[0, 0] for i in range(61)]
+# bitの各桁が１か０かをlistaに収納
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            lista[i][1] += 1
+        else:
+            lista[i][0] += 1
+for i in A:
+    splitbit(i)
+ans = 0
+for i in range(61):
+    ans += ((lista[i][0] * lista[i][1]) * (2 ** i)) % mod
+print(ans % mod)
+
+# ARC021 B - Your Numbers are XORed...
+L = getN()
+B = getArray(L)
+B_xor = B[0]
+for i in range(1, L - 1):
+    B_xor ^= B[i]
+
+# B_xor ^ a1(aの最後) ^ a1 == Bの最後なら成立
+# この時aがどんな値であろうと条件が成立する
+if B_xor == B[-1]:
+    now = 0
+    print(now)
+    # a2 = B1 ^ a1
+    # a3 = B2 ^ a2
+    for j in range(L - 1):
+        now = B[j] ^ now
+        print(now)
 else:
-    print(25 * N)
+    print(-1)
