@@ -49,287 +49,425 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-#####segfunc#####
-def segfunc(x, y):
-    return min(x, y)
-#################
-#####ide_ele#####
-ide_ele = float('inf')
-#################
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-    def query(self, l, r):
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
+
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
+
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+
+        if x == y:
+            return
+
+        if self.parents[x] > self.parents[y]:
+            x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def size(self, x):
+        return -self.parents[self.find(x)]
+
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
+
+# ABC002 派閥
+# 条件
+# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
+# (i, j)がqueryに含まれる
+
+# この人数nの最大値を求める
+
+# 集合Aの取り方は？
+# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
 N, M = getNM()
-seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
-L = [getList() for i in range(N)]
-L.sort()
-seg.update(0, 0)
-# [0, 1, 2, 3, 4, 5]
-# seg.query(0, 2): [0, 1]の最小値
-# seg.query(2, 2 + 1): [2]の最小値
-# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
-for l, r, c in L:
-    opt = seg.query(l, r)
-    vs = seg.query(r, r + 1)
-    seg.update(r, min(vs, opt + c))
-print(seg.query(M, M + 1))
+mem = set()
+for i in range(M):
+    a, b = getNM()
+    mem.add((a - 1, b - 1))
 
-#####segfunc#####
-def segfunc(x, y):
-    return x * y
-#################
-#####ide_ele#####
-ide_ele = 1
-#################
-class SegTree:
-    """
-    init(init_val, ide_ele): 配列init_valで初期化 O(N)
-    update(k, x): k番目の値をxに更新 O(logN)
-    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
-    """
-    def __init__(self, init_val, segfunc, ide_ele):
-        """
-        init_val: 配列の初期値
-        segfunc: 区間にしたい操作
-        ide_ele: 単位元
-        n: 要素数
-        num: n以上の最小の2のべき乗
-        tree: セグメント木(1-index)
-        """
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-    def update(self, k, x):
-        """
-        k番目の値をxに更新
-        k: index(0-index)
-        x: update value
-        """
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-    def query(self, l, r):
-        """
-        [l, r)のsegfuncしたものを得る
-        l: index(0-index)
-        r: index(0-index)
-        """
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+ans = 0
+for bit in range(1 << N):
+    # 任意のi, jについてqueryに含まれているか判定
+    flag = True
+    for i in range(N):
+        for j in range(i + 1, N):
+            # 適当に選んだ２人がbitの中に含まれていれば
+            if bit & (1 << i) and bit & (1 << j):
+                if not (i, j) in mem:
+                    flag = False
+    # もし集合bitが条件を満たすなら人数を調べる
+    if flag:
+        opt = bin(bit).count('1')
+        ans = max(ans, opt)
+print(ans)
 
-#ABC157 E - Simple String Queries
-N = 7
-s = 'abcdbbd'
-Q = 6
-query = [
-[2, 3, 6],
-[1, 5, 'z'],
-[2, 1, 1],
-[1, 4, 'a'],
-[1, 7, 'd'],
-[2, 1, 7]
-]
-S = []
-for i in s:
-    # 面倒なので文字を数値化
-	S.append(ord(i) - ord("a"))
-seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
-# 入力
-for i in range(N):
-	seg[S[i]].update(i, 0)
+# ABC040 D - 道路の老朽化対策について
+# 人によって通れる橋が限定される場合がある
+# クエリソートしてUnion Find
+
+N, M = getNM()
+bridge = [getList() for i in range(M)]
+Q = getN()
+resident = []
 for i in range(Q):
-    a, b, c = query[i]
-    if int(a) == 1:
-        b = int(b) - 1
-        # Sのb番目にある文字をupdate
-        seg[S[b]].update(b, 1)
-        t = ord(c) - ord("a")
-        seg[t].update(b, 0)
-        S[b] = t
-    else:
-        b = int(b) - 1
-        c = int(c)
-        cnt = 0
-        for se in seg:
-            # 1 * 1 * 0 * 1 *...
-            # 区間内に一つでも0があれば0
-            if se.query(b, c) == 0:
-                cnt += 1
-        print(cnt)
+    a, b = getNM()
+    resident.append([a, b, i])
 
+bridge.sort(reverse = True, key = lambda i:i[2])
+resident.sort(reverse = True, key = lambda i:i[1])
 
-def segfunc(x, y):
-    return min(x, y)
+U = UnionFind(N)
 
-ide_ele = float('inf')
-
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-
-    def query(self, l, r):
-        res = self.ide_ele
-
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-
-# ABC146 F - Sugoroku
-# 最短手数k回でクリアできるとすると、
-# 1 ~ M　の内１つをk回選んで合計をNにする
-N, M = getNM()
-S = input()
-trap = set()
-for i in range(len(S)):
-    if S[i] == '1':
-        trap.add(i)
-
-# これABC011 123引き算と同じでは
-
-# 案1 dpを使う
-# dp[i]: iマスに止まる時の最短手順
-# dp[i]の時 dp[i + 1] ~ dp[i + M]についてmin(dp[i] + 1, dp[i + j])を見ていく
-# 決まったらdpを前から見ていき最短手順がdp[i] - 1になるものを探す（辞書順）
-# → M <= 10 ** 5より多分無理
-
-# セグ木使えばいける？
-# dp[i] = dp[i - M] ~ dp[i - 1]の最小値 + 1
-# dp[i - M] ~ dp[i - 1]の最小値はlogNで求められるので全体でNlogN
-
-dp = [float('inf')] * (N + 1)
-dp[0] = 0
-seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
-seg.update(0, 0)
-
-# dp[i]をレコード
-for i in range(1, N + 1):
-    # もしドボンマスなら飛ばす（float('inf')のまま）
-    if i in trap:
-        continue
-    # dp[i - M] ~ dp[i - 1]の最小値をサーチ
-    min_t = seg.query(max(0, i - M), i)
-    seg.update(i, min_t + 1)
-    dp[i] = min_t + 1
-
-# goalに到達できないなら
-if dp[-1] == float('inf'):
-    print(-1)
-    exit()
-
-# 何回の試行で到達できるかをグルーピング
-dis = [[] for i in range(dp[-1] + 1)]
-for i in range(len(dp)):
-    if dp[i] == float('inf'):
-        continue
-    dis[dp[i]].append(i)
-
-# ゴールから巻き戻っていく
-now = dp[-1]
-now_index = N
 ans = []
-# 辞書順で1 4 4 < 3 3 3なので
-# 一番前にできるだけ小さい数が来るようにする
-for i in range(now, 0, -1):
-    # dp[i] - 1回で到達できる
-    # 現在地点からMマス以内
-    # で最も現在地点から遠いところが１つ前のマス
-    index = bisect_left(dis[i - 1], now_index - M)
-    # サイコロの目を決める
-    ans.append(now_index - dis[i - 1][index])
-    # 現在地点更新
-    now_index = dis[i - 1][index]
+index = 0
+for i in range(Q):
+    # 建築年が新しい順に橋をかけていく
+    for j in range(index, M):
+        if bridge[j][2] > resident[i][1]:
+            a, b, c = bridge[j]
+            U.union(a - 1, b - 1)
+        else:
+            index = j
+            break
+    # U.sizeで判定
+    ans.append([resident[i][2], U.size(resident[i][0] - 1)])
 
-for i in ans[::-1]:
+# 国民を登場順にソート
+ans.sort(key = lambda i: i[0])
+for i in ans:
+    print(i[1])
+
+# ABC065 built?
+# xでソート、yでソートし、それぞれ
+# abs(a - b)とabs(c - d)のエッジをそれぞれ加える
+# どちらか短い方が使われる
+N = getN()
+query = []
+for i in range(N):
+    a, b = getNM()
+    query.append([a, b, i])
+
+q_a = sorted(query, key = lambda i: i[0])
+q_b = sorted(query, key = lambda i: i[1])
+edges = []
+
+a1 = q_a[0]
+b1 = q_b[0]
+for i in range(1, N):
+    a2 = q_a[i]
+    b2 = q_b[i]
+    edges.append([abs(a1[0] - a2[0]), a1[2], a2[2]])
+    edges.append([abs(b1[1] - b2[1]), b1[2], b2[2]])
+    a1, b1 = a2, b2
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+        if U.size(0) == N:
+            break
+    return res
+print(kruskal(N, edges))
+
+# ABC097 D - Equals
+# 同じ島のところにしか飛べない
+N, M = getNM()
+# 1 ~ 5の並び替え
+# これを1, 2, 3, 4, 5にしたい
+P = getList()
+# Pのうちのペア
+query = []
+for i in range(M):
+    a, b = getNM()
+    query.append([a, b])
+
+U = UnionFind(N)
+for i in range(M):
+    a, b = query[i]
+    U.union(a - 1, b - 1)
+
+cnt = 0
+for i in range(N):
+    if U.same(P[i] - 1, i):
+        cnt += 1
+
+print(cnt)
+
+# ABC120 D - Decayed Bridges
+# クエリソート
+N, M = getNM()
+query = [getNM() for i in range(M)]
+
+U = UnionFind(N)
+now = cmb_list[N]
+ans = [now]
+
+for i in range(M - 1, 0, -1):
+    a, b = query[i]
+    size_a = 0
+    size_b = 0
+    if not U.same(a - 1, b - 1):
+        size_a = U.size(a - 1)
+        size_b = U.size(b - 1)
+
+        U.union(a - 1, b - 1)
+        size_after = U.size(a - 1)
+
+        now -= (cmb_list[size_after] - cmb_list[size_a] - cmb_list[size_b])
+    else:
+        U.union(a - 1, b - 1)
+    ans.append(now)
+
+for i in range(M - 1, -1, -1):
+    print(ans[i])
+
+# ABC126 E - 1 or 2
+# カードN枚
+# 各カードには1か2が書かれている
+N, M = getNM()
+# A1 + A2 + 1は偶数
+query = []
+
+for i in range(M):
+    a, b, c = getNM()
+    query.append([a, b, c])
+
+U = UnionFind(N)
+for i in query:
+    U.union(i[0] - 1, i[1] - 1)
+
+print(U.group_count())
+
+# ABC157 D - Friend Suggestions
+N, M, K = getNM()
+F = [getList() for i in range(M)]
+B = [getList() for i in range(K)]
+
+# 友人候補の数を答える
+# 各人につきO(1)で答える
+
+# 集合の足し引きで答える
+# U.same(a) = {aと友人関係にあるもの、aとブロック関係、その他}
+# U.same(a) - aと友人関係にあるもの - aとブロック関係が答え
+# まずUnionfind
+
+U = UnionFind(N)
+for a, b in F:
+    U.union(a - 1, b - 1)
+
+# U.same(i)の人数を答える
+ans = [0] * N
+for i in range(N):
+    ans[i] = U.size(i)
+
+# U.same内のaと友人関係にあるもの, aとブロック関係にあるものを引く
+# 同じグループ内にいる時だけ関係する
+for a, b in F:
+    if U.same(a - 1, b - 1):
+        ans[a - 1] -= 1
+        ans[b - 1] -= 1
+
+for c, d in B:
+    if U.same(c - 1, d - 1):
+        ans[c - 1] -= 1
+        ans[d - 1] -= 1
+
+ans = [i - 1 for i in ans] # 自身を引く
+print(*ans)
+
+# ARC029 C - 高橋君と国家
+# 各都市を適当に道で結んだ結果、k個の島ができる
+# このK個の島それぞれに交易所が立っていればいい
+# すなわちK個がmotherと繋がっていればいい
+# 各1 ~ Nに交易所を立てるのを0~Nにエッジを貼るのに見立てる
+N, M = getNM()
+edges = []
+for i in range(N):
+    c = getN()
+    edges.append((c, 0, i + 1))
+for i in range(M):
+    s, t, w = getNM()
+    edges.append((w, s, t))
+edges.sort()
+
+def kruskal(n, edges):
+    U = UnionFind(n)
+    res = 0
+    for e in edges:
+        w, s, t = e
+        if not U.same(s, t):
+            res += w
+            U.union(s, t)
+    return res
+print(kruskal(N + 1, edges))
+
+# 駐車場
+N, M, S = getNM()
+S -= 1
+dist = [[] for i in range(N)]
+for i in range(M):
+    v1, v2 = getNM()
+    v1 -= 1
+    v2 -= 1
+    v1, v2 = min(v1, v2), max(v1, v2)
+    dist[v1].append(v2)
+
+U = UnionFind(N)
+
+ans = []
+for i in range(N - 1, -1, -1):
+    # 地点iに車を駐める場合、一端がiの道は使えない
+    # → iに車を停める以前であれば,一端がiの道を使える
+    for j in dist[i]:
+        U.union(i, j)
+    if U.same(i, S):
+        ans.append(i + 1)
+ans.sort()
+for i in ans:
     print(i)
 
-# ARC026 C - 蛍光灯
-# 範囲全体を照らすのに必要な最小値
-N, M = getNM()
-seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
-L = [getList() for i in range(N)]
-L.sort()
-seg.update(0, 0)
+# CODE FESTIVAL 2016 Final C - Interpretation
+N, M = getNM() # N人、M種類の言語
+que = []
+for i in range(N):
+    q = getList()
+    q = [i - 1 for i in q[1:]]
+    que.append(q)
 
-# [0, 1, 2, 3, 4, 5]
-# seg.query(0, 2): [0, 1]の最小値
-# seg.query(2, 2 + 1): [2]の最小値
-# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
-for l, r, c in L:
-    opt = seg.query(l, r)
-    vs = seg.query(r, r + 1)
-    seg.update(r, min(vs, opt + c))
-print(seg.query(M, M + 1))
+lang = [[] for i in range(M)]
+for i in range(N):
+    for j in que[i]:
+        lang[j].append(i)
+"""
+N人全ての参加者が他の全ての参加者と通話できるか
+共通の言語を使える or 通訳が存在する
+Unionfindする？
+条件を言い換えると
+他の全ての参加者と通話できるという判定は？
+上から順に？
+最大流？
+ツリーがどうなっていればいい？
+通訳が間に何人も挟まっていいなら木が１つなら条件を満たす
+そもそも木が2つ以上あればアウト
+unionfindのエッジを貼る方法
+1と2が同じグループか
+N + M でunionfind
+まとめてunionfind
+i:ユーザー j + N:言語
+"""
+
+U = UnionFind(N + M)
+for i in range(N):
+    for j in que[i]:
+        U.union(i, j + N)
+
+non_user = 0
+for i in range(M):
+    if not lang[i]:
+        non_user += 1
+
+# 使われてない言語を除くと木が1本ならYES
+if len(U.roots()) - non_user == 1:
+    print('YES')
+else:
+    print('NO')
+
+# PAST3 K - コンテナの移動
+# LISか？
+N, Q = getNM()
+que = [getList() for i in range(Q)]
+
+"""
+Q個のクエリが与えられるので、順番に処理してください。
+机 1 2 3 4
+コ 1 2 3 4
+机fにあるxから上を机tに移動させる
+すでにtにコンテナがある場合はその上に載せる
+それぞれのコンテナがどこにあるか
+最終的に一箇所になるのでは
+UnionFindかセグ木か
+~から上をどう求めるか　dictを使う？O(N)かかる
+セグ木か？　全てにtのコンテナの数を加算
+普通にappendにぶたんでいいのでは　pop, appendにO(N)かかるのでだめ
+・iの上のものをどう求めるか
+・iより上のものを移動させる方法　移動するとはどういうことか
+parentsを変えること
+最後尾につなぐ
+上のコンテナは下のコンテナに従う
+f t x 机fにあるxから上を机tに移動させる
+iはどこに属するか
+位置情報を保持する方法
+全てのコンテナについてrootsは保持できる
+どのコンテナがどこに属しているかは問題の条件からわかる
+"""
+
+# UnionFindの亜種
+# 一番最初は使わない
+roots = [-i for i in range(N + 1)] # コンテナiはどこに連なるか
+last = [i for i in range(N + 1)] # 机iの最後尾を保持
+
+for f, t, x in que:
+    ### fから消す ###
+    # xの下にあるもの(xのroots)が最後尾に
+    # その際位置情報を渡す
+    appe_last = last[f] # 移動元の最後尾
+    if last[f] > 0: # 下のものがあれば
+        last[f] = roots[x] # 最後尾変更
+    else: # 空なら
+        last[f] = -1 # 最後尾変更
+    ###############
+
+    ### tに加える　###
+    # xのrootを変更する　tの最後尾につける
+    if last[t] > 0: # tになんかあれば
+        roots[x] = last[t] # root変更
+        last[t] = appe_last # 最後尾変更
+    else: # 空っぽなら
+        roots[x] = -t
+        last[t] = appe_last
+    ################
+
+ans = [-1] * (N + 1)
+def dfs(x):
+    global ans
+    res = 0
+    if ans[x] > 0:
+        return ans[x]
+
+    if roots[x] < 0:
+        ans[x] = -roots[x]
+        return ans[x]
+
+    ans[x] = dfs(roots[x])
+    return ans[x]
+
+for i in range(1, N + 1):
+    dfs(i)
+
+for i in ans[1:]:
+    print(i)
