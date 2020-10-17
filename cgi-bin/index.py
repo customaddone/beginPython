@@ -49,192 +49,287 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-"""
-Z algorithm
-def Z(s):
-    n = len(s)
-    z = [0] * n
-    z[0] = n
-    L, R = 0, 0
-    for i in range(1, n):
-        if i >= R:
-            L = R = i
-            # 一致が続く限り伸ばす
-            while(R < n and s[R - L] == s[R]):
-                R += 1
-            # LCAを書き込む
-            # 頭から一致しない場合はR - L = i - i = 0
-            z[i] = R - L
-        # 全て利用できる場合
-        elif z[i - L] < R - i:
-            z[i] = z[i - L]
-        # 一部利用できる場合
-        else:
-            L = i
-            while(R < n and s[R - L] == s[R]):
-                R += 1
-            z[i] = R - L
-    return z
-# [5, 0, 3, 0, 1]
-#print(Z('ababa'))
-N = getN()
-S = input()
-ans = 0
+#####segfunc#####
+def segfunc(x, y):
+    return min(x, y)
+#################
+#####ide_ele#####
+ide_ele = float('inf')
+#################
+class SegTree:
+    def __init__(self, init_val, segfunc, ide_ele):
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+    def update(self, k, x):
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
+    def query(self, l, r):
+        res = self.ide_ele
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
+N, M = getNM()
+seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
+L = [getList() for i in range(N)]
+L.sort()
+seg.update(0, 0)
+# [0, 1, 2, 3, 4, 5]
+# seg.query(0, 2): [0, 1]の最小値
+# seg.query(2, 2 + 1): [2]の最小値
+# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
+for l, r, c in L:
+    opt = seg.query(l, r)
+    vs = seg.query(r, r + 1)
+    seg.update(r, min(vs, opt + c))
+print(seg.query(M, M + 1))
+
+#####segfunc#####
+def segfunc(x, y):
+    return x * y
+#################
+#####ide_ele#####
+ide_ele = 1
+#################
+class SegTree:
+    """
+    init(init_val, ide_ele): 配列init_valで初期化 O(N)
+    update(k, x): k番目の値をxに更新 O(logN)
+    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
+    """
+    def __init__(self, init_val, segfunc, ide_ele):
+        """
+        init_val: 配列の初期値
+        segfunc: 区間にしたい操作
+        ide_ele: 単位元
+        n: 要素数
+        num: n以上の最小の2のべき乗
+        tree: セグメント木(1-index)
+        """
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+    def update(self, k, x):
+        """
+        k番目の値をxに更新
+        k: index(0-index)
+        x: update value
+        """
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
+    def query(self, l, r):
+        """
+        [l, r)のsegfuncしたものを得る
+        l: index(0-index)
+        r: index(0-index)
+        """
+        res = self.ide_ele
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
+
+#ABC157 E - Simple String Queries
+N = 7
+s = 'abcdbbd'
+Q = 6
+query = [
+[2, 3, 6],
+[1, 5, 'z'],
+[2, 1, 1],
+[1, 4, 'a'],
+[1, 7, 'd'],
+[2, 1, 7]
+]
+S = []
+for i in s:
+    # 面倒なので文字を数値化
+	S.append(ord(i) - ord("a"))
+seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
+# 入力
 for i in range(N):
-    z = Z(S[i:])
-    k = len(z)
-    for j in range(k):
-        # '' と 'ababa'
-        # 'a' と 'baba'
-        # 'ab' と 'aba'
-        # ans は j('', 'a', 'ab')の長さ以上にならない（ダブらないため）
-        ans = max(ans, min(j, z[j]))
-print(ans)
-"""
-
-# Rolling hash
-N = getN()
-S = list(map(ord, list(input())))
-# 適当
-base = 1007
-# base = 1009
-power = [1] * (N + 1)
-# 部分文字列を数字に
-# ハッシュ生成
-for i in range(1, N + 1):
-    power[i] = power[i - 1] * base % mod
-print(power)
-
-# 長さmの文字列がダブらずに存在するか
-def check(m):
-    if N - m < m:
-        return False
-    res = 0
-    # 頭m文字のハッシュ生成
-    for i in range(m):
-        res += S[i] * power[m - i - 1]
-        res %= mod
-    dic = {res: 0}
-    for i in range(N - m):
-        # ハッシュをローリングしていって次々m文字のハッシュを生成していく
-        res = ((res - S[i] * power[m - 1]) * base + S[i + m]) % mod
-        # もし既出なら
-        if res in dic.keys():
-            index = dic[res]
-            if index + m <= i + 1: # 重ならないか
-                return True
-        else:
-            dic[res] = i + 1 # i + 1:頭の位置を記録する
-        print(dic)
-    return False
-
-ok = 0
-ng = N + 1
-while ng - ok > 1:
-    mid = (ok + ng) // 2
-
-    if check(mid):
-        ok = mid
+	seg[S[i]].update(i, 0)
+for i in range(Q):
+    a, b, c = query[i]
+    if int(a) == 1:
+        b = int(b) - 1
+        # Sのb番目にある文字をupdate
+        seg[S[b]].update(b, 1)
+        t = ord(c) - ord("a")
+        seg[t].update(b, 0)
+        S[b] = t
     else:
-        ng = mid
-print(ok)
+        b = int(b) - 1
+        c = int(c)
+        cnt = 0
+        for se in seg:
+            # 1 * 1 * 0 * 1 *...
+            # 区間内に一つでも0があれば0
+            if se.query(b, c) == 0:
+                cnt += 1
+        print(cnt)
 
-"""
-N, K = getNM()
+
+def segfunc(x, y):
+    return min(x, y)
+
+ide_ele = float('inf')
+
+class SegTree:
+    def __init__(self, init_val, segfunc, ide_ele):
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+
+    def update(self, k, x):
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
+
+    def query(self, l, r):
+        res = self.ide_ele
+
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
+
+# ABC146 F - Sugoroku
+# 最短手数k回でクリアできるとすると、
+# 1 ~ M　の内１つをk回選んで合計をNにする
+N, M = getNM()
 S = input()
-if(K * 2 > N):
-    print('NO')
-    exit()
-def check(n, s, k, mod, alp):
-    # 各アルファベットをエンコード
-    encode = {}
-    for i, ch in enumerate(alp, 10001):
-        encode[ch] = pow(172603, i, mod)
-    # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
-    left = 0
-    right = 0
-    for i in range(k):
-        left += encode[s[i]]
-        left %= mod
-        right += encode[s[i + k]]
-        right %= mod
-    words = set()
-    # ローリングする
-    for i in range(n):
-        words.add(left)
-        if (right in words):
-            return True
-        if (i + 2 * k >= n):
-            break
-        left += encode[s[i + k]] - encode[s[i]]
-        left %= mod
-        right += encode[s[i + k * 2]] - encode[s[i + k]]
-        right %= mod
-    return False
-ans = True
-ps = '9999217 9999221 9999233 9999271 9999277 9999289 9999299 9999317 9999337 9999347 9999397 9999401 9999419 9999433 9999463 9999469 9999481 9999511 9999533 9999593 9999601 9999637 9999653 9999659 9999667 9999677 9999713 9999739 9999749 9999761 9999823 9999863 9999877 9999883 9999889 9999901 9999907 9999929 9999931 9999937 9999943 9999971 9999973'
-ps = list(map(int, ps.split(' ')))
-ps.append(10 ** 9 + 7)
-ps.append(3040409)
-ps.append(10 ** 20 + 9)
-# 各modについて
-for p in ps:
-    # アルファベットをランダムに並べた表でエンコード表を作る
-    for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
-        ans = (ans & check(N, S, K, p, alp))
-if(ans):
-    print('YES')
-else:
-    print('NO')
-"""
-# ARC024 だれじゃ
-N, K = getNM()
-S = input()
+trap = set()
+for i in range(len(S)):
+    if S[i] == '1':
+        trap.add(i)
 
-if(K * 2 > N):
-    print('NO')
+# これABC011 123引き算と同じでは
+
+# 案1 dpを使う
+# dp[i]: iマスに止まる時の最短手順
+# dp[i]の時 dp[i + 1] ~ dp[i + M]についてmin(dp[i] + 1, dp[i + j])を見ていく
+# 決まったらdpを前から見ていき最短手順がdp[i] - 1になるものを探す（辞書順）
+# → M <= 10 ** 5より多分無理
+
+# セグ木使えばいける？
+# dp[i] = dp[i - M] ~ dp[i - 1]の最小値 + 1
+# dp[i - M] ~ dp[i - 1]の最小値はlogNで求められるので全体でNlogN
+
+dp = [float('inf')] * (N + 1)
+dp[0] = 0
+seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
+seg.update(0, 0)
+
+# dp[i]をレコード
+for i in range(1, N + 1):
+    # もしドボンマスなら飛ばす（float('inf')のまま）
+    if i in trap:
+        continue
+    # dp[i - M] ~ dp[i - 1]の最小値をサーチ
+    min_t = seg.query(max(0, i - M), i)
+    seg.update(i, min_t + 1)
+    dp[i] = min_t + 1
+
+# goalに到達できないなら
+if dp[-1] == float('inf'):
+    print(-1)
     exit()
 
-# ダブらない場所に長さKの同じ文字の種類と数で構成された部分があるか
-def check(n, s, k, mod, alp):
-    # 各アルファベットをエンコード
-    encode = {}
-    for i, ch in enumerate(alp, 10001):
-        encode[ch] = pow(172603, i, mod)
+# 何回の試行で到達できるかをグルーピング
+dis = [[] for i in range(dp[-1] + 1)]
+for i in range(len(dp)):
+    if dp[i] == float('inf'):
+        continue
+    dis[dp[i]].append(i)
 
-    # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
-    res = 0
-    for i in range(k):
-        res += encode[s[i]]
-        res %= mod
+# ゴールから巻き戻っていく
+now = dp[-1]
+now_index = N
+ans = []
+# 辞書順で1 4 4 < 3 3 3なので
+# 一番前にできるだけ小さい数が来るようにする
+for i in range(now, 0, -1):
+    # dp[i] - 1回で到達できる
+    # 現在地点からMマス以内
+    # で最も現在地点から遠いところが１つ前のマス
+    index = bisect_left(dis[i - 1], now_index - M)
+    # サイコロの目を決める
+    ans.append(now_index - dis[i - 1][index])
+    # 現在地点更新
+    now_index = dis[i - 1][index]
 
-    dic = {res: 0}
-    # ローリングする
-    for i in range(n - k):
-        res += encode[s[i + k]] - encode[s[i]]
-        res %= mod
-        if res in dic.keys():
-            index = dic[res]
-            if index + k <= i + 1:# ダブって無いか
-                return True
-        else:
-            dic[res] = i + 1
+for i in ans[::-1]:
+    print(i)
 
-    return False
+# ARC026 C - 蛍光灯
+# 範囲全体を照らすのに必要な最小値
+N, M = getNM()
+seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
+L = [getList() for i in range(N)]
+L.sort()
+seg.update(0, 0)
 
-ans = True
-ps = '9999217 9999221 9999233 9999271 9999277 9999289 9999299 9999317 9999337 9999347 9999397 9999401 9999419 9999433 9999463 9999469 9999481 9999511 9999533 9999593 9999601 9999637 9999653 9999659 9999667 9999677 9999713 9999739 9999749 9999761 9999823 9999863 9999877 9999883 9999889 9999901 9999907 9999929 9999931 9999937 9999943 9999971 9999973'
-ps = list(map(int, ps.split(' ')))
-ps.append(10 ** 9 + 7)
-ps.append(3040409)
-ps.append(10 ** 20 + 9)
-# 各modについて
-for p in ps:
-    # アルファベットをランダムに並べた表でエンコード表を作る
-    for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
-        ans = (ans & check(N, S, K, p, alp))
-
-if(ans):
-    print('YES')
-else:
-    print('NO')
+# [0, 1, 2, 3, 4, 5]
+# seg.query(0, 2): [0, 1]の最小値
+# seg.query(2, 2 + 1): [2]の最小値
+# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
+for l, r, c in L:
+    opt = seg.query(l, r)
+    vs = seg.query(r, r + 1)
+    seg.update(r, min(vs, opt + c))
+print(seg.query(M, M + 1))
