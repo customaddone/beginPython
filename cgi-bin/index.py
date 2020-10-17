@@ -228,3 +228,42 @@ for l, r in zip(left, right):
     # どちらか小さい方
     ans += min(l, r)
 print(ans)
+
+# ARC033 C - データ構造
+# 座圧BIT
+Q = getN()
+que = [getList() for i in range(Q)]
+
+# データに入れる数字を抽出する
+A = []
+for t, x in que:
+    if t == 1:
+        A.append(x)
+# 座標圧縮
+# alter: A[i] → alt_A[i]
+# rev: alt[i] → A[i]
+def compress(array):
+    s = set(array)
+    s = sorted(list(s))
+    alter = {}
+    rev = {}
+    for i in range(len(s)):
+        alter[s[i]] = i
+        rev[i] = s[i]
+
+    return alter, rev
+
+alter, rev = compress(A)
+
+limit = Q + 1
+bit = BIT(limit)
+for t, x in que:
+    if t == 1:
+        bit.add(alter[x] + 1, 1)
+    else:
+        # xを超えないギリギリの場所が1-indexで与えられる
+        opt = bit.lowerbound(x) - 1
+        # 1-indexなのでそのままprintする
+        print(rev[opt])
+        # xを超えないギリギリの場所の一つ右を-1する
+        bit.add(opt + 1, -1)
