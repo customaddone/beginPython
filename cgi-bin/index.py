@@ -49,221 +49,365 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC038 D-プレゼント
-class BIT:
-    def __init__(self, n):
-        self.n = n
-        self.data = [0] * (n + 1)
+A = [3, 4, -8]
+# array内の連続する区間の総和
+def imos_sum(A):
+    n = len(A)
+    imos = [0]
+    for i in range(n):
+        imos.append(imos[i] + A[i])
+    for i in range(n):
+        for j in range(i + 1, n + 1):
+            print(imos[j] - imos[i])
+imos_sum(A)
 
-    def ope(self, x, y):
-        return max(x, y)
+# roopする配列の長さk以下の区間和
+def roop_imos(array, k):
+    n = len(array)
+    alta = copy.deepcopy(array)
+    alta += alta
+    imos = [0]
+    for i in range(len(alta)):
+        imos.append(imos[i] + alta[i])
+    for i in range(n):
+        for j in range(1, k + 1):
+            print(imos[i + j] - imos[i])
+# roop_imos(A, 2)
 
-    def update(self, i, v):
-        j = i
-        while j <= self.n:
-            self.data[j] = self.ope(self.data[j], v)
-            j += j & -j
-
-    def query(self, i):
-        ret = 0
-        j = i
-        while 0 < j:
-            ret = self.ope(self.data[j], ret)
-            j &= (j - 1)
-        return ret
-
-bit = BIT(10 ** 5)
-
-for w, h in que:
-    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
-    # 最初は0個
-    q = bit.query(h - 1)
-    # 高さhの時の箱の数を更新
-    bit.update(h, q + 1)
-print(bit.query(10 ** 5))
-
-# ABC140 E - Second Sum
-# [Pl, Pr]間で２番目に大きいものの総和を
-# l, rについてのnC2通りの全てについて求めよ
-
-# 8 2 7 3 4 5 6 1
-# 8 2: 2
-# 8 2 7: 7
-# 2 7 3: 3
-# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
-# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
-
-# N <= 10 ** 5
-# Piが２番目になる通りが何通り　みたいな感じで求められる？
-# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
-
-# ヒープキューとか使える？
-# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
-# 尺取り使える？
-
-# 累積？　一番
-
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
-
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
-
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
-
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self,w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
+# ABC005 D - おいしいたこ焼きの焼き方
 N = getN()
-P = getList()
-dic = {}
-bit = BIT(N)
+maze = [getList() for i in range(N)]
+Q = getN()
+query = getArray(Q)
+
+# 二次元累積和
+dp = [[0] * N for i in range(N)]
+# 縦１行目、横１行目
 for i in range(N):
-    dic[P[i]] = i + 1
+    dp[i][0] = maze[i][0]
+for i in range(N):
+    for j in range(1, N):
+        dp[i][j] = dp[i][j - 1] + maze[i][j]
+# 全て
+for i in range(1, N):
+    for j in range(N):
+        dp[i][j] += dp[i - 1][j]
 
-# 両端に何もない時用
-# [0] + Pの各要素 + [N + 1]みたいになる
-dic[0] = 0
-dic[N + 1] = N + 1
+# 採点マシーン
+def judge(sx, sy, ex, ey):
+    mother = dp[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
+
+# 「大きさNの時の美味しさ」のリスト
+anslist = [0] * (N ** 2 + 1)
+for nsx in range(N):
+    for nex in range(nsx, N):
+        for nsy in range(N):
+            for ney in range(nsy, N):
+                opt = judge(nsx, nsy, nex, ney)
+                #print(opt, [nsx, nsy, nex, ney])
+                index = (nex - nsx + 1) * (ney - nsy + 1)
+                anslist[index] = max(anslist[index], opt)
+
+# 「大きさN以下の時の美味しさ」のリスト
+ans_alta = [0] * (N ** 2 + 1)
+for i in range(1, len(ans_alta)):
+    ans_alta[i] = max(ans_alta[i - 1], anslist[i])
+
+for i in query:
+    print(ans_alta[i])
+
+# ABC014 atcolor
+n = int(input())
+lista = []
+for i in range(n):
+    a, b = map(int, input().split())
+    lista.append([a, b])
+listb = [0] * (10 ** 6 + 2)
+for i in lista:
+    listb[i[0]] += 1
+    listb[i[1] + 1] -= 1
+listc = [0]
+for i in range(10 ** 6 + 2):
+    listc.append(listb[i] + listc[i])
+print(max(listc))
+
+# ABC017 C - ハイスコア
+
+# 全ての区間を選ばないように
+# 二次元累積?
+# 区間累積
+
+# queryを「lでスタートするもの」と「rでゴールするもの」という２つの捉え方をする
+
+# N:遺跡(query) M:宝石
+N, M = getNM()
+query = [getList() for i in range(N)]
+if M == 1:
+    print(0)
+    exit()
+
+# r以前の宝石を獲得する遺跡を探索する累積和
+imos_up = [0] * M
+# l以降の宝石を獲得する遺跡を探索する累積和
+imos_down = [0] * M
+
+for l, r, s in query:
+    imos_up[r - 1] += s
+    imos_down[l - 1] += s
+
+for i in range(1, M):
+    imos_up[i] += imos_up[i - 1]
+    imos_down[M - i - 1] += imos_down[M - i]
+
 ans = 0
-
-for i in range(N, 0, -1):
-    # 8のインデックス、7のインデックス...に1を登録していく
-    bit.add(dic[i], 1)
-    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
-    c = bit.get(dic[i] + 1)
-    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
-    # l2: l1の一つ左側にあるもの
-    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
-    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
-    # r2: r1の一つ右側にあるもの
-    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
-    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
-    ans += S * i
+for i in range(M):
+    # i - 1個以前の宝石を獲得する遺跡、i + 1個以降の遺跡を獲得する遺跡を探索する
+    if i == 0:
+        opt = imos_down[i + 1]
+    elif i == M - 1:
+        opt = imos_up[i - 1]
+    else:
+        opt = imos_up[i - 1] + imos_down[i + 1]
+    ans = max(ans, opt)
 print(ans)
 
-# ABC174 F - Range Set Query
+H, W = 3, 4
+# maze = [getList() for i in range(H)]
+maze = [
+[1, 2, 1, 2],
+[2, 3, 2, 3],
+[1, 3, 1, 3]
+]
 
-# 色の種類
-# 同じ色のボールがある場合、どの情報があれば良いか
-# 最もrに近いボールの位置がわかればいい
-N, Q = getNM()
-C = getList()
-que = []
+# 二次元累積和
+dp_sum = [[0] * W for i in range(H)]
+dp_1 = [[0] * W for i in range(H)]
+dp_2 = [[0] * W for i in range(H)]
+dp_3 = [[0] * W for i in range(H)]
+
+# x = 0 ~ i, y = 0 ~ j までの数の合計
+def bi_cumul_sum(dp_n):
+    # 縦１行目、横１行目
+    for i in range(H):
+        dp_n[i][0] = maze[i][0]
+    for i in range(H):
+        for j in range(1, W):
+            dp_n[i][j] = dp_n[i][j - 1] + maze[i][j]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_n[i][j] += dp_n[i - 1][j]
+bi_cumul_sum(dp_sum)
+# print(dp_sum)
+
+# x = 0 ~ i, y = 0 ~ j までに出るnumの回数の合計
+def bi_cumul_cnt(num, dp_m):
+    # 縦１行目、横１行目
+    for i in range(H):
+        if maze[i][0] == num:
+            dp_m[i][0] = 1
+    for i in range(H):
+        for j in range(1, W):
+            if maze[i][j] == num:
+                dp_m[i][j] = dp_m[i][j - 1] + 1
+            else:
+                dp_m[i][j] = dp_m[i][j - 1]
+    # 全て
+    for i in range(1, H):
+        for j in range(W):
+            dp_m[i][j] += dp_m[i - 1][j]
+bi_cumul_cnt(3, dp_3)
+# print(dp_1)
+
+# x = sx ~ ex y = sy ~ eyまで
+def judge(sx, sy, ex, ey, dp_l):
+    mother = dp_l[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp_l[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp_l[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp_l[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
+
+print(judge(1, 1, 3, 2, dp_sum))
+print(judge(2, 1, 3, 2, dp_3))
+
+N, M, Q = 10, 3, 2
+query = [
+[1, 5],
+[2, 8],
+[7, 10],
+[1, 7],
+[3, 10]
+]
+
+# l から rまで行く鉄道の数
+lr = [[0 for i in range(N + 1)] for j in range(N + 1)]
+# l から r以前のどこかまで行く鉄道の数
+imos = [[0 for i in range(N + 1)] for j in range(N + 1)]
+imos2 = [[0 for i in range(N + 1)] for j in range(N + 1)]
+
+for i in query:
+    l, r = i
+    lr[l][r] += 1
+
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # j - 1以前のどこかまで行くもの　+ jまで行くもの
+        imos[i][j] = imos[i][j - 1] + lr[i][j]
+
+for i in range(1, N + 1):
+    for j in range(1, N + 1):
+        # i - 1以前のどこかからスタート + iスタート
+        imos2[i][j] = imos2[i - 1][j] + lr[i][j]
+
+print(imos2)
+
+"""
+# 飛ばし累積和
+N = 10
+num = [i for i in range(1, N + 1)]
+D = 2
+lista = [0] * N
+for i in range(D):
+    for j in range(i, N, D):
+        if j == i:
+            lista[j] = num[j]
+        else:
+            lista[j] = num[j] + lista[j - D]
+# [1, 2, 4, 6, 9, 12, 16, 20, 25, 30]
+print(lista)
+# 9番目までの奇数の数字の合計 - 1番目までの奇数の数字の合計
+# 3 + 5 + 7 + 9
+print(lista[8] - lista[0])
+"""
+
+# Dかそれぞれのqueryで固定なのでこの問題は解ける
+H, W, D = getNM()
+maze = []
+for i in range(H):
+    a = getList()
+    maze.append(a)
+Q = getN()
+# piece[0]からpiece[1]まで
+# 4 → 6　→ 8
+piece = []
 for i in range(Q):
     l, r = getNM()
-    que.append([i, l, r])
+    piece.append([l, r])
 
-que_list = [[] for i in range(N + 1)]
+place_list = [[-1, -1] for i in range(H * W)]
+
+for y in range(H):
+    for x in range(W):
+        place_list[maze[y][x] - 1] = [x, y]
+
+# 飛ばし累積和
+x_plus = [0] * (H * W)
+y_plus = [0] * (H * W)
+for i in range(D):
+    for j in range(i, H * W, D):
+        if j == i:
+            opt_x = 0
+            opt_y = 0
+        else:
+            opt_x = abs(place_list[j][0] - place_list[j - D][0])
+            opt_y = abs(place_list[j][1] - place_list[j - D][1])
+            x_plus[j] = opt_x + x_plus[j - D]
+            y_plus[j] = opt_y + y_plus[j - D]
+
+def past_exam(piece_query):
+    start = piece_query[0]
+    goal = piece_query[1]
+
+    x_point = x_plus[goal - 1] - x_plus[start - 1]
+    y_point = y_plus[goal - 1] - y_plus[start - 1]
+    return x_point + y_point
+
 for i in range(Q):
-    que_list[que[i][2]].append(que[i])
+    print(past_exam(piece[i]))
 
-c_place = [-1] * (max(C) + 1)
-bit = BIT(N + 1)
+# ABC179 D - Leaping Tak
+# 遅延セグ木
+N, K = getNM()
+que = [getList() for i in range(K)]
 
-ans = [0] * Q
-for i in range(1, N + 1):# 1-indexなので　配列参照する際はi - 1
+dp = [0] * (N + 1) # dp[i] iの時の通りの数
+imos = [0] * (N + 1) # imos[i]: dp[1] ~ dp[i]までの累計
+dp[1] = 1
+imos[1] = 1
 
-    if c_place[C[i - 1]] == -1: # 新規
-        c_place[C[i - 1]] = i
-        bit.add(i, 1)
-    else: # 更新
-        bit.add(c_place[C[i - 1]], -1)
-        c_place[C[i - 1]] = i
-        bit.add(i, 1)
+# 貰うdp
+# dp += dp[l] - dp[r]
 
-    if len(que_list[i]) > 0: # i == rのqueryに答える
-        for index, l, r in que_list[i]:
-            ans[index] = bit.cum(l, r + 1)
+for i in range(2, N + 1):
+    for l, r in que:
+        if i - l >= 0:
+            dp[i] += imos[i - l] - imos[max((i - r - 1), 0)]
+            dp[i] %= mod
+    imos[i] = dp[i]
+    imos[i] += imos[i - 1]
+    imos[i] %= mod
 
-for i in ans:
-    print(i)
+print(dp[N] % mod)
 
-# ARC031 C - 積み木
-# 反転数を求める感じで
+# 配るdp
+
+dp = [0] * (N + 1)
+dp[1] = 1
+dp[2] = -1
+
+for i in range(1, N + 1):
+    dp[i] += dp[i - 1]
+    dp[i] %= mod
+    for l, r in que:
+        if i + l <= N:
+            dp[i + l] += dp[i]
+        if i + r + 1 <= N:
+            dp[i + r + 1] -= dp[i]
+print(dp[N] % mod)
+
+# ARC043 B - 難易度
+# つまりsnuke festival
 N = getN()
-B = getList()
+D = getArray(N)
+D.sort()
 
-# 各積み木は左か右かを選んで移動させられる
-# BITの小さい方でいい
-place = [0] * (N + 1)
+# a3を選んだ時のありうるa4の数字の通り
+num_3 = [0] * N
 for i in range(N):
-    place[B[i]] = i
+    index = bisect_left(D, D[i] * 2)
+    num_3[i] = N - index
 
-bit = BIT(N + 1)
-# 左にある自分より小さいものではない（大きいもの）の数
-left = [0] * (N + 1)
-# 右にある自分より小さいものではない（大きいもの）の数
-right = [0] * (N + 1)
-for i in range(N, 0, -1):
-    bit.add(place[i] + 1, 1)
-    left[i] = bit.get(place[i] + 1)
-    right[i] = (N - i) - bit.get(place[i] + 1)
+imos_1 = copy.deepcopy(num_3)
+# a2を選んだ時にありうるa4の通り
+num_2 = [0] * N
+for i in range(N - 1):
+    imos_1[-i - 2] += imos_1[-i - 1]
+for i in range(N):
+    if num_3[i] > 0:
+        num_2[i] = imos_1[N - num_3[i]]
 
-ans = 0
-for l, r in zip(left, right):
-    # どちらか小さい方
-    ans += min(l, r)
-print(ans)
-
-# ARC033 C - データ構造
-# 座圧BIT
-Q = getN()
-que = [getList() for i in range(Q)]
-
-# データに入れる数字を抽出する
-A = []
-for t, x in que:
-    if t == 1:
-        A.append(x)
-# 座標圧縮
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-
-    return alter, rev
-
-alter, rev = compress(A)
-
-limit = Q + 1
-bit = BIT(limit)
-for t, x in que:
-    if t == 1:
-        bit.add(alter[x] + 1, 1)
-    else:
-        # xを超えないギリギリの場所が1-indexで与えられる
-        opt = bit.lowerbound(x) - 1
-        # 1-indexなのでそのままprintする
-        print(rev[opt])
-        # xを超えないギリギリの場所の一つ右を-1する
-        bit.add(opt + 1, -1)
+imos_2 = copy.deepcopy(num_2)
+# a1を選んだ時にありうるa4の通り
+num_1 = [0] * N
+for i in range(N - 1):
+    imos_2[-i - 2] += imos_2[-i - 1]
+for i in range(N):
+    if num_2[i] > 0:
+        num_1[i] = imos_2[N - num_3[i]]
+print(sum(num_1) % mod)
