@@ -49,143 +49,192 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC098 D - Xor Sum 2
-# 連続する区間の長さを答える　尺取り
-
-N = getN()
-A = getList()
-
-r, tmp = 0, 0
-# l:左端
-cnt = 0
-for l in range(N):
-    while r < N and tmp ^ A[r] == tmp + A[r]:
-        # 右端を伸ばす
-        tmp += A[r]
-        r += 1
-    # 計算
-    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
-    # (r - l + 1) - 1
-    cnt += r - l
-
-    if l == r:
-        r += 1
-        tmp -= A[l]
-    else:
-        tmp -= A[l]
-print(cnt)
-
-# ABC117 D - XXOR
-N, K = getNM()
-A = getList()
-
-# 各X xor Aiについて
-# 各桁について
-# Xにフラグ立つ + Aiにフラグ立たない
-# Xにフラグ立たない + Aiにフラグ立つ　の時 2 ** iだけxorの値が増える
-# Aの各要素の2 ** iのフラグの合計がn本の時
-# Xの2 ** iのフラグを立てるとN - n * 2 ** i、立てないとn * 2 ** i　f(x)の値が増える
-
-# 各桁のフラグが合計何本あるか
-flag = [0] * 61
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            flag[i] += 1
-for i in range(N):
-    splitbit(A[i])
-
-x = 0
-ans = 0
-for i in range(60, -1, -1):
-    # flag[i] < N - flag[i]ならフラグを立てるほうがお得
-    # だがKの制限があり立てたくても立てられないことがある
-    # Xの2 ** iのフラグを立ててもXがKを超えないか
-    if flag[i] < N - flag[i] and x + 2 ** i <= K:
-        # Xにフラグを立てる
-        x += 2 ** i
-        # f(x)の値が増える
-        ans += 2 ** i * (N - flag[i])
-    # flag[i] < N - flag[i]だがフラグを立てられない場合 +
-    # flag[i] >= N - flag[i]の時
-    else:
-        ans += 2 ** i * flag[i]
-
-print(ans)
-
-# ABC121 D - XOR World
-A, B = getNM()
-# bit1桁目のフラグの個数
-# 周期は2 ** 1
-# 0と1が交互に
-# bit2桁目のフラグの個数
-# 周期は2 ** 2
-flags1 = [0] * 61
-flags2 = [0] * 61
-# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
-def bitflag(n, flaglist):
-    if n > 0:
-        for i in range(1, 61):
-            split = 2 ** i
-            flag1 = (n // split) * (split // 2)
-            flag2 = max(n % split + 1 - (split // 2), 0)
-            flaglist[i] += flag1 + flag2
-# 1 ~ A - 1について（Aは範囲に入っているため）
-bitflag(A - 1, flags1)
-bitflag(B, flags2)
-for i in range(61):
-    flags2[i] -= flags1[i]
-ans = 0
-# 奇数ならフラグが立つ
-for i in range(61):
-    if flags2[i] % 2 != 0:
-        ans += 2 ** (i - 1)
-print(ans)
-
-# ABC147 D - Xor Sum 4
-
-N = getN()
-A = getList()
-# Aの各数字の（２進数における）各桁ごとに分解して排他的論理和を求める
-# 例
-# 3
-# 1 2 3 →
-# 1, 10, 11
-# 2 ** 0の桁について(1 ^ 2) 1 ^ 0 = 1,(1 ^ 3) 1 ^ 1 = 0,(2 ^ 3) 0 ^ 1 = 1
-# 2 ** 1の桁について 0(1の2 ** 1の桁は0) ^ 1 = 1, 0 ^ 1 = 1, 1 ^ 1 = 0
-# 各桁について2 ** iの桁が1の数字の選び方 * 2 ** iの桁が0の数字の選び方 * 2 ** iを
-# 足し合わせる
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][1] += 1
+"""
+Z algorithm
+def Z(s):
+    n = len(s)
+    z = [0] * n
+    z[0] = n
+    L, R = 0, 0
+    for i in range(1, n):
+        if i >= R:
+            L = R = i
+            # 一致が続く限り伸ばす
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            # LCAを書き込む
+            # 頭から一致しない場合はR - L = i - i = 0
+            z[i] = R - L
+        # 全て利用できる場合
+        elif z[i - L] < R - i:
+            z[i] = z[i - L]
+        # 一部利用できる場合
         else:
-            lista[i][0] += 1
-for i in A:
-    splitbit(i)
+            L = i
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            z[i] = R - L
+    return z
+# [5, 0, 3, 0, 1]
+#print(Z('ababa'))
+N = getN()
+S = input()
 ans = 0
-for i in range(61):
-    ans += ((lista[i][0] * lista[i][1]) * (2 ** i)) % mod
-print(ans % mod)
+for i in range(N):
+    z = Z(S[i:])
+    k = len(z)
+    for j in range(k):
+        # '' と 'ababa'
+        # 'a' と 'baba'
+        # 'ab' と 'aba'
+        # ans は j('', 'a', 'ab')の長さ以上にならない（ダブらないため）
+        ans = max(ans, min(j, z[j]))
+print(ans)
+"""
 
-# ARC021 B - Your Numbers are XORed...
-L = getN()
-B = getArray(L)
-B_xor = B[0]
-for i in range(1, L - 1):
-    B_xor ^= B[i]
+# Rolling hash
+N = getN()
+S = list(map(ord, list(input())))
+# 適当
+base = 1007
+# base = 1009
+power = [1] * (N + 1)
+# 部分文字列を数字に
+# ハッシュ生成
+for i in range(1, N + 1):
+    power[i] = power[i - 1] * base % mod
+print(power)
 
-# B_xor ^ a1(aの最後) ^ a1 == Bの最後なら成立
-# この時aがどんな値であろうと条件が成立する
-if B_xor == B[-1]:
-    now = 0
-    print(now)
-    # a2 = B1 ^ a1
-    # a3 = B2 ^ a2
-    for j in range(L - 1):
-        now = B[j] ^ now
-        print(now)
+# 長さmの文字列がダブらずに存在するか
+def check(m):
+    if N - m < m:
+        return False
+    res = 0
+    # 頭m文字のハッシュ生成
+    for i in range(m):
+        res += S[i] * power[m - i - 1]
+        res %= mod
+    dic = {res: 0}
+    for i in range(N - m):
+        # ハッシュをローリングしていって次々m文字のハッシュを生成していく
+        res = ((res - S[i] * power[m - 1]) * base + S[i + m]) % mod
+        # もし既出なら
+        if res in dic.keys():
+            index = dic[res]
+            if index + m <= i + 1: # 重ならないか
+                return True
+        else:
+            dic[res] = i + 1 # i + 1:頭の位置を記録する
+        print(dic)
+    return False
+
+ok = 0
+ng = N + 1
+while ng - ok > 1:
+    mid = (ok + ng) // 2
+
+    if check(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
+
+"""
+N, K = getNM()
+S = input()
+if(K * 2 > N):
+    print('NO')
+    exit()
+def check(n, s, k, mod, alp):
+    # 各アルファベットをエンコード
+    encode = {}
+    for i, ch in enumerate(alp, 10001):
+        encode[ch] = pow(172603, i, mod)
+    # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
+    left = 0
+    right = 0
+    for i in range(k):
+        left += encode[s[i]]
+        left %= mod
+        right += encode[s[i + k]]
+        right %= mod
+    words = set()
+    # ローリングする
+    for i in range(n):
+        words.add(left)
+        if (right in words):
+            return True
+        if (i + 2 * k >= n):
+            break
+        left += encode[s[i + k]] - encode[s[i]]
+        left %= mod
+        right += encode[s[i + k * 2]] - encode[s[i + k]]
+        right %= mod
+    return False
+ans = True
+ps = '9999217 9999221 9999233 9999271 9999277 9999289 9999299 9999317 9999337 9999347 9999397 9999401 9999419 9999433 9999463 9999469 9999481 9999511 9999533 9999593 9999601 9999637 9999653 9999659 9999667 9999677 9999713 9999739 9999749 9999761 9999823 9999863 9999877 9999883 9999889 9999901 9999907 9999929 9999931 9999937 9999943 9999971 9999973'
+ps = list(map(int, ps.split(' ')))
+ps.append(10 ** 9 + 7)
+ps.append(3040409)
+ps.append(10 ** 20 + 9)
+# 各modについて
+for p in ps:
+    # アルファベットをランダムに並べた表でエンコード表を作る
+    for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
+        ans = (ans & check(N, S, K, p, alp))
+if(ans):
+    print('YES')
 else:
-    print(-1)
+    print('NO')
+"""
+# ARC024 だれじゃ
+N, K = getNM()
+S = input()
+
+if(K * 2 > N):
+    print('NO')
+    exit()
+
+# ダブらない場所に長さKの同じ文字の種類と数で構成された部分があるか
+def check(n, s, k, mod, alp):
+    # 各アルファベットをエンコード
+    encode = {}
+    for i, ch in enumerate(alp, 10001):
+        encode[ch] = pow(172603, i, mod)
+
+    # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
+    res = 0
+    for i in range(k):
+        res += encode[s[i]]
+        res %= mod
+
+    dic = {res: 0}
+    # ローリングする
+    for i in range(n - k):
+        res += encode[s[i + k]] - encode[s[i]]
+        res %= mod
+        if res in dic.keys():
+            index = dic[res]
+            if index + k <= i + 1:# ダブって無いか
+                return True
+        else:
+            dic[res] = i + 1
+
+    return False
+
+ans = True
+ps = '9999217 9999221 9999233 9999271 9999277 9999289 9999299 9999317 9999337 9999347 9999397 9999401 9999419 9999433 9999463 9999469 9999481 9999511 9999533 9999593 9999601 9999637 9999653 9999659 9999667 9999677 9999713 9999739 9999749 9999761 9999823 9999863 9999877 9999883 9999889 9999901 9999907 9999929 9999931 9999937 9999943 9999971 9999973'
+ps = list(map(int, ps.split(' ')))
+ps.append(10 ** 9 + 7)
+ps.append(3040409)
+ps.append(10 ** 20 + 9)
+# 各modについて
+for p in ps:
+    # アルファベットをランダムに並べた表でエンコード表を作る
+    for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
+        ans = (ans & check(N, S, K, p, alp))
+
+if(ans):
+    print('YES')
+else:
+    print('NO')
