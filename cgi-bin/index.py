@@ -49,178 +49,103 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC114 C - 755
-N = getN()
-rength = len(str(N))
-numlist = [3, 5, 7]
-cnt = 0
+# ARC126 F - XOR Matching
+# d = 2 ** N - 1について
+# 1 xor 2 xor... xor dは
+# 各桁にフラグが2 * (N - 1)本ずつ立っている（つまり0になる）
+# なのでXを抜くとXを構成する部分についてフラグが抜けてXができる
 
-def sevfivthr(i, strint):
-    global cnt
-    if i == rength:
-        return
-    else:
-        for num in numlist:
-            newstr = strint + str(num)
-            if ('3' in newstr) and ('5' in newstr) and ('7' in newstr):
-                if int(newstr) <= N:
-                    cnt += 1
-            sevfivthr(i + 1, newstr)
-for i in numlist:
-    sevfivthr(1, str(i))
-print(cnt)
+M, K = getNM()
 
-# ABC115 D - Christmas
-# レベルNバーガーの下からX層目まで
+if M == 0 and K == 0:
+    print(0, 0)
+
+elif M == 1 and K == 0:
+    print(0, 0, 1, 1)
+
+elif M >= 2 and K < 2 ** M:
+    ans = []
+    for n in range(2 ** M):
+        if n != K:
+            ans.append(n)
+    print(*ans, K, *ans[::-1], K)
+
+else:
+    print(-1)
+
+# B - Median Pyramid Easy
+
+"""
+頂点にXを書き込む
+N段目の順列としてありうるものを示す
+・一番都合のいいものを出す
+・条件を緩和してみる
+・条件が小さい場合を考える
+Xがなければ
+2 ** (N - 2)を頂点に書けばいい これ以外不可能ってことはない？
+N = 4の場合
+   4
+  345
+ 23456
+1234567
+
+・実験
+def cnt(array):
+    alta = deepcopy(array)
+    while len(alta) > 1:
+        l = []
+        for i in range(1, len(alta) - 1):
+            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
+        alta = l
+    return alta[0]
+
+A = [1, 2, 3, 4, 5]
+for i in permutations(A):
+    print(i, cnt(i))
+X = 2, 3, 4なら可能
+同様に N = 4なら 2 ~ 6であれば可能
+
+X = 2の場合 最終的に上がってくるのは2, 2, 3
+1, 2がペアで存在する場合はX = 2になる？
+上にあげるには？
+上げたい数を真ん中で二つ並べることができたら（例:6 4 2 2 3)勝ち確
+
+真ん中に X + 2, X - 1, X, X + 1, X - 2を配置
+これを中央の値と入れ替える
+"""
+
+def cnt(array):
+    alta = deepcopy(array)
+    while len(alta) > 1:
+        l = []
+        for i in range(1, len(alta) - 1):
+            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
+        alta = l
+    return alta[0]
+
 N, X = getNM()
+ma = 2 * N
+mid = ma // 2
+if X == 1 or X == ma - 1:
+    print('No')
+    exit()
+print('Yes')
 
-# レベルNバーガーの中間地点、全体のサイズ
-cnt_burger = [[0 for i in range(2)] for i in range(51)]
-cnt_burger[0] = [1, 1]
-for i in range(1, 51):
-    cnt_burger[i][0] = 1 + cnt_burger[i - 1][1] + 1
-    cnt_burger[i][1] = cnt_burger[i][0] + cnt_burger[i - 1][1] + 1
+list = [i for i in range(ma - 1, 0, -1)]
+ans = [-1] * ma
 
-# レベルNバーガーにパティが何枚含まれる？
-cnt_patty = [0] * 51
-cnt_patty[0] = 1
-for i in range(1, 51):
-    cnt_patty[i] = 2 * cnt_patty[i - 1] + 1
+if (ma - 1) - X > 1 and mid - 2 > 0: # X + 2を入れ替える
+    ans[mid - 2] = list.pop(list.index(X + 2))
+if X - 2 > 0 and (ma - 1) - mid > 1: # X - 2を入れ替える
+    ans[mid + 2] = list.pop(list.index(X - 2))
 
-# レベルNの下からX番目までにパティが何枚含まれるか
-# xが大きいのでdpはできない
-def count(n, x):
-    # レベル0バーガーの場合
-    if n == 0 and x == 1:
-        return 1
+ans[mid - 1] = list.pop(list.index(X - 1))
+ans[mid + 1] = list.pop(list.index(X + 1))
+ans[mid] = list.pop(list.index(X))
 
-    # バーガーの一番下のパンのみ食べる場合
-    if x == 1:
-        return 0
+for i in range(1, ma):
+    if ans[i] == -1:
+        ans[i] = list.pop()
 
-    # 中間地点以前のどこかまで食べる場合
-    elif 1 < x < cnt_burger[n][0]:
-        # レベルn - 1バーガーの下からx - 1層目まで
-        return count(n - 1, x - 1)
-
-    # 中間地点まで食べる
-    elif x == cnt_burger[n][0]:
-        return cnt_patty[n - 1] + 1
-
-    # 中間地点 ~ 最後以前のうちのどこか
-    elif cnt_burger[n][0] < x < cnt_burger[n][1]:
-        return cnt_patty[n - 1] + 1 + count(n - 1, x - cnt_burger[n][0])
-
-    # 最後
-    else:
-         return 2 * cnt_patty[n - 1] + 1
-
-print(count(N, X))
-
-# ABC122 D - We Like AGC
-N = getN()
-# 文字の個数を求める
-# 755を思い出す
-# dfsする
-
-memo = [{} for i in range(N + 1)]
-
-# 判定用
-def ok(last4):
-    # 1234, 2134, 1324, 1243を調べる
-    for i in range(4):
-        t = list(last4)
-        if i >= 1:
-            t[i - 1], t[i] = t[i], t[i - 1]
-        if ''.join(t).count('AGC') >= 1:
-            return False
-    return True
-
-# 文字を伸ばしていく
-# memo[cur][last3]:cur文字目まで決定しており、そのラスト3文字がlast3のもの
-# 判定に必要なのは後ろ3文字 + ['A', 'G', 'C', 'T']
-def dfs(cur, last3):
-    if last3 in memo[cur]:
-        return memo[cur][last3]
-    # 全部決定したら
-    if cur == N:
-        return 1
-
-    res = 0
-    # last3に['A', 'G', 'C', 'T']をくっつけてみる
-    for s in 'AGCT':
-        if ok(last3 + s):
-            res = (res + dfs(cur + 1, last3[1:] + s)) % mod
-    memo[cur][last3] = res
-    return res
-
-print(dfs(0, 'TTT'))
-
-# AGC009 B - Tournament
-
-N = getN()
-A = [-1, -1] + getArray(N - 1)
-
-"""
-トーナメントの深さの最小値を求めよ
-何もなければbitの長さになる
-a2...anは人aiとの試合で負けた
-
-A = [1, 1, 2, 4]の場合
-1が優勝（デフォルト）
-2は1との試合で負けました
-3は1との試合で負けました
-4は2との試合で負けました
-5は4との試合で負けました
-1は2, 3と戦った 2, 3に勝った
-2は1, 4と戦った 4に勝った
-3は1と戦った
-4は2, 5と戦った 5に勝った
-5は4と戦った
-
-4がネックになりそう
-4をいい感じに配置して
-
-1から辿る
-1は3に勝った 深さは
-
-各頂点をrootとした部分木のサイズを求める
-A = [1, 2, 1, 3, 1, 4]の場合
-1の相手は2, 4, 6 部分木の深さは4
-
-葉から求める
-5の部分木のサイズは1(葉なので)
-7の部分木のサイズは1(葉なので)
-
-3の部分木のサイズは最小で子要素の数n + 1(自分)
-①3の子要素を逆順にソートする
-②子要素の深さはn, n-1...1まで許容される　越えたら求める部分木のサイズが大きくなる
-
-選手iの各相手(子要素)が[r1, r2, r3...]だとする
-これらを選手iが戦った試合だけを見たトーナメント表上に配置する
-深さの最小mi_resは子要素の数n + 1(自分)
-ただし1回戦で戦った相手の部分木の深さがn1ならmi_res = min(mi_res, n1 - 1)
-     2回戦で戦った相手の部分木の深さがn2ならmi_res = min(mi_res, n2 - 2)
-     ...
-と更新されていく
-つまり深さが深い相手を後ろの方に配置した方がお得
-"""
-
-dist = [[] for i in range(N + 1)]
-for i in range(2, N + 1):
-    dist[A[i]].append(i)
-
-def depth_cnt(x):
-    l = []
-    for i in dist[x]:
-        l.append(depth_cnt(i))
-    l.sort(reverse = True) # xが最後に勝った相手に深さが一番深いやつを持ってくるとお得
-    mi_depth = len(l)
-    res = mi_depth
-    for i in range(mi_depth):
-        # xが最後に勝った相手、xが最後から2番目に勝った相手...
-        # 今回は逆にやる
-        res = max(res, l[i] + i)
-    return res + 1 # 部分木のサイズは最小で子要素の数n + 1(自分)
-
-print(depth_cnt(1) - 1)
+for i in ans[1:]:
+    print(i)
