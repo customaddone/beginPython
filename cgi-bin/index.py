@@ -49,98 +49,178 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC021 C - 正直者の高橋くん
-# 経路の通りを求める問題
-N = 7
-a, b = 1, 7
-M = 8
-que = [
-[1, 2],
-[1, 3],
-[4, 2],
-[4, 3],
-[4, 5],
-[4, 6],
-[7, 5],
-[7, 6]
-]
-dist = [[] for i in range(N)]
-for x, y in que:
-    dist[x - 1].append(y - 1)
-    dist[y - 1].append(x - 1)
-
-# スタートからの最短距離測定
-def distance(sta):
-    # 木をstaから順にたどる（戻るの禁止）
-    pos = deque([sta])
-    ignore = [-1] * N
-    ignore[sta] = 0
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in dist[u]:
-            if ignore[i] == -1:
-                ignore[i] = ignore[u] + 1
-                pos.append(i)
-
-    return ignore
-
-d = distance(a - 1)
-
-# スタートから特定の点まで最短距離で行く通りの数
-def counter(sta):
-    pos = deque([sta])
-    ignore = [0] * N
-    cnt = [0] * N
-    cnt[sta] = 1
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        if ignore[u] == 0:
-            ignore[u] = 1
-            # d[i] == d[u] + 1を満たすuの子ノード全てに
-            # 「スタートからuまでの通りの数」をプラス（他のルートからも来る）
-            for i in dist[u]:
-                if d[i] == d[u] + 1:
-                    cnt[i] += cnt[u]
-                    pos.append(i)
-    return cnt
-
-print(counter(a - 1)[b - 1] % mod)
-
-# ARC044 B - 最短路問題
-# 通りの数を求める問題
-# 深さ1のものは,深さ2のものは
+# ABC114 C - 755
 N = getN()
-A = getList()
-M = max(A)
+rength = len(str(N))
+numlist = [3, 5, 7]
+cnt = 0
 
-if A[0] != 0:
-    print(0)
-    exit()
+def sevfivthr(i, strint):
+    global cnt
+    if i == rength:
+        return
+    else:
+        for num in numlist:
+            newstr = strint + str(num)
+            if ('3' in newstr) and ('5' in newstr) and ('7' in newstr):
+                if int(newstr) <= N:
+                    cnt += 1
+            sevfivthr(i + 1, newstr)
+for i in numlist:
+    sevfivthr(1, str(i))
+print(cnt)
 
-lista = [0] * (M + 1)
-lista[0] = 1
-for i in range(1, N):
-    if A[i] == 0:
-        print(0)
-        exit()
-    lista[A[i]] += 1
+# ABC115 D - Christmas
+# レベルNバーガーの下からX層目まで
+N, X = getNM()
 
-ans = 1
-for i in range(1, M + 1):
-    if lista[i] == 0:
-        print(0)
-        exit()
-    # 全ての距離i - 1の点とある距離iの点との辺について
-    # 繋いだ場合辺はi - 1の点の数だけあるが、これらのうち１つ以上と繋ぐ
-    opt1 = (pow(2, lista[i - 1], mod) - 1)
-    # それが距離iの点の数分ある
-    depth = pow(opt1, lista[i], mod)
-    # 距離i間の辺について
-    # 辺はlista[i] * (lista[i] - 1) // 2だけあるが、そのうち０本以上と繋ぐ
-    # これによって頂点の最短距離が変わることはない
-    width = pow(2, lista[i] * (lista[i] - 1) // 2, mod)
-    ans *=  depth * width
-    ans %= mod
-print(ans)
+# レベルNバーガーの中間地点、全体のサイズ
+cnt_burger = [[0 for i in range(2)] for i in range(51)]
+cnt_burger[0] = [1, 1]
+for i in range(1, 51):
+    cnt_burger[i][0] = 1 + cnt_burger[i - 1][1] + 1
+    cnt_burger[i][1] = cnt_burger[i][0] + cnt_burger[i - 1][1] + 1
+
+# レベルNバーガーにパティが何枚含まれる？
+cnt_patty = [0] * 51
+cnt_patty[0] = 1
+for i in range(1, 51):
+    cnt_patty[i] = 2 * cnt_patty[i - 1] + 1
+
+# レベルNの下からX番目までにパティが何枚含まれるか
+# xが大きいのでdpはできない
+def count(n, x):
+    # レベル0バーガーの場合
+    if n == 0 and x == 1:
+        return 1
+
+    # バーガーの一番下のパンのみ食べる場合
+    if x == 1:
+        return 0
+
+    # 中間地点以前のどこかまで食べる場合
+    elif 1 < x < cnt_burger[n][0]:
+        # レベルn - 1バーガーの下からx - 1層目まで
+        return count(n - 1, x - 1)
+
+    # 中間地点まで食べる
+    elif x == cnt_burger[n][0]:
+        return cnt_patty[n - 1] + 1
+
+    # 中間地点 ~ 最後以前のうちのどこか
+    elif cnt_burger[n][0] < x < cnt_burger[n][1]:
+        return cnt_patty[n - 1] + 1 + count(n - 1, x - cnt_burger[n][0])
+
+    # 最後
+    else:
+         return 2 * cnt_patty[n - 1] + 1
+
+print(count(N, X))
+
+# ABC122 D - We Like AGC
+N = getN()
+# 文字の個数を求める
+# 755を思い出す
+# dfsする
+
+memo = [{} for i in range(N + 1)]
+
+# 判定用
+def ok(last4):
+    # 1234, 2134, 1324, 1243を調べる
+    for i in range(4):
+        t = list(last4)
+        if i >= 1:
+            t[i - 1], t[i] = t[i], t[i - 1]
+        if ''.join(t).count('AGC') >= 1:
+            return False
+    return True
+
+# 文字を伸ばしていく
+# memo[cur][last3]:cur文字目まで決定しており、そのラスト3文字がlast3のもの
+# 判定に必要なのは後ろ3文字 + ['A', 'G', 'C', 'T']
+def dfs(cur, last3):
+    if last3 in memo[cur]:
+        return memo[cur][last3]
+    # 全部決定したら
+    if cur == N:
+        return 1
+
+    res = 0
+    # last3に['A', 'G', 'C', 'T']をくっつけてみる
+    for s in 'AGCT':
+        if ok(last3 + s):
+            res = (res + dfs(cur + 1, last3[1:] + s)) % mod
+    memo[cur][last3] = res
+    return res
+
+print(dfs(0, 'TTT'))
+
+# AGC009 B - Tournament
+
+N = getN()
+A = [-1, -1] + getArray(N - 1)
+
+"""
+トーナメントの深さの最小値を求めよ
+何もなければbitの長さになる
+a2...anは人aiとの試合で負けた
+
+A = [1, 1, 2, 4]の場合
+1が優勝（デフォルト）
+2は1との試合で負けました
+3は1との試合で負けました
+4は2との試合で負けました
+5は4との試合で負けました
+1は2, 3と戦った 2, 3に勝った
+2は1, 4と戦った 4に勝った
+3は1と戦った
+4は2, 5と戦った 5に勝った
+5は4と戦った
+
+4がネックになりそう
+4をいい感じに配置して
+
+1から辿る
+1は3に勝った 深さは
+
+各頂点をrootとした部分木のサイズを求める
+A = [1, 2, 1, 3, 1, 4]の場合
+1の相手は2, 4, 6 部分木の深さは4
+
+葉から求める
+5の部分木のサイズは1(葉なので)
+7の部分木のサイズは1(葉なので)
+
+3の部分木のサイズは最小で子要素の数n + 1(自分)
+①3の子要素を逆順にソートする
+②子要素の深さはn, n-1...1まで許容される　越えたら求める部分木のサイズが大きくなる
+
+選手iの各相手(子要素)が[r1, r2, r3...]だとする
+これらを選手iが戦った試合だけを見たトーナメント表上に配置する
+深さの最小mi_resは子要素の数n + 1(自分)
+ただし1回戦で戦った相手の部分木の深さがn1ならmi_res = min(mi_res, n1 - 1)
+     2回戦で戦った相手の部分木の深さがn2ならmi_res = min(mi_res, n2 - 2)
+     ...
+と更新されていく
+つまり深さが深い相手を後ろの方に配置した方がお得
+"""
+
+dist = [[] for i in range(N + 1)]
+for i in range(2, N + 1):
+    dist[A[i]].append(i)
+
+def depth_cnt(x):
+    l = []
+    for i in dist[x]:
+        l.append(depth_cnt(i))
+    l.sort(reverse = True) # xが最後に勝った相手に深さが一番深いやつを持ってくるとお得
+    mi_depth = len(l)
+    res = mi_depth
+    for i in range(mi_depth):
+        # xが最後に勝った相手、xが最後から2番目に勝った相手...
+        # 今回は逆にやる
+        res = max(res, l[i] + i)
+    return res + 1 # 部分木のサイズは最小で子要素の数n + 1(自分)
+
+print(depth_cnt(1) - 1)

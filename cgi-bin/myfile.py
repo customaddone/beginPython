@@ -47,3 +47,7 @@ for i in range(T):
     n, a, b = getNM()
     opt = abs(n - a - b + 1)
     print(((4 * (n - a + 1) * (n - b + 1)) - ((opt ** 2) * 4)) % mod)
+
+opt1 = dp[bit] + dist[j][i] # 以前巡回していた
+opt2 = dp[bit & ~(1 << j)] + dist[j][i] # 以前巡回していない
+dp[bit] = min(dp[bit], opt1, opt2)
