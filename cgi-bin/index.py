@@ -49,103 +49,266 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ARC126 F - XOR Matching
-# d = 2 ** N - 1について
-# 1 xor 2 xor... xor dは
-# 各桁にフラグが2 * (N - 1)本ずつ立っている（つまり0になる）
-# なのでXを抜くとXを構成する部分についてフラグが抜けてXができる
+# ABC038 D-プレゼント
+class BIT:
+    def __init__(self, n):
+        self.n = n
+        self.data = [0] * (n + 1)
 
-M, K = getNM()
+    def ope(self, x, y):
+        return max(x, y)
 
-if M == 0 and K == 0:
-    print(0, 0)
+    def update(self, i, v):
+        j = i
+        while j <= self.n:
+            self.data[j] = self.ope(self.data[j], v)
+            j += j & -j
 
-elif M == 1 and K == 0:
-    print(0, 0, 1, 1)
+    def query(self, i):
+        ret = 0
+        j = i
+        while 0 < j:
+            ret = self.ope(self.data[j], ret)
+            j &= (j - 1)
+        return ret
 
-elif M >= 2 and K < 2 ** M:
-    ans = []
-    for n in range(2 ** M):
-        if n != K:
-            ans.append(n)
-    print(*ans, K, *ans[::-1], K)
+bit = BIT(10 ** 5)
 
-else:
-    print(-1)
+for w, h in que:
+    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
+    # 最初は0個
+    q = bit.query(h - 1)
+    # 高さhの時の箱の数を更新
+    bit.update(h, q + 1)
+print(bit.query(10 ** 5))
 
-# B - Median Pyramid Easy
+# ABC140 E - Second Sum
+# [Pl, Pr]間で２番目に大きいものの総和を
+# l, rについてのnC2通りの全てについて求めよ
 
-"""
-頂点にXを書き込む
-N段目の順列としてありうるものを示す
-・一番都合のいいものを出す
-・条件を緩和してみる
-・条件が小さい場合を考える
-Xがなければ
-2 ** (N - 2)を頂点に書けばいい これ以外不可能ってことはない？
-N = 4の場合
-   4
-  345
- 23456
-1234567
+# 8 2 7 3 4 5 6 1
+# 8 2: 2
+# 8 2 7: 7
+# 2 7 3: 3
+# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
+# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
 
-・実験
-def cnt(array):
-    alta = deepcopy(array)
-    while len(alta) > 1:
-        l = []
-        for i in range(1, len(alta) - 1):
-            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
-        alta = l
-    return alta[0]
+# N <= 10 ** 5
+# Piが２番目になる通りが何通り　みたいな感じで求められる？
+# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
 
-A = [1, 2, 3, 4, 5]
-for i in permutations(A):
-    print(i, cnt(i))
-X = 2, 3, 4なら可能
-同様に N = 4なら 2 ~ 6であれば可能
+# ヒープキューとか使える？
+# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
+# 尺取り使える？
 
-X = 2の場合 最終的に上がってくるのは2, 2, 3
-1, 2がペアで存在する場合はX = 2になる？
-上にあげるには？
-上げたい数を真ん中で二つ並べることができたら（例:6 4 2 2 3)勝ち確
+# 累積？　一番
 
-真ん中に X + 2, X - 1, X, X + 1, X - 2を配置
-これを中央の値と入れ替える
-"""
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-def cnt(array):
-    alta = deepcopy(array)
-    while len(alta) > 1:
-        l = []
-        for i in range(1, len(alta) - 1):
-            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
-        alta = l
-    return alta[0]
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-N, X = getNM()
-ma = 2 * N
-mid = ma // 2
-if X == 1 or X == ma - 1:
-    print('No')
-    exit()
-print('Yes')
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-list = [i for i in range(ma - 1, 0, -1)]
-ans = [-1] * ma
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-if (ma - 1) - X > 1 and mid - 2 > 0: # X + 2を入れ替える
-    ans[mid - 2] = list.pop(list.index(X + 2))
-if X - 2 > 0 and (ma - 1) - mid > 1: # X - 2を入れ替える
-    ans[mid + 2] = list.pop(list.index(X - 2))
+    def lowerbound(self,w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
-ans[mid - 1] = list.pop(list.index(X - 1))
-ans[mid + 1] = list.pop(list.index(X + 1))
-ans[mid] = list.pop(list.index(X))
+N = getN()
+P = getList()
+dic = {}
+bit = BIT(N)
+for i in range(N):
+    dic[P[i]] = i + 1
 
-for i in range(1, ma):
-    if ans[i] == -1:
-        ans[i] = list.pop()
+# 両端に何もない時用
+# [0] + Pの各要素 + [N + 1]みたいになる
+dic[0] = 0
+dic[N + 1] = N + 1
+ans = 0
 
-for i in ans[1:]:
+for i in range(N, 0, -1):
+    # 8のインデックス、7のインデックス...に1を登録していく
+    bit.add(dic[i], 1)
+    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
+    c = bit.get(dic[i] + 1)
+    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
+    # l2: l1の一つ左側にあるもの
+    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
+    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
+    # r2: r1の一つ右側にあるもの
+    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
+    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
+    ans += S * i
+print(ans)
+
+# ABC174 F - Range Set Query
+
+# 色の種類
+# 同じ色のボールがある場合、どの情報があれば良いか
+# 最もrに近いボールの位置がわかればいい
+N, Q = getNM()
+C = getList()
+que = []
+for i in range(Q):
+    l, r = getNM()
+    que.append([i, l, r])
+
+que_list = [[] for i in range(N + 1)]
+for i in range(Q):
+    que_list[que[i][2]].append(que[i])
+
+c_place = [-1] * (max(C) + 1)
+bit = BIT(N + 1)
+
+ans = [0] * Q
+for i in range(1, N + 1):# 1-indexなので　配列参照する際はi - 1
+
+    if c_place[C[i - 1]] == -1: # 新規
+        c_place[C[i - 1]] = i
+        bit.add(i, 1)
+    else: # 更新
+        bit.add(c_place[C[i - 1]], -1)
+        c_place[C[i - 1]] = i
+        bit.add(i, 1)
+
+    if len(que_list[i]) > 0: # i == rのqueryに答える
+        for index, l, r in que_list[i]:
+            ans[index] = bit.cum(l, r + 1)
+
+for i in ans:
     print(i)
+
+# ARC031 C - 積み木
+# 反転数を求める感じで
+N = getN()
+B = getList()
+
+# 各積み木は左か右かを選んで移動させられる
+# BITの小さい方でいい
+place = [0] * (N + 1)
+for i in range(N):
+    place[B[i]] = i
+
+bit = BIT(N + 1)
+# 左にある自分より小さいものではない（大きいもの）の数
+left = [0] * (N + 1)
+# 右にある自分より小さいものではない（大きいもの）の数
+right = [0] * (N + 1)
+for i in range(N, 0, -1):
+    bit.add(place[i] + 1, 1)
+    left[i] = bit.get(place[i] + 1)
+    right[i] = (N - i) - bit.get(place[i] + 1)
+
+ans = 0
+for l, r in zip(left, right):
+    # どちらか小さい方
+    ans += min(l, r)
+print(ans)
+
+# ARC033 C - データ構造
+# 座圧BIT
+Q = getN()
+que = [getList() for i in range(Q)]
+
+# データに入れる数字を抽出する
+A = []
+for t, x in que:
+    if t == 1:
+        A.append(x)
+# 座標圧縮
+# alter: A[i] → alt_A[i]
+# rev: alt[i] → A[i]
+def compress(array):
+    s = set(array)
+    s = sorted(list(s))
+    alter = {}
+    rev = {}
+    for i in range(len(s)):
+        alter[s[i]] = i
+        rev[i] = s[i]
+
+    return alter, rev
+
+alter, rev = compress(A)
+
+limit = Q + 1
+bit = BIT(limit)
+for t, x in que:
+    if t == 1:
+        bit.add(alter[x] + 1, 1)
+    else:
+        # xを超えないギリギリの場所が1-indexで与えられる
+        opt = bit.lowerbound(x) - 1
+        # 1-indexなのでそのままprintする
+        print(rev[opt])
+        # xを超えないギリギリの場所の一つ右を-1する
+        bit.add(opt + 1, -1)
+
+# AGC005 B - Minimum Sum
+
+"""
+全ての連続部分列について、その最小値の総和を求めよ
+N = 3
+A = [2, 1, 3]の時
+
+[2]:2 [1]:1 [3]:3
+[2, 1]:1 [1, 3]:1
+[2, 1, 3]:1
+合計9
+
+BITを使うと思う
+小さいものから順に置いていく
+iが最小値を取る領域[l, r]を求める
+1を置く
+[ , 1, ]
+この時、左端は1番目、右端は3番目までを領域に含めることができる
+左側は2 - 1 + 1 = 2通り、右側は3 - 2 + 1 = 2通りある
+ans += (2 - 1 + 1) * (3 - 2 + 1) * 1
+2を置く
+[2, 1, ]
+左端は1番目、右端も1番目
+"""
+
+N = getN()
+A = getList()
+index = [0] * (N + 1)
+for i in range(N):
+    index[A[i]] = i + 1
+
+bit = BIT(N)
+ans = 0
+for i in range(1, N + 1):
+    c = bit.get(index[i]) # 左側にあるフラグの数を求める
+    # フラグがc個になる場所 + 1、フラグがc + 1個にある場所 - 1を求める
+    # つまり、
+    # 左側にある自分より小さいもののうち最も右側にあるもの + 1
+    # 右側にある自分より小さいもののうち最も左側にあるもの - 1
+    # の場所を求める
+    l, r = bit.lowerbound(c) + 1, bit.lowerbound(c + 1) - 1
+    ans += (index[i] - l + 1) * (r - index[i] + 1) * i
+    bit.add(index[i], 1) # 自身を置く
+print(ans)
