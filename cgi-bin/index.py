@@ -49,328 +49,224 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 文字列を整数に変換
-N = 26
+# NOMURA プログラミングコンテスト 2020 C - Folia
+"""
+N = 3
+A = [0, 1, 1, 2]の場合
+葉の数を求める
+まず完全二分木から考える
+ここから取り除く
+深さ3の葉は4つある
+深さ4の葉は8つある
+深さnの葉は2 ** (n - 1)つある
 
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
+深さ3の葉は4つある完全二分木について
+A = [0, 0, 0, 4]
+深さ3の葉を一つ刈ると
+A = [0, 0, 0, 3]
+二つ刈ってみる　この時、１つ目と同じ親のを刈ると
+A = [0, 0, 1, 2]
+違うのを刈ると
+A = [0, 0, 0, 2]
+根となる頂点を１つ作る
+A[0] = 1ならその頂点は葉（下に頂点を繋げない)
+A[0] = 0ならその頂点は生きる
+
+頂点の最大値を求めるなら
+なるべく大きく分岐させた方がいい
+エッジ貼らなくても頂点数求めるだけでいい
+A[i]を探索するたびに ans += する
+
+現在用意している仮の頂点数を保持しておく
+確定させた頂点数も抑えておく
+
+A = [0, 0, 1, 0, 2]を逆から見ると
+psuedo = [1, 2, 4, 8, 16]
+psuedoのそれぞれとA[4]どちらか小さい方をpsuedoから引く
+psuedo = [0, 0, 2, 6, 14]
+
+left[0] ~ left[i]のそれぞれでA[i]を引けるだけ引く
+順に見ると
+psuedo = []
+left = [] # ansに加える値
+A[0] = 0
+psuedo = [1]
+left = [1]
+A[1] = 0
+psuedo = [1, 2]
+left = [1, 2]
+A[2] = 1
+psuedo = [1, 2, 3]
+left = [0, 1, 3]
+A[3] = 0
+psuedo = [1, 2, 3, 6]
+left = [0, 1, 3, 6]
+A[4] = 2
+psuedo = [1, 2, 3, 6, 10]
+left = [0, 0, 1, 4, 10]
+
+葉にならない点の上限を考える
+"""
+
+# 根から探索するか
+# 葉から探索するか
+
+# 私は根から
+# 総和には累積和が効く
+N = getN()
+A = getList()
+
+# 深さ0の二分木の場合
+if N == 0:
+    if A[0] == 1:
+        print(1)
     else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
-
-# z
-print(num2alpha(N))
-
-n = N
-lista = []
-digit = 26
-i = 0
-
-while n != 0:
-    opt = n % digit
-    lista.insert(0, opt)
-    if n % digit == 0:
-        n = n // digit - 1
-    else:
-        n = n // digit
-    i += 1
-
-str_list = 'abcdefghijklmnopqrstuvwxyz'
-ans = ''
-for i in range(len(lista)):
-    ans += str_list[lista[i] - 1]
-
-# z
-print(ans)
-
-#  最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
-
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
-
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# ABC009 C - 辞書式順序ふたたび
-
-N,K = getNM()
-S = list(input())
-T = sorted(S)
-diff = 0
-ans = ""
-
-for i in range(N):
-    s = S[i]
-    # 残りの文字を全ループさせる
-    for t in T:
-        # tを追加して良いか確かめる
-        diff1 = diff + (s != t)
-        count = Counter(T)
-        count[t] -= 1
-        diff2 = sum((Counter(S[i + 1:]) - count).values())
-        # 追加していいなら
-        if diff1 + diff2 <= K:
-            diff = diff1
-            ans += t
-            T.remove(t)
-            break
-print(ans)
-
-# ABC031 語呂合わせ
-
-# 1 ~ Kまでの数字がどの単語に当てはまるか
-# 1 ~ Kに対し文字の候補は26 ** 3通り?
-
-# 文字列は総文字数、アルファベットの種類（２６種類、定数倍）で捉えられる
-
-N, M = getNM()
-que = []
-for i in range(M):
-    v, w = input().split()
-    que.append([v, w])
-root = 3
-
-def judge(array):
-    # 1 ~ Kに割り当てた文字数が正しいか
-    for v, w in que:
-        cnt = 0
-        for i in range(len(v)):
-            cnt += array[int(v[i]) - 1]
-        if cnt != len(w):
-            return
-    # 文字数が適合するなら
-    str_list = [''] * N
-    for v, w in que:
-        cnt = 0
-        # 文字を区切っていく
-        for i in range(len(v)):
-            str_len = array[int(v[i]) - 1]
-            opt = w[cnt: cnt + str_len]
-            if str_list[int(v[i]) - 1] == '':
-                str_list[int(v[i]) - 1] = opt
-            else:
-                if str_list[int(v[i]) - 1] != opt:
-                    return
-            cnt += str_len
-
-    # 全て適合するなら
-    for i in str_list:
-        print(i)
+        print(-1)
     exit()
 
-# 1 ~ Kの文字数が何文字かについて3 ** Kを全探索
-def four_pow(i, array):
-    global cnt
-    if i == N:
-        judge(array)
-        return
-    for j in range(1, root + 1):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-four_pow(0, [])
-
-K, N = getNM()
-G = []
-for i in range(N):
-    v, w = map(str, input().split())
-    # 桁ごとに数字を分ける
-    v = list(v)
-    v = [int(d) - 1 for d in v]
-    G.append((v, w))
-
-# それぞれの語呂数に対して長さ1 ~ 3を割り当てる
-for p in product(range(1, 4), repeat = K):
-    S = [[] for _ in range(K)]
-    for v, w in G:
-        c = 0
-        # 長さが正しいか判定するパート
-        for d in v:
-            # 使われた語呂数の長さを足し合わせる
-            c += p[d]
-        if c != len(w):
-            break
-        # 文字列を割り当てるパート
-        else:
-            cur = 0
-            for d in v:
-                # 長さごとに文字列を切っていく
-                S[d].append(w[cur: cur + p[d]])
-                cur += p[d]
-    # 長さが整合したものが見つかれば
-    else:
-        for i in range(K):
-            # 任意の語呂数に対する文字列が一意に定まらなければ
-            # 112: abcで 1 = a, 1 = B, 2 = cになるみたいなケース
-            if len(set(S[i])) != 1:
-                break
-        else:
-            for i in range(K):
-                print(S[i][0])
-            exit()
-
-# ABC043 D - アンバランス
-# i文字目を見る場合
-# i - 1文字目が同じ文字ならアウト
-# i - 2文字目が同じでもアウト
-S = input()
-N = len(S)
-
-ans = [-1, -1]
-for i in range(1, N):
-    if S[i] == S[i - 1]:
-        ans = [i, i + 1]
-        break
-    if i > 1 and S[i] == S[i - 2]:
-        ans = [i - 1, i + 1]
-        break
-print(*ans)
-
-# ABC049 C - 白昼夢
-
-S = input()
-
-while len(S) >= 5:
-    # Sを４つの単語で順に調べて刈っていく
-    if len(S) >= 7 and S[-7:] == "dreamer":
-        S = S[:-7]
-        continue
-
-    if len(S) >= 6 and S[-6:] == "eraser":
-        S = S[:-6]
-        continue
-
-    elif S[-5:] == "dream" or S[-5:] == "erase":
-        S = S[:-5]
-        continue
-
-    else:
-        break
-
-if len(S) == 0:
-    print("YES")
+if A[0] == 0:
+    psuedo = [1]
+    left = [1] # 確定させる用
 else:
-    print("NO")
+    psuedo = [0]
+    left = [0]
 
-# ARC019 B - こだわりの名前
-S = input()
-N = len(S)
-bi = N // 2
-str_f = []
-for i in range(bi):
-    str_f.append(S[i])
-str_b = []
-for i in range(bi):
-    str_b.append(S[-i - 1])
+alta = deepcopy(A)
+for i in range(N - 1, -1, -1):
+    alta[i] += alta[i + 1]
+ma = max(alta)
 
-cnt = 0
-for i in range(bi):
-    if str_f[i] != str_b[i]:
-        cnt += 1
-
-# 全て一致
-if cnt == 0:
-    # 真ん中以外は何に変えても回文にならない
-    # 真ん中は何に変えても回文になる
-    print(2 * bi * 25)
-elif cnt == 1:
-    if N % 2 == 0:
-        print(25 * bi * 2 - 2)
-    else:
-        # 真ん中は何に変えても回文にならない
-        print(25 * bi * 2 - 2 + 25)
-else:
-    print(25 * N)
-
-# AGC048 A - atcoder < S
-
-"""
-スワップの最小回数は
-１文字目 a
-どこかにaより上がいたらそれをスワップして終了
-aならそのまま
-a以下なら？
-counterする？
-
-前から探索する
-スワップしなくていいならスワップしない
-target[i] > alta[i]の時スワップする
-前のとスワップするかも
-そもそもatcoderは6文字
-スワップの最大回数は6回
-次の文字にいくのはtarget[i] = alta[i]だった時のみ
-target[i] < alta[i]: 終了
-target[i] = alta[i]: 次に
-target[i] > alta[i]: スワップ要
-
-target'atcoder'が任意の文字(例:topcoder)、任意の二箇所（隣接しなくていい）をスワップできるなら
-一文字目を見る
-target[i] < alta[i]: 終了
-target[i] = alta[i]: 次に
-target[i] > alta[i]: スワップ要
-その文字以降を探索 target[i]を上回るものがあればスワップ += 1終了
-無い場合　target[i]と同じものが見つかればそのうち一番右のものとスワップ
-　　　　　target[i]を下回るものしかなければ終了
-
-たぶん
-"""
-
-T = getN()
-S = [input() for i in range(T)]
-
-for s in S:
-    if s.count('a') == len(s):
+# i + 1番目について調べる
+for i in range(1, N + 1):
+    opt = min(psuedo[-1] * 2, ma) # stop指数爆発 今回max(alta)以上の数字は必要ない
+    psuedo.append(opt)
+    left.append(opt)
+    if psuedo[-1] - A[i] < 0:
         print(-1)
-        continue
-
-    if s > 'atcoder':
-        print(0)
-        continue
-
-    n = len(s)
-    for i in range(n):
-        # aより上の要素をスワップを繰り返し運送する
-
-        # i - 1回運送すると2番目の位置にくる
-        # もしord('t') < ord(i)なら条件を満たし終了
-        # そうでなければもう一つ前に運送する
-
-        # i回運送すると１番目の位置に来る
-        # ord('a') < ord(i)より条件を満たす
-        if s[i] > 'a':
-            if s[i] > 't':
-                print(i - 1)
-            else:
-                print(i)
+        exit()
+    psuedo[-1] -= A[i]
+    # 確定させていく
+    """
+    明らか追いつかないので累積する
+    for j in range(i, -1, -1):
+        if dete[j] == 0:
             break
+        add = min(dete[j], A[i])
+        ans += add
+        dete[j] -= add
+    """
+
+ans = 0
+
+for i in range(N + 1):
+    ans += min(left[i], alta[i])
+print(ans)
+
+# ARC011 ダブレット
+# つまり最短経路問題
+s1, s2 = input().split(' ')
+N = getN()
+S = set()
+
+S.add(s1)
+S.add(s2)
+
+for i in range(N):
+    S.add(input())
+
+if s1 == s2:
+    print(0)
+    print(s1)
+    print(s2)
+    exit()
+
+S = list(S)
+N = len(S)
+
+# 2つにエッジを貼れるか
+def judge(s1, s2):
+    cnt = 0
+    n = len(s1)
+    for i in range(n):
+        if s1[i] != s2[i]:
+            cnt += 1
+    if cnt <= 1:
+        return True
+    else:
+        return False
+
+dist = [[] for i in range(N)]
+d = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    for j in range(i + 1, N):
+        if judge(S[i], S[j]):
+            dist[i].append(j)
+            dist[j].append(i)
+            d[i][j] = 1
+            d[j][i] = 1
+
+sta = 0
+end = 0
+for i in range(N):
+    if S[i] == s1:
+        sta = i
+        break
+for i in range(N):
+    if S[i] == s2:
+        end = i
+        break
+
+# ダイクストラする
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        di, now = heapq.heappop(pq)
+        if (di > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i] > dist[now] + d[i][now]:
+                dist[i] = dist[now] + d[i][now]
+                heapq.heappush(pq, (dist[i], i))
+    return dist
+
+distance = dij(sta, dist)
+if distance[end] == float('inf'):
+    print(-1)
+    exit()
+
+# 最短経路を示す矢印を求める
+# ダイクストラと同じ要領で
+def router(n, sta):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    ignore[sta] = 0
+    path[sta] = -1
+
+    while pos:
+        u = pos.popleft()
+
+        for i in dist[u]:
+            if ignore[i] != 1 and distance[i] == ignore[u] + d[i][u]:
+                path[i] = u
+                ignore[i] = ignore[u] + d[i][u]
+                pos.append(i)
+
+    return path
+
+path = router(N, sta)
+ans = [S[end]]
+now = end
+while True:
+    now = path[now]
+    ans.append(S[now])
+    if now == sta:
+        break
+
+print(len(ans) - 2)
+for i in range(len(ans)):
+    print(ans[-i - 1])
