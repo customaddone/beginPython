@@ -49,266 +49,328 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC038 D-プレゼント
-class BIT:
-    def __init__(self, n):
-        self.n = n
-        self.data = [0] * (n + 1)
+# 文字列を整数に変換
+N = 26
 
-    def ope(self, x, y):
-        return max(x, y)
-
-    def update(self, i, v):
-        j = i
-        while j <= self.n:
-            self.data[j] = self.ope(self.data[j], v)
-            j += j & -j
-
-    def query(self, i):
-        ret = 0
-        j = i
-        while 0 < j:
-            ret = self.ope(self.data[j], ret)
-            j &= (j - 1)
-        return ret
-
-bit = BIT(10 ** 5)
-
-for w, h in que:
-    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
-    # 最初は0個
-    q = bit.query(h - 1)
-    # 高さhの時の箱の数を更新
-    bit.update(h, q + 1)
-print(bit.query(10 ** 5))
-
-# ABC140 E - Second Sum
-# [Pl, Pr]間で２番目に大きいものの総和を
-# l, rについてのnC2通りの全てについて求めよ
-
-# 8 2 7 3 4 5 6 1
-# 8 2: 2
-# 8 2 7: 7
-# 2 7 3: 3
-# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
-# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
-
-# N <= 10 ** 5
-# Piが２番目になる通りが何通り　みたいな感じで求められる？
-# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
-
-# ヒープキューとか使える？
-# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
-# 尺取り使える？
-
-# 累積？　一番
-
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
-
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
-
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
-
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self,w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
-N = getN()
-P = getList()
-dic = {}
-bit = BIT(N)
-for i in range(N):
-    dic[P[i]] = i + 1
-
-# 両端に何もない時用
-# [0] + Pの各要素 + [N + 1]みたいになる
-dic[0] = 0
-dic[N + 1] = N + 1
-ans = 0
-
-for i in range(N, 0, -1):
-    # 8のインデックス、7のインデックス...に1を登録していく
-    bit.add(dic[i], 1)
-    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
-    c = bit.get(dic[i] + 1)
-    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
-    # l2: l1の一つ左側にあるもの
-    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
-    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
-    # r2: r1の一つ右側にあるもの
-    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
-    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
-    ans += S * i
-print(ans)
-
-# ABC174 F - Range Set Query
-
-# 色の種類
-# 同じ色のボールがある場合、どの情報があれば良いか
-# 最もrに近いボールの位置がわかればいい
-N, Q = getNM()
-C = getList()
-que = []
-for i in range(Q):
-    l, r = getNM()
-    que.append([i, l, r])
-
-que_list = [[] for i in range(N + 1)]
-for i in range(Q):
-    que_list[que[i][2]].append(que[i])
-
-c_place = [-1] * (max(C) + 1)
-bit = BIT(N + 1)
-
-ans = [0] * Q
-for i in range(1, N + 1):# 1-indexなので　配列参照する際はi - 1
-
-    if c_place[C[i - 1]] == -1: # 新規
-        c_place[C[i - 1]] = i
-        bit.add(i, 1)
-    else: # 更新
-        bit.add(c_place[C[i - 1]], -1)
-        c_place[C[i - 1]] = i
-        bit.add(i, 1)
-
-    if len(que_list[i]) > 0: # i == rのqueryに答える
-        for index, l, r in que_list[i]:
-            ans[index] = bit.cum(l, r + 1)
-
-for i in ans:
-    print(i)
-
-# ARC031 C - 積み木
-# 反転数を求める感じで
-N = getN()
-B = getList()
-
-# 各積み木は左か右かを選んで移動させられる
-# BITの小さい方でいい
-place = [0] * (N + 1)
-for i in range(N):
-    place[B[i]] = i
-
-bit = BIT(N + 1)
-# 左にある自分より小さいものではない（大きいもの）の数
-left = [0] * (N + 1)
-# 右にある自分より小さいものではない（大きいもの）の数
-right = [0] * (N + 1)
-for i in range(N, 0, -1):
-    bit.add(place[i] + 1, 1)
-    left[i] = bit.get(place[i] + 1)
-    right[i] = (N - i) - bit.get(place[i] + 1)
-
-ans = 0
-for l, r in zip(left, right):
-    # どちらか小さい方
-    ans += min(l, r)
-print(ans)
-
-# ARC033 C - データ構造
-# 座圧BIT
-Q = getN()
-que = [getList() for i in range(Q)]
-
-# データに入れる数字を抽出する
-A = []
-for t, x in que:
-    if t == 1:
-        A.append(x)
-# 座標圧縮
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-
-    return alter, rev
-
-alter, rev = compress(A)
-
-limit = Q + 1
-bit = BIT(limit)
-for t, x in que:
-    if t == 1:
-        bit.add(alter[x] + 1, 1)
+def num2alpha(num):
+    if num <= 26:
+        return chr(96 + num)
+    elif num % 26 == 0:
+        return num2alpha(num // 26 - 1) + chr(122)
     else:
-        # xを超えないギリギリの場所が1-indexで与えられる
-        opt = bit.lowerbound(x) - 1
-        # 1-indexなのでそのままprintする
-        print(rev[opt])
-        # xを超えないギリギリの場所の一つ右を-1する
-        bit.add(opt + 1, -1)
+        return num2alpha(num // 26) + chr(96 + num % 26)
 
-# AGC005 B - Minimum Sum
+# z
+print(num2alpha(N))
 
-"""
-全ての連続部分列について、その最小値の総和を求めよ
-N = 3
-A = [2, 1, 3]の時
+n = N
+lista = []
+digit = 26
+i = 0
 
-[2]:2 [1]:1 [3]:3
-[2, 1]:1 [1, 3]:1
-[2, 1, 3]:1
-合計9
+while n != 0:
+    opt = n % digit
+    lista.insert(0, opt)
+    if n % digit == 0:
+        n = n // digit - 1
+    else:
+        n = n // digit
+    i += 1
 
-BITを使うと思う
-小さいものから順に置いていく
-iが最小値を取る領域[l, r]を求める
-1を置く
-[ , 1, ]
-この時、左端は1番目、右端は3番目までを領域に含めることができる
-左側は2 - 1 + 1 = 2通り、右側は3 - 2 + 1 = 2通りある
-ans += (2 - 1 + 1) * (3 - 2 + 1) * 1
-2を置く
-[2, 1, ]
-左端は1番目、右端も1番目
-"""
+str_list = 'abcdefghijklmnopqrstuvwxyz'
+ans = ''
+for i in range(len(lista)):
+    ans += str_list[lista[i] - 1]
 
-N = getN()
-A = getList()
-index = [0] * (N + 1)
-for i in range(N):
-    index[A[i]] = i + 1
-
-bit = BIT(N)
-ans = 0
-for i in range(1, N + 1):
-    c = bit.get(index[i]) # 左側にあるフラグの数を求める
-    # フラグがc個になる場所 + 1、フラグがc + 1個にある場所 - 1を求める
-    # つまり、
-    # 左側にある自分より小さいもののうち最も右側にあるもの + 1
-    # 右側にある自分より小さいもののうち最も左側にあるもの - 1
-    # の場所を求める
-    l, r = bit.lowerbound(c) + 1, bit.lowerbound(c + 1) - 1
-    ans += (index[i] - l + 1) * (r - index[i] + 1) * i
-    bit.add(index[i], 1) # 自身を置く
+# z
 print(ans)
+
+#  最長共通部分列
+s = 'pirikapirirara'
+t = 'poporinapeperuto'
+
+def dfs(s, ts):
+    lens = len(s)
+    lent = len(t)
+    dp = [[0] * (lent + 1) for i in range(lens + 1)]
+    dp[0][0] = 0
+
+    for i in range(lens):
+        for j in range(lent):
+            if s[i] == t[j]:
+                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
+            else:
+                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
+    return dp[lens][lent]
+print(dfs(s, t))
+
+# レーベンシュタイン距離
+s = "pirikapirirara"
+t = "poporinapeperuto"
+
+def dfs(s, t):
+    lens = len(s)
+    lent = len(t)
+    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
+    dp[0][0] = 0
+
+    for i in range(lens):
+        for j in range(lent):
+            if s[i] == t[j]:
+                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
+            else:
+                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
+    return dp[lens][lent]
+print(dfs(s, t))
+
+# ABC009 C - 辞書式順序ふたたび
+
+N,K = getNM()
+S = list(input())
+T = sorted(S)
+diff = 0
+ans = ""
+
+for i in range(N):
+    s = S[i]
+    # 残りの文字を全ループさせる
+    for t in T:
+        # tを追加して良いか確かめる
+        diff1 = diff + (s != t)
+        count = Counter(T)
+        count[t] -= 1
+        diff2 = sum((Counter(S[i + 1:]) - count).values())
+        # 追加していいなら
+        if diff1 + diff2 <= K:
+            diff = diff1
+            ans += t
+            T.remove(t)
+            break
+print(ans)
+
+# ABC031 語呂合わせ
+
+# 1 ~ Kまでの数字がどの単語に当てはまるか
+# 1 ~ Kに対し文字の候補は26 ** 3通り?
+
+# 文字列は総文字数、アルファベットの種類（２６種類、定数倍）で捉えられる
+
+N, M = getNM()
+que = []
+for i in range(M):
+    v, w = input().split()
+    que.append([v, w])
+root = 3
+
+def judge(array):
+    # 1 ~ Kに割り当てた文字数が正しいか
+    for v, w in que:
+        cnt = 0
+        for i in range(len(v)):
+            cnt += array[int(v[i]) - 1]
+        if cnt != len(w):
+            return
+    # 文字数が適合するなら
+    str_list = [''] * N
+    for v, w in que:
+        cnt = 0
+        # 文字を区切っていく
+        for i in range(len(v)):
+            str_len = array[int(v[i]) - 1]
+            opt = w[cnt: cnt + str_len]
+            if str_list[int(v[i]) - 1] == '':
+                str_list[int(v[i]) - 1] = opt
+            else:
+                if str_list[int(v[i]) - 1] != opt:
+                    return
+            cnt += str_len
+
+    # 全て適合するなら
+    for i in str_list:
+        print(i)
+    exit()
+
+# 1 ~ Kの文字数が何文字かについて3 ** Kを全探索
+def four_pow(i, array):
+    global cnt
+    if i == N:
+        judge(array)
+        return
+    for j in range(1, root + 1):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+four_pow(0, [])
+
+K, N = getNM()
+G = []
+for i in range(N):
+    v, w = map(str, input().split())
+    # 桁ごとに数字を分ける
+    v = list(v)
+    v = [int(d) - 1 for d in v]
+    G.append((v, w))
+
+# それぞれの語呂数に対して長さ1 ~ 3を割り当てる
+for p in product(range(1, 4), repeat = K):
+    S = [[] for _ in range(K)]
+    for v, w in G:
+        c = 0
+        # 長さが正しいか判定するパート
+        for d in v:
+            # 使われた語呂数の長さを足し合わせる
+            c += p[d]
+        if c != len(w):
+            break
+        # 文字列を割り当てるパート
+        else:
+            cur = 0
+            for d in v:
+                # 長さごとに文字列を切っていく
+                S[d].append(w[cur: cur + p[d]])
+                cur += p[d]
+    # 長さが整合したものが見つかれば
+    else:
+        for i in range(K):
+            # 任意の語呂数に対する文字列が一意に定まらなければ
+            # 112: abcで 1 = a, 1 = B, 2 = cになるみたいなケース
+            if len(set(S[i])) != 1:
+                break
+        else:
+            for i in range(K):
+                print(S[i][0])
+            exit()
+
+# ABC043 D - アンバランス
+# i文字目を見る場合
+# i - 1文字目が同じ文字ならアウト
+# i - 2文字目が同じでもアウト
+S = input()
+N = len(S)
+
+ans = [-1, -1]
+for i in range(1, N):
+    if S[i] == S[i - 1]:
+        ans = [i, i + 1]
+        break
+    if i > 1 and S[i] == S[i - 2]:
+        ans = [i - 1, i + 1]
+        break
+print(*ans)
+
+# ABC049 C - 白昼夢
+
+S = input()
+
+while len(S) >= 5:
+    # Sを４つの単語で順に調べて刈っていく
+    if len(S) >= 7 and S[-7:] == "dreamer":
+        S = S[:-7]
+        continue
+
+    if len(S) >= 6 and S[-6:] == "eraser":
+        S = S[:-6]
+        continue
+
+    elif S[-5:] == "dream" or S[-5:] == "erase":
+        S = S[:-5]
+        continue
+
+    else:
+        break
+
+if len(S) == 0:
+    print("YES")
+else:
+    print("NO")
+
+# ARC019 B - こだわりの名前
+S = input()
+N = len(S)
+bi = N // 2
+str_f = []
+for i in range(bi):
+    str_f.append(S[i])
+str_b = []
+for i in range(bi):
+    str_b.append(S[-i - 1])
+
+cnt = 0
+for i in range(bi):
+    if str_f[i] != str_b[i]:
+        cnt += 1
+
+# 全て一致
+if cnt == 0:
+    # 真ん中以外は何に変えても回文にならない
+    # 真ん中は何に変えても回文になる
+    print(2 * bi * 25)
+elif cnt == 1:
+    if N % 2 == 0:
+        print(25 * bi * 2 - 2)
+    else:
+        # 真ん中は何に変えても回文にならない
+        print(25 * bi * 2 - 2 + 25)
+else:
+    print(25 * N)
+
+# AGC048 A - atcoder < S
+
+"""
+スワップの最小回数は
+１文字目 a
+どこかにaより上がいたらそれをスワップして終了
+aならそのまま
+a以下なら？
+counterする？
+
+前から探索する
+スワップしなくていいならスワップしない
+target[i] > alta[i]の時スワップする
+前のとスワップするかも
+そもそもatcoderは6文字
+スワップの最大回数は6回
+次の文字にいくのはtarget[i] = alta[i]だった時のみ
+target[i] < alta[i]: 終了
+target[i] = alta[i]: 次に
+target[i] > alta[i]: スワップ要
+
+target'atcoder'が任意の文字(例:topcoder)、任意の二箇所（隣接しなくていい）をスワップできるなら
+一文字目を見る
+target[i] < alta[i]: 終了
+target[i] = alta[i]: 次に
+target[i] > alta[i]: スワップ要
+その文字以降を探索 target[i]を上回るものがあればスワップ += 1終了
+無い場合　target[i]と同じものが見つかればそのうち一番右のものとスワップ
+　　　　　target[i]を下回るものしかなければ終了
+
+たぶん
+"""
+
+T = getN()
+S = [input() for i in range(T)]
+
+for s in S:
+    if s.count('a') == len(s):
+        print(-1)
+        continue
+
+    if s > 'atcoder':
+        print(0)
+        continue
+
+    n = len(s)
+    for i in range(n):
+        # aより上の要素をスワップを繰り返し運送する
+
+        # i - 1回運送すると2番目の位置にくる
+        # もしord('t') < ord(i)なら条件を満たし終了
+        # そうでなければもう一つ前に運送する
+
+        # i回運送すると１番目の位置に来る
+        # ord('a') < ord(i)より条件を満たす
+        if s[i] > 'a':
+            if s[i] > 't':
+                print(i - 1)
+            else:
+                print(i)
+            break
