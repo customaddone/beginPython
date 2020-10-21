@@ -49,248 +49,406 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC114 C - 755
-N = getN()
-rength = len(str(N))
-numlist = [3, 5, 7]
-cnt = 0
+# ABC038 D-プレゼント
+class BIT:
+    def __init__(self, n):
+        self.n = n
+        self.data = [0] * (n + 1)
 
-def sevfivthr(i, strint):
-    global cnt
-    if i == rength:
-        return
-    else:
-        for num in numlist:
-            newstr = strint + str(num)
-            if ('3' in newstr) and ('5' in newstr) and ('7' in newstr):
-                if int(newstr) <= N:
-                    cnt += 1
-            sevfivthr(i + 1, newstr)
-for i in numlist:
-    sevfivthr(1, str(i))
-print(cnt)
+    def ope(self, x, y):
+        return max(x, y)
 
-# ABC115 D - Christmas
-# レベルNバーガーの下からX層目まで
-N, X = getNM()
+    def update(self, i, v):
+        j = i
+        while j <= self.n:
+            self.data[j] = self.ope(self.data[j], v)
+            j += j & -j
 
-# レベルNバーガーの中間地点、全体のサイズ
-cnt_burger = [[0 for i in range(2)] for i in range(51)]
-cnt_burger[0] = [1, 1]
-for i in range(1, 51):
-    cnt_burger[i][0] = 1 + cnt_burger[i - 1][1] + 1
-    cnt_burger[i][1] = cnt_burger[i][0] + cnt_burger[i - 1][1] + 1
+    def query(self, i):
+        ret = 0
+        j = i
+        while 0 < j:
+            ret = self.ope(self.data[j], ret)
+            j &= (j - 1)
+        return ret
 
-# レベルNバーガーにパティが何枚含まれる？
-cnt_patty = [0] * 51
-cnt_patty[0] = 1
-for i in range(1, 51):
-    cnt_patty[i] = 2 * cnt_patty[i - 1] + 1
+bit = BIT(10 ** 5)
 
-# レベルNの下からX番目までにパティが何枚含まれるか
-# xが大きいのでdpはできない
-def count(n, x):
-    # レベル0バーガーの場合
-    if n == 0 and x == 1:
-        return 1
+for w, h in que:
+    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
+    # 最初は0個
+    q = bit.query(h - 1)
+    # 高さhの時の箱の数を更新
+    bit.update(h, q + 1)
+print(bit.query(10 ** 5))
 
-    # バーガーの一番下のパンのみ食べる場合
-    if x == 1:
-        return 0
+# ABC140 E - Second Sum
+# [Pl, Pr]間で２番目に大きいものの総和を
+# l, rについてのnC2通りの全てについて求めよ
 
-    # 中間地点以前のどこかまで食べる場合
-    elif 1 < x < cnt_burger[n][0]:
-        # レベルn - 1バーガーの下からx - 1層目まで
-        return count(n - 1, x - 1)
+# 8 2 7 3 4 5 6 1
+# 8 2: 2
+# 8 2 7: 7
+# 2 7 3: 3
+# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
+# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
 
-    # 中間地点まで食べる
-    elif x == cnt_burger[n][0]:
-        return cnt_patty[n - 1] + 1
+# N <= 10 ** 5
+# Piが２番目になる通りが何通り　みたいな感じで求められる？
+# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
 
-    # 中間地点 ~ 最後以前のうちのどこか
-    elif cnt_burger[n][0] < x < cnt_burger[n][1]:
-        return cnt_patty[n - 1] + 1 + count(n - 1, x - cnt_burger[n][0])
+# ヒープキューとか使える？
+# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
+# 尺取り使える？
 
-    # 最後
-    else:
-         return 2 * cnt_patty[n - 1] + 1
+# 累積？　一番
 
-print(count(N, X))
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-# ABC122 D - We Like AGC
-N = getN()
-# 文字の個数を求める
-# 755を思い出す
-# dfsする
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-memo = [{} for i in range(N + 1)]
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-# 判定用
-def ok(last4):
-    # 1234, 2134, 1324, 1243を調べる
-    for i in range(4):
-        t = list(last4)
-        if i >= 1:
-            t[i - 1], t[i] = t[i], t[i - 1]
-        if ''.join(t).count('AGC') >= 1:
-            return False
-    return True
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-# 文字を伸ばしていく
-# memo[cur][last3]:cur文字目まで決定しており、そのラスト3文字がlast3のもの
-# 判定に必要なのは後ろ3文字 + ['A', 'G', 'C', 'T']
-def dfs(cur, last3):
-    if last3 in memo[cur]:
-        return memo[cur][last3]
-    # 全部決定したら
-    if cur == N:
-        return 1
-
-    res = 0
-    # last3に['A', 'G', 'C', 'T']をくっつけてみる
-    for s in 'AGCT':
-        if ok(last3 + s):
-            res = (res + dfs(cur + 1, last3[1:] + s)) % mod
-    memo[cur][last3] = res
-    return res
-
-print(dfs(0, 'TTT'))
-
-# AGC009 B - Tournament
-
-N = getN()
-A = [-1, -1] + getArray(N - 1)
-
-"""
-トーナメントの深さの最小値を求めよ
-何もなければbitの長さになる
-a2...anは人aiとの試合で負けた
-A = [1, 1, 2, 4]の場合
-1が優勝（デフォルト）
-2は1との試合で負けました
-3は1との試合で負けました
-4は2との試合で負けました
-5は4との試合で負けました
-1は2, 3と戦った 2, 3に勝った
-2は1, 4と戦った 4に勝った
-3は1と戦った
-4は2, 5と戦った 5に勝った
-5は4と戦った
-4がネックになりそう
-4をいい感じに配置して
-1から辿る
-1は3に勝った 深さは
-各頂点をrootとした部分木のサイズを求める
-A = [1, 2, 1, 3, 1, 4]の場合
-1の相手は2, 4, 6 部分木の深さは4
-葉から求める
-5の部分木のサイズは1(葉なので)
-7の部分木のサイズは1(葉なので)
-3の部分木のサイズは最小で子要素の数n + 1(自分)
-①3の子要素を逆順にソートする
-②子要素の深さはn, n-1...1まで許容される　越えたら求める部分木のサイズが大きくなる
-選手iの各相手(子要素)が[r1, r2, r3...]だとする
-これらを選手iが戦った試合だけを見たトーナメント表上に配置する
-深さの最小mi_resは子要素の数n + 1(自分)
-ただし1回戦で戦った相手の部分木の深さがn1ならmi_res = min(mi_res, n1 - 1)
-     2回戦で戦った相手の部分木の深さがn2ならmi_res = min(mi_res, n2 - 2)
-     ...
-と更新されていく
-つまり深さが深い相手を後ろの方に配置した方がお得
-"""
-
-dist = [[] for i in range(N + 1)]
-for i in range(2, N + 1):
-    dist[A[i]].append(i)
-
-def depth_cnt(x):
-    l = []
-    for i in dist[x]:
-        l.append(depth_cnt(i))
-    l.sort(reverse = True) # xが最後に勝った相手に深さが一番深いやつを持ってくるとお得
-    mi_depth = len(l)
-    res = mi_depth
-    for i in range(mi_depth):
-        # xが最後に勝った相手、xが最後から2番目に勝った相手...
-        # 今回は逆にやる
-        res = max(res, l[i] + i)
-    return res + 1 # 部分木のサイズは最小で子要素の数n + 1(自分)
-
-print(depth_cnt(1) - 1)
-
-# AGC044 A - pay to win
-
-"""
-あなたは 0 という数を持っており
-A(*= 2)
-B(*= 3)
-C(*= 5)
-D(+=1, -=1)
-Dは最初に一回する
-Dはいつやればお得？ 最小に行った方がお得
-
-指数は爆発するのでそんなに数は大きくならない
-1 → 2 (B or D)
-1 → 3 (C or D)
-
-Nについて2, 3, 5で出来るだけ割って見るか
-Dを最初に少々足して
-2, 3, 5を出来るだけ積んでNの近辺を目指せ
-Dをどこまで少々足せばいいか
-
-小さい数で試してみる
-11 は　12 - 1だったり 10 + 1だったりする
-着地場所の候補は6(11 // 6 + 1) ~ 21
-もし因数に2, 3, 5がなければDのみで行くことになる　←　
-途中でいい具合にDをするといい感じになるが
-dfs(x) xに着地する時の最小コスト
-メモdfsでなんとかできない？
-
-着地点の範囲は
-N - 5 ~ N + 5ぐらいでいいのでは
-
-N から 0を目指す
-上下の直近の2,3,5の倍数まで移動してから割り算で移動するような遷移しか考える必要がない
-13 なら 14, 6
-分岐先はそんなに多くない
-"""
-
-T = getN()
-
-for _ in range(T):
-    n, A, B, C, D = getNM()
-    memo = {}
-
-    def solve(N):
-        if N in memo:
-            return memo[N]
-        if N == 0:
+    def lowerbound(self,w):
+        if w <= 0:
             return 0
-        if N == 1:
-            return D # Dを使う
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
-        tmp = D * N # 最初の候補、全てDで
+N = getN()
+P = getList()
+dic = {}
+bit = BIT(N)
+for i in range(N):
+    dic[P[i]] = i + 1
 
-        if N % 2 == 0: # 割り切れるならそうすればいい
-            tmp = min(tmp, solve(N // 2) + A)
-        else:
-            tmp = min(tmp, solve(N // 2) + A + D, solve(N // 2 + 1) + A + D)
+# 両端に何もない時用
+# [0] + Pの各要素 + [N + 1]みたいになる
+dic[0] = 0
+dic[N + 1] = N + 1
+ans = 0
 
-        if N % 3 == 0:
-            tmp = min(tmp, solve(N // 3) + B)
-        else:
-            d = N % 3
-            u = 3 - d
-            tmp = min(tmp, solve(N // 3) + B + d * D, solve(N // 3 + 1) + B + u * D)
+for i in range(N, 0, -1):
+    # 8のインデックス、7のインデックス...に1を登録していく
+    bit.add(dic[i], 1)
+    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
+    c = bit.get(dic[i] + 1)
+    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
+    # l2: l1の一つ左側にあるもの
+    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
+    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
+    # r2: r1の一つ右側にあるもの
+    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
+    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
+    ans += S * i
+print(ans)
 
-        if N % 5 == 0:
-            tmp = min(tmp, solve(N // 5) + C)
-        else:
-            d = N % 5
-            u = 5 - d
-            tmp = min(tmp, solve(N // 5) + C + d * D, solve(N // 5 + 1) + C + u * D)
+# ABC174 F - Range Set Query
 
-        memo[N] = tmp
-        return tmp
+# 色の種類
+# 同じ色のボールがある場合、どの情報があれば良いか
+# 最もrに近いボールの位置がわかればいい
+N, Q = getNM()
+C = getList()
+que = []
+for i in range(Q):
+    l, r = getNM()
+    que.append([i, l, r])
 
-    print(solve(n))
+que_list = [[] for i in range(N + 1)]
+for i in range(Q):
+    que_list[que[i][2]].append(que[i])
+
+c_place = [-1] * (max(C) + 1)
+bit = BIT(N + 1)
+
+ans = [0] * Q
+for i in range(1, N + 1):# 1-indexなので　配列参照する際はi - 1
+
+    if c_place[C[i - 1]] == -1: # 新規
+        c_place[C[i - 1]] = i
+        bit.add(i, 1)
+    else: # 更新
+        bit.add(c_place[C[i - 1]], -1)
+        c_place[C[i - 1]] = i
+        bit.add(i, 1)
+
+    if len(que_list[i]) > 0: # i == rのqueryに答える
+        for index, l, r in que_list[i]:
+            ans[index] = bit.cum(l, r + 1)
+
+for i in ans:
+    print(i)
+
+# ARC031 C - 積み木
+# 反転数を求める感じで
+N = getN()
+B = getList()
+
+# 各積み木は左か右かを選んで移動させられる
+# BITの小さい方でいい
+place = [0] * (N + 1)
+for i in range(N):
+    place[B[i]] = i
+
+bit = BIT(N + 1)
+# 左にある自分より小さいものではない（大きいもの）の数
+left = [0] * (N + 1)
+# 右にある自分より小さいものではない（大きいもの）の数
+right = [0] * (N + 1)
+for i in range(N, 0, -1):
+    bit.add(place[i] + 1, 1)
+    left[i] = bit.get(place[i] + 1)
+    right[i] = (N - i) - bit.get(place[i] + 1)
+
+ans = 0
+for l, r in zip(left, right):
+    # どちらか小さい方
+    ans += min(l, r)
+print(ans)
+
+# ARC033 C - データ構造
+# 座圧BIT
+Q = getN()
+que = [getList() for i in range(Q)]
+
+# データに入れる数字を抽出する
+A = []
+for t, x in que:
+    if t == 1:
+        A.append(x)
+# 座標圧縮
+# alter: A[i] → alt_A[i]
+# rev: alt[i] → A[i]
+def compress(array):
+    s = set(array)
+    s = sorted(list(s))
+    alter = {}
+    rev = {}
+    for i in range(len(s)):
+        alter[s[i]] = i
+        rev[i] = s[i]
+
+    return alter, rev
+
+alter, rev = compress(A)
+
+limit = Q + 1
+bit = BIT(limit)
+for t, x in que:
+    if t == 1:
+        bit.add(alter[x] + 1, 1)
+    else:
+        # xを超えないギリギリの場所が1-indexで与えられる
+        opt = bit.lowerbound(x) - 1
+        # 1-indexなのでそのままprintする
+        print(rev[opt])
+        # xを超えないギリギリの場所の一つ右を-1する
+        bit.add(opt + 1, -1)
+
+# AGC005 B - Minimum Sum
+
+"""
+全ての連続部分列について、その最小値の総和を求めよ
+N = 3
+A = [2, 1, 3]の時
+[2]:2 [1]:1 [3]:3
+[2, 1]:1 [1, 3]:1
+[2, 1, 3]:1
+合計9
+BITを使うと思う
+小さいものから順に置いていく
+iが最小値を取る領域[l, r]を求める
+1を置く
+[ , 1, ]
+この時、左端は1番目、右端は3番目までを領域に含めることができる
+左側は2 - 1 + 1 = 2通り、右側は3 - 2 + 1 = 2通りある
+ans += (2 - 1 + 1) * (3 - 2 + 1) * 1
+2を置く
+[2, 1, ]
+左端は1番目、右端も1番目
+"""
+
+N = getN()
+A = getList()
+index = [0] * (N + 1)
+for i in range(N):
+    index[A[i]] = i + 1
+
+bit = BIT(N)
+ans = 0
+for i in range(1, N + 1):
+    c = bit.get(index[i]) # 左側にあるフラグの数を求める
+    # フラグがc個になる場所 + 1、フラグがc + 1個にある場所 - 1を求める
+    # つまり、
+    # 左側にある自分より小さいもののうち最も右側にあるもの + 1
+    # 右側にある自分より小さいもののうち最も左側にあるもの - 1
+    # の場所を求める
+    l, r = bit.lowerbound(c) + 1, bit.lowerbound(c + 1) - 1
+    ans += (index[i] - l + 1) * (r - index[i] + 1) * i
+    bit.add(index[i], 1) # 自身を置く
+print(ans)
+
+# ARC069 E - Frequency
+
+"""
+N個の山がある
+石の数が最大の山のうち最も前の番号をsにappend
+石を一つとる
+これを繰り返す
+
+Sが辞書順で最小の数列になるようにした時、sに数はそれぞれいくつずつ含まれるか
+A = [1, 2, 1, 3, 2, 4, 2, 5, 8, 1]の時
+Sの最終的な長さはsum(A)
+
+S = []
+S = [9]: 一つ目はどういう操作をしても共通
+出来るだけ前の方のをindexに指定したい
+最大値の位置を出来るだけ前に寄せるためには？
+現在より前の数字について最大の数字に移動する セグ木?
+
+現在より前の数字について最大の数字まで数を減らす
+それより後ろの数字についてnextの数字まで減らす
+A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
+1 + 1つの5を4まで下げる
+A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
+
+前からとって行った時の最小値の場所しか加算されない
+この場合[1, 2,  , 3,  , 4,  , 5, 8,  ]
+index = 9についてindex以降の数字を全て5まで下げる
+ans[index] += index以降の5以上の部分
+index = 8についてindex以降の数字を全て4まで下げる
+ans[index] += index以降の4以上5以下の部分
+5以上を加算、４以上４以下を加算、３以上３以下を
+この場所にどのように加算するか
+全てのindexについてO(1)で答えるか？
+５以上のものを足す、４以上のものを足す...
+
+各場所ind_l[i]についてそれより右側の部分のunder以上upper未満の部分について
+総和を求める
+
+BITを使って
+ある範囲内のunder以上の場所の数を答える　これは簡単
+          upper以下の場所の数を答える　これも簡単 bitの結果を足し引きすればOK
+
+"""
+
+N = getN()
+A = getList()
+
+cnt = [] # 数字iがどこにあるか
+ma = [] # 1 ~ i個目までの最大値
+for i in range(N):
+    cnt.append([A[i], i + 1])
+    if i == 0:
+        ma.append(A[i])
+    else:
+        ma.append(max(ma[-1], A[i]))
+
+ind_l = [] # 加算する場所
+for i in range(N - 1, 0, -1):
+    if ma[i - 1] < ma[i]:
+        ind_l.append(i + 1)
+ind_l.append(1)
+ma.insert(0, 0) # 1-indexに修正した方がいい
+ma.insert(0, 0)
+
+cnt.sort()
+
+upper = max(A)
+bit = BIT(N)
+ans = [0] * (N + 1)
+
+# 自分より右側のunder ~ upperを足し合わせる
+for i in range(len(ind_l)):
+    index = ind_l[i]
+    under = ma[ind_l[i]]
+    left = 0
+    while cnt and cnt[-1][0] > under:
+        p, ind = cnt.pop()
+        left += max(0, upper - p) # upperに到達しない部分について控除分
+        bit.add(ind, 1)
+    ans[index] = bit.cum(index, N + 1) * (upper - under) - left
+    upper = under
+
+for i in ans[1:]:
+    print(i)
+
+# ARC075 E - Meaningful Mean
+
+N, K = getNM()
+A = getArray(N)
+
+# 連続部分列: imos, 尺取り法, セグ木, 数え上げdpなどが使えそう
+# 算術平均がK以上であるものは何個あるでしょうか？ 尺取りっぽい
+# → 平均なので尺取りではない　{100, 1 100...100}みたいな場合
+
+# 平均なので各項をKで引いて見ようか
+# N, K = 3, 6
+# A = [7, 5, 7] の場合
+# A = [1, -1, 1]になる 累計が0以上のもの → これだとO(n2)かかる
+# 右端rを決めた時にペアになる左端lはいくつあるか
+
+# N, K = 7, 26
+# A = [10, 20, 30, 40, 30, 20, 10]の時
+# imos = [0, -16, -22, -18, -4, 0, -6, -22]
+# l ~ r区間の平均 = imos[r] - imos[l - 1] これが0以上なら
+# = imos[r] >= imos[l - 1]なら
+# imos[b] - imos[a] >= 0になるペアがいくつあるかをO(n)で
+
+# つまり
+# imos上のimos[i] = bについてより左側にb以下の数はいくつあるか
+
+A = [i - K for i in A]
+imos = [0]
+for i in range(N):
+    imos.append(imos[i] + A[i])
+mi = min(imos)
+imos = [i - mi for i in imos] # imosの全ての要素が0以上になるように調整
+N += 1
+
+# 座標圧縮BIT
+# alter: A[i] → alt_A[i]
+# rev: alt[i] → A[i]
+def compress(array):
+    s = set(array)
+    s = sorted(list(s))
+    alter = {}
+    rev = {}
+    for i in range(len(s)):
+        alter[s[i]] = i
+        rev[i] = s[i]
+    return alter, rev
+
+alter, rev = compress(imos)
+limit = N + 1
+bit = BIT(limit)
+ans = 0
+for i in range(N):
+    # 自身以下の数字が左にいくつあるか
+    ans += bit.get(alter[imos[i]] + 2) # 変換してから調べる
+    bit.add(alter[imos[i]] + 1, 1) # 変換してからレコード
+
+print(ans)
