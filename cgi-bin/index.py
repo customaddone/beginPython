@@ -49,406 +49,261 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC038 D-プレゼント
-class BIT:
-    def __init__(self, n):
-        self.n = n
-        self.data = [0] * (n + 1)
-
-    def ope(self, x, y):
-        return max(x, y)
-
-    def update(self, i, v):
-        j = i
-        while j <= self.n:
-            self.data[j] = self.ope(self.data[j], v)
-            j += j & -j
-
-    def query(self, i):
-        ret = 0
-        j = i
-        while 0 < j:
-            ret = self.ope(self.data[j], ret)
-            j &= (j - 1)
-        return ret
-
-bit = BIT(10 ** 5)
-
-for w, h in que:
-    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
-    # 最初は0個
-    q = bit.query(h - 1)
-    # 高さhの時の箱の数を更新
-    bit.update(h, q + 1)
-print(bit.query(10 ** 5))
-
-# ABC140 E - Second Sum
-# [Pl, Pr]間で２番目に大きいものの総和を
-# l, rについてのnC2通りの全てについて求めよ
-
-# 8 2 7 3 4 5 6 1
-# 8 2: 2
-# 8 2 7: 7
-# 2 7 3: 3
-# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
-# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
-
-# N <= 10 ** 5
-# Piが２番目になる通りが何通り　みたいな感じで求められる？
-# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
-
-# ヒープキューとか使える？
-# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
-# 尺取り使える？
-
-# 累積？　一番
-
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
-
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
-
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
-
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self,w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
-N = getN()
-P = getList()
-dic = {}
-bit = BIT(N)
-for i in range(N):
-    dic[P[i]] = i + 1
-
-# 両端に何もない時用
-# [0] + Pの各要素 + [N + 1]みたいになる
-dic[0] = 0
-dic[N + 1] = N + 1
-ans = 0
-
-for i in range(N, 0, -1):
-    # 8のインデックス、7のインデックス...に1を登録していく
-    bit.add(dic[i], 1)
-    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
-    c = bit.get(dic[i] + 1)
-    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
-    # l2: l1の一つ左側にあるもの
-    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
-    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
-    # r2: r1の一つ右側にあるもの
-    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
-    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
-    ans += S * i
-print(ans)
-
-# ABC174 F - Range Set Query
-
-# 色の種類
-# 同じ色のボールがある場合、どの情報があれば良いか
-# 最もrに近いボールの位置がわかればいい
-N, Q = getNM()
-C = getList()
-que = []
-for i in range(Q):
-    l, r = getNM()
-    que.append([i, l, r])
-
-que_list = [[] for i in range(N + 1)]
-for i in range(Q):
-    que_list[que[i][2]].append(que[i])
-
-c_place = [-1] * (max(C) + 1)
-bit = BIT(N + 1)
-
-ans = [0] * Q
-for i in range(1, N + 1):# 1-indexなので　配列参照する際はi - 1
-
-    if c_place[C[i - 1]] == -1: # 新規
-        c_place[C[i - 1]] = i
-        bit.add(i, 1)
-    else: # 更新
-        bit.add(c_place[C[i - 1]], -1)
-        c_place[C[i - 1]] = i
-        bit.add(i, 1)
-
-    if len(que_list[i]) > 0: # i == rのqueryに答える
-        for index, l, r in que_list[i]:
-            ans[index] = bit.cum(l, r + 1)
-
-for i in ans:
-    print(i)
-
-# ARC031 C - 積み木
-# 反転数を求める感じで
-N = getN()
-B = getList()
-
-# 各積み木は左か右かを選んで移動させられる
-# BITの小さい方でいい
-place = [0] * (N + 1)
-for i in range(N):
-    place[B[i]] = i
-
-bit = BIT(N + 1)
-# 左にある自分より小さいものではない（大きいもの）の数
-left = [0] * (N + 1)
-# 右にある自分より小さいものではない（大きいもの）の数
-right = [0] * (N + 1)
-for i in range(N, 0, -1):
-    bit.add(place[i] + 1, 1)
-    left[i] = bit.get(place[i] + 1)
-    right[i] = (N - i) - bit.get(place[i] + 1)
-
-ans = 0
-for l, r in zip(left, right):
-    # どちらか小さい方
-    ans += min(l, r)
-print(ans)
-
-# ARC033 C - データ構造
-# 座圧BIT
-Q = getN()
-que = [getList() for i in range(Q)]
-
-# データに入れる数字を抽出する
-A = []
-for t, x in que:
-    if t == 1:
-        A.append(x)
-# 座標圧縮
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-
-    return alter, rev
-
-alter, rev = compress(A)
-
-limit = Q + 1
-bit = BIT(limit)
-for t, x in que:
-    if t == 1:
-        bit.add(alter[x] + 1, 1)
-    else:
-        # xを超えないギリギリの場所が1-indexで与えられる
-        opt = bit.lowerbound(x) - 1
-        # 1-indexなのでそのままprintする
-        print(rev[opt])
-        # xを超えないギリギリの場所の一つ右を-1する
-        bit.add(opt + 1, -1)
-
-# AGC005 B - Minimum Sum
-
+# NOMURA プログラミングコンテスト 2020 C - Folia
 """
-全ての連続部分列について、その最小値の総和を求めよ
 N = 3
-A = [2, 1, 3]の時
-[2]:2 [1]:1 [3]:3
-[2, 1]:1 [1, 3]:1
-[2, 1, 3]:1
-合計9
-BITを使うと思う
-小さいものから順に置いていく
-iが最小値を取る領域[l, r]を求める
-1を置く
-[ , 1, ]
-この時、左端は1番目、右端は3番目までを領域に含めることができる
-左側は2 - 1 + 1 = 2通り、右側は3 - 2 + 1 = 2通りある
-ans += (2 - 1 + 1) * (3 - 2 + 1) * 1
-2を置く
-[2, 1, ]
-左端は1番目、右端も1番目
+A = [0, 1, 1, 2]の場合
+葉の数を求める
+まず完全二分木から考える
+ここから取り除く
+深さ3の葉は4つある
+深さ4の葉は8つある
+深さnの葉は2 ** (n - 1)つある
+深さ3の葉は4つある完全二分木について
+A = [0, 0, 0, 4]
+深さ3の葉を一つ刈ると
+A = [0, 0, 0, 3]
+二つ刈ってみる　この時、１つ目と同じ親のを刈ると
+A = [0, 0, 1, 2]
+違うのを刈ると
+A = [0, 0, 0, 2]
+根となる頂点を１つ作る
+A[0] = 1ならその頂点は葉（下に頂点を繋げない)
+A[0] = 0ならその頂点は生きる
+頂点の最大値を求めるなら
+なるべく大きく分岐させた方がいい
+エッジ貼らなくても頂点数求めるだけでいい
+A[i]を探索するたびに ans += する
+現在用意している仮の頂点数を保持しておく
+確定させた頂点数も抑えておく
+A = [0, 0, 1, 0, 2]を逆から見ると
+psuedo = [1, 2, 4, 8, 16]
+psuedoのそれぞれとA[4]どちらか小さい方をpsuedoから引く
+psuedo = [0, 0, 2, 6, 14]
+left[0] ~ left[i]のそれぞれでA[i]を引けるだけ引く
+順に見ると
+psuedo = []
+left = [] # ansに加える値
+A[0] = 0
+psuedo = [1]
+left = [1]
+A[1] = 0
+psuedo = [1, 2]
+left = [1, 2]
+A[2] = 1
+psuedo = [1, 2, 3]
+left = [0, 1, 3]
+A[3] = 0
+psuedo = [1, 2, 3, 6]
+left = [0, 1, 3, 6]
+A[4] = 2
+psuedo = [1, 2, 3, 6, 10]
+left = [0, 0, 1, 4, 10]
+葉にならない点の上限を考える
 """
 
-N = getN()
-A = getList()
-index = [0] * (N + 1)
-for i in range(N):
-    index[A[i]] = i + 1
+# 根から探索するか
+# 葉から探索するか
 
-bit = BIT(N)
-ans = 0
-for i in range(1, N + 1):
-    c = bit.get(index[i]) # 左側にあるフラグの数を求める
-    # フラグがc個になる場所 + 1、フラグがc + 1個にある場所 - 1を求める
-    # つまり、
-    # 左側にある自分より小さいもののうち最も右側にあるもの + 1
-    # 右側にある自分より小さいもののうち最も左側にあるもの - 1
-    # の場所を求める
-    l, r = bit.lowerbound(c) + 1, bit.lowerbound(c + 1) - 1
-    ans += (index[i] - l + 1) * (r - index[i] + 1) * i
-    bit.add(index[i], 1) # 自身を置く
-print(ans)
-
-# ARC069 E - Frequency
-
-"""
-N個の山がある
-石の数が最大の山のうち最も前の番号をsにappend
-石を一つとる
-これを繰り返す
-
-Sが辞書順で最小の数列になるようにした時、sに数はそれぞれいくつずつ含まれるか
-A = [1, 2, 1, 3, 2, 4, 2, 5, 8, 1]の時
-Sの最終的な長さはsum(A)
-
-S = []
-S = [9]: 一つ目はどういう操作をしても共通
-出来るだけ前の方のをindexに指定したい
-最大値の位置を出来るだけ前に寄せるためには？
-現在より前の数字について最大の数字に移動する セグ木?
-
-現在より前の数字について最大の数字まで数を減らす
-それより後ろの数字についてnextの数字まで減らす
-A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
-1 + 1つの5を4まで下げる
-A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
-
-前からとって行った時の最小値の場所しか加算されない
-この場合[1, 2,  , 3,  , 4,  , 5, 8,  ]
-index = 9についてindex以降の数字を全て5まで下げる
-ans[index] += index以降の5以上の部分
-index = 8についてindex以降の数字を全て4まで下げる
-ans[index] += index以降の4以上5以下の部分
-5以上を加算、４以上４以下を加算、３以上３以下を
-この場所にどのように加算するか
-全てのindexについてO(1)で答えるか？
-５以上のものを足す、４以上のものを足す...
-
-各場所ind_l[i]についてそれより右側の部分のunder以上upper未満の部分について
-総和を求める
-
-BITを使って
-ある範囲内のunder以上の場所の数を答える　これは簡単
-          upper以下の場所の数を答える　これも簡単 bitの結果を足し引きすればOK
-
-"""
-
+# 私は根から
+# 総和には累積和が効く
 N = getN()
 A = getList()
 
-cnt = [] # 数字iがどこにあるか
-ma = [] # 1 ~ i個目までの最大値
-for i in range(N):
-    cnt.append([A[i], i + 1])
-    if i == 0:
-        ma.append(A[i])
+# 深さ0の二分木の場合
+if N == 0:
+    if A[0] == 1:
+        print(1)
     else:
-        ma.append(max(ma[-1], A[i]))
+        print(-1)
+    exit()
 
-ind_l = [] # 加算する場所
-for i in range(N - 1, 0, -1):
-    if ma[i - 1] < ma[i]:
-        ind_l.append(i + 1)
-ind_l.append(1)
-ma.insert(0, 0) # 1-indexに修正した方がいい
-ma.insert(0, 0)
+if A[0] == 0:
+    psuedo = [1]
+    left = [1] # 確定させる用
+else:
+    psuedo = [0]
+    left = [0]
 
-cnt.sort()
+alta = deepcopy(A)
+for i in range(N - 1, -1, -1):
+    alta[i] += alta[i + 1]
+ma = max(alta)
 
-upper = max(A)
-bit = BIT(N)
-ans = [0] * (N + 1)
+# i + 1番目について調べる
+for i in range(1, N + 1):
+    opt = min(psuedo[-1] * 2, ma) # stop指数爆発 今回max(alta)以上の数字は必要ない
+    psuedo.append(opt)
+    left.append(opt)
+    if psuedo[-1] - A[i] < 0:
+        print(-1)
+        exit()
+    psuedo[-1] -= A[i]
+    # 確定させていく
+    """
+    明らか追いつかないので累積する
+    for j in range(i, -1, -1):
+        if dete[j] == 0:
+            break
+        add = min(dete[j], A[i])
+        ans += add
+        dete[j] -= add
+    """
 
-# 自分より右側のunder ~ upperを足し合わせる
-for i in range(len(ind_l)):
-    index = ind_l[i]
-    under = ma[ind_l[i]]
-    left = 0
-    while cnt and cnt[-1][0] > under:
-        p, ind = cnt.pop()
-        left += max(0, upper - p) # upperに到達しない部分について控除分
-        bit.add(ind, 1)
-    ans[index] = bit.cum(index, N + 1) * (upper - under) - left
-    upper = under
-
-for i in ans[1:]:
-    print(i)
-
-# ARC075 E - Meaningful Mean
-
-N, K = getNM()
-A = getArray(N)
-
-# 連続部分列: imos, 尺取り法, セグ木, 数え上げdpなどが使えそう
-# 算術平均がK以上であるものは何個あるでしょうか？ 尺取りっぽい
-# → 平均なので尺取りではない　{100, 1 100...100}みたいな場合
-
-# 平均なので各項をKで引いて見ようか
-# N, K = 3, 6
-# A = [7, 5, 7] の場合
-# A = [1, -1, 1]になる 累計が0以上のもの → これだとO(n2)かかる
-# 右端rを決めた時にペアになる左端lはいくつあるか
-
-# N, K = 7, 26
-# A = [10, 20, 30, 40, 30, 20, 10]の時
-# imos = [0, -16, -22, -18, -4, 0, -6, -22]
-# l ~ r区間の平均 = imos[r] - imos[l - 1] これが0以上なら
-# = imos[r] >= imos[l - 1]なら
-# imos[b] - imos[a] >= 0になるペアがいくつあるかをO(n)で
-
-# つまり
-# imos上のimos[i] = bについてより左側にb以下の数はいくつあるか
-
-A = [i - K for i in A]
-imos = [0]
-for i in range(N):
-    imos.append(imos[i] + A[i])
-mi = min(imos)
-imos = [i - mi for i in imos] # imosの全ての要素が0以上になるように調整
-N += 1
-
-# 座標圧縮BIT
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-    return alter, rev
-
-alter, rev = compress(imos)
-limit = N + 1
-bit = BIT(limit)
 ans = 0
-for i in range(N):
-    # 自身以下の数字が左にいくつあるか
-    ans += bit.get(alter[imos[i]] + 2) # 変換してから調べる
-    bit.add(alter[imos[i]] + 1, 1) # 変換してからレコード
 
+for i in range(N + 1):
+    ans += min(left[i], alta[i])
 print(ans)
+
+# ARC011 ダブレット
+# つまり最短経路問題
+s1, s2 = input().split(' ')
+N = getN()
+S = set()
+
+S.add(s1)
+S.add(s2)
+
+for i in range(N):
+    S.add(input())
+
+if s1 == s2:
+    print(0)
+    print(s1)
+    print(s2)
+    exit()
+
+S = list(S)
+N = len(S)
+
+# 2つにエッジを貼れるか
+def judge(s1, s2):
+    cnt = 0
+    n = len(s1)
+    for i in range(n):
+        if s1[i] != s2[i]:
+            cnt += 1
+    if cnt <= 1:
+        return True
+    else:
+        return False
+
+dist = [[] for i in range(N)]
+d = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    for j in range(i + 1, N):
+        if judge(S[i], S[j]):
+            dist[i].append(j)
+            dist[j].append(i)
+            d[i][j] = 1
+            d[j][i] = 1
+
+sta = 0
+end = 0
+for i in range(N):
+    if S[i] == s1:
+        sta = i
+        break
+for i in range(N):
+    if S[i] == s2:
+        end = i
+        break
+
+# ダイクストラする
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        di, now = heapq.heappop(pq)
+        if (di > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i] > dist[now] + d[i][now]:
+                dist[i] = dist[now] + d[i][now]
+                heapq.heappush(pq, (dist[i], i))
+    return dist
+
+distance = dij(sta, dist)
+if distance[end] == float('inf'):
+    print(-1)
+    exit()
+
+# 最短経路を示す矢印を求める
+# ダイクストラと同じ要領で
+def router(n, sta):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    ignore[sta] = 0
+    path[sta] = -1
+
+    while pos:
+        u = pos.popleft()
+
+        for i in dist[u]:
+            if ignore[i] != 1 and distance[i] == ignore[u] + d[i][u]:
+                path[i] = u
+                ignore[i] = ignore[u] + d[i][u]
+                pos.append(i)
+
+    return path
+
+path = router(N, sta)
+ans = [S[end]]
+now = end
+while True:
+    now = path[now]
+    ans.append(S[now])
+    if now == sta:
+        break
+
+print(len(ans) - 2)
+for i in range(len(ans)):
+    print(ans[-i - 1])
+
+# AGC014 B - Unplanned Queries
+
+"""
+どこかの点を基準とする
+
+・どの辺を見ても書かれている数が偶数になった
+性質を満たす木が存在するか
+
+色々な木で考えてみよう
+最終的に最適な木の構造がわかる？
+
+頂点xを基準に見ると
+x - 1 - 2の木の場合 [1, 2]のクエリは
+x - 1 ① 2 xを経由すると
+x ② 1 ① 2
+他の辺の偶奇を変えずに1 - 2間だけ数字を加算することができた
+
+最も単純なスターグラフを考えると、x - i間の辺の数字 = クエリに何回iが出たか
+適当な頂点を根として、根付き木にする。この根を r とする。
+
+・クエリ(p, a) + (p, b)とクエリ(a, b)は同じ
+まず、クエリ (a, b) を考えたとき、これ を (r, a), (r, b) と分解することができる。
+これは、(a, b) の LCA を p としたとき、クエリ (a, b) ではパス a − p, b − p に +1 しており、
+クエリ (r, a), (r, b) ではパス a − p, b − p に +1、パス r − p に +2 するため、
+mod 2 で考えると同一視できるので明らかである。
+
+基準点をrとすると、クエリ全体では (r, i (i = 1 ~ N))を繰り返すことと同値である
+(r, v(vはrから一番深い点))のクエリを偶数回行う時、途中の辺についても偶数回加算されている
+"""
+
+N, M = getNM()
+list = [0] * (N + 1)
+for i in range(M):
+    a, b = getNM()
+    list[a] += 1
+    list[b] += 1
+
+for i in range(1, N + 1):
+    if list[i] % 2 != 0:
+        print('NO')
+        exit()
+print('YES')
