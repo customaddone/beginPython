@@ -49,261 +49,90 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# NOMURA プログラミングコンテスト 2020 C - Folia
-"""
-N = 3
-A = [0, 1, 1, 2]の場合
-葉の数を求める
-まず完全二分木から考える
-ここから取り除く
-深さ3の葉は4つある
-深さ4の葉は8つある
-深さnの葉は2 ** (n - 1)つある
-深さ3の葉は4つある完全二分木について
-A = [0, 0, 0, 4]
-深さ3の葉を一つ刈ると
-A = [0, 0, 0, 3]
-二つ刈ってみる　この時、１つ目と同じ親のを刈ると
-A = [0, 0, 1, 2]
-違うのを刈ると
-A = [0, 0, 0, 2]
-根となる頂点を１つ作る
-A[0] = 1ならその頂点は葉（下に頂点を繋げない)
-A[0] = 0ならその頂点は生きる
-頂点の最大値を求めるなら
-なるべく大きく分岐させた方がいい
-エッジ貼らなくても頂点数求めるだけでいい
-A[i]を探索するたびに ans += する
-現在用意している仮の頂点数を保持しておく
-確定させた頂点数も抑えておく
-A = [0, 0, 1, 0, 2]を逆から見ると
-psuedo = [1, 2, 4, 8, 16]
-psuedoのそれぞれとA[4]どちらか小さい方をpsuedoから引く
-psuedo = [0, 0, 2, 6, 14]
-left[0] ~ left[i]のそれぞれでA[i]を引けるだけ引く
-順に見ると
-psuedo = []
-left = [] # ansに加える値
-A[0] = 0
-psuedo = [1]
-left = [1]
-A[1] = 0
-psuedo = [1, 2]
-left = [1, 2]
-A[2] = 1
-psuedo = [1, 2, 3]
-left = [0, 1, 3]
-A[3] = 0
-psuedo = [1, 2, 3, 6]
-left = [0, 1, 3, 6]
-A[4] = 2
-psuedo = [1, 2, 3, 6, 10]
-left = [0, 0, 1, 4, 10]
-葉にならない点の上限を考える
-"""
-
-# 根から探索するか
-# 葉から探索するか
-
-# 私は根から
-# 総和には累積和が効く
-N = getN()
-A = getList()
-
-# 深さ0の二分木の場合
-if N == 0:
-    if A[0] == 1:
-        print(1)
-    else:
-        print(-1)
-    exit()
-
-if A[0] == 0:
-    psuedo = [1]
-    left = [1] # 確定させる用
-else:
-    psuedo = [0]
-    left = [0]
-
-alta = deepcopy(A)
-for i in range(N - 1, -1, -1):
-    alta[i] += alta[i + 1]
-ma = max(alta)
-
-# i + 1番目について調べる
-for i in range(1, N + 1):
-    opt = min(psuedo[-1] * 2, ma) # stop指数爆発 今回max(alta)以上の数字は必要ない
-    psuedo.append(opt)
-    left.append(opt)
-    if psuedo[-1] - A[i] < 0:
-        print(-1)
-        exit()
-    psuedo[-1] -= A[i]
-    # 確定させていく
-    """
-    明らか追いつかないので累積する
-    for j in range(i, -1, -1):
-        if dete[j] == 0:
-            break
-        add = min(dete[j], A[i])
-        ans += add
-        dete[j] -= add
-    """
-
-ans = 0
-
-for i in range(N + 1):
-    ans += min(left[i], alta[i])
-print(ans)
-
-# ARC011 ダブレット
-# つまり最短経路問題
-s1, s2 = input().split(' ')
-N = getN()
-S = set()
-
-S.add(s1)
-S.add(s2)
-
-for i in range(N):
-    S.add(input())
-
-if s1 == s2:
-    print(0)
-    print(s1)
-    print(s2)
-    exit()
-
-S = list(S)
-N = len(S)
-
-# 2つにエッジを貼れるか
-def judge(s1, s2):
-    cnt = 0
-    n = len(s1)
-    for i in range(n):
-        if s1[i] != s2[i]:
-            cnt += 1
-    if cnt <= 1:
-        return True
-    else:
-        return False
-
-dist = [[] for i in range(N)]
-d = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    for j in range(i + 1, N):
-        if judge(S[i], S[j]):
-            dist[i].append(j)
-            dist[j].append(i)
-            d[i][j] = 1
-            d[j][i] = 1
-
-sta = 0
-end = 0
-for i in range(N):
-    if S[i] == s1:
-        sta = i
-        break
-for i in range(N):
-    if S[i] == s2:
-        end = i
-        break
-
-# ダイクストラする
-def dij(start, edges):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-
-    # pqの先頭がgoal行きのものなら最短距離を返す
-    while len(pq) > 0:
-        di, now = heapq.heappop(pq)
-        if (di > dist[now]):
-            continue
-        for i in edges[now]:
-            if dist[i] > dist[now] + d[i][now]:
-                dist[i] = dist[now] + d[i][now]
-                heapq.heappush(pq, (dist[i], i))
-    return dist
-
-distance = dij(sta, dist)
-if distance[end] == float('inf'):
-    print(-1)
-    exit()
-
-# 最短経路を示す矢印を求める
-# ダイクストラと同じ要領で
-def router(n, sta):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    ignore[sta] = 0
-    path[sta] = -1
-
-    while pos:
-        u = pos.popleft()
-
-        for i in dist[u]:
-            if ignore[i] != 1 and distance[i] == ignore[u] + d[i][u]:
-                path[i] = u
-                ignore[i] = ignore[u] + d[i][u]
-                pos.append(i)
-
-    return path
-
-path = router(N, sta)
-ans = [S[end]]
-now = end
-while True:
-    now = path[now]
-    ans.append(S[now])
-    if now == sta:
-        break
-
-print(len(ans) - 2)
-for i in range(len(ans)):
-    print(ans[-i - 1])
-
-# AGC014 B - Unplanned Queries
+# キーエンス プログラミング コンテスト 2019 D - Double Landscape
 
 """
-どこかの点を基準とする
+1 ~ N * M の整数を書き込む
+i行目の数字の最大の数字はA
+j行目の数字の最大の数字はB
 
-・どの辺を見ても書かれている数が偶数になった
-性質を満たす木が存在するか
+反転数の数を求める時は列ごと入れ替え、列内入れ替えを行った
+書き込みの個数を求めよ dpかcombo?
 
-色々な木で考えてみよう
-最終的に最適な木の構造がわかる？
+条件の満たし方を考える
+まず条件を満たすものを一つ出す
+Aiがn　i行目にはnとn以下の数字しか書かれていない
 
-頂点xを基準に見ると
-x - 1 - 2の木の場合 [1, 2]のクエリは
-x - 1 ① 2 xを経由すると
-x ② 1 ① 2
-他の辺の偶奇を変えずに1 - 2間だけ数字を加算することができた
+AとB両方に登場するとは限らない
+ある数について指定の場所に置かないといけない
+あとは自由 comboで求める
+3 3
+5 9 7
+3 6 9
+  5 9 7
+3
+6
+9
 
-最も単純なスターグラフを考えると、x - i間の辺の数字 = クエリに何回iが出たか
-適当な頂点を根として、根付き木にする。この根を r とする。
+9を置く
+  5 9 7
+3
+6
+9   9
+8を置く　置けない！
 
-・クエリ(p, a) + (p, b)とクエリ(a, b)は同じ
-まず、クエリ (a, b) を考えたとき、これ を (r, a), (r, b) と分解することができる。
-これは、(a, b) の LCA を p としたとき、クエリ (a, b) ではパス a − p, b − p に +1 しており、
-クエリ (r, a), (r, b) ではパス a − p, b − p に +1、パス r − p に +2 するため、
-mod 2 で考えると同一視できるので明らかである。
+二次元累積和？
+N * M ~ 1まで１つずつ数を置いていく
+iがAにある and Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+・置けるとこ
+1箇所　今回解放されるとこのクロス
 
-基準点をrとすると、クエリ全体では (r, i (i = 1 ~ N))を繰り返すことと同値である
-(r, v(vはrから一番深い点))のクエリを偶数回行う時、途中の辺についても偶数回加算されている
+iがAにある ^ Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ
+・置けるとこ
+今回解放されたとこのいずれかに置く
+
+A,Bにない
+現在解放されているマスのどこにでも置ける
 """
 
 N, M = getNM()
-list = [0] * (N + 1)
-for i in range(M):
-    a, b = getNM()
-    list[a] += 1
-    list[b] += 1
+A = set(getList())
+B = set(getList())
+if len(A) < N or len(B) < M: # A,B内で数字がダブってたら0
+    print(0)
+    exit()
 
-for i in range(1, N + 1):
-    if list[i] % 2 != 0:
-        print('NO')
-        exit()
-print('YES')
+ans = 1
+opened = 0 # 解放されたマス
+a_allowed = 0 # 解放された行
+b_allowed = 0 # 解放された列
+
+for i in range(N * M, 0, -1):
+    if (i in A) and (i in B):
+        # 解放はできる
+        opened += (a_allowed + b_allowed) + 1 # 今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+        a_allowed += 1
+        b_allowed += 1
+        opened -= 1 # 解放されたマスに置く
+        # ans *= 1 # 置けるのは1箇所　今回解放されるとこのクロス
+    elif (i in A):
+        opened += b_allowed # 解放する行 * 解放されている列
+        a_allowed += 1
+        ans *= b_allowed # 今回解放された行のいずれかに置く
+        opened -= 1
+    elif (i in B):
+        opened += a_allowed
+        b_allowed += 1
+        ans *= a_allowed
+        opened -= 1
+    else:
+        ans *= opened # 解放されている部分のどこに置いても良い
+        opened -= 1
+
+    ans %= mod
+
+print(ans)
