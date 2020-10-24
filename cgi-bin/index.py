@@ -49,90 +49,55 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# キーエンス プログラミング コンテスト 2019 D - Double Landscape
+# ARC039 C - 幼稚園児高橋君
 
 """
-1 ~ N * M の整数を書き込む
-i行目の数字の最大の数字はA
-j行目の数字の最大の数字はB
+訪問してない格子点とは？
+どんどん掘り進んでいく感覚
+ぐるぐるするのか？
+現在の上下左右の領域を保持するか？
+順番は関係ない？
+URL
+RLU 関係はある
 
-反転数の数を求める時は列ごと入れ替え、列内入れ替えを行った
-書き込みの個数を求めよ dpかcombo?
+同じ点には戻らない
+dequeする？
+Dancing Links
+4近傍の情報を抑えておく
 
-条件の満たし方を考える
-まず条件を満たすものを一つ出す
-Aiがn　i行目にはnとn以下の数字しか書かれていない
-
-AとB両方に登場するとは限らない
-ある数について指定の場所に置かないといけない
-あとは自由 comboで求める
-3 3
-5 9 7
-3 6 9
-  5 9 7
-3
-6
-9
-
-9を置く
-  5 9 7
-3
-6
-9   9
-8を置く　置けない！
-
-二次元累積和？
-N * M ~ 1まで１つずつ数を置いていく
-iがAにある and Bにある
-・解放する部分
-今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
-・置けるとこ
-1箇所　今回解放されるとこのクロス
-
-iがAにある ^ Bにある
-・解放する部分
-今まで解放された部分と今回解放する部分の交わるとこ
-・置けるとこ
-今回解放されたとこのいずれかに置く
-
-A,Bにない
-現在解放されているマスのどこにでも置ける
+現在の場所について、次の場所の情報を
+次の場所について、その場所に行った場合の逆方向の次の場所の情報を抑える
 """
 
-N, M = getNM()
-A = set(getList())
-B = set(getList())
-if len(A) < N or len(B) < M: # A,B内で数字がダブってたら0
-    print(0)
-    exit()
+K = getN()
+S = input()
+D = 'URDL'
+dxy = [(0,1), (1,0), (0,-1), (-1,0)] # 上下左右
+nxs = {}
 
-ans = 1
-opened = 0 # 解放されたマス
-a_allowed = 0 # 解放された行
-b_allowed = 0 # 解放された列
+# for i in range(4):
+#     dx, dy = dxy[i]
+for di, (dx,dy) in enumerate(dxy):
+    nxs[(0, 0, di)] = (dx, dy) # (x座標, y座標, どの方向？): (次のx座標、次のy座標)
 
-for i in range(N * M, 0, -1):
-    if (i in A) and (i in B):
-        # 解放はできる
-        opened += (a_allowed + b_allowed) + 1 # 今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
-        a_allowed += 1
-        b_allowed += 1
-        opened -= 1 # 解放されたマスに置く
-        # ans *= 1 # 置けるのは1箇所　今回解放されるとこのクロス
-    elif (i in A):
-        opened += b_allowed # 解放する行 * 解放されている列
-        a_allowed += 1
-        ans *= b_allowed # 今回解放された行のいずれかに置く
-        opened -= 1
-    elif (i in B):
-        opened += a_allowed
-        b_allowed += 1
-        ans *= a_allowed
-        opened -= 1
-    else:
-        ans *= opened # 解放されている部分のどこに置いても良い
-        opened -= 1
+x = y = 0
+for c in S:
+    i = D.index(c) # 直進する方向
+    # 上下左右４箇所について次の場所がレコードされているか
+    # されていなければ作る
+    for di, (dx, dy) in enumerate(dxy): # 4方向について探索
+        # 順方向について
+        if (x, y, di) not in nxs: # 探索してなければ
+            ddx, ddy = dxy[di]
+            nxs[(x, y, di)] = (x + ddx, y + ddy) # 現在の座標 + 1を追加
+        # 逆方向について
+        dj = (di + 2) % 4
+        if (x, y, dj) not in nxs: # 探索してなければ
+            ddx, ddy = dxy[dj]
+            nxs[(x, y, dj)] = (x + ddx, y + ddy)
 
-    ans %= mod
+        nx, ny = nxs[(x, y, di)] # 次の場所
+        nxs[(nx, ny, dj)] = nxs[(x, y, dj)] # 次の場所について、逆方向の次の場所は現在の場所についての逆方向の次の場所と同じ
+    x, y = nxs[(x, y, i)] # 新しい場所に移動
 
-print(ans)
+print(x, y)
