@@ -49,426 +49,353 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-A = [3, 4, -8]
-# array内の連続する区間の総和
-def imos_sum(A):
-    n = len(A)
-    imos = [0]
-    for i in range(n):
-        imos.append(imos[i] + A[i])
-    for i in range(n):
-        for j in range(i + 1, n + 1):
-            print(imos[j] - imos[i])
-imos_sum(A)
 
-# roopする配列の長さk以下の区間和
-def roop_imos(array, k):
-    n = len(array)
-    alta = copy.deepcopy(array)
-    alta += alta
-    imos = [0]
-    for i in range(len(alta)):
-        imos.append(imos[i] + alta[i])
-    for i in range(n):
-        for j in range(1, k + 1):
-            print(imos[i + j] - imos[i])
-# roop_imos(A, 2)
+# NOMURA プログラミングコンテスト 2020 C - Folia
+"""
+N = 3
+A = [0, 1, 1, 2]の場合
+葉の数を求める
+まず完全二分木から考える
+ここから取り除く
+深さ3の葉は4つある
+深さ4の葉は8つある
+深さnの葉は2 ** (n - 1)つある
+深さ3の葉は4つある完全二分木について
+A = [0, 0, 0, 4]
+深さ3の葉を一つ刈ると
+A = [0, 0, 0, 3]
+二つ刈ってみる　この時、１つ目と同じ親のを刈ると
+A = [0, 0, 1, 2]
+違うのを刈ると
+A = [0, 0, 0, 2]
+根となる頂点を１つ作る
+A[0] = 1ならその頂点は葉（下に頂点を繋げない)
+A[0] = 0ならその頂点は生きる
+頂点の最大値を求めるなら
+なるべく大きく分岐させた方がいい
+エッジ貼らなくても頂点数求めるだけでいい
+A[i]を探索するたびに ans += する
+現在用意している仮の頂点数を保持しておく
+確定させた頂点数も抑えておく
+A = [0, 0, 1, 0, 2]を逆から見ると
+psuedo = [1, 2, 4, 8, 16]
+psuedoのそれぞれとA[4]どちらか小さい方をpsuedoから引く
+psuedo = [0, 0, 2, 6, 14]
+left[0] ~ left[i]のそれぞれでA[i]を引けるだけ引く
+順に見ると
+psuedo = []
+left = [] # ansに加える値
+A[0] = 0
+psuedo = [1]
+left = [1]
+A[1] = 0
+psuedo = [1, 2]
+left = [1, 2]
+A[2] = 1
+psuedo = [1, 2, 3]
+left = [0, 1, 3]
+A[3] = 0
+psuedo = [1, 2, 3, 6]
+left = [0, 1, 3, 6]
+A[4] = 2
+psuedo = [1, 2, 3, 6, 10]
+left = [0, 0, 1, 4, 10]
+葉にならない点の上限を考える
+"""
 
-# ABC005 D - おいしいたこ焼きの焼き方
+# 根から探索するか
+# 葉から探索するか
+
+# 私は根から
+# 総和には累積和が効く
 N = getN()
-maze = [getList() for i in range(N)]
-Q = getN()
-query = getArray(Q)
-
-# 二次元累積和
-dp = [[0] * N for i in range(N)]
-# 縦１行目、横１行目
-for i in range(N):
-    dp[i][0] = maze[i][0]
-for i in range(N):
-    for j in range(1, N):
-        dp[i][j] = dp[i][j - 1] + maze[i][j]
-# 全て
-for i in range(1, N):
-    for j in range(N):
-        dp[i][j] += dp[i - 1][j]
-
-# 採点マシーン
-def judge(sx, sy, ex, ey):
-    mother = dp[ey][ex]
-    minus1 = 0
-    minus2 = 0
-    plus = 0
-    if sx > 0:
-        minus1 = dp[ey][sx - 1]
-    if sy > 0:
-        minus2 = dp[sy - 1][ex]
-    if sx > 0 and sy > 0:
-        plus = dp[sy - 1][sx - 1]
-    return mother - minus1 - minus2 + plus
-
-# 「大きさNの時の美味しさ」のリスト
-anslist = [0] * (N ** 2 + 1)
-for nsx in range(N):
-    for nex in range(nsx, N):
-        for nsy in range(N):
-            for ney in range(nsy, N):
-                opt = judge(nsx, nsy, nex, ney)
-                #print(opt, [nsx, nsy, nex, ney])
-                index = (nex - nsx + 1) * (ney - nsy + 1)
-                anslist[index] = max(anslist[index], opt)
-
-# 「大きさN以下の時の美味しさ」のリスト
-ans_alta = [0] * (N ** 2 + 1)
-for i in range(1, len(ans_alta)):
-    ans_alta[i] = max(ans_alta[i - 1], anslist[i])
-
-for i in query:
-    print(ans_alta[i])
-
-# ABC014 atcolor
-n = int(input())
-lista = []
-for i in range(n):
-    a, b = map(int, input().split())
-    lista.append([a, b])
-listb = [0] * (10 ** 6 + 2)
-for i in lista:
-    listb[i[0]] += 1
-    listb[i[1] + 1] -= 1
-listc = [0]
-for i in range(10 ** 6 + 2):
-    listc.append(listb[i] + listc[i])
-print(max(listc))
-
-# ABC017 C - ハイスコア
-
-# 全ての区間を選ばないように
-# 二次元累積?
-# 区間累積
-
-# queryを「lでスタートするもの」と「rでゴールするもの」という２つの捉え方をする
-
-# N:遺跡(query) M:宝石
-N, M = getNM()
-query = [getList() for i in range(N)]
-if M == 1:
-    print(0)
-    exit()
-
-# r以前の宝石を獲得する遺跡を探索する累積和
-imos_up = [0] * M
-# l以降の宝石を獲得する遺跡を探索する累積和
-imos_down = [0] * M
-
-for l, r, s in query:
-    imos_up[r - 1] += s
-    imos_down[l - 1] += s
-
-for i in range(1, M):
-    imos_up[i] += imos_up[i - 1]
-    imos_down[M - i - 1] += imos_down[M - i]
-
-ans = 0
-for i in range(M):
-    # i - 1個以前の宝石を獲得する遺跡、i + 1個以降の遺跡を獲得する遺跡を探索する
-    if i == 0:
-        opt = imos_down[i + 1]
-    elif i == M - 1:
-        opt = imos_up[i - 1]
-    else:
-        opt = imos_up[i - 1] + imos_down[i + 1]
-    ans = max(ans, opt)
-print(ans)
-
-H, W = 3, 4
-# maze = [getList() for i in range(H)]
-maze = [
-[1, 2, 1, 2],
-[2, 3, 2, 3],
-[1, 3, 1, 3]
-]
-
-# 二次元累積和
-dp_sum = [[0] * W for i in range(H)]
-dp_1 = [[0] * W for i in range(H)]
-dp_2 = [[0] * W for i in range(H)]
-dp_3 = [[0] * W for i in range(H)]
-
-# x = 0 ~ i, y = 0 ~ j までの数の合計
-def bi_cumul_sum(dp_n):
-    # 縦１行目、横１行目
-    for i in range(H):
-        dp_n[i][0] = maze[i][0]
-    for i in range(H):
-        for j in range(1, W):
-            dp_n[i][j] = dp_n[i][j - 1] + maze[i][j]
-    # 全て
-    for i in range(1, H):
-        for j in range(W):
-            dp_n[i][j] += dp_n[i - 1][j]
-bi_cumul_sum(dp_sum)
-# print(dp_sum)
-
-# x = 0 ~ i, y = 0 ~ j までに出るnumの回数の合計
-def bi_cumul_cnt(num, dp_m):
-    # 縦１行目、横１行目
-    for i in range(H):
-        if maze[i][0] == num:
-            dp_m[i][0] = 1
-    for i in range(H):
-        for j in range(1, W):
-            if maze[i][j] == num:
-                dp_m[i][j] = dp_m[i][j - 1] + 1
-            else:
-                dp_m[i][j] = dp_m[i][j - 1]
-    # 全て
-    for i in range(1, H):
-        for j in range(W):
-            dp_m[i][j] += dp_m[i - 1][j]
-bi_cumul_cnt(3, dp_3)
-# print(dp_1)
-
-# x = sx ~ ex y = sy ~ eyまで
-def judge(sx, sy, ex, ey, dp_l):
-    mother = dp_l[ey][ex]
-    minus1 = 0
-    minus2 = 0
-    plus = 0
-    if sx > 0:
-        minus1 = dp_l[ey][sx - 1]
-    if sy > 0:
-        minus2 = dp_l[sy - 1][ex]
-    if sx > 0 and sy > 0:
-        plus = dp_l[sy - 1][sx - 1]
-    return mother - minus1 - minus2 + plus
-
-print(judge(1, 1, 3, 2, dp_sum))
-print(judge(2, 1, 3, 2, dp_3))
-
-N, M, Q = 10, 3, 2
-query = [
-[1, 5],
-[2, 8],
-[7, 10],
-[1, 7],
-[3, 10]
-]
-
-# l から rまで行く鉄道の数
-lr = [[0 for i in range(N + 1)] for j in range(N + 1)]
-# l から r以前のどこかまで行く鉄道の数
-imos = [[0 for i in range(N + 1)] for j in range(N + 1)]
-imos2 = [[0 for i in range(N + 1)] for j in range(N + 1)]
-
-for i in query:
-    l, r = i
-    lr[l][r] += 1
-
-for i in range(1, N + 1):
-    for j in range(1, N + 1):
-        # j - 1以前のどこかまで行くもの　+ jまで行くもの
-        imos[i][j] = imos[i][j - 1] + lr[i][j]
-
-for i in range(1, N + 1):
-    for j in range(1, N + 1):
-        # i - 1以前のどこかからスタート + iスタート
-        imos2[i][j] = imos2[i - 1][j] + lr[i][j]
-
-print(imos2)
-
-"""
-# 飛ばし累積和
-N = 10
-num = [i for i in range(1, N + 1)]
-D = 2
-lista = [0] * N
-for i in range(D):
-    for j in range(i, N, D):
-        if j == i:
-            lista[j] = num[j]
-        else:
-            lista[j] = num[j] + lista[j - D]
-# [1, 2, 4, 6, 9, 12, 16, 20, 25, 30]
-print(lista)
-# 9番目までの奇数の数字の合計 - 1番目までの奇数の数字の合計
-# 3 + 5 + 7 + 9
-print(lista[8] - lista[0])
-"""
-
-# Dかそれぞれのqueryで固定なのでこの問題は解ける
-H, W, D = getNM()
-maze = []
-for i in range(H):
-    a = getList()
-    maze.append(a)
-Q = getN()
-# piece[0]からpiece[1]まで
-# 4 → 6　→ 8
-piece = []
-for i in range(Q):
-    l, r = getNM()
-    piece.append([l, r])
-
-place_list = [[-1, -1] for i in range(H * W)]
-
-for y in range(H):
-    for x in range(W):
-        place_list[maze[y][x] - 1] = [x, y]
-
-# 飛ばし累積和
-x_plus = [0] * (H * W)
-y_plus = [0] * (H * W)
-for i in range(D):
-    for j in range(i, H * W, D):
-        if j == i:
-            opt_x = 0
-            opt_y = 0
-        else:
-            opt_x = abs(place_list[j][0] - place_list[j - D][0])
-            opt_y = abs(place_list[j][1] - place_list[j - D][1])
-            x_plus[j] = opt_x + x_plus[j - D]
-            y_plus[j] = opt_y + y_plus[j - D]
-
-def past_exam(piece_query):
-    start = piece_query[0]
-    goal = piece_query[1]
-
-    x_point = x_plus[goal - 1] - x_plus[start - 1]
-    y_point = y_plus[goal - 1] - y_plus[start - 1]
-    return x_point + y_point
-
-for i in range(Q):
-    print(past_exam(piece[i]))
-
-# ABC179 D - Leaping Tak
-# 遅延セグ木
-N, K = getNM()
-que = [getList() for i in range(K)]
-
-dp = [0] * (N + 1) # dp[i] iの時の通りの数
-imos = [0] * (N + 1) # imos[i]: dp[1] ~ dp[i]までの累計
-dp[1] = 1
-imos[1] = 1
-
-# 貰うdp
-# dp += dp[l] - dp[r]
-
-for i in range(2, N + 1):
-    for l, r in que:
-        if i - l >= 0:
-            dp[i] += imos[i - l] - imos[max((i - r - 1), 0)]
-            dp[i] %= mod
-    imos[i] = dp[i]
-    imos[i] += imos[i - 1]
-    imos[i] %= mod
-
-print(dp[N] % mod)
-
-# 配るdp
-
-dp = [0] * (N + 1)
-dp[1] = 1
-dp[2] = -1
-
-for i in range(1, N + 1):
-    dp[i] += dp[i - 1]
-    dp[i] %= mod
-    for l, r in que:
-        if i + l <= N:
-            dp[i + l] += dp[i]
-        if i + r + 1 <= N:
-            dp[i + r + 1] -= dp[i]
-print(dp[N] % mod)
-
-# ARC043 B - 難易度
-# つまりsnuke festival
-N = getN()
-D = getArray(N)
-D.sort()
-
-# a3を選んだ時のありうるa4の数字の通り
-num_3 = [0] * N
-for i in range(N):
-    index = bisect_left(D, D[i] * 2)
-    num_3[i] = N - index
-
-imos_1 = copy.deepcopy(num_3)
-# a2を選んだ時にありうるa4の通り
-num_2 = [0] * N
-for i in range(N - 1):
-    imos_1[-i - 2] += imos_1[-i - 1]
-for i in range(N):
-    if num_3[i] > 0:
-        num_2[i] = imos_1[N - num_3[i]]
-
-imos_2 = copy.deepcopy(num_2)
-# a1を選んだ時にありうるa4の通り
-num_1 = [0] * N
-for i in range(N - 1):
-    imos_2[-i - 2] += imos_2[-i - 1]
-for i in range(N):
-    if num_2[i] > 0:
-        num_1[i] = imos_2[N - num_3[i]]
-print(sum(num_1) % mod)
-
-# AGC008 B - Contiguous Repainting
-
-"""
-連続するK個
-同じ場所でK個黒く塗ってK個白く塗れば元どおり
-反転させる訳ではない
-どこまで細かく黒を塗れるか
-Nで制約される
-
-・iとi + K
-・i ~ i + K - 1
-を使う
-
-連続するn個を消せる
-10 5
-5 -4 -5 -8 -4 7 2 -4 0 7 の場合
-[5 -4 -5 -8 -4] 7 2 -4 0 7 黒
-5 [-4 -5 -8 -4 7] 2 -4 0 7 白
-5 -4 -5 -8 -4 [7 2 -4 0 7] 黒で17点
-
-i個目の色を変更したい場合
-左右から十分離れていたら個別に色を変えることができる 問題ない
-左右から近い場合は？　セットになる
-結構連続する？
-
-右から順に処理する
-Nが小さいと右端の操作が左端に作用する
-左:全部黒or白 右:自由
-左:自由 右:全部黒or白ができる
-
-全部黒or白の部分についても操作できる
-
-上から順に塗られていく
-逆から考えると
-最初にある区間のK個を黒か白で塗る　
-右隣、左隣のマスは自由に選べる
-"""
-
-N, K = getNM()
 A = getList()
 
-p = [0] * N
-q = [0] * N
+# 深さ0の二分木の場合
+if N == 0:
+    if A[0] == 1:
+        print(1)
+    else:
+        print(-1)
+    exit()
 
-p[0] = A[0] if A[0] > 0 else 0
-q[0] = A[0]
+if A[0] == 0:
+    psuedo = [1]
+    left = [1] # 確定させる用
+else:
+    psuedo = [0]
+    left = [0]
 
-for i in range(1, N):
-    p[i] = p[i - 1] + (A[i] if A[i] > 0 else 0)
-    q[i] = q[i - 1] + A[i]
+alta = deepcopy(A)
+for i in range(N - 1, -1, -1):
+    alta[i] += alta[i + 1]
+ma = max(alta)
+
+# i + 1番目について調べる
+for i in range(1, N + 1):
+    opt = min(psuedo[-1] * 2, ma) # stop指数爆発 今回max(alta)以上の数字は必要ない
+    psuedo.append(opt)
+    left.append(opt)
+    if psuedo[-1] - A[i] < 0:
+        print(-1)
+        exit()
+    psuedo[-1] -= A[i]
+    # 確定させていく
+    """
+    明らか追いつかないので累積する
+    for j in range(i, -1, -1):
+        if dete[j] == 0:
+            break
+        add = min(dete[j], A[i])
+        ans += add
+        dete[j] -= add
+    """
 
 ans = 0
-for i in range(N - K + 1):
-    t = i + K - 1
-    x = p[-1] - p[t] + (p[i - 1] if i != 0 else 0)
-    ans = max(ans, x)
-    x += q[t] - (q[i - 1] if i != 0 else 0)
-    ans = max(ans, x)
 
+for i in range(N + 1):
+    ans += min(left[i], alta[i])
 print(ans)
+
+# ARC011 ダブレット
+# つまり最短経路問題
+s1, s2 = input().split(' ')
+N = getN()
+S = set()
+
+S.add(s1)
+S.add(s2)
+
+for i in range(N):
+    S.add(input())
+
+if s1 == s2:
+    print(0)
+    print(s1)
+    print(s2)
+    exit()
+
+S = list(S)
+N = len(S)
+
+# 2つにエッジを貼れるか
+def judge(s1, s2):
+    cnt = 0
+    n = len(s1)
+    for i in range(n):
+        if s1[i] != s2[i]:
+            cnt += 1
+    if cnt <= 1:
+        return True
+    else:
+        return False
+
+dist = [[] for i in range(N)]
+d = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    for j in range(i + 1, N):
+        if judge(S[i], S[j]):
+            dist[i].append(j)
+            dist[j].append(i)
+            d[i][j] = 1
+            d[j][i] = 1
+
+sta = 0
+end = 0
+for i in range(N):
+    if S[i] == s1:
+        sta = i
+        break
+for i in range(N):
+    if S[i] == s2:
+        end = i
+        break
+
+# ダイクストラする
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        di, now = heapq.heappop(pq)
+        if (di > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i] > dist[now] + d[i][now]:
+                dist[i] = dist[now] + d[i][now]
+                heapq.heappush(pq, (dist[i], i))
+    return dist
+
+distance = dij(sta, dist)
+if distance[end] == float('inf'):
+    print(-1)
+    exit()
+
+# 最短経路を示す矢印を求める
+# ダイクストラと同じ要領で
+def router(n, sta):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    ignore[sta] = 0
+    path[sta] = -1
+
+    while pos:
+        u = pos.popleft()
+
+        for i in dist[u]:
+            if ignore[i] != 1 and distance[i] == ignore[u] + d[i][u]:
+                path[i] = u
+                ignore[i] = ignore[u] + d[i][u]
+                pos.append(i)
+
+    return path
+
+path = router(N, sta)
+ans = [S[end]]
+now = end
+while True:
+    now = path[now]
+    ans.append(S[now])
+    if now == sta:
+        break
+
+print(len(ans) - 2)
+for i in range(len(ans)):
+    print(ans[-i - 1])
+
+# AGC014 B - Unplanned Queries
+
+"""
+どこかの点を基準とする
+・どの辺を見ても書かれている数が偶数になった
+性質を満たす木が存在するか
+
+色々な木で考えてみよう
+最終的に最適な木の構造がわかる？
+
+頂点xを基準に見ると
+x - 1 - 2の木の場合 [1, 2]のクエリは
+x - 1 ① 2 xを経由すると
+x ② 1 ① 2
+他の辺の偶奇を変えずに1 - 2間だけ数字を加算することができた
+
+最も単純なスターグラフを考えると、x - i間の辺の数字 = クエリに何回iが出たか
+適当な頂点を根として、根付き木にする。この根を r とする。
+
+・クエリ(p, a) + (p, b)とクエリ(a, b)は同じ
+まず、クエリ (a, b) を考えたとき、これ を (r, a), (r, b) と分解することができる。
+これは、(a, b) の LCA を p としたとき、クエリ (a, b) ではパス a − p, b − p に +1 しており、
+クエリ (r, a), (r, b) ではパス a − p, b − p に +1、パス r − p に +2 するため、
+mod 2 で考えると同一視できるので明らかである。
+
+基準点をrとすると、クエリ全体では (r, i (i = 1 ~ N))を繰り返すことと同値である
+(r, v(vはrから一番深い点))のクエリを偶数回行う時、途中の辺についても偶数回加算されている
+"""
+
+N, M = getNM()
+list = [0] * (N + 1)
+for i in range(M):
+    a, b = getNM()
+    list[a] += 1
+    list[b] += 1
+
+for i in range(1, N + 1):
+    if list[i] % 2 != 0:
+        print('NO')
+        exit()
+print('YES')
+
+# AGC013 B - Hamiltonish Path
+
+"""
+木構造ではない
+N頂点にM辺
+・２個以上の頂点を通る
+・同じ頂点を通らない
+・パスの少なくとも一方の端点と直接辺で結ばれている頂点は、必ずパスに含まれる
+いくつかあるうちの一つ答えよ
+
+端点と端点をつなぐと輪になる
+端点の頂点数は2でないといけないのでは　そんなことはない
+端点の候補はどんなものがあるか
+
+端点の１つ目はなんでもいいのか
+グリッドグラフを考えた場合に中央の点を指定してもうまく条件を満たすのでいけそう
+ただし、子要素に葉があればだめ
+
+端点に葉が2つあれば余裕
+
+端点を一つ選ぶ　→
+隣接する辺を全て通るパスを考える　
+7 8
+1 2
+2 3
+3 4
+4 5
+5 6
+6 7
+3 5
+2 6　の時
+もし2 6のパスがなければ3を端点にできない
+パスグラフを考えると
+パスグラフの端っこ２つを端点にしないと作れない
+
+大元となるパスグラフを見つける
+寄り道しないといけない場合であってもすぐ戻ってこれるような
+端点を一つ決める
+
+適当な点１つを選んでそこから端点1に行くパス、端点2に行くパスを書いていく
+
+これ完全グラフだとTLEするんじゃ？
+今回Mの数が小さい
+作れる最大の完全グラフはN = 400 (N(N + 1) // 2 = 80000ぐらい)なのでOK
+"""
+
+N, M = getNM()
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+parent = [-1] * N
+ignore = [0] * N
+ignore[0] = 1
+dot1 = 0
+dot1_flag = True
+dot2 = 0
+dot2_flag = True
+
+# 端点が見つかる（行き止まりになる）まで探索
+while dot1_flag or dot2_flag:
+    dot1_flag = False
+    for i in dist[dot1]:
+        if ignore[i] == 0:
+            ignore[i] = 1
+            parent[dot1] = i
+            dot1 = i
+            dot1_flag = True
+            break
+
+    dot2_flag = False
+    for i in dist[dot2]:
+        if ignore[i] == 0:
+            ignore[i] = 1
+            parent[i] = dot2
+            dot2 = i
+            dot2_flag = True
+            break
+
+ans = [dot2 + 1]
+now = dot2
+while now != dot1:
+    now = parent[now]
+    ans.append(now + 1)
+
+ans = list(reversed(ans))
+
+print(len(ans))
+print(*ans)
