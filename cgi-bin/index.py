@@ -49,55 +49,171 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ARC039 C - 幼稚園児高橋君
+# ARC126 F - XOR Matching
+# d = 2 ** N - 1について
+# 1 xor 2 xor... xor dは
+# 各桁にフラグが2 * (N - 1)本ずつ立っている（つまり0になる）
+# なのでXを抜くとXを構成する部分についてフラグが抜けてXができる
+
+M, K = getNM()
+
+if M == 0 and K == 0:
+    print(0, 0)
+
+elif M == 1 and K == 0:
+    print(0, 0, 1, 1)
+
+elif M >= 2 and K < 2 ** M:
+    ans = []
+    for n in range(2 ** M):
+        if n != K:
+            ans.append(n)
+    print(*ans, K, *ans[::-1], K)
+
+else:
+    print(-1)
+
+# B - Median Pyramid Easy
 
 """
-訪問してない格子点とは？
-どんどん掘り進んでいく感覚
-ぐるぐるするのか？
-現在の上下左右の領域を保持するか？
-順番は関係ない？
-URL
-RLU 関係はある
-
-同じ点には戻らない
-dequeする？
-Dancing Links
-4近傍の情報を抑えておく
-
-現在の場所について、次の場所の情報を
-次の場所について、その場所に行った場合の逆方向の次の場所の情報を抑える
+頂点にXを書き込む
+N段目の順列としてありうるものを示す
+・一番都合のいいものを出す
+・条件を緩和してみる
+・条件が小さい場合を考える
+Xがなければ
+2 ** (N - 2)を頂点に書けばいい これ以外不可能ってことはない？
+N = 4の場合
+   4
+  345
+ 23456
+1234567
+・実験
+def cnt(array):
+    alta = deepcopy(array)
+    while len(alta) > 1:
+        l = []
+        for i in range(1, len(alta) - 1):
+            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
+        alta = l
+    return alta[0]
+A = [1, 2, 3, 4, 5]
+for i in permutations(A):
+    print(i, cnt(i))
+X = 2, 3, 4なら可能
+同様に N = 4なら 2 ~ 6であれば可能
+X = 2の場合 最終的に上がってくるのは2, 2, 3
+1, 2がペアで存在する場合はX = 2になる？
+上にあげるには？
+上げたい数を真ん中で二つ並べることができたら（例:6 4 2 2 3)勝ち確
+真ん中に X + 2, X - 1, X, X + 1, X - 2を配置
+これを中央の値と入れ替える
 """
 
-K = getN()
+def cnt(array):
+    alta = deepcopy(array)
+    while len(alta) > 1:
+        l = []
+        for i in range(1, len(alta) - 1):
+            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
+        alta = l
+    return alta[0]
+
+N, X = getNM()
+ma = 2 * N
+mid = ma // 2
+if X == 1 or X == ma - 1:
+    print('No')
+    exit()
+print('Yes')
+
+list = [i for i in range(ma - 1, 0, -1)]
+ans = [-1] * ma
+
+if (ma - 1) - X > 1 and mid - 2 > 0: # X + 2を入れ替える
+    ans[mid - 2] = list.pop(list.index(X + 2))
+if X - 2 > 0 and (ma - 1) - mid > 1: # X - 2を入れ替える
+    ans[mid + 2] = list.pop(list.index(X - 2))
+
+ans[mid - 1] = list.pop(list.index(X - 1))
+ans[mid + 1] = list.pop(list.index(X + 1))
+ans[mid] = list.pop(list.index(X))
+
+for i in range(1, ma):
+    if ans[i] == -1:
+        ans[i] = list.pop()
+
+for i in ans[1:]:
+    print(i)
+
+# ARC013 E - Tr/ee
+
+"""
+頂点がN個、辺がN - 1本あります
+1110
+任意の辺を一つ取り除くとサイズ1の連結成分が作れる
+任意の辺を一つ取り除くとサイズ2の連結成分が作れる
+任意の辺を一つ取り除くとサイズ3の連結成分が作れる
+
+どの辺を一つ取り除いてもサイズ4の連結成分は作れない
+
+サイズ1の連結成分が作れること、サイズnの連結成分は作れないことは自明
+サイズiの連結成分が作れるなら、サイズn - iの連結成分が作れる
+単純な木構造から考えよう
+・パスグラフ
+・スターグラフ
+
+・パスグラフ
+1(1がN - 1個) + 0になる
+・スターグラフ
+10...010になる
+
+他のものは作れないか
+連結成分iのものが作れる条件、作れない条件
+作れない条件が知りたい　単体であれば必ず作れる
+（連結成分iが作れ、jが作れない）が成り立たない場合がある？
+部分木から考えていく
+大きさ2のパスグラフは11
+これをrootにつけると 110になる
+大きさ3のスターグラフは101
+これをrootにつけると1010になる
+
+大きさnのグラフにパス状に/スター状に繋げていくと
+1 - 2のグラフに
+パス状に3を繋げると 110
+スター状に繋げると 110 ここまでは同じ
+1 - 2 - 3のグラフに
+パス状に繋げると 1110
+スター状に繋げると 1010
+
+パスグラフに辺を加えて連結成分jが作れないようにしよう
+
+11010110は作れるか
+一方をパスグラフに、一方をスターグラフにする?
+1 - 2の状態でスタート
+もしS[i] = 1なら親要素にi + 2をつけ、それを親要素にする
+もしS[i] = 0なら現在の親要素につける
+"""
+
 S = input()
-D = 'URDL'
-dxy = [(0,1), (1,0), (0,-1), (-1,0)] # 上下左右
-nxs = {}
-
-# for i in range(4):
-#     dx, dy = dxy[i]
-for di, (dx,dy) in enumerate(dxy):
-    nxs[(0, 0, di)] = (dx, dy) # (x座標, y座標, どの方向？): (次のx座標、次のy座標)
-
-x = y = 0
-for c in S:
-    i = D.index(c) # 直進する方向
-    # 上下左右４箇所について次の場所がレコードされているか
-    # されていなければ作る
-    for di, (dx, dy) in enumerate(dxy): # 4方向について探索
-        # 順方向について
-        if (x, y, di) not in nxs: # 探索してなければ
-            ddx, ddy = dxy[di]
-            nxs[(x, y, di)] = (x + ddx, y + ddy) # 現在の座標 + 1を追加
-        # 逆方向について
-        dj = (di + 2) % 4
-        if (x, y, dj) not in nxs: # 探索してなければ
-            ddx, ddy = dxy[dj]
-            nxs[(x, y, dj)] = (x + ddx, y + ddy)
-
-        nx, ny = nxs[(x, y, di)] # 次の場所
-        nxs[(nx, ny, dj)] = nxs[(x, y, dj)] # 次の場所について、逆方向の次の場所は現在の場所についての逆方向の次の場所と同じ
-    x, y = nxs[(x, y, i)] # 新しい場所に移動
-
-print(x, y)
+N = len(S)
+# この条件を満たしていると木を作ることができる
+if S[N - 1] == "1" or S[N - 2] == "0" or S[0] == "0":
+    print(-1)
+else:
+    for i in range(N - 1):
+        if S[i] != S[N - i - 2]:
+            print(-1)
+            exit()
+    ans = []
+    parent = 1 # 現在のparent
+    for i in range(N - 1):
+        if S[i] == "1":
+            # パスグラフ状
+            ans.append([parent, i + 2])
+            parent = i + 2 # parent変更
+        else:
+            # スターグラフ状
+            ans.append([parent, i + 2])
+    for i in ans:
+        print(i[0], i[1])
