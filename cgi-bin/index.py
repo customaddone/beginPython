@@ -49,203 +49,168 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC006 D - トランプ挿入ソート
-n = getN()
-lista = [getList() for i in range(n)]
+# ARC126 F - XOR Matching
+# d = 2 ** N - 1について
+# 1 xor 2 xor... xor dは
+# 各桁にフラグが2 * (N - 1)本ずつ立っている（つまり0になる）
+# なのでXを抜くとXを構成する部分についてフラグが抜けてXができる
 
-# 最長増加部分列問題 (LIS)の問題
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-print(n - lis(lista))
+M, K = getNM()
 
-# Donutsプロコンチャレンジ2015 C - 行列のできるドーナツ屋
-# LISの応用
+if M == 0 and K == 0:
+    print(0, 0)
 
-N = getN()
-H = getList()
+elif M == 1 and K == 0:
+    print(0, 0, 1, 1)
 
-# まあBITだろう
-# 逆から置くBITではない？
-# 累積和？
-# 個数だけ求めればいい
+elif M >= 2 and K < 2 ** M:
+    ans = []
+    for n in range(2 ** M):
+        if n != K:
+            ans.append(n)
+    print(*ans, K, *ans[::-1], K)
 
-# 地点iからは
-# i - 1起点の単純増加列
-# LIS？
-ans = [0] * N
-L = []
-# 人0 ~ iまでがどのように見えるか これを人i + 1が見る
-for i in range(N - 1):
-    # もしLの一番小さいやつよりH[i]が大きければ
-    while L and L[-1] < H[i]:
-        L.pop()
-    L.append(H[i])
-    ans[i + 1] = len(L)
+else:
+    print(-1)
 
-for i in ans:
-    print(i)
-
-# ABC134 E - Sequence Decomposing
-N = getN()
-A = getArray(N)
-
-def lis(A):
-    L = deque([A[0]])
-    for a in A[1:]:
-        # Lのどの数より小さくければ
-        # 繋げられるものがない
-        if a <= L[0]:
-            L.appendleft(a)
-        else:
-            # L[bisect_left(L, a) - 1]
-            # Lの中のa未満の数字のうちの最大値
-            L[bisect_left(L, a) - 1] = a
-    return len(L)
-
-print(lis(A))
-
-N = 10
-A = [0, 6, 9, 9, 2, 3, 4, 5, 10, 3]
-
-ans = deque([A[0]])
-for i in range(1, N):
-    # ans[index] A[i]が挟みこめる場所
-    # A[0] <= A[i]なら0になる
-    # ans[index - 1]: A[i]未満で一番大きい数字
-    index = bisect_left(ans, A[i])
-    if index == 0:
-        ans.appendleft(A[i])
-    else:
-        # 同じ数が複数ある場合は一番最後の数字が更新される
-        ans[index - 1] = A[i]
-print(len(ans))
-
-# ABC165 F - LIS on Tree
-# 頂点1から頂点kまでの最短パス上
-# ルートはO(n)で求められる
-N = getN()
-A = getList()
-query = [getList() for i in range(N - 1)]
-
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-ignore = [0] * N
-ignore[0] = 1
-lis = [A[0]]
-rec = [0] * N
-rec[0] = 1
-
-# 行きがけ帰りがけの要領
-def dfs(u):
-    global lis
-    for i in dist[u]:
-        if ignore[i] != 1:
-            ignore[i] = 1
-            # 巻き戻し用
-            plus = 0 # true or false
-            change = (0, 0, 0) # true or false, 変更した場所、変更した数値
-
-            if A[i] > lis[-1]:
-                lis.append(A[i])
-                plus = 1
-            else:
-                index = bisect_left(lis, A[i])
-                change = (1, index, lis[index])
-                lis[index] = A[i]
-            rec[i] = len(lis)
-            dfs(i)
-            # 巻き戻す
-            if plus:
-                lis.pop()
-            else:
-                lis[change[1]] = change[2]
-
-dfs(0)
-for i in rec:
-    print(i)
-
-# ACLC1 A - Reachable Towns
-
-N = getN()
-Q = [getList() for i in range(N)]
-que = deepcopy(Q)
-que.sort(key = lambda i:i[1], reverse = True)
-que.sort()
-
-# xy座標が共に大きいもの
-# 順列になっている？
+# B - Median Pyramid Easy
 
 """
-O(n**2)
-U = UnionFind(N)
-for i in range(N):
-    for j in range(i + 1, N):
-        if que[i][1] < que[j][1]:
-            U.union(i, j)
-for i in range(N):
-    print(U.count(i))
+頂点にXを書き込む
+N段目の順列としてありうるものを示す
+・一番都合のいいものを出す
+・条件を緩和してみる
+・条件が小さい場合を考える
+Xがなければ
+2 ** (N - 2)を頂点に書けばいい これ以外不可能ってことはない？
+N = 4の場合
+   4
+  345
+ 23456
+1234567
+・実験
+def cnt(array):
+    alta = deepcopy(array)
+    while len(alta) > 1:
+        l = []
+        for i in range(1, len(alta) - 1):
+            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
+        alta = l
+    return alta[0]
+A = [1, 2, 3, 4, 5]
+for i in permutations(A):
+    print(i, cnt(i))
+X = 2, 3, 4なら可能
+同様に N = 4なら 2 ~ 6であれば可能
+X = 2の場合 最終的に上がってくるのは2, 2, 3
+1, 2がペアで存在する場合はX = 2になる？
+上にあげるには？
+上げたい数を真ん中で二つ並べることができたら（例:6 4 2 2 3)勝ち確
+真ん中に X + 2, X - 1, X, X + 1, X - 2を配置
+これを中央の値と入れ替える
 """
-#　ソート方法はこれでOK
-# やらなくていい探索がある　それを減らす
-# 4 3
-# 4 1
-# 4 2
-# 3 1
-# 3 2
-# 1 2 これだけいる
 
-# 4 3 1 2でi < jになるものをペアに
-# 1とペアにできるのは2, 3, 4
-# 2とペアにできるのは3, 4
-# 3は4
-# それぞれ右側にあれば
+def cnt(array):
+    alta = deepcopy(array)
+    while len(alta) > 1:
+        l = []
+        for i in range(1, len(alta) - 1):
+            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
+        alta = l
+    return alta[0]
 
-# 6 7 5 3 2 4 1
-# グループ１ 6 7
-# グループ2 5
-# グループ3 3 2 4
-# グループ4 1
-# どれか１つのグループに属する
+N, X = getNM()
+ma = 2 * N
+mid = ma // 2
+if X == 1 or X == ma - 1:
+    print('No')
+    exit()
+print('Yes')
 
-U = UnionFind(N + 1)
-group = []
+list = [i for i in range(ma - 1, 0, -1)]
+ans = [-1] * ma
 
-for x, y in que:
-    # １番目のものは必ずグループのリーダーになれる
-    if not group:
-        group.append(y)
-        continue
-    # リーダーが降順に並ぶように
-    if y < group[-1]:
-        group.append(y)
-        continue
-    opt = float('inf')
-    # グループ再編成
-    while group:
-        # yより小さいものは全てyが所属するグループに入る
-        if y > group[-1]:
-            l = group.pop()
-            U.union(l, y)
-            opt = min(opt, l) # yが所属するグループの中のリーダー　一番最初のものが記録される
+if (ma - 1) - X > 1 and mid - 2 > 0: # X + 2を入れ替える
+    ans[mid - 2] = list.pop(list.index(X + 2))
+if X - 2 > 0 and (ma - 1) - mid > 1: # X - 2を入れ替える
+    ans[mid + 2] = list.pop(list.index(X - 2))
+
+ans[mid - 1] = list.pop(list.index(X - 1))
+ans[mid + 1] = list.pop(list.index(X + 1))
+ans[mid] = list.pop(list.index(X))
+
+for i in range(1, ma):
+    if ans[i] == -1:
+        ans[i] = list.pop()
+
+for i in ans[1:]:
+    print(i)
+
+# ARC013 E - Tr/ee
+
+"""
+頂点がN個、辺がN - 1本あります
+1110
+任意の辺を一つ取り除くとサイズ1の連結成分が作れる
+任意の辺を一つ取り除くとサイズ2の連結成分が作れる
+任意の辺を一つ取り除くとサイズ3の連結成分が作れる
+どの辺を一つ取り除いてもサイズ4の連結成分は作れない
+サイズ1の連結成分が作れること、サイズnの連結成分は作れないことは自明
+サイズiの連結成分が作れるなら、サイズn - iの連結成分が作れる
+単純な木構造から考えよう
+・パスグラフ
+・スターグラフ
+・パスグラフ
+1(1がN - 1個) + 0になる
+・スターグラフ
+10...010になる
+他のものは作れないか
+連結成分iのものが作れる条件、作れない条件
+作れない条件が知りたい　単体であれば必ず作れる
+（連結成分iが作れ、jが作れない）が成り立たない場合がある？
+部分木から考えていく
+大きさ2のパスグラフは11
+これをrootにつけると 110になる
+大きさ3のスターグラフは101
+これをrootにつけると1010になる
+大きさnのグラフにパス状に/スター状に繋げていくと
+1 - 2のグラフに
+パス状に3を繋げると 110
+スター状に繋げると 110 ここまでは同じ
+1 - 2 - 3のグラフに
+パス状に繋げると 1110
+スター状に繋げると 1010
+パスグラフに辺を加えて連結成分jが作れないようにしよう
+11010110は作れるか
+一方をパスグラフに、一方をスターグラフにする?
+1 - 2の状態でスタート
+もしS[i] = 1なら親要素にi + 2をつけ、それを親要素にする
+もしS[i] = 0なら現在の親要素につける
+"""
+
+S = input()
+N = len(S)
+# この条件を満たしていると木を作ることができる
+if S[N - 1] == "1" or S[N - 2] == "0" or S[0] == "0":
+    print(-1)
+else:
+    for i in range(N - 1):
+        if S[i] != S[N - i - 2]:
+            print(-1)
+            exit()
+    ans = []
+    parent = 1 # 現在のparent
+    for i in range(N - 1):
+        if S[i] == "1":
+            # パスグラフ状
+            ans.append([parent, i + 2])
+            parent = i + 2 # parent変更
         else:
-            break
-    # リーダー変更
-    group.append(opt)
-
-for i in range(N):
-    print(U.count(Q[i][1])) # yがiのもののサイズの大きさ　uf.funcはインデックスで呼ばなくてもいい
-
+            # スターグラフ状
+            ans.append([parent, i + 2])
+    for i in ans:
+        print(i[0], i[1])
+        
 # ARC091 E - LISDL
 
 """
@@ -253,6 +218,7 @@ for i in range(N):
 最長減少部分列の長さはB
 使える数字は1 ~ N
 一番都合のいいものを探す
+構築問題は場合分けしてそれぞれの場合の最も都合がいいものをとる
 A + B > N + 1ならダメっぽい
 A + B = Nの場合
 2 3 5 + 5 4
