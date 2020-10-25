@@ -49,355 +49,316 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+# ABC006 D - トランプ挿入ソート
+n = getN()
+lista = [getList() for i in range(n)]
 
-# NOMURA プログラミングコンテスト 2020 C - Folia
-"""
-N = 3
-A = [0, 1, 1, 2]の場合
-葉の数を求める
-まず完全二分木から考える
-ここから取り除く
-深さ3の葉は4つある
-深さ4の葉は8つある
-深さnの葉は2 ** (n - 1)つある
-深さ3の葉は4つある完全二分木について
-A = [0, 0, 0, 4]
-深さ3の葉を一つ刈ると
-A = [0, 0, 0, 3]
-二つ刈ってみる　この時、１つ目と同じ親のを刈ると
-A = [0, 0, 1, 2]
-違うのを刈ると
-A = [0, 0, 0, 2]
-根となる頂点を１つ作る
-A[0] = 1ならその頂点は葉（下に頂点を繋げない)
-A[0] = 0ならその頂点は生きる
-頂点の最大値を求めるなら
-なるべく大きく分岐させた方がいい
-エッジ貼らなくても頂点数求めるだけでいい
-A[i]を探索するたびに ans += する
-現在用意している仮の頂点数を保持しておく
-確定させた頂点数も抑えておく
-A = [0, 0, 1, 0, 2]を逆から見ると
-psuedo = [1, 2, 4, 8, 16]
-psuedoのそれぞれとA[4]どちらか小さい方をpsuedoから引く
-psuedo = [0, 0, 2, 6, 14]
-left[0] ~ left[i]のそれぞれでA[i]を引けるだけ引く
-順に見ると
-psuedo = []
-left = [] # ansに加える値
-A[0] = 0
-psuedo = [1]
-left = [1]
-A[1] = 0
-psuedo = [1, 2]
-left = [1, 2]
-A[2] = 1
-psuedo = [1, 2, 3]
-left = [0, 1, 3]
-A[3] = 0
-psuedo = [1, 2, 3, 6]
-left = [0, 1, 3, 6]
-A[4] = 2
-psuedo = [1, 2, 3, 6, 10]
-left = [0, 0, 1, 4, 10]
-葉にならない点の上限を考える
-"""
+# 最長増加部分列問題 (LIS)の問題
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        if a > L[-1]:
+            L.append(a)
+        # このelseに引っかかった時にトランプのソートが必要
+        else:
+            L[bisect_left(L, a)] = a
+    return len(L)
+print(n - lis(lista))
 
-# 根から探索するか
-# 葉から探索するか
+# Donutsプロコンチャレンジ2015 C - 行列のできるドーナツ屋
+# LISの応用
 
-# 私は根から
-# 総和には累積和が効く
+N = getN()
+H = getList()
+
+# まあBITだろう
+# 逆から置くBITではない？
+# 累積和？
+# 個数だけ求めればいい
+
+# 地点iからは
+# i - 1起点の単純増加列
+# LIS？
+ans = [0] * N
+L = []
+# 人0 ~ iまでがどのように見えるか これを人i + 1が見る
+for i in range(N - 1):
+    # もしLの一番小さいやつよりH[i]が大きければ
+    while L and L[-1] < H[i]:
+        L.pop()
+    L.append(H[i])
+    ans[i + 1] = len(L)
+
+for i in ans:
+    print(i)
+
+# ABC134 E - Sequence Decomposing
+N = getN()
+A = getArray(N)
+
+def lis(A):
+    L = deque([A[0]])
+    for a in A[1:]:
+        # Lのどの数より小さくければ
+        # 繋げられるものがない
+        if a <= L[0]:
+            L.appendleft(a)
+        else:
+            # L[bisect_left(L, a) - 1]
+            # Lの中のa未満の数字のうちの最大値
+            L[bisect_left(L, a) - 1] = a
+    return len(L)
+
+print(lis(A))
+
+N = 10
+A = [0, 6, 9, 9, 2, 3, 4, 5, 10, 3]
+
+ans = deque([A[0]])
+for i in range(1, N):
+    # ans[index] A[i]が挟みこめる場所
+    # A[0] <= A[i]なら0になる
+    # ans[index - 1]: A[i]未満で一番大きい数字
+    index = bisect_left(ans, A[i])
+    if index == 0:
+        ans.appendleft(A[i])
+    else:
+        # 同じ数が複数ある場合は一番最後の数字が更新される
+        ans[index - 1] = A[i]
+print(len(ans))
+
+# ABC165 F - LIS on Tree
+# 頂点1から頂点kまでの最短パス上
+# ルートはO(n)で求められる
 N = getN()
 A = getList()
-
-# 深さ0の二分木の場合
-if N == 0:
-    if A[0] == 1:
-        print(1)
-    else:
-        print(-1)
-    exit()
-
-if A[0] == 0:
-    psuedo = [1]
-    left = [1] # 確定させる用
-else:
-    psuedo = [0]
-    left = [0]
-
-alta = deepcopy(A)
-for i in range(N - 1, -1, -1):
-    alta[i] += alta[i + 1]
-ma = max(alta)
-
-# i + 1番目について調べる
-for i in range(1, N + 1):
-    opt = min(psuedo[-1] * 2, ma) # stop指数爆発 今回max(alta)以上の数字は必要ない
-    psuedo.append(opt)
-    left.append(opt)
-    if psuedo[-1] - A[i] < 0:
-        print(-1)
-        exit()
-    psuedo[-1] -= A[i]
-    # 確定させていく
-    """
-    明らか追いつかないので累積する
-    for j in range(i, -1, -1):
-        if dete[j] == 0:
-            break
-        add = min(dete[j], A[i])
-        ans += add
-        dete[j] -= add
-    """
-
-ans = 0
-
-for i in range(N + 1):
-    ans += min(left[i], alta[i])
-print(ans)
-
-# ARC011 ダブレット
-# つまり最短経路問題
-s1, s2 = input().split(' ')
-N = getN()
-S = set()
-
-S.add(s1)
-S.add(s2)
-
-for i in range(N):
-    S.add(input())
-
-if s1 == s2:
-    print(0)
-    print(s1)
-    print(s2)
-    exit()
-
-S = list(S)
-N = len(S)
-
-# 2つにエッジを貼れるか
-def judge(s1, s2):
-    cnt = 0
-    n = len(s1)
-    for i in range(n):
-        if s1[i] != s2[i]:
-            cnt += 1
-    if cnt <= 1:
-        return True
-    else:
-        return False
+query = [getList() for i in range(N - 1)]
 
 dist = [[] for i in range(N)]
-d = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    for j in range(i + 1, N):
-        if judge(S[i], S[j]):
-            dist[i].append(j)
-            dist[j].append(i)
-            d[i][j] = 1
-            d[j][i] = 1
-
-sta = 0
-end = 0
-for i in range(N):
-    if S[i] == s1:
-        sta = i
-        break
-for i in range(N):
-    if S[i] == s2:
-        end = i
-        break
-
-# ダイクストラする
-def dij(start, edges):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-
-    # pqの先頭がgoal行きのものなら最短距離を返す
-    while len(pq) > 0:
-        di, now = heapq.heappop(pq)
-        if (di > dist[now]):
-            continue
-        for i in edges[now]:
-            if dist[i] > dist[now] + d[i][now]:
-                dist[i] = dist[now] + d[i][now]
-                heapq.heappush(pq, (dist[i], i))
-    return dist
-
-distance = dij(sta, dist)
-if distance[end] == float('inf'):
-    print(-1)
-    exit()
-
-# 最短経路を示す矢印を求める
-# ダイクストラと同じ要領で
-def router(n, sta):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    ignore[sta] = 0
-    path[sta] = -1
-
-    while pos:
-        u = pos.popleft()
-
-        for i in dist[u]:
-            if ignore[i] != 1 and distance[i] == ignore[u] + d[i][u]:
-                path[i] = u
-                ignore[i] = ignore[u] + d[i][u]
-                pos.append(i)
-
-    return path
-
-path = router(N, sta)
-ans = [S[end]]
-now = end
-while True:
-    now = path[now]
-    ans.append(S[now])
-    if now == sta:
-        break
-
-print(len(ans) - 2)
-for i in range(len(ans)):
-    print(ans[-i - 1])
-
-# AGC014 B - Unplanned Queries
-
-"""
-どこかの点を基準とする
-・どの辺を見ても書かれている数が偶数になった
-性質を満たす木が存在するか
-
-色々な木で考えてみよう
-最終的に最適な木の構造がわかる？
-
-頂点xを基準に見ると
-x - 1 - 2の木の場合 [1, 2]のクエリは
-x - 1 ① 2 xを経由すると
-x ② 1 ① 2
-他の辺の偶奇を変えずに1 - 2間だけ数字を加算することができた
-
-最も単純なスターグラフを考えると、x - i間の辺の数字 = クエリに何回iが出たか
-適当な頂点を根として、根付き木にする。この根を r とする。
-
-・クエリ(p, a) + (p, b)とクエリ(a, b)は同じ
-まず、クエリ (a, b) を考えたとき、これ を (r, a), (r, b) と分解することができる。
-これは、(a, b) の LCA を p としたとき、クエリ (a, b) ではパス a − p, b − p に +1 しており、
-クエリ (r, a), (r, b) ではパス a − p, b − p に +1、パス r − p に +2 するため、
-mod 2 で考えると同一視できるので明らかである。
-
-基準点をrとすると、クエリ全体では (r, i (i = 1 ~ N))を繰り返すことと同値である
-(r, v(vはrから一番深い点))のクエリを偶数回行う時、途中の辺についても偶数回加算されている
-"""
-
-N, M = getNM()
-list = [0] * (N + 1)
-for i in range(M):
-    a, b = getNM()
-    list[a] += 1
-    list[b] += 1
-
-for i in range(1, N + 1):
-    if list[i] % 2 != 0:
-        print('NO')
-        exit()
-print('YES')
-
-# AGC013 B - Hamiltonish Path
-
-"""
-木構造ではない
-N頂点にM辺
-・２個以上の頂点を通る
-・同じ頂点を通らない
-・パスの少なくとも一方の端点と直接辺で結ばれている頂点は、必ずパスに含まれる
-いくつかあるうちの一つ答えよ
-
-端点と端点をつなぐと輪になる
-端点の頂点数は2でないといけないのでは　そんなことはない
-端点の候補はどんなものがあるか
-
-端点の１つ目はなんでもいいのか
-グリッドグラフを考えた場合に中央の点を指定してもうまく条件を満たすのでいけそう
-ただし、子要素に葉があればだめ
-
-端点に葉が2つあれば余裕
-
-端点を一つ選ぶ　→
-隣接する辺を全て通るパスを考える　
-7 8
-1 2
-2 3
-3 4
-4 5
-5 6
-6 7
-3 5
-2 6　の時
-もし2 6のパスがなければ3を端点にできない
-パスグラフを考えると
-パスグラフの端っこ２つを端点にしないと作れない
-
-大元となるパスグラフを見つける
-寄り道しないといけない場合であってもすぐ戻ってこれるような
-端点を一つ決める
-端点を2にしてもう片方の端点を考える時、1が邪魔
-端点を2から1にずらせれば楽
-
-適当な点１つを選んでそこから端点1に行くパス、端点2に行くパスを書いていく
-
-これ完全グラフだとTLEするんじゃ？
-今回Mの数が小さい
-作れる最大の完全グラフはN = 400 (N(N + 1) // 2 = 80000ぐらい)なのでOK
-"""
-
-N, M = getNM()
-dist = [[] for i in range(N)]
-for i in range(M):
-    a, b = getNM()
+for i in range(N - 1):
+    a, b = query[i]
     dist[a - 1].append(b - 1)
     dist[b - 1].append(a - 1)
 
-parent = [-1] * N
 ignore = [0] * N
 ignore[0] = 1
-dot1 = 0
-dot1_flag = True
-dot2 = 0
-dot2_flag = True
+lis = [A[0]]
+rec = [0] * N
+rec[0] = 1
 
-# 端点が見つかる（行き止まりになる）まで探索
-while dot1_flag or dot2_flag:
-    dot1_flag = False
-    for i in dist[dot1]:
-        if ignore[i] == 0:
+# 行きがけ帰りがけの要領
+def dfs(u):
+    global lis
+    for i in dist[u]:
+        if ignore[i] != 1:
             ignore[i] = 1
-            parent[dot1] = i
-            dot1 = i
-            dot1_flag = True
+            # 巻き戻し用
+            plus = 0 # true or false
+            change = (0, 0, 0) # true or false, 変更した場所、変更した数値
+
+            if A[i] > lis[-1]:
+                lis.append(A[i])
+                plus = 1
+            else:
+                index = bisect_left(lis, A[i])
+                change = (1, index, lis[index])
+                lis[index] = A[i]
+            rec[i] = len(lis)
+            dfs(i)
+            # 巻き戻す
+            if plus:
+                lis.pop()
+            else:
+                lis[change[1]] = change[2]
+
+dfs(0)
+for i in rec:
+    print(i)
+
+# ACLC1 A - Reachable Towns
+
+N = getN()
+Q = [getList() for i in range(N)]
+que = deepcopy(Q)
+que.sort(key = lambda i:i[1], reverse = True)
+que.sort()
+
+# xy座標が共に大きいもの
+# 順列になっている？
+
+"""
+O(n**2)
+U = UnionFind(N)
+for i in range(N):
+    for j in range(i + 1, N):
+        if que[i][1] < que[j][1]:
+            U.union(i, j)
+for i in range(N):
+    print(U.count(i))
+"""
+#　ソート方法はこれでOK
+# やらなくていい探索がある　それを減らす
+# 4 3
+# 4 1
+# 4 2
+# 3 1
+# 3 2
+# 1 2 これだけいる
+
+# 4 3 1 2でi < jになるものをペアに
+# 1とペアにできるのは2, 3, 4
+# 2とペアにできるのは3, 4
+# 3は4
+# それぞれ右側にあれば
+
+# 6 7 5 3 2 4 1
+# グループ１ 6 7
+# グループ2 5
+# グループ3 3 2 4
+# グループ4 1
+# どれか１つのグループに属する
+
+U = UnionFind(N + 1)
+group = []
+
+for x, y in que:
+    # １番目のものは必ずグループのリーダーになれる
+    if not group:
+        group.append(y)
+        continue
+    # リーダーが降順に並ぶように
+    if y < group[-1]:
+        group.append(y)
+        continue
+    opt = float('inf')
+    # グループ再編成
+    while group:
+        # yより小さいものは全てyが所属するグループに入る
+        if y > group[-1]:
+            l = group.pop()
+            U.union(l, y)
+            opt = min(opt, l) # yが所属するグループの中のリーダー　一番最初のものが記録される
+        else:
             break
+    # リーダー変更
+    group.append(opt)
 
-    dot2_flag = False
-    for i in dist[dot2]:
-        if ignore[i] == 0:
-            ignore[i] = 1
-            parent[i] = dot2
-            dot2 = i
-            dot2_flag = True
-            break
+for i in range(N):
+    print(U.count(Q[i][1])) # yがiのもののサイズの大きさ　uf.funcはインデックスで呼ばなくてもいい
 
-ans = [dot2 + 1]
-now = dot2
-while now != dot1:
-    now = parent[now]
-    ans.append(now + 1)
+# ARC091 E - LISDL
 
-ans = list(reversed(ans))
+"""
+最長増加部分列の長さはA　
+最長減少部分列の長さはB
+使える数字は1 ~ N
+一番都合のいいものを探す
+A + B > N + 1ならダメっぽい
+A + B = Nの場合
+2 3 5 + 5 4
+2 3 1 5 4
+1を適当な所に置けば良い
+A + B = N + 1の場合は簡単
+N = 5
+A, B = 3, 3
+3 4 5 + 5 2 1
+3 4 5 2 1
 
-print(len(ans))
+A + B < N の場合
+いらないものを適当に置けば
+いいのでは？
+N = 5
+A, B = 2, 2 は無理 A + B <= 4は無理
+2 3 + 3 1 (4, 5はいらない)
+2 3 1 + 4 5
+
+(5, 6, 3, 1, 4, 2)
+4 5 6 1 2 3
+
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        if a > L[-1]:
+            L.append(a)
+        # このelseに引っかかった時にトランプのソートが必要
+        else:
+            L[bisect_left(L, a)] = a
+    return len(L)
+
+for i in permutations([1, 2, 3, 4, 5, 6, 7]):
+    if lis(i) + lis(list(reversed(i))) <= 5:
+        print(lis(i), lis(list(reversed(i))), i)
+
+相方を2にした場合の下限は(N + 1) // 2 ?
+5なら3 2
+6なら3 2
+7なら4 2
+8なら4 2
+3 4 5 + 5 2
+3 4 5 1 2
+4 5 6 + 6 3
+4 5 6 1 2 3
+4 5 6 7 + 6 3
+4 5 6 7 1 2 3
+細かく区切ればもっといける
+N = 16なら
+[13 14 15 16] [9 10 11 12] [5 6 7 8] [1 2 3 4]
+A = 4, B = 4
+A * B >= Nであれば作れる
+
+LISはグループで分割しよう！！！
+"""
+
+N, A, B = getNM()
+
+# mainの長さが半分より下ならout
+if A * B < N or N + 1 < A + B:
+    print(-1)
+    exit()
+
+if A == 1:
+    if B == N:
+        print(*[i for i in range(N, 0, -1)])
+    else:
+        print(-1)
+    exit()
+
+if B == 1:
+    if A == N:
+        print(*[i for i in range(1, N + 1)])
+    else:
+        print(-1)
+    exit()
+
+# グループ内の要素の数がA,グループの数がB
+res1 = [i + 1 for i in range(N - A, N)]
+res2 = []
+L = [i + 1 for i in range(N - A - 1, -1, -1)] # 残りN - A個
+
+# 残りN - A個をB - 1個で分割する
+ind = (N - A) // (B - 1)
+for i in range(B - 1):
+    opt = []
+    for j in range(ind + (i < (N - A) % (B - 1))):
+        u = L.pop()
+        opt.append(u)
+    res2.append(opt)
+
+res2 = list(reversed(res2))
+
+ans = res1
+for i in range(B - 1):
+    ans += res2[i]
+
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        if a > L[-1]:
+            L.append(a)
+        # このelseに引っかかった時にトランプのソートが必要
+        else:
+            L[bisect_left(L, a)] = a
+    return len(L)
+
+# print(lis(ans), lis(list(reversed(ans))))
 print(*ans)
