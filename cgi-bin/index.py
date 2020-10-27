@@ -49,101 +49,175 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC027 C - 倍々ゲーム
-# ２人が最善を尽くす時、どちらが勝つか
-# パターン1:ある状態になるように収束させれば必ず勝つ
-# パターン2:ある場所を目指せば必ず勝つようになる
-# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
+# ABC007 幅優先探索
+r, c = map(int, input().split())
+sy, sx = map(int, input().split())
+gx, gy = map(int, input().split())
+sy -= 1
+sx -= 1
+gx -= 1
+gy -= 1
 
-# まずは全通り試してみる　その中で勝ちが偏っている部分がある
-N = getN()
-k = N
-depth = 0
-while k > 1:
-    k //= 2
-    depth += 1
-x = 1
-cnt = 1
-if depth % 2:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-        else:
-            x *= 2
-            x += 1
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
-else:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-            x += 1
-        else:
-            x *= 2
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
+maze = []
+ans = float('inf')
 
-# ABC048 D - An Ordinary Game
-# 最終的にどのような形で終わるか
-S = input()
-if (S[0] != S[-1]) ^ (len(S) % 2):
-    print('Second')
-else:
-    print('First')
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
-# ABC059 D - Alice&Brown
-# まずは全通り試してみる
+pos = deque([[sx, sy, 0]])
+dp = [[-1] * (c + 1) for i in range(r + 1)]
+dp[sx][sy] = 0
 
-# 最終形をイメージする →
-# 1 0 操作出来ない　終わり
-# 1 1 操作出来ない　終わり
-# 逆に2 0 や 3 0 なら操作できる
-# 2以上開く、０か１開くを繰り返す
-X, Y = getNM()
-X = int(X)
-Y = int(Y)
+for i in range(r):
+    c = input()
+    maze.append(list(c))
 
-if (X - Y) ** 2 > 1:
-    print("Alice")
-else:
-    print("Brown")
+while len(pos) > 0:
+    x, y, depth = pos.popleft()
+    if x == gx and y == gy:
+        break
+    maze[x][y] = '#'
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if maze[nx][ny] == "." and dp[nx][ny] == -1:
+            pos.append([nx, ny, depth + 1])
+            dp[nx][ny] = dp[x][y] + 1
+print(dp[gx][gy])
 
-# 全国統一プログラミング王 予選　C - Different Strokes
+# ABC176 D - Wizard in Maze
+H, W = getNM()
+Ch, Cw = getNM()
+Dh, Dw = getNM()
+maze = [input() for i in range(H)]
+Ch -= 1
+Cw -= 1
+Dh -= 1
+Dw -= 1
+
+# ワープを最低で何回使うか
+# 上下左右2つ向こうまでの範囲内でワープできる
+# 隣接する'.'が領域
+
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
+
+pos = deque([[Ch, Cw]])
+dp = [[-1] * W for i in range(H)]
+dp[Ch][Cw] = 0
+
+while len(pos) > 0:
+    y, x = pos.popleft()
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        # 歩いて移動
+        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] == "." and (dp[ny][nx] == -1 or dp[y][x] < dp[ny][nx]):
+            # 0-1 bfs
+            # 先頭に置く
+            pos.appendleft([ny, nx])
+            dp[ny][nx] = dp[y][x]
+    # ワープ
+    for i in range(-2, 3):
+        for j in range(-2, 3):
+            wy = y + i
+            wx = x + j
+            # 歩いて移動不可能でないと使わない
+            if 0 <= wx < W and 0 <= wy < H and maze[wy][wx] == "." and dp[wy][wx] == -1:
+                pos.append([wy, wx])
+                dp[wy][wx] = dp[y][x] + 1
+
+print(dp[Dh][Dw])
+
+# AGC033 A - Darker and Darker
 
 """
-一つの数字を最大化できないか
-結局青木さんの点数は高橋くんが選ばなかったもののBの総和になる
-つまり高橋くんがi個目を選ぶとAi獲得するだけでなくBi特することになる
-逆に青木さんがj個目を選ぶとBi獲得するだけでなくAi高橋くんを損させられる
-高橋くん、青木さんはAi + Biが大きい順に取っていく
+一番近い#までの距離
+100万マスあるので一回の探索で済むように
+黒マスの周囲４マスを探索
+用が済めばポイ　同じマスについて探索する必要はない
+これで計算量は4 * H * W
 """
 
-N = getN()
-dish = []
-for i in range(N):
-    a, b = getNM()
-    dish.append([a, b, a + b])
+H, W = getNM()
+maze = [list(input()) for i in range(H)]
+prev = []
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == '#':
+            prev.append((i, j))
 
-dish.sort(key = lambda i:i[2])
+dx = [0, 1, 0, -1]
+dy = [1, 0, -1, 0]
 
+flag = True
 ans = 0
-while True:
-    if dish: # 高橋くん
-        a, b, total = dish.pop()
-        ans += a
-    else:
-        break
-
-    if dish: # 青木さん
-        a, b, total = dish.pop()
-        ans -= b
-    else:
-        break
+while flag:
+    flag = False
+    next = []
+    while prev:
+        y, x = prev.pop()
+        for i in range(4):
+            ny = y + dy[i]
+            nx = x + dx[i]
+            if 0 <= ny < H and 0 <= nx < W and maze[ny][nx] == '.':
+                flag = True
+                maze[ny][nx] = '#'
+                next.append((ny, nx))
+    prev = next
+    if flag:
+        ans += 1
 
 print(ans)
+
+# AGC043 A - Range Flip Find Route
+
+"""
+白いとこだけ踏んでゴールを目指す
+スタートやゴールが黒いこともある
+
+操作をすると選択した長方形空間内の白黒が反転する
+最小で何回操作するか
+効率の良い操作方法を考える
+
+黒い部分を白くすることだけを考える？
+白だけ踏んでいけるとは？
+二回反転させれば元どおり
+
+白から黒に、黒から白に侵入するときだけ += 1する？
+"""
+
+H, W = getNM()
+maze = [list(input()) for i in range(H)]
+dp = [[float('inf')] * W for i in range(H)]
+dp[0][0] = 0
+if maze[0][0] == "#":
+    dp[0][0] = 1
+
+dy = [0, 1]
+dx = [1, 0]
+
+pos = deque([[0, 0]])
+
+# 0 - 1bfs?
+while pos:
+    y, x = pos.popleft()
+    for i in range(2):
+        ny = y + dy[i]
+        nx = x + dx[i]
+        if 0 <= ny < H and 0 <= nx < W: # 領域内
+            # 同じ色の場合
+            if maze[y][x] == maze[ny][nx] and dp[ny][nx] > dp[y][x]:
+                pos.appendleft([ny, nx])
+                dp[ny][nx] = dp[y][x]
+            # 違う色の場合
+            if maze[y][x] != maze[ny][nx]:
+                # 入るときだけでいい
+                if maze[y][x] == "." and dp[ny][nx] > dp[y][x] + 1:
+                    pos.append([ny, nx])
+                    dp[ny][nx] = dp[y][x] + 1
+                elif maze[y][x] == "#" and dp[ny][nx] > dp[y][x]:
+                    pos.appendleft([ny, nx])
+                    dp[ny][nx] = dp[y][x]
+
+print(dp[H - 1][W - 1])
