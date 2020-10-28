@@ -49,140 +49,439 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# https://qiita.com/Morifolium/items/6c8f0a188af2f9620db2
-N = 8
-
-ab = [
-[1, 6],
-[2, 5],
-[3, 1],
-[3, 2],
-[4, 1],
-[4, 6],
-[5, 1],
-[6, 7],
-[7, 8]
-]
+# NOMURA プログラミングコンテスト 2020 C - Folia
 """
-for _ in range(N + M - 1):
-    ab.append(tuple(map(int, input().split())))
+N = 3
+A = [0, 1, 1, 2]の場合
+葉の数を求める
+まず完全二分木から考える
+ここから取り除く
+深さ3の葉は4つある
+深さ4の葉は8つある
+深さnの葉は2 ** (n - 1)つある
+深さ3の葉は4つある完全二分木について
+A = [0, 0, 0, 4]
+深さ3の葉を一つ刈ると
+A = [0, 0, 0, 3]
+二つ刈ってみる　この時、１つ目と同じ親のを刈ると
+A = [0, 0, 1, 2]
+違うのを刈ると
+A = [0, 0, 0, 2]
+根となる頂点を１つ作る
+A[0] = 1ならその頂点は葉（下に頂点を繋げない)
+A[0] = 0ならその頂点は生きる
+頂点の最大値を求めるなら
+なるべく大きく分岐させた方がいい
+エッジ貼らなくても頂点数求めるだけでいい
+A[i]を探索するたびに ans += する
+現在用意している仮の頂点数を保持しておく
+確定させた頂点数も抑えておく
+A = [0, 0, 1, 0, 2]を逆から見ると
+psuedo = [1, 2, 4, 8, 16]
+psuedoのそれぞれとA[4]どちらか小さい方をpsuedoから引く
+psuedo = [0, 0, 2, 6, 14]
+left[0] ~ left[i]のそれぞれでA[i]を引けるだけ引く
+順に見ると
+psuedo = []
+left = [] # ansに加える値
+A[0] = 0
+psuedo = [1]
+left = [1]
+A[1] = 0
+psuedo = [1, 2]
+left = [1, 2]
+A[2] = 1
+psuedo = [1, 2, 3]
+left = [0, 1, 3]
+A[3] = 0
+psuedo = [1, 2, 3, 6]
+left = [0, 1, 3, 6]
+A[4] = 2
+psuedo = [1, 2, 3, 6, 10]
+left = [0, 0, 1, 4, 10]
+葉にならない点の上限を考える
 """
 
-def topological(n, dist):
-    in_cnt = defaultdict(int)
-    outs = defaultdict(list)
+# 根から探索するか
+# 葉から探索するか
 
-    for a, b in ab:
-        in_cnt[b - 1] += 1
-        outs[a - 1].append(b - 1)
+# 私は根から
+# 総和には累積和が効く
+N = getN()
+A = getList()
 
-    res = []
-    queue = deque([i for i in range(n) if in_cnt[i] == 0])
+# 深さ0の二分木の場合
+if N == 0:
+    if A[0] == 1:
+        print(1)
+    else:
+        print(-1)
+    exit()
 
-    while len(queue) != 0:
-        v = queue.popleft()
-        res.append(v)
-        for v2 in outs[v]:
-            in_cnt[v2] -= 1
-            if in_cnt[v2] == 0:
-                queue.append(v2)
+if A[0] == 0:
+    psuedo = [1]
+    left = [1] # 確定させる用
+else:
+    psuedo = [0]
+    left = [0]
 
-    return res
+alta = deepcopy(A)
+for i in range(N - 1, -1, -1):
+    alta[i] += alta[i + 1]
+ma = max(alta)
 
-# [2, 3, 1, 4, 0, 5, 6, 7]
-# queryに閉路ができる道を追加するとバグってlen = 8未満の配列を返す
-print(topological(N, ab))
+# i + 1番目について調べる
+for i in range(1, N + 1):
+    opt = min(psuedo[-1] * 2, ma) # stop指数爆発 今回max(alta)以上の数字は必要ない
+    psuedo.append(opt)
+    left.append(opt)
+    if psuedo[-1] - A[i] < 0:
+        print(-1)
+        exit()
+    psuedo[-1] -= A[i]
+    # 確定させていく
+    """
+    明らか追いつかないので累積する
+    for j in range(i, -1, -1):
+        if dete[j] == 0:
+            break
+        add = min(dete[j], A[i])
+        ans += add
+        dete[j] -= add
+    """
 
-# ABC041 D - 徒競走
-# トポロジカルソートの種類の数
-N, M = 3, 2
-query = [
-[2, 1],
-[2, 3]
-]
+ans = 0
 
-X = [0] * N
-for i in range(M):
-    x, y = query[i]
-    # xにある矢印を集計
-    X[x - 1] |= 1 << (y - 1)
+for i in range(N + 1):
+    ans += min(left[i], alta[i])
+print(ans)
 
-DP = [0] * (1 << N)
-DP[0] = 1
+# ARC011 ダブレット
+# つまり最短経路問題
+s1, s2 = input().split(' ')
+N = getN()
+S = set()
 
-# jの左に置くものとしてどのような組み合わせがあるか
-for bit in range(1, 1 << N):
-    for j in range(N):
-        # j番目が含まれる場合において
-        if bit & (1 << j):
-            if not (X[j] & (bit ^ (1 << j))):
-                # 上のbitまで運送してってdp[-1]で集計
-                DP[bit] += DP[bit ^ (1 << j)]
-print(DP)
+S.add(s1)
+S.add(s2)
 
-# 全国統一プログラミング王決定戦予選 D - Restore the Tree
+for i in range(N):
+    S.add(input())
+
+if s1 == s2:
+    print(0)
+    print(s1)
+    print(s2)
+    exit()
+
+S = list(S)
+N = len(S)
+
+# 2つにエッジを貼れるか
+def judge(s1, s2):
+    cnt = 0
+    n = len(s1)
+    for i in range(n):
+        if s1[i] != s2[i]:
+            cnt += 1
+    if cnt <= 1:
+        return True
+    else:
+        return False
+
+dist = [[] for i in range(N)]
+d = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    for j in range(i + 1, N):
+        if judge(S[i], S[j]):
+            dist[i].append(j)
+            dist[j].append(i)
+            d[i][j] = 1
+            d[j][i] = 1
+
+sta = 0
+end = 0
+for i in range(N):
+    if S[i] == s1:
+        sta = i
+        break
+for i in range(N):
+    if S[i] == s2:
+        end = i
+        break
+
+# ダイクストラする
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        di, now = heapq.heappop(pq)
+        if (di > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i] > dist[now] + d[i][now]:
+                dist[i] = dist[now] + d[i][now]
+                heapq.heappush(pq, (dist[i], i))
+    return dist
+
+distance = dij(sta, dist)
+if distance[end] == float('inf'):
+    print(-1)
+    exit()
+
+# 最短経路を示す矢印を求める
+# ダイクストラと同じ要領で
+def router(n, sta):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    ignore[sta] = 0
+    path[sta] = -1
+
+    while pos:
+        u = pos.popleft()
+
+        for i in dist[u]:
+            if ignore[i] != 1 and distance[i] == ignore[u] + d[i][u]:
+                path[i] = u
+                ignore[i] = ignore[u] + d[i][u]
+                pos.append(i)
+
+    return path
+
+path = router(N, sta)
+ans = [S[end]]
+now = end
+while True:
+    now = path[now]
+    ans.append(S[now])
+    if now == sta:
+        break
+
+print(len(ans) - 2)
+for i in range(len(ans)):
+    print(ans[-i - 1])
+
+# AGC014 B - Unplanned Queries
 
 """
-元のN頂点N - 1辺の根付き有向辺グラフ + 新たにM本の有向辺
-元の木は一意に定まることが示せる。
-
-邪魔なM本を消せ
-木にするためには
-ループを消す
-B側に根以外の各頂点がN - 1個あるようにすればいい
-他には？
-適当に辺を選んでいくが、最終的に連結である必要がある
-
-6 3
-2 1
-2 3
-4 1
-4 2
-6 1
-2 6
-4 6
-6 5の場合
-
-1: [2, 1], [4, 1], [6, 1]
-2: [4, 2]
-3: [6, 3]
-4: [] 親になるものがすぐわかることもある
-5: [6, 5]
-6: [2, 6], [4, 6]
-
-切り離しても連結のママのものは？
-MのA,Bについて、Bは元の根付き木に置けるAの子孫である
-親方向へは伸びない
-なのでトポソする
+どこかの点を基準とする
+・どの辺を見ても書かれている数が偶数になった
+性質を満たす木が存在するか
+色々な木で考えてみよう
+最終的に最適な木の構造がわかる？
+頂点xを基準に見ると
+x - 1 - 2の木の場合 [1, 2]のクエリは
+x - 1 ① 2 xを経由すると
+x ② 1 ① 2
+他の辺の偶奇を変えずに1 - 2間だけ数字を加算することができた
+最も単純なスターグラフを考えると、x - i間の辺の数字 = クエリに何回iが出たか
+適当な頂点を根として、根付き木にする。この根を r とする。
+・クエリ(p, a) + (p, b)とクエリ(a, b)は同じ
+まず、クエリ (a, b) を考えたとき、これ を (r, a), (r, b) と分解することができる。
+これは、(a, b) の LCA を p としたとき、クエリ (a, b) ではパス a − p, b − p に +1 しており、
+クエリ (r, a), (r, b) ではパス a − p, b − p に +1、パス r − p に +2 するため、
+mod 2 で考えると同一視できるので明らかである。
+基準点をrとすると、クエリ全体では (r, i (i = 1 ~ N))を繰り返すことと同値である
+(r, v(vはrから一番深い点))のクエリを偶数回行う時、途中の辺についても偶数回加算されている
 """
 
 N, M = getNM()
-dist = [getList() for i in range(N + M - 1)]
-edges = [[] for i in range(N)] # 親要素の候補
-for a, b in dist:
-    edges[b - 1].append(a - 1)
+list = [0] * (N + 1)
+for i in range(M):
+    a, b = getNM()
+    list[a] += 1
+    list[b] += 1
 
-# トポソする
-# 順番が求まる
-res = topological(N, dist)
+for i in range(1, N + 1):
+    if list[i] % 2 != 0:
+        print('NO')
+        exit()
+print('YES')
 
-ans = [-1] * N
-ans[res[0]] = 0
-depth = [-1] * N
-depth[res[0]] = 0
+# AGC013 B - Hamiltonish Path
 
-# 追加のM辺はショートカットになるので
-# 元の根付き木は辺のうち深さが最も深くなるもの
+"""
+木構造ではない
+N頂点にM辺
+・２個以上の頂点を通る
+・同じ頂点を通らない
+・パスの少なくとも一方の端点と直接辺で結ばれている頂点は、必ずパスに含まれる
+いくつかあるうちの一つ答えよ
+端点と端点をつなぐと輪になる
+端点の頂点数は2でないといけないのでは　そんなことはない
+端点の候補はどんなものがあるか
+端点の１つ目はなんでもいいのか
+グリッドグラフを考えた場合に中央の点を指定してもうまく条件を満たすのでいけそう
+ただし、子要素に葉があればだめ
+端点に葉が2つあれば余裕
+端点を一つ選ぶ　→
+隣接する辺を全て通るパスを考える　
+7 8
+1 2
+2 3
+3 4
+4 5
+5 6
+6 7
+3 5
+2 6　の時
+もし2 6のパスがなければ3を端点にできない
+パスグラフを考えると
+パスグラフの端っこ２つを端点にしないと作れない
+大元となるパスグラフを見つける
+寄り道しないといけない場合であってもすぐ戻ってこれるような
+端点を一つ決める
+端点を2にしてもう片方の端点を考える時、1が邪魔
+端点を2から1にずらせれば楽
+適当な点１つを選んでそこから端点1に行くパス、端点2に行くパスを書いていく
+これ完全グラフだとTLEするんじゃ？
+今回Mの数が小さい
+作れる最大の完全グラフはN = 400 (N(N + 1) // 2 = 80000ぐらい)なのでOK
+"""
 
-for i in res[1:]: # 二番手以降について調べる
-    parent = 0
-    dep_opt = 0
-    for j in edges[i]: # iの各親について深さを調べる
-        if depth[j] + 1 > dep_opt: # 更新できるなら
-            parent = j
-            dep_opt = depth[j] + 1
-    ans[i] = parent + 1
-    depth[i] = dep_opt
+N, M = getNM()
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-for i in ans:
-    print(i)
+parent = [-1] * N
+ignore = [0] * N
+ignore[0] = 1
+dot1 = 0
+dot1_flag = True
+dot2 = 0
+dot2_flag = True
+
+# 端点が見つかる（行き止まりになる）まで探索
+while dot1_flag or dot2_flag:
+    dot1_flag = False
+    for i in dist[dot1]:
+        if ignore[i] == 0:
+            ignore[i] = 1
+            parent[dot1] = i
+            dot1 = i
+            dot1_flag = True
+            break
+
+    dot2_flag = False
+    for i in dist[dot2]:
+        if ignore[i] == 0:
+            ignore[i] = 1
+            parent[i] = dot2
+            dot2 = i
+            dot2_flag = True
+            break
+
+ans = [dot2 + 1]
+now = dot2
+while now != dot1:
+    now = parent[now]
+    ans.append(now + 1)
+
+ans = list(reversed(ans))
+
+print(len(ans))
+print(*ans)
+
+# AGC039 B - Graph Partition
+
+"""
+N頂点M辺
+N <= 200
+O(n ** 3)までいける
+ワーシャルフロイドか
+01
+10
+1 - 2
+
+頂点集合V1, V2, V3...をできる限り作る
+頂点集合の最大値
+どの辺も番号が隣り合う頂点集合の頂点同士をつなぐ
+頂点を分解する
+いろいろやってみる
+
+頂点を一つずつ前から調べてみる
+頂点1をV1に入れると
+V1とVkだけ不利な気がする
+
+隣接する頂点は隣に置く
+距離が2ある頂点については自身と同じ場所に置ける
+[[1, 3, 4], [0, 2, 5], [1, 3], [0, 2], [0], [1]]の場合
+
+0を置く 0
+1を置く 0 1
+2を置く 0 1 2
+3を置く時 0 - 3にエッジがあるため2の向こうに置くことはできない
+0 1 2
+  3
+
+全ての辺について条件を満たす
+辺をいい感じに配置する
+1, 3について、[0, 2]は共通して隣にいないといけない
+輪ができる　輪を潰す
+
+最短距離の位置に配置すれば良い
+繋がってなければ何してもいい
+
+偶数か奇数か　繋がっていれば隣
+２つに分けることは可能か
+距離奇数のものを向こうに、偶数のものをこっちに
+判定可能
+距離を伸ばすということは？
+
+まず２つのグループに分けられるか
+分けられるならAi ~ Ajの最短距離の最長が答え
+"""
+
+N = getN()
+S = [[int(i) for i in list(input())] for j in range(N)]
+
+edges = [[] for i in range(N)]
+for i in range(N):
+    for j in range(N):
+        if S[i][j] == 1:
+            edges[i].append(j)
+
+# まず２つのグループに分けられるか
+group = [-1] * N
+group[0] = 0
+
+pos = deque([0])
+while pos:
+    u = pos.popleft()
+    for i in edges[u]:
+        if group[i] == -1: # 未確定
+            group[i] = 1 if group[u] == 0 else 0
+            pos.append(i)
+        else: # 確定済み
+            if group[u] == group[i]:
+                print(-1)
+                exit()
+
+# ２つのグループに分けられるなら
+# Sをdistに使う
+for i in range(N):
+    for j in range(N):
+        if i != j and S[i][j] == 0:
+            S[i][j] = float('inf')
+
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
+
+S = warshall_floyd(S)
+ans = 2 # 連結ってことは絶対に2以上
+for i in S:
+    ans = max(ans, max(i) + 1)
+
+print(ans)
