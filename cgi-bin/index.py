@@ -49,174 +49,251 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC027 C - 倍々ゲーム
-# ２人が最善を尽くす時、どちらが勝つか
-# パターン1:ある状態になるように収束させれば必ず勝つ
-# パターン2:ある場所を目指せば必ず勝つようになる
-# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
+# ABC161 D - Lunlun Number
+K = 13
+que = []
+heapify(que)
+for i in range(1, 10):
+    que.append(i)
+for i in range(K):
+    u = heappop(que)
+    if u % 10 != 0:
+        heappush(que, 10 * u + (u % 10) - 1)
+    heappush(que, 10 * u + (u % 10))
+    if u % 10 != 9:
+        heappush(que, 10 * u + (u % 10) + 1)
+print(u)
 
-# まずは全通り試してみる　その中で勝ちが偏っている部分がある
-N = getN()
-k = N
-depth = 0
-while k > 1:
-    k //= 2
-    depth += 1
-x = 1
-cnt = 1
-if depth % 2:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-        else:
-            x *= 2
-            x += 1
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
-else:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-            x += 1
-        else:
-            x *= 2
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
-
-# ABC048 D - An Ordinary Game
-# 最終的にどのような形で終わるか
-S = input()
-if (S[0] != S[-1]) ^ (len(S) % 2):
-    print('Second')
-else:
-    print('First')
-
-# ABC059 D - Alice&Brown
-# まずは全通り試してみる
-
-# 最終形をイメージする →
-# 1 0 操作出来ない　終わり
-# 1 1 操作出来ない　終わり
-# 逆に2 0 や 3 0 なら操作できる
-# 2以上開く、０か１開くを繰り返す
-X, Y = getNM()
-X = int(X)
-Y = int(Y)
-
-if (X - Y) ** 2 > 1:
-    print("Alice")
-else:
-    print("Brown")
-
-# AGC033 LRUD Game
-
-"""
-制約よりゲーム木とも違う
-つまりnim
-スタート地点にコマが置いてある　これを２人で動かす
-S[i]の方向に動かす、もしくは動かさない
-盤上から落ちるか残るか
-逆から見てみると
-
-最適行動　とは？
-中央に寄るように、もしくは遠ざかるように？
-
-全ての行動をシミュレートして偏りを探す
-RとLの数の差、UとDの数の差によって勝敗がわかる
-
-高橋くんが如何なる行為をしても青木くんは盤上に残すことができる
-青木くんが如何なる行為をしても高橋くんは盤上から落とすことができる
-
-高橋くんは駒の振れ幅を大きくする
-青木くんは駒の振れ幅を小さくする
-基本高橋くん有利？
-
-2人は相手の行動を先読みできるか
-あとで相手がRを大量に持っている　→　できるだけ左にずらす
-最後のL or Rの処理のあと、コマが残っている
-相手の最悪の行動に対応できるか
-高橋と青木のLRUDの差で考える
-LL
-  RRRの場合
-
-２人が最適な行動をするとは
-相手が最悪の行動をしてくるということ
-コマが一番左にいても絶対に落とせる
-L, R, U, Dのそれぞれが独立に
-R, L, D, Uと対戦できる
-"""
-
-H, W, N = getNM() # H:縦 W:横
-start = getList()
-S = input()
-T = input()
-
-LRUD_range = [start[1], start[1], start[0], start[0]]
-
-for i in range(N):
-    # 高橋のターン
-    if S[i] == 'L': # 高橋のL対青木のR
-        LRUD_range[0] -= 1
-    elif S[i] == 'R':
-        LRUD_range[1] += 1
-    elif S[i] == 'U':
-        LRUD_range[2] -= 1
-    else:
-        LRUD_range[3] += 1
-
-    if LRUD_range[0] < 1 or W < LRUD_range[1] or LRUD_range[2] < 1 or H < LRUD_range[3]:
-        print('NO')
-        exit()
-
-    # 青木のターン
-    if T[i] == 'L': # 高橋のR対青木のL ただしleftできるのは1まで
-        LRUD_range[1] = max(1, LRUD_range[1] - 1)
-    elif T[i] == 'R':
-        LRUD_range[0] = min(W, LRUD_range[0] + 1)
-    elif T[i] == 'U':
-        LRUD_range[3] = max(1, LRUD_range[3] - 1)
-    else:
-        LRUD_range[2] = min(H, LRUD_range[2] + 1)
-
-print('YES')
-
-
-# 全国統一プログラミング王 予選　C - Different Strokes
-
-"""
-一つの数字を最大化できないか
-結局青木さんの点数は高橋くんが選ばなかったもののBの総和になる
-つまり高橋くんがi個目を選ぶとAi獲得するだけでなくBi特することになる
-逆に青木さんがj個目を選ぶとBi獲得するだけでなくAi高橋くんを損させられる
-高橋くん、青木さんはAi + Biが大きい順に取っていく
-"""
-
-N = getN()
-dish = []
-for i in range(N):
+N, M = getNM()
+weight = []
+key = []
+for _ in range(M):
     a, b = getNM()
-    dish.append([a, b, a + b])
+    weight.append(a)
+    c = getList()
+    key.append(c)
+dp = [float('inf')] * (1 << N)
+dp[0] = 0
+for i in range(M):
+    bit = 0
+    for item in key[i]:
+        bit |= (1 << (item - 1))
+    for j in range(1 << N):
+        dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
+print(dp)
 
-dish.sort(key = lambda i:i[2])
+
+# ARC028 B-特別賞
+N, K = getNM()
+A = getList()
+young = [0] * N
+# i番目に若い人の順位はyoung[i]位
+for i in range(N):
+    young[A[i] - 1] = i
+A = [-i for i in A]
+# Aの前からK個のリストを作る
+prized = []
+for i in range(K):
+    prized.append(A[i])
+heapq.heapify(prized)
+# K個数字があるうちの最大値（K番目の数字）を取ってくる
+now = heapq.heappop(prized)
+print(young[-now - 1] + 1)
+for i in range(K, N):
+    # もし現在のK番目の数字より小さい数字がきたら
+    if A[i] > now:
+        # prizedリストに混ぜて（計K個入っている）
+        heapq.heappush(prized, A[i])
+        # 再びK個数字があるうちの最大値（K番目の数字）を取ってくる
+        now = heapq.heappop(prized)
+        print(young[-now - 1] + 1)
+    # もし現在のK番目の数字より小さい数字がきたら捨てる
+    else:
+        print(young[-now - 1] + 1)
+
+# ABC062 D - 3N Numbers
+N = getN()
+A = getList()
+# foreとbackの境界線を移動させる
+# [3 1 4 1 5 9]の場合
+# foreは[3 1], [3 1 4], [3, 1, 4, 1]の場合
+# backは[5 9], [1 5 9], [4, 1, 5, 9]の場合を前計算
+# 前から計算
+fore = A[:N]
+# 後ろから計算
+back = A[2 * N:]
+back = [-i for i in back]
+for_sum = sum(fore)
+back_sum = sum(back)
+heapify(fore)
+heapify(back)
+
+fore_list = []
+back_list = []
+for i in range(N):
+    fore_list.append(for_sum)
+    back_list.append(back_sum)
+    in_fore = A[N + i]
+    heappush(fore, in_fore)
+    out_fore = heappop(fore)
+    for_sum += in_fore - out_fore
+
+    in_back = (-1) * A[-N - i - 1]
+    heappush(back, in_back)
+    out_back = heappop(back)
+    back_sum += in_back - out_back
+
+fore_list.append(for_sum)
+back_list.append(back_sum)
+
+ans = -float('inf')
+for i in range(N + 1):
+    opt = fore_list[i] + back_list[N - i]
+    ans = max(ans, opt)
+print(ans)
+
+# ABC123 D - Cake 123
+X, Y, Z, K = getNM()
+A = sorted([-i for i in getList()])
+B = sorted([-i for i in getList()])
+C = sorted([-i for i in getList()])
+pos = []
+heapify(pos)
+dict = defaultdict(int)
+u = (A[0] + B[0] + C[0], 0, 0, 0)
+heappush(pos, u)
+dict[u] = 1
+for i in range(K):
+    p, i, j, l = heappop(pos)
+    print(-p)
+    # 取り出すごとにA, B, Cについての次の値をpush
+    if i + 1 < X:
+        opt_a = (A[i + 1] + B[j] + C[l], i + 1, j, l)
+        if dict[opt_a] == 0:
+            heappush(pos, opt_a)
+            dict[opt_a] = 1
+    if j + 1 < Y:
+        opt_b = (A[i] + B[j + 1] + C[l], i, j + 1, l)
+        if dict[opt_b] == 0:
+            heappush(pos, opt_b)
+            dict[opt_b] = 1
+    if l + 1 < Z:
+        opt_c = (A[i] + B[j] + C[l + 1], i, j, l + 1)
+        if dict[opt_c] == 0:
+            heappush(pos, opt_c)
+            dict[opt_c] = 1
+
+# ABC137 D - Summer Vacation
+
+N, M = getNM()
+query = [getList() for i in range(N)]
+
+A_list = [[] for i in range(10 ** 5 + 1)]
+for a, b in query:
+    A_list[a].append(b)
+
+job = []
+heapq.heapify(job)
 
 ans = 0
-while True:
-    if dish: # 高橋くん
-        a, b, total = dish.pop()
-        ans += a
-    else:
-        break
-
-    if dish: # 青木さん
-        a, b, total = dish.pop()
-        ans -= b
-    else:
-        break
-
+for i in range(1, M + 1):
+    for j in A_list[i]:
+        heapq.heappush(job, -j)
+    if len(job) > 0:
+        u = heapq.heappop(job)
+        ans += -u
 print(ans)
+
+# ABC149 E - Handshake
+# Mがクソデカイので使用不可
+# 二分探索使ってね
+N, M = getNM()
+A = sorted([-i for i in getList()])
+
+pos = []
+heapify(pos)
+dict = defaultdict(int)
+u = (A[0] + A[0], 0, 0)
+heappush(pos, u)
+dict[u] = 1
+
+ans = 0
+# 大きい値M番目まで全て求まる
+for i in range(M):
+    p, i, j = heappop(pos)
+    ans += -p
+    if i + 1 < N:
+        opt_a = (A[i + 1] + A[j], i + 1, j)
+        if dict[opt_a] == 0:
+            heappush(pos, opt_a)
+            dict[opt_a] = 1
+    if j + 1 < N:
+        opt_b = (A[i] + A[j + 1], i, j + 1)
+        if dict[opt_b] == 0:
+            heappush(pos, opt_b)
+            dict[opt_b] = 1
+print(ans)
+
+# Code Formula 2014 予選A C - 決勝進出者
+
+"""
+N: 予選の回数
+K: 招待人数
+最高順位が高い順に　どこかの予選でハイスコアを出せばOK
+最高順位が同じ場合は、最高順位を取った予選が開かれた時期が早い方から先に選ばれる。
+現在の試合を含めた残り試合数 = dとすると
+(K + d - 1) // dの人数分上から順番にとる
+2 11
+1 2 3 4 5 6 7 8 9 10 11
+1 2 15 14 13 16 17 18 19 20 21
+
+の場合
+[[1, 2, 3, 4, 5, 6], [15, 14, 13]] ここまでいける
+[1 2 3 4 5 6] 7 8 9 10 11
+[1 2 15 14 13] 16 17 18 19 20 21
+1番目の6位までと2番目以降の5位までは問答無用で確定する
+後をどうするか
+枠が空く　このまま順調に取っていっても枠が余る場合は
+枠が空いた場合は再計算
+N <= 50しかない
+優先度何番目かをレコードする
+枠が空くたびにボーダーが下がる
+
+4 5
+1 2 3 4 5
+2 1 3 4 5
+1 2 3 4 5
+2 1 3 4 5 の場合
+
+一番最初に2人通過できる？
+制約が小さいので50回全探索できる
+
+iを一つ進めるごとに候補がA[i]の分だけ増える
+これをヒープキューで優先度が高い（数字が小さい）順に取る
+"""
+
+N, K = getNM()
+A = [[] for i in range(N)]
+for i in range(N):
+    a = getList()
+    for j in range(K):
+        A[i].append([j * N + i + 1, a[j]])
+
+ans = [[] for i in range(N)]
+L = []
+heapify(L)
+passed = set()
+
+for i in range(N):
+    for j in A[i]:
+        heappush(L, j)
+    while L and L[0][0] <= K: # whileで抜き取る時は要素が残っているか気をつけよう
+        pref, id = heappop(L)
+        if id in passed:
+            K += 1
+        else:
+            ans[i].append(id)
+            passed.add(id)
+
+for i in ans:
+    print(*sorted(i))
