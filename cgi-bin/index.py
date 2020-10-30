@@ -49,404 +49,453 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC008 C - コイン
-n = getN()
-c = getArray(n)
-sumans = 0
+# ARC126 F - XOR Matching
+# d = 2 ** N - 1について
+# 1 xor 2 xor... xor dは
+# 各桁にフラグが2 * (N - 1)本ずつ立っている（つまり0になる）
+# なのでXを抜くとXを構成する部分についてフラグが抜けてXができる
 
-for i in c:
-    lista = [j for j in c if i % j == 0]
-    count = len(lista)
-    sumans += math.ceil(count / 2) / count
-print(sumans)
+M, K = getNM()
 
-# ABC011 D - 大ジャンプ
-def cmb_1(n, r):
-    r = min(n - r, r)
-    if (r < 0) or (n < r):
-        return 0
+if M == 0 and K == 0:
+    print(0, 0)
 
-    if n == 0:
-        return 1
+elif M == 1 and K == 0:
+    print(0, 0, 1, 1)
 
-    if r == 0:
-        return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+elif M >= 2 and K < 2 ** M:
+    ans = []
+    for n in range(2 ** M):
+        if n != K:
+            ans.append(n)
+    print(*ans, K, *ans[::-1], K)
 
-N, D = getNM()
-X, Y = getNM()
-X = abs(X)
-Y = abs(Y)
-
-# X軸に平行に正の向きに飛ぶ回数はx_time + α回
-# X軸に平行に負の向きに飛ぶ回数はα回
-x_time = X // D
-y_time = Y // D
-
-if X % D != 0 or Y % D != 0 or N < x_time + y_time:
-    print(0)
-    exit()
-
-N_a = N - (x_time + y_time)
-if N_a % 2 != 0:
-    print(0)
-    exit()
-N_a //= 2
-
-ans = 0
-for i in range(N_a + 1):
-    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
-print(ans / (4 ** N))
-
-# ABC024 D - 動的計画法
-A, B, C = getArray(3)
-
-# kCc / k+1Cc = k - c + 1 / k + 1
-# k+1Cc+1 / kCc = k + 1 / c + 1
-# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
-x = (C * pow(A, mod - 2, mod)) % mod
-y = (B * pow(A, mod - 2, mod)) % mod
-
-n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
-k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
-print((n - k) % mod, k % mod)
-
-# ABC058 D - いろはちゃんとマス目
-# 総計する
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
-
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-
-H, W, A, B = getNM()
-
-mother = cmb((H - 1) + (W - 1), (W - 1))
-
-goban = cmb((H - A) + (B - 1), B - 1)
-togoal = cmb((A - 1) + (W - B - 1), (W - B - 1))
-
-for i in range(A):
-    row = H - A + i
-    col = B - 1
-    row_left = A - 1 - i
-    col_left = W - B - 1
-    mother -= cmb(row + col, row) * cmb(row_left + col_left, row_left)
-    mother %= mod
-print(mother)
-
-# ABC057 D - Maximum Average Sets
-N, A, B = getNM()
-V = sorted(getList(), reverse = True)
-
-# 1行目の答え　上からA個
-print(sum(V[:A]) / A)
-
-# Vの各要素の数を数える
-dict = defaultdict(int)
-for i in range(N):
-    dict[V[i]] += 1
-
-r = A
-n = 0
-for i in dict.items():
-    print(i)
-    if r - i[1] >= 0:
-        r -= i[1]
-    else:
-        n = i[1] # A個まで残りr個であり、そこには要素i[j]がn個入れられる
-        break
-
-ans = 0
-# V[0] == V[A - 1]ならA個を超えても平均値が下がらない
-# 残りr個(合計でA個)決める、残りr + 1個(合計でA + 1個)決める...合計でB個決める
-if r > 0 and V[0] == V[A - 1]:
-    for i in range(r, B + 1):
-        ans += cmb_1(n, i)
 else:
-    ans += cmb_1(n, r) # A個まであとr個残っており、n個のうちr個選ぶ
+    print(-1)
 
-print(ans)
+# B - Median Pyramid Easy
 
-# ABC066 D - 11
-# 普通にやれば(cmb(N + 1, i)だが、今回ダブりがある
-# 29 19 ~ 19 31 9の場合
-# [29]のうちいくつか + １番目の19 + [31, 9]のうちいくつかと
-# [29]のうちいくつか + ２番目の19 + [31, 9]のうちいくつかはダブル
-# i個要素を選ぶとすると、19を選び、外側の要素からi - 1個選ぶ全通りについてダブルので１回引く
-N = getN()
-A = getList()
-
-lista = [0] * (max(A) + 1)
-double = 0
-# ダブり位置1を決める
-dou_ind_2 = 0
-for i in range(N + 1):
-    if lista[A[i]] > 0:
-        double = A[i]
-        dou_ind_2 = i
-        break
-    lista[A[i]] += 1
-# ダブり位置2を決める
-dou_ind_1 = 0
-for i in range(N + 1):
-    if A[i] == double:
-        dou_ind_1 = i
-        break
-
-outer = dou_ind_1 + (N - dou_ind_2)
-
-for i in range(1, N + 2):
-    if i == 1:
-        print(N)
-        continue
-    print((cmb(N + 1, i) - cmb(outer, i - 1)) % mod)
-
-# ABC105 D - Candy Distribution
-# M人に配る mod M
-N, M = getNM()
-A = getList()
-
-alta = []
-for i in A:
-    alta.append(i % M)
-
-imos = [0]
-for i in range(N):
-    imos.append((alta[i] + imos[i]) % M)
-
-ans = 0
-for i in Counter(imos).values():
-    ans += cmb_1(i, 2)
-print(ans)
-
-# ABC136 E - Max GCD
-N, K = getNM()
-A = getList()
-
-# 操作後のAの要素全てが因数にkを持つ
-
-# 好きな回数操作を行えるとすると、Aの要素全てに因数kを持たせることができるか？
-# 操作前と操作後とではAの総和は変わらない → A = akとするとa個のkをN個の要素に配分する
-# ことでAの要素全てに因数kを持たせることができる。
-# 好きな回数操作を行える、操作後のAの全ての要素を割り切る正の整数は、sum(A)の約数になる
-
-def make_divisors(n):
-    divisors = []
-    for i in range(1, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            divisors.append(i)
-            # √nで無い数についてもう一個プラス
-            if i != n // i:
-                divisors.append(n // i)
-    return sorted(divisors)
-
-# K回以下の操作の条件付きでも題意を満たすか
-# alta % kをし、あまりが小さい順にソートする
-# 前からi番目までをプラス、i + 1番目以降をマイナスにする
-# どちらか大きい方がK以下なら条件を満たす
-
-def judger(x):
-    alta = [i % x for i in A]
-    alta.sort()
-    alta_b = [x - i for i in alta]
-    # 前からi番目までプラスにする
-    imos_f = copy.deepcopy(alta)
-    # 前からi + 1番目以降をマイナスにする
-    imos_b = copy.deepcopy(alta_b)
-
-    for i in range(N - 1):
-        imos_f[i + 1] += imos_f[i]
-        imos_b[-i - 2] += imos_b[-i - 1]
-
-    # 全部マイナス、全部プラスの場合
-    imos_f.insert(0, 0)
-    imos_b.append(0)
-
-    ans = float('inf')
-    for i in range(N + 1):
-        ans = min(ans, max(imos_f[i], imos_b[i]))
-
-    return ans
-
-for i in make_divisors(sum(A))[::-1]:
-    if judger(i) <= K:
-        print(i)
-
-# ABC154 F - Many Many Paths
 """
-経路の個数
-D - いろはちゃんとマス目を参考に
-        x
-o o o o o 各oからxに移動する通りは1通りずつ
-o x 各oからxに移動する通りは1通りずつ
-o
-o
-o
-o
-g(r,c) を 0 ≤ i ≤ r かつ 0 ≤ j ≤ c を満たす全ての整数の組 (i,j) に対する f(i,j) の総和とする。
-ここでf(r + 1, c) = f(r, c) + f(r, c - 1)...f(r, 0)
-f(r, c)からr方向へ1つ（一通り）
-f(r, c - 1)からr方向へ1つ, c方向に1つ（一通り）
-...
-つまりf(r2 + 1, c2) = f(r2, c) + f(r2, c - 1) + ... f(r2, 0)
-これをf(0, c2)からf(r2 + 1, c2)まで求めればg(r2, c2)が求まる
+頂点にXを書き込む
+N段目の順列としてありうるものを示す
+・一番都合のいいものを出す
+・条件を緩和してみる
+・条件が小さい場合を考える
+Xがなければ
+2 ** (N - 2)を頂点に書けばいい これ以外不可能ってことはない？
+N = 4の場合
+   4
+  345
+ 23456
+1234567
+・実験
+def cnt(array):
+    alta = deepcopy(array)
+    while len(alta) > 1:
+        l = []
+        for i in range(1, len(alta) - 1):
+            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
+        alta = l
+    return alta[0]
+A = [1, 2, 3, 4, 5]
+for i in permutations(A):
+    print(i, cnt(i))
+X = 2, 3, 4なら可能
+同様に N = 4なら 2 ~ 6であれば可能
+X = 2の場合 最終的に上がってくるのは2, 2, 3
+1, 2がペアで存在する場合はX = 2になる？
+上にあげるには？
+上げたい数を真ん中で二つ並べることができたら（例:6 4 2 2 3)勝ち確
+真ん中に X + 2, X - 1, X, X + 1, X - 2を配置
+これを中央の値と入れ替える
 """
 
-r1, c1, r2, c2 = getNM()
+def cnt(array):
+    alta = deepcopy(array)
+    while len(alta) > 1:
+        l = []
+        for i in range(1, len(alta) - 1):
+            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
+        alta = l
+    return alta[0]
 
-ans = 0
-for i in range(r1, r2 + 1):
-    ans = (ans + cmb(c2 + i + 1, i + 1) - cmb(c1 + i, i + 1)) % mod
-print(ans)
+N, X = getNM()
+ma = 2 * N
+mid = ma // 2
+if X == 1 or X == ma - 1:
+    print('No')
+    exit()
+print('Yes')
 
-# ABC171 F - Strivore
+list = [i for i in range(ma - 1, 0, -1)]
+ans = [-1] * ma
+
+if (ma - 1) - X > 1 and mid - 2 > 0: # X + 2を入れ替える
+    ans[mid - 2] = list.pop(list.index(X + 2))
+if X - 2 > 0 and (ma - 1) - mid > 1: # X - 2を入れ替える
+    ans[mid + 2] = list.pop(list.index(X - 2))
+
+ans[mid - 1] = list.pop(list.index(X - 1))
+ans[mid + 1] = list.pop(list.index(X + 1))
+ans[mid] = list.pop(list.index(X))
+
+for i in range(1, ma):
+    if ans[i] == -1:
+        ans[i] = list.pop()
+
+for i in ans[1:]:
+    print(i)
+
+# ARC013 E - Tr/ee
+
 """
-dp[i][j]を
-「i文字目まででj回Sの文字を使ったか」とする
-K = 5
-S = 'oof'
-dp = [[0] * (len(S) + 1) for i in range(K + len(S) + 1)]
-dp[0][0] = 1
-for i in range(1, K + len(S) + 1):
-    for j in range(len(S) + 1):
-        if j < len(S):
-            dp[i][j] += dp[i - 1][j] * 25
-        else:
-            dp[i][j] += dp[i - 1][j] * 26 # j回使い切るともうSは関係なくなるので *= 26になる
-        if j >= 1:
-            dp[i][j] += dp[i - 1][j - 1]
-l_s = len(S)
-どのタイミングで「この先ずっと*= 26」になるか
-後ろからi文字目にSを使い切る: pow(25, K - k, mod) * cmb(N + K - k - 1, N - 1) * pow(26, k, mod)
-...
+頂点がN個、辺がN - 1本あります
+1110
+任意の辺を一つ取り除くとサイズ1の連結成分が作れる
+任意の辺を一つ取り除くとサイズ2の連結成分が作れる
+任意の辺を一つ取り除くとサイズ3の連結成分が作れる
+どの辺を一つ取り除いてもサイズ4の連結成分は作れない
+サイズ1の連結成分が作れること、サイズnの連結成分は作れないことは自明
+サイズiの連結成分が作れるなら、サイズn - iの連結成分が作れる
+単純な木構造から考えよう
+・パスグラフ
+・スターグラフ
+・パスグラフ
+1(1がN - 1個) + 0になる
+・スターグラフ
+10...010になる
+他のものは作れないか
+連結成分iのものが作れる条件、作れない条件
+作れない条件が知りたい　単体であれば必ず作れる
+（連結成分iが作れ、jが作れない）が成り立たない場合がある？
+部分木から考えていく
+大きさ2のパスグラフは11
+これをrootにつけると 110になる
+大きさ3のスターグラフは101
+これをrootにつけると1010になる
+大きさnのグラフにパス状に/スター状に繋げていくと
+1 - 2のグラフに
+パス状に3を繋げると 110
+スター状に繋げると 110 ここまでは同じ
+1 - 2 - 3のグラフに
+パス状に繋げると 1110
+スター状に繋げると 1010
+パスグラフに辺を加えて連結成分jが作れないようにしよう
+11010110は作れるか
+一方をパスグラフに、一方をスターグラフにする?
+1 - 2の状態でスタート
+もしS[i] = 1なら親要素にi + 2をつけ、それを親要素にする
+もしS[i] = 0なら現在の親要素につける
 """
 
-K = getN()
 S = input()
 N = len(S)
-
-ans = 0
-# l_s + i文字目に文字を使い切る
-# 次から *= 26
-for k in range(K + 1):
-    # 逆からやってる
-    ans += cmb(N + K - k - 1, N - 1) * pow(26, k, mod) * pow(25, K - k, mod) % mod
-    ans %= mod
-
-print(ans)
-
-# ARC023 C - タコヤ木
-N = getN()
-A = getList()
-
-def cmb(x,y):
-    r = 1
-    for i in range(1, y + 1):
-        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
-    return r
-
-now = A[0]
-cnt = 0
-ans = 1
-for i in range(1, N):
-    if A[i] > -1:
-        if cnt > 0:
-            ans *= cmb(A[i] - now + cnt, cnt)
-            ans %= mod
-            now = A[i]
-            cnt = 0
+# この条件を満たしていると木を作ることができる
+if S[N - 1] == "1" or S[N - 2] == "0" or S[0] == "0":
+    print(-1)
+else:
+    for i in range(N - 1):
+        if S[i] != S[N - i - 2]:
+            print(-1)
+            exit()
+    ans = []
+    parent = 1 # 現在のparent
+    for i in range(N - 1):
+        if S[i] == "1":
+            # パスグラフ状
+            ans.append([parent, i + 2])
+            parent = i + 2 # parent変更
         else:
-            now = A[i]
+            # スターグラフ状
+            ans.append([parent, i + 2])
+    for i in ans:
+        print(i[0], i[1])
+
+# ARC091 E - LISDL
+
+"""
+最長増加部分列の長さはA　
+最長減少部分列の長さはB
+使える数字は1 ~ N
+一番都合のいいものを探す
+構築問題は場合分けしてそれぞれの場合の最も都合がいいものをとる
+A + B > N + 1ならダメっぽい
+A + B = Nの場合
+2 3 5 + 5 4
+2 3 1 5 4
+1を適当な所に置けば良い
+A + B = N + 1の場合は簡単
+N = 5
+A, B = 3, 3
+3 4 5 + 5 2 1
+3 4 5 2 1
+A + B < N の場合
+いらないものを適当に置けば
+いいのでは？
+N = 5
+A, B = 2, 2 は無理 A + B <= 4は無理
+2 3 + 3 1 (4, 5はいらない)
+2 3 1 + 4 5
+(5, 6, 3, 1, 4, 2)
+4 5 6 1 2 3
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        if a > L[-1]:
+            L.append(a)
+        # このelseに引っかかった時にトランプのソートが必要
+        else:
+            L[bisect_left(L, a)] = a
+    return len(L)
+for i in permutations([1, 2, 3, 4, 5, 6, 7]):
+    if lis(i) + lis(list(reversed(i))) <= 5:
+        print(lis(i), lis(list(reversed(i))), i)
+相方を2にした場合の下限は(N + 1) // 2 ?
+5なら3 2
+6なら3 2
+7なら4 2
+8なら4 2
+3 4 5 + 5 2
+3 4 5 1 2
+4 5 6 + 6 3
+4 5 6 1 2 3
+4 5 6 7 + 6 3
+4 5 6 7 1 2 3
+細かく区切ればもっといける
+N = 16なら
+[13 14 15 16] [9 10 11 12] [5 6 7 8] [1 2 3 4]
+A = 4, B = 4
+A * B >= Nであれば作れる
+LISはグループで分割しよう！！！
+"""
+
+N, A, B = getNM()
+
+# mainの長さが半分より下ならout
+if A * B < N or N + 1 < A + B:
+    print(-1)
+    exit()
+
+if A == 1:
+    if B == N:
+        print(*[i for i in range(N, 0, -1)])
     else:
-        cnt += 1
-print(ans)
+        print(-1)
+    exit()
 
-# ABC044 B - Extension
+if B == 1:
+    if A == N:
+        print(*[i for i in range(1, N + 1)])
+    else:
+        print(-1)
+    exit()
+
+# グループ内の要素の数がA,グループの数がB
+res1 = [i + 1 for i in range(N - A, N)]
+res2 = []
+L = [i + 1 for i in range(N - A - 1, -1, -1)] # 残りN - A個
+
+# 残りN - A個をB - 1個で分割する
+ind = (N - A) // (B - 1)
+for i in range(B - 1):
+    opt = []
+    for j in range(ind + (i < (N - A) % (B - 1))):
+        u = L.pop()
+        opt.append(u)
+    res2.append(opt)
+
+res2 = list(reversed(res2))
+
+ans = res1
+for i in range(B - 1):
+    ans += res2[i]
+
+def lis(A):
+    L = [A[0]]
+    for a in A[1:]:
+        if a > L[-1]:
+            L.append(a)
+        # このelseに引っかかった時にトランプのソートが必要
+        else:
+            L[bisect_left(L, a)] = a
+    return len(L)
+
+# print(lis(ans), lis(list(reversed(ans))))
+print(*ans)
+
+# Tenka1 Programmer Beginner Contest D - Crossing
 
 """
-最初縦Aマス横Bマス
-・上か右のマスを増やす
-・追加されたマスのうちちょうど1マスを黒く塗り、残りを白く塗る
-
-最終的に縦Cマス横Dマスになった　最終的なマス目の塗られ方としてありうるものは
-A, B, C, D = 3000
-
-通りの場合はdpかcombo
-
-最初のA * Bマスは絶対に白
-追加される分について黒や白で塗られ、あとで変更されない
-二項定理の性質を思い出す
-1 1 2 2の場合
-
-1 0   0 1   1 1
-0 1   0 1   0 0 の３通り
-
-2 1 3 4の場合
-
-0 0 0 0
-0 0 0 0
-0 0 0 0 の塗り方の通りは？
-
-dp[i][j]: 現在縦iマス、横jマスでの塗り方の通り
-どう遷移する？
-
-dp[i - 1][j - 1]から遷移させると
-dp[i][j] = dp[i - 1][j - 1] * ((i - 1) * (j - 1) + i + j) ?
-
-4 1
-3 1  5  16 44
-2 1  2  4  8
-1
-  1  2  3  4
-
- 足りない　漏れがある
-１　dp[i - 1][j]方面
-　　上のマスが増える その塗り方はj通りあるが、dp[i][j - 1]の時とダブっていないかdp
-
-左右対象になるので2かけて引く？
-
-黒マスの数は
-[3, 3]を求める場合は[2, 2]経由だけでなく[3, 1]経由もある
-
-相手側になんも塗ってないところがある場合を抑えておく
-
-dp[2][j]は全てのjについてi <= 2の範囲で色がついてる
-dp[j][1]は　　　　　　　　　　　　　全てのiにについてj <= 1の範囲で色がついている
-
-足し上げ足し上げダブりを引く方針
+1 ~ Nまでの部分集合のうち任意のものを選んで
+・1 ~ Nのうちどの整数もどれか2つの組の中に含まれる
+・どの２つの部分集合についても共通する数字が１つのみ
+N = 3
+2個 1 2
+2個 3 1    1 3でもいい
+2個 2 3
+第１条件
+2N個の数字を使う
+K = N, |Si| = 2にしたらOKではないか？
+1 2
+2 3
+3 4
+4 1 みたいに
+N = 4だとNoになる？
+2 3と4 1が共通項を持たない
+他のK - 1個について共通項がちょうど一つ 自身の要素を他のk - 1個に配分する
+|S1| = k - 1でなければならない
+K * (K - 1) = 2Nならいける
+その場合
+1 ~ Nについて
+N = 6 (k = 4 |Si| = 3)
+1 ~ 6を均等に配分
+1 2 3
+1 4 5
+2 4 6
+3 6 5
+1 2 3 4
+1 5 6 7
+2 5 8 9
+3 6 8 10
+4 7 9 10
+L字型に敷き詰める要領で
+第１のL字 k - 1が2つ　1番目横　他縦
+第２のL字 k - 2が2つ　2番目横　他縦
+1 2 3 4
+5 6 7
+8 9
+10 +
+      1
+    5 2
+  8 6 3
+109 7 4 ピラミッド状に
 """
 
-A, B, C, D = getNM()
-MOD = 998244353
+N = getN()
+k = math.floor(math.sqrt(2 * N)) + 1
+if k * (k - 1) != 2 * N:
+    print('No')
+    exit()
 
-dp = [[0] * (C + 1) for _ in range(D + 1)] # dpは完成形を
-dp[B][A] = 1
+ans = [[] for i in range(k)]
+# 縦のピラミッド
+L = [i + 1 for i in range(N - 1, -1, -1)]
+for i in range(k - 1):
+    for j in range(k - i - 1):
+        u = L.pop()
+        ans[i].append(u)
 
-# 順に大きくしていく
-for i in range(B, D + 1):
-    for j in range(A, C + 1):
-        if j > A:
-            dp[i][j] += dp[i][j-1] * i
-        if i > B:
-            dp[i][j] += dp[i-1][j] * j
-        if i > B and j > A:
-            # もし右上を選んだ場合はダブらないが
-            # それ以外を選んだ場合はダブりが出る
-            dp[i][j] -= dp[i-1][j-1] * (i-1) * (j-1) # ダブったのを捨てる
-        dp[i][j] %= MOD
+# 横のピラミッド
+L = [i + 1 for i in range(N - 1, -1, -1)]
+for i in range(k - 1):
+    for j in range(k - i - 1):
+        u = L.pop()
+        ans[j + i + 1].append(u)
 
-print(dp[-1][-1])
+print('Yes')
+print(len(ans))
+for i in range(len(ans)):
+    print(len(ans[i]), *ans[i])
+
+# AGC022 B - GCD Sequence
+
+"""
+Aの各要素は全て異なる
+どのaiについても
+gcd(ai, sum(A) - ai)が1ではない
+aiとsum(A) - aiが共通因数をもつ
+
+aiとsum(A)が共通因数を持つ
+
+Aの全ての要素を同じ因数を持つものに変えれば簡単
+全ての要素の最大公約数が1である　の場合は？
+互いに素なものが１つでもあればOK
+
+1 2 3 は条件を満たす　完全数なら話は早い　早くない　1に何してもgcdは1
+
+N <= 10000より　1 * n, 2 * n, 3 * n...とするのは諦める
+ターゲットとなるgcdの数は小さくないと間に合わない
+2と3で統一してみれば
+3の
+3の倍数を偶数個足すと偶数になる
+でも偶数と3の倍数である奇数のgcdは1
+要素は3万以下であることに注意
+
+2 ~ 30000までの偶数(15000個)
+3 ~ 30000までの3の倍数かつ奇数の数(5000個) できる！！！
+
+偶数の個数は
+N % 3 == 0の時 6の倍数を先頭に
+30000 + 29997, 29991
+N % 3 == 1の時
+2, 4 + 3, 9 逆から
+N % 3 == 2の時
+2, 4, 6 + 3, 9 楽
+
+制限ないと楽だけど
+限界まで2の倍数を並べればいい
+N % 3 == 0　2の倍数N - 2個
+N % 3 == 1  2の倍数N - 2個
+N % 3 == 2  2の倍数N - 2個
+
+N = 3の時は注意
+
+上限を15000にすると3の個数が変動する
+"""
+
+N = getN()
+
+def cnter(ans):
+    two = 0
+    three = 0
+    tw_l = 0
+    th_l = 0
+    for i in ans:
+        if i % 2 == 0:
+            two += 1
+            tw_l += i
+        elif i % 3 == 0:
+            three += 1
+            th_l += i
+
+    return tw_l % 3, th_l % 2, two, three, max(ans), min(ans)
+
+if N == 3:
+    print(2, 5, 63)
+    exit()
+
+if N % 3 == 0:
+    even = min(N - 2, 15000) # 偶数の個数
+    three = N - even # 基本的には2 これは偶数個でないといけない
+
+    caution = False
+    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
+        caution = True
+        three += 1
+
+    ans = [i * 2 for i in range(15000, 15000 - even, -1)]
+    if caution: # 調整2 even -= 1
+        ans.pop(0) # 30000を抜き取る
+
+    for i in range(three):
+        ans.append(i * 6 + 3)
+
+    print(*ans)
+
+else: # 2と3が絶対に並ぶのでgcd = 1
+    even = min(N - 2, 15000) # 偶数の個数
+    three = N - even
+
+    caution = False
+    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
+        caution = True
+        three += 1
+
+    ans = [i * 2 for i in range(1, even + 1)]
+    if caution: # 調整2
+        ans.pop() # 30000を抜き取る
+
+    for i in range(three):
+        ans.append(i * 6 + 3)
+
+    print(*ans)
