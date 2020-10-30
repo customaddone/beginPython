@@ -49,251 +49,404 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC161 D - Lunlun Number
-K = 13
-que = []
-heapify(que)
-for i in range(1, 10):
-    que.append(i)
-for i in range(K):
-    u = heappop(que)
-    if u % 10 != 0:
-        heappush(que, 10 * u + (u % 10) - 1)
-    heappush(que, 10 * u + (u % 10))
-    if u % 10 != 9:
-        heappush(que, 10 * u + (u % 10) + 1)
-print(u)
+# ABC008 C - コイン
+n = getN()
+c = getArray(n)
+sumans = 0
 
-N, M = getNM()
-weight = []
-key = []
-for _ in range(M):
-    a, b = getNM()
-    weight.append(a)
-    c = getList()
-    key.append(c)
-dp = [float('inf')] * (1 << N)
-dp[0] = 0
-for i in range(M):
-    bit = 0
-    for item in key[i]:
-        bit |= (1 << (item - 1))
-    for j in range(1 << N):
-        dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
-print(dp)
+for i in c:
+    lista = [j for j in c if i % j == 0]
+    count = len(lista)
+    sumans += math.ceil(count / 2) / count
+print(sumans)
 
+# ABC011 D - 大ジャンプ
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if (r < 0) or (n < r):
+        return 0
 
-# ARC028 B-特別賞
-N, K = getNM()
-A = getList()
-young = [0] * N
-# i番目に若い人の順位はyoung[i]位
+    if n == 0:
+        return 1
+
+    if r == 0:
+        return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
+
+N, D = getNM()
+X, Y = getNM()
+X = abs(X)
+Y = abs(Y)
+
+# X軸に平行に正の向きに飛ぶ回数はx_time + α回
+# X軸に平行に負の向きに飛ぶ回数はα回
+x_time = X // D
+y_time = Y // D
+
+if X % D != 0 or Y % D != 0 or N < x_time + y_time:
+    print(0)
+    exit()
+
+N_a = N - (x_time + y_time)
+if N_a % 2 != 0:
+    print(0)
+    exit()
+N_a //= 2
+
+ans = 0
+for i in range(N_a + 1):
+    ans += cmb_1(N, x_time + i) * cmb_1(N - (x_time + i), i) * cmb_1(N - (x_time + 2 * i), y_time + N_a - i)
+print(ans / (4 ** N))
+
+# ABC024 D - 動的計画法
+A, B, C = getArray(3)
+
+# kCc / k+1Cc = k - c + 1 / k + 1
+# k+1Cc+1 / kCc = k + 1 / c + 1
+# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
+x = (C * pow(A, mod - 2, mod)) % mod
+y = (B * pow(A, mod - 2, mod)) % mod
+
+n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
+k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
+print((n - k) % mod, k % mod)
+
+# ABC058 D - いろはちゃんとマス目
+# 総計する
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+H, W, A, B = getNM()
+
+mother = cmb((H - 1) + (W - 1), (W - 1))
+
+goban = cmb((H - A) + (B - 1), B - 1)
+togoal = cmb((A - 1) + (W - B - 1), (W - B - 1))
+
+for i in range(A):
+    row = H - A + i
+    col = B - 1
+    row_left = A - 1 - i
+    col_left = W - B - 1
+    mother -= cmb(row + col, row) * cmb(row_left + col_left, row_left)
+    mother %= mod
+print(mother)
+
+# ABC057 D - Maximum Average Sets
+N, A, B = getNM()
+V = sorted(getList(), reverse = True)
+
+# 1行目の答え　上からA個
+print(sum(V[:A]) / A)
+
+# Vの各要素の数を数える
+dict = defaultdict(int)
 for i in range(N):
-    young[A[i] - 1] = i
-A = [-i for i in A]
-# Aの前からK個のリストを作る
-prized = []
-for i in range(K):
-    prized.append(A[i])
-heapq.heapify(prized)
-# K個数字があるうちの最大値（K番目の数字）を取ってくる
-now = heapq.heappop(prized)
-print(young[-now - 1] + 1)
-for i in range(K, N):
-    # もし現在のK番目の数字より小さい数字がきたら
-    if A[i] > now:
-        # prizedリストに混ぜて（計K個入っている）
-        heapq.heappush(prized, A[i])
-        # 再びK個数字があるうちの最大値（K番目の数字）を取ってくる
-        now = heapq.heappop(prized)
-        print(young[-now - 1] + 1)
-    # もし現在のK番目の数字より小さい数字がきたら捨てる
-    else:
-        print(young[-now - 1] + 1)
+    dict[V[i]] += 1
 
-# ABC062 D - 3N Numbers
+r = A
+n = 0
+for i in dict.items():
+    print(i)
+    if r - i[1] >= 0:
+        r -= i[1]
+    else:
+        n = i[1] # A個まで残りr個であり、そこには要素i[j]がn個入れられる
+        break
+
+ans = 0
+# V[0] == V[A - 1]ならA個を超えても平均値が下がらない
+# 残りr個(合計でA個)決める、残りr + 1個(合計でA + 1個)決める...合計でB個決める
+if r > 0 and V[0] == V[A - 1]:
+    for i in range(r, B + 1):
+        ans += cmb_1(n, i)
+else:
+    ans += cmb_1(n, r) # A個まであとr個残っており、n個のうちr個選ぶ
+
+print(ans)
+
+# ABC066 D - 11
+# 普通にやれば(cmb(N + 1, i)だが、今回ダブりがある
+# 29 19 ~ 19 31 9の場合
+# [29]のうちいくつか + １番目の19 + [31, 9]のうちいくつかと
+# [29]のうちいくつか + ２番目の19 + [31, 9]のうちいくつかはダブル
+# i個要素を選ぶとすると、19を選び、外側の要素からi - 1個選ぶ全通りについてダブルので１回引く
 N = getN()
 A = getList()
-# foreとbackの境界線を移動させる
-# [3 1 4 1 5 9]の場合
-# foreは[3 1], [3 1 4], [3, 1, 4, 1]の場合
-# backは[5 9], [1 5 9], [4, 1, 5, 9]の場合を前計算
-# 前から計算
-fore = A[:N]
-# 後ろから計算
-back = A[2 * N:]
-back = [-i for i in back]
-for_sum = sum(fore)
-back_sum = sum(back)
-heapify(fore)
-heapify(back)
 
-fore_list = []
-back_list = []
-for i in range(N):
-    fore_list.append(for_sum)
-    back_list.append(back_sum)
-    in_fore = A[N + i]
-    heappush(fore, in_fore)
-    out_fore = heappop(fore)
-    for_sum += in_fore - out_fore
-
-    in_back = (-1) * A[-N - i - 1]
-    heappush(back, in_back)
-    out_back = heappop(back)
-    back_sum += in_back - out_back
-
-fore_list.append(for_sum)
-back_list.append(back_sum)
-
-ans = -float('inf')
+lista = [0] * (max(A) + 1)
+double = 0
+# ダブり位置1を決める
+dou_ind_2 = 0
 for i in range(N + 1):
-    opt = fore_list[i] + back_list[N - i]
-    ans = max(ans, opt)
-print(ans)
+    if lista[A[i]] > 0:
+        double = A[i]
+        dou_ind_2 = i
+        break
+    lista[A[i]] += 1
+# ダブり位置2を決める
+dou_ind_1 = 0
+for i in range(N + 1):
+    if A[i] == double:
+        dou_ind_1 = i
+        break
 
-# ABC123 D - Cake 123
-X, Y, Z, K = getNM()
-A = sorted([-i for i in getList()])
-B = sorted([-i for i in getList()])
-C = sorted([-i for i in getList()])
-pos = []
-heapify(pos)
-dict = defaultdict(int)
-u = (A[0] + B[0] + C[0], 0, 0, 0)
-heappush(pos, u)
-dict[u] = 1
-for i in range(K):
-    p, i, j, l = heappop(pos)
-    print(-p)
-    # 取り出すごとにA, B, Cについての次の値をpush
-    if i + 1 < X:
-        opt_a = (A[i + 1] + B[j] + C[l], i + 1, j, l)
-        if dict[opt_a] == 0:
-            heappush(pos, opt_a)
-            dict[opt_a] = 1
-    if j + 1 < Y:
-        opt_b = (A[i] + B[j + 1] + C[l], i, j + 1, l)
-        if dict[opt_b] == 0:
-            heappush(pos, opt_b)
-            dict[opt_b] = 1
-    if l + 1 < Z:
-        opt_c = (A[i] + B[j] + C[l + 1], i, j, l + 1)
-        if dict[opt_c] == 0:
-            heappush(pos, opt_c)
-            dict[opt_c] = 1
+outer = dou_ind_1 + (N - dou_ind_2)
 
-# ABC137 D - Summer Vacation
+for i in range(1, N + 2):
+    if i == 1:
+        print(N)
+        continue
+    print((cmb(N + 1, i) - cmb(outer, i - 1)) % mod)
 
+# ABC105 D - Candy Distribution
+# M人に配る mod M
 N, M = getNM()
-query = [getList() for i in range(N)]
+A = getList()
 
-A_list = [[] for i in range(10 ** 5 + 1)]
-for a, b in query:
-    A_list[a].append(b)
+alta = []
+for i in A:
+    alta.append(i % M)
 
-job = []
-heapq.heapify(job)
+imos = [0]
+for i in range(N):
+    imos.append((alta[i] + imos[i]) % M)
 
 ans = 0
-for i in range(1, M + 1):
-    for j in A_list[i]:
-        heapq.heappush(job, -j)
-    if len(job) > 0:
-        u = heapq.heappop(job)
-        ans += -u
+for i in Counter(imos).values():
+    ans += cmb_1(i, 2)
 print(ans)
 
-# ABC149 E - Handshake
-# Mがクソデカイので使用不可
-# 二分探索使ってね
-N, M = getNM()
-A = sorted([-i for i in getList()])
-
-pos = []
-heapify(pos)
-dict = defaultdict(int)
-u = (A[0] + A[0], 0, 0)
-heappush(pos, u)
-dict[u] = 1
-
-ans = 0
-# 大きい値M番目まで全て求まる
-for i in range(M):
-    p, i, j = heappop(pos)
-    ans += -p
-    if i + 1 < N:
-        opt_a = (A[i + 1] + A[j], i + 1, j)
-        if dict[opt_a] == 0:
-            heappush(pos, opt_a)
-            dict[opt_a] = 1
-    if j + 1 < N:
-        opt_b = (A[i] + A[j + 1], i, j + 1)
-        if dict[opt_b] == 0:
-            heappush(pos, opt_b)
-            dict[opt_b] = 1
-print(ans)
-
-# Code Formula 2014 予選A C - 決勝進出者
-
-"""
-N: 予選の回数
-K: 招待人数
-最高順位が高い順に　どこかの予選でハイスコアを出せばOK
-最高順位が同じ場合は、最高順位を取った予選が開かれた時期が早い方から先に選ばれる。
-現在の試合を含めた残り試合数 = dとすると
-(K + d - 1) // dの人数分上から順番にとる
-2 11
-1 2 3 4 5 6 7 8 9 10 11
-1 2 15 14 13 16 17 18 19 20 21
-
-の場合
-[[1, 2, 3, 4, 5, 6], [15, 14, 13]] ここまでいける
-[1 2 3 4 5 6] 7 8 9 10 11
-[1 2 15 14 13] 16 17 18 19 20 21
-1番目の6位までと2番目以降の5位までは問答無用で確定する
-後をどうするか
-枠が空く　このまま順調に取っていっても枠が余る場合は
-枠が空いた場合は再計算
-N <= 50しかない
-優先度何番目かをレコードする
-枠が空くたびにボーダーが下がる
-
-4 5
-1 2 3 4 5
-2 1 3 4 5
-1 2 3 4 5
-2 1 3 4 5 の場合
-
-一番最初に2人通過できる？
-制約が小さいので50回全探索できる
-
-iを一つ進めるごとに候補がA[i]の分だけ増える
-これをヒープキューで優先度が高い（数字が小さい）順に取る
-"""
-
+# ABC136 E - Max GCD
 N, K = getNM()
-A = [[] for i in range(N)]
-for i in range(N):
-    a = getList()
-    for j in range(K):
-        A[i].append([j * N + i + 1, a[j]])
+A = getList()
 
-ans = [[] for i in range(N)]
-L = []
-heapify(L)
-passed = set()
+# 操作後のAの要素全てが因数にkを持つ
 
-for i in range(N):
-    for j in A[i]:
-        heappush(L, j)
-    while L and L[0][0] <= K: # whileで抜き取る時は要素が残っているか気をつけよう
-        pref, id = heappop(L)
-        if id in passed:
-            K += 1
+# 好きな回数操作を行えるとすると、Aの要素全てに因数kを持たせることができるか？
+# 操作前と操作後とではAの総和は変わらない → A = akとするとa個のkをN個の要素に配分する
+# ことでAの要素全てに因数kを持たせることができる。
+# 好きな回数操作を行える、操作後のAの全ての要素を割り切る正の整数は、sum(A)の約数になる
+
+def make_divisors(n):
+    divisors = []
+    for i in range(1, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            divisors.append(i)
+            # √nで無い数についてもう一個プラス
+            if i != n // i:
+                divisors.append(n // i)
+    return sorted(divisors)
+
+# K回以下の操作の条件付きでも題意を満たすか
+# alta % kをし、あまりが小さい順にソートする
+# 前からi番目までをプラス、i + 1番目以降をマイナスにする
+# どちらか大きい方がK以下なら条件を満たす
+
+def judger(x):
+    alta = [i % x for i in A]
+    alta.sort()
+    alta_b = [x - i for i in alta]
+    # 前からi番目までプラスにする
+    imos_f = copy.deepcopy(alta)
+    # 前からi + 1番目以降をマイナスにする
+    imos_b = copy.deepcopy(alta_b)
+
+    for i in range(N - 1):
+        imos_f[i + 1] += imos_f[i]
+        imos_b[-i - 2] += imos_b[-i - 1]
+
+    # 全部マイナス、全部プラスの場合
+    imos_f.insert(0, 0)
+    imos_b.append(0)
+
+    ans = float('inf')
+    for i in range(N + 1):
+        ans = min(ans, max(imos_f[i], imos_b[i]))
+
+    return ans
+
+for i in make_divisors(sum(A))[::-1]:
+    if judger(i) <= K:
+        print(i)
+
+# ABC154 F - Many Many Paths
+"""
+経路の個数
+D - いろはちゃんとマス目を参考に
+        x
+o o o o o 各oからxに移動する通りは1通りずつ
+o x 各oからxに移動する通りは1通りずつ
+o
+o
+o
+o
+g(r,c) を 0 ≤ i ≤ r かつ 0 ≤ j ≤ c を満たす全ての整数の組 (i,j) に対する f(i,j) の総和とする。
+ここでf(r + 1, c) = f(r, c) + f(r, c - 1)...f(r, 0)
+f(r, c)からr方向へ1つ（一通り）
+f(r, c - 1)からr方向へ1つ, c方向に1つ（一通り）
+...
+つまりf(r2 + 1, c2) = f(r2, c) + f(r2, c - 1) + ... f(r2, 0)
+これをf(0, c2)からf(r2 + 1, c2)まで求めればg(r2, c2)が求まる
+"""
+
+r1, c1, r2, c2 = getNM()
+
+ans = 0
+for i in range(r1, r2 + 1):
+    ans = (ans + cmb(c2 + i + 1, i + 1) - cmb(c1 + i, i + 1)) % mod
+print(ans)
+
+# ABC171 F - Strivore
+"""
+dp[i][j]を
+「i文字目まででj回Sの文字を使ったか」とする
+K = 5
+S = 'oof'
+dp = [[0] * (len(S) + 1) for i in range(K + len(S) + 1)]
+dp[0][0] = 1
+for i in range(1, K + len(S) + 1):
+    for j in range(len(S) + 1):
+        if j < len(S):
+            dp[i][j] += dp[i - 1][j] * 25
         else:
-            ans[i].append(id)
-            passed.add(id)
+            dp[i][j] += dp[i - 1][j] * 26 # j回使い切るともうSは関係なくなるので *= 26になる
+        if j >= 1:
+            dp[i][j] += dp[i - 1][j - 1]
+l_s = len(S)
+どのタイミングで「この先ずっと*= 26」になるか
+後ろからi文字目にSを使い切る: pow(25, K - k, mod) * cmb(N + K - k - 1, N - 1) * pow(26, k, mod)
+...
+"""
 
-for i in ans:
-    print(*sorted(i))
+K = getN()
+S = input()
+N = len(S)
+
+ans = 0
+# l_s + i文字目に文字を使い切る
+# 次から *= 26
+for k in range(K + 1):
+    # 逆からやってる
+    ans += cmb(N + K - k - 1, N - 1) * pow(26, k, mod) * pow(25, K - k, mod) % mod
+    ans %= mod
+
+print(ans)
+
+# ARC023 C - タコヤ木
+N = getN()
+A = getList()
+
+def cmb(x,y):
+    r = 1
+    for i in range(1, y + 1):
+        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
+    return r
+
+now = A[0]
+cnt = 0
+ans = 1
+for i in range(1, N):
+    if A[i] > -1:
+        if cnt > 0:
+            ans *= cmb(A[i] - now + cnt, cnt)
+            ans %= mod
+            now = A[i]
+            cnt = 0
+        else:
+            now = A[i]
+    else:
+        cnt += 1
+print(ans)
+
+# ABC044 B - Extension
+
+"""
+最初縦Aマス横Bマス
+・上か右のマスを増やす
+・追加されたマスのうちちょうど1マスを黒く塗り、残りを白く塗る
+
+最終的に縦Cマス横Dマスになった　最終的なマス目の塗られ方としてありうるものは
+A, B, C, D = 3000
+
+通りの場合はdpかcombo
+
+最初のA * Bマスは絶対に白
+追加される分について黒や白で塗られ、あとで変更されない
+二項定理の性質を思い出す
+1 1 2 2の場合
+
+1 0   0 1   1 1
+0 1   0 1   0 0 の３通り
+
+2 1 3 4の場合
+
+0 0 0 0
+0 0 0 0
+0 0 0 0 の塗り方の通りは？
+
+dp[i][j]: 現在縦iマス、横jマスでの塗り方の通り
+どう遷移する？
+
+dp[i - 1][j - 1]から遷移させると
+dp[i][j] = dp[i - 1][j - 1] * ((i - 1) * (j - 1) + i + j) ?
+
+4 1
+3 1  5  16 44
+2 1  2  4  8
+1
+  1  2  3  4
+
+ 足りない　漏れがある
+１　dp[i - 1][j]方面
+　　上のマスが増える その塗り方はj通りあるが、dp[i][j - 1]の時とダブっていないかdp
+
+左右対象になるので2かけて引く？
+
+黒マスの数は
+[3, 3]を求める場合は[2, 2]経由だけでなく[3, 1]経由もある
+
+相手側になんも塗ってないところがある場合を抑えておく
+
+dp[2][j]は全てのjについてi <= 2の範囲で色がついてる
+dp[j][1]は　　　　　　　　　　　　　全てのiにについてj <= 1の範囲で色がついている
+
+足し上げ足し上げダブりを引く方針
+"""
+
+A, B, C, D = getNM()
+MOD = 998244353
+
+dp = [[0] * (C + 1) for _ in range(D + 1)] # dpは完成形を
+dp[B][A] = 1
+
+# 順に大きくしていく
+for i in range(B, D + 1):
+    for j in range(A, C + 1):
+        if j > A:
+            dp[i][j] += dp[i][j-1] * i
+        if i > B:
+            dp[i][j] += dp[i-1][j] * j
+        if i > B and j > A:
+            # もし右上を選んだ場合はダブらないが
+            # それ以外を選んだ場合はダブりが出る
+            dp[i][j] -= dp[i-1][j-1] * (i-1) * (j-1) # ダブったのを捨てる
+        dp[i][j] %= MOD
+
+print(dp[-1][-1])
