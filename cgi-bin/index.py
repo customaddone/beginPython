@@ -49,218 +49,139 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC098 D - Xor Sum 2
-# 連続する区間の長さを答える　尺取り
-
-N = getN()
-A = getList()
-
-r, tmp = 0, 0
-# l:左端
-cnt = 0
-for l in range(N):
-    while r < N and tmp ^ A[r] == tmp + A[r]:
-        # 右端を伸ばす
-        tmp += A[r]
-        r += 1
-    # 計算
-    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
-    # (r - l + 1) - 1
-    cnt += r - l
-
-    if l == r:
-        r += 1
-        tmp -= A[l]
-    else:
-        tmp -= A[l]
-print(cnt)
-
-# ABC117 D - XXOR
-N, K = getNM()
-A = getList()
-
-# 各X xor Aiについて
-# 各桁について
-# Xにフラグ立つ + Aiにフラグ立たない
-# Xにフラグ立たない + Aiにフラグ立つ　の時 2 ** iだけxorの値が増える
-# Aの各要素の2 ** iのフラグの合計がn本の時
-# Xの2 ** iのフラグを立てるとN - n * 2 ** i、立てないとn * 2 ** i　f(x)の値が増える
-
-# 各桁のフラグが合計何本あるか
-flag = [0] * 61
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            flag[i] += 1
-for i in range(N):
-    splitbit(A[i])
-
-x = 0
-ans = 0
-for i in range(60, -1, -1):
-    # flag[i] < N - flag[i]ならフラグを立てるほうがお得
-    # だがKの制限があり立てたくても立てられないことがある
-    # Xの2 ** iのフラグを立ててもXがKを超えないか
-    if flag[i] < N - flag[i] and x + 2 ** i <= K:
-        # Xにフラグを立てる
-        x += 2 ** i
-        # f(x)の値が増える
-        ans += 2 ** i * (N - flag[i])
-    # flag[i] < N - flag[i]だがフラグを立てられない場合 +
-    # flag[i] >= N - flag[i]の時
-    else:
-        ans += 2 ** i * flag[i]
-
-print(ans)
-
-# ABC121 D - XOR World
-A, B = getNM()
-# bit1桁目のフラグの個数
-# 周期は2 ** 1
-# 0と1が交互に
-# bit2桁目のフラグの個数
-# 周期は2 ** 2
-flags1 = [0] * 61
-flags2 = [0] * 61
-# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
-def bitflag(n, flaglist):
-    if n > 0:
-        for i in range(1, 61):
-            split = 2 ** i
-            flag1 = (n // split) * (split // 2)
-            flag2 = max(n % split + 1 - (split // 2), 0)
-            flaglist[i] += flag1 + flag2
-# 1 ~ A - 1について（Aは範囲に入っているため）
-bitflag(A - 1, flags1)
-bitflag(B, flags2)
-for i in range(61):
-    flags2[i] -= flags1[i]
-ans = 0
-# 奇数ならフラグが立つ
-for i in range(61):
-    if flags2[i] % 2 != 0:
-        ans += 2 ** (i - 1)
-print(ans)
-
-# ABC147 D - Xor Sum 4
-
-N = getN()
-A = getList()
-# Aの各数字の（２進数における）各桁ごとに分解して排他的論理和を求める
-# 例
-# 3
-# 1 2 3 →
-# 1, 10, 11
-# 2 ** 0の桁について(1 ^ 2) 1 ^ 0 = 1,(1 ^ 3) 1 ^ 1 = 0,(2 ^ 3) 0 ^ 1 = 1
-# 2 ** 1の桁について 0(1の2 ** 1の桁は0) ^ 1 = 1, 0 ^ 1 = 1, 1 ^ 1 = 0
-# 各桁について2 ** iの桁が1の数字の選び方 * 2 ** iの桁が0の数字の選び方 * 2 ** iを
-# 足し合わせる
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][1] += 1
-        else:
-            lista[i][0] += 1
-for i in A:
-    splitbit(i)
-ans = 0
-for i in range(61):
-    ans += ((lista[i][0] * lista[i][1]) * (2 ** i)) % mod
-print(ans % mod)
-
-# ARC021 B - Your Numbers are XORed...
-L = getN()
-B = getArray(L)
-B_xor = B[0]
-for i in range(1, L - 1):
-    B_xor ^= B[i]
-
-# B_xor ^ a1(aの最後) ^ a1 == Bの最後なら成立
-# この時aがどんな値であろうと条件が成立する
-if B_xor == B[-1]:
-    now = 0
-    print(now)
-    # a2 = B1 ^ a1
-    # a3 = B2 ^ a2
-    for j in range(L - 1):
-        now = B[j] ^ now
-        print(now)
-else:
-    print(-1)
-
-# Tenka1 Programmer Contest D - IntegerotS
+# AGC022 B - GCD Sequence
 
 """
-Aのbitの総和がK以下になるように整数を集める
-ナップサック問題っぽいがAもBもおおきい
-貪欲に行く
-Kを超えた場合でも、他のでフラグを消せればいい
+Aの各要素は全て異なる
+どのaiについても
+gcd(ai, sum(A) - ai)が1ではない
+aiとsum(A) - aiが共通因数をもつ
 
-まず全部足し、フラグを抜いていく？
-dpっぽいが2 ** 30の30を使う？
-フラグの数が奇数か偶数か
+aiとsum(A)が共通因数を持つ
 
-bitwise or どちらかのビットが1なら1、そうでなければ0
-一度立てたフラグは消えない
+Aの全ての要素を同じ因数を持つものに変えれば簡単
+全ての要素の最大公約数が1である　の場合は？
+互いに素なものが１つでもあればOK
 
-Kの各bitについて
-フラグを立てるか立てないか
-0 のbitlengthは0
-1 のbitlengthは1 (右から1番目に最初のフラグが立っている)
-2 のbitlengthは2
-3 のbitlengthは2
+1 2 3 は条件を満たす　完全数なら話は早い　早くない　1に何してもgcdは1
 
-[0, 0, 8, 4, 0, 0, 0,
-むやみにフラグを立てないように
+N <= 10000より　1 * n, 2 * n, 3 * n...とするのは諦める
+ターゲットとなるgcdの数は小さくないと間に合わない
+2と3で統一してみれば
+3の
+3の倍数を偶数個足すと偶数になる
+でも偶数と3の倍数である奇数のgcdは1
+要素は3万以下であることに注意
 
-K = 101にどう従っていくか
-1本目を1にするなら それ以降の条件にも従ってもらう
+2 ~ 30000までの偶数(15000個)
+3 ~ 30000までの3の倍数かつ奇数の数(5000個) できる！！！
 
-Kと比べた時に何本目まで従っているか
-K = 101
-a = 10の場合左から2番目が従えてない
-[[3, 3, 1], [4, 4, -1], [2, 5, 1]]
+偶数の個数は
+N % 3 == 0の時 6の倍数を先頭に
+30000 + 29997, 29991
+N % 3 == 1の時
+2, 4 + 3, 9 逆から
+N % 3 == 2の時
+2, 4, 6 + 3, 9 楽
 
-別に30回回していい
-一本目のKについて
-立てるなら
-Kにフラグが立ってなかったら
-立ててはいけない
+制限ないと楽だけど
+限界まで2の倍数を並べればいい
+N % 3 == 0　2の倍数N - 2個
+N % 3 == 1  2の倍数N - 2個
+N % 3 == 2  2の倍数N - 2個
 
-K以下の値の2進数換算は
-Kのi番目の1のフラグを1 → 0にし、それ以下を自由にしたもの　である
-フラグの数が多い方がいいので
-整数を集めてできる数をXとすると
-K = 11010の場合は
-X = 01111, 10111, 11001 を見ていけばいい
-足してXになる数を求めればいい
+N = 3の時は注意
 
-K以下の〜について
-最も有利な条件を並べてそれぞれで計算
+上限を15000にすると3の個数が変動する
 """
 
-N, K = getNM()
-que = [getList() for i in range(N)]
+N = getN()
 
-ans = 0
-# 足すとKのフラグになる
-opt = 0
-for a, b in que:
-    if K | a == K:
-        opt += b
-ans = max(ans, opt)
+def cnter(ans):
+    two = 0
+    three = 0
+    tw_l = 0
+    th_l = 0
+    for i in ans:
+        if i % 2 == 0:
+            two += 1
+            tw_l += i
+        elif i % 3 == 0:
+            three += 1
+            th_l += i
 
-# 足すとXのフラグになる
-for i in range(31, 0, -1):
-    opt = 0
-    if K & (1 << i): # フラグが立っていれば
-        X = (K ^ (1 << i)) | ((2 ** i) - 1) # 1 << iのフラグを消す + それ以下を全て1に
-        for a, b in que:
-            if X | a == X: # フラグの本数が変わらなければ
-                opt += b
+    return tw_l % 3, th_l % 2, two, three, max(ans), min(ans)
 
-        ans = max(ans, opt)
+if N == 3:
+    print(2, 5, 63)
+    exit()
 
-print(ans)
+if N % 3 == 0:
+    even = min(N - 2, 15000) # 偶数の個数
+    three = N - even # 基本的には2 これは偶数個でないといけない
+
+    caution = False
+    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
+        caution = True
+        three += 1
+
+    ans = [i * 2 for i in range(15000, 15000 - even, -1)]
+    if caution: # 調整2 even -= 1
+        ans.pop(0) # 30000を抜き取る
+
+    for i in range(three):
+        ans.append(i * 6 + 3)
+
+    print(*ans)
+
+else: # 2と3が絶対に並ぶのでgcd = 1
+    even = min(N - 2, 15000) # 偶数の個数
+    three = N - even
+
+    caution = False
+    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
+        caution = True
+        three += 1
+
+    ans = [i * 2 for i in range(1, even + 1)]
+    if caution: # 調整2
+        ans.pop() # 30000を抜き取る
+
+    for i in range(three):
+        ans.append(i * 6 + 3)
+
+    print(*ans)
+
+# Judge System Update Test Contest 202004 D - Calculating GCD
+
+# Q個のSiについて次の問いに答えよ
+
+N, Q = getNM()
+A = getList()
+S = getList()
+
+gc = [0] * N # 最終的なXの値を求めるため
+gc[0] = A[0]
+# 共通因数として持っておかないといけない数が増えていく
+# nowの値とA[i]に共通因数があれば残る
+# 6 12 6 9 の場合は
+# 2 or 3 2 or 3 2 or 3 3のみ [6, 6, 6, 3]
+# gcd(S1, gc[i]) > 1なら通過 == 1なら値を出力
+
+# gc[i]は指数関数的に減少していくんじゃ！
+index = [0]
+for i in range(1, N):
+    gc[i] = math.gcd(gc[i - 1], A[i])
+    if gc[i] < gc[i - 1]:
+        index.append(i)
+
+# gcdが変化する部分だけでgcdすればいいとわかる
+# 精々2 ** 30なので30回程度
+for s in S:
+    for j in index:
+        opt = math.gcd(s, gc[j])
+        if opt == 1:
+            print(j + 1)
+            break
+    else:
+        print(math.gcd(s, gc[-1]))
