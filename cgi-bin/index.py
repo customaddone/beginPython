@@ -43,145 +43,131 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
-mod = 10 ** 9 + 7
+mod = 998244353
 
 #############
 # Main Code #
 #############
 
-# AGC022 B - GCD Sequence
+# キーエンス プログラミング コンテスト 2019 D - Double Landscape
 
 """
-Aの各要素は全て異なる
-どのaiについても
-gcd(ai, sum(A) - ai)が1ではない
-aiとsum(A) - aiが共通因数をもつ
+1 ~ N * M の整数を書き込む
+i行目の数字の最大の数字はA
+j行目の数字の最大の数字はB
 
-aiとsum(A)が共通因数を持つ
+反転数の数を求める時は列ごと入れ替え、列内入れ替えを行った
+書き込みの個数を求めよ dpかcombo?
 
-Aの全ての要素を同じ因数を持つものに変えれば簡単
-全ての要素の最大公約数が1である　の場合は？
-互いに素なものが１つでもあればOK
+条件の満たし方を考える
+まず条件を満たすものを一つ出す
+Aiがn　i行目にはnとn以下の数字しか書かれていない
 
-1 2 3 は条件を満たす　完全数なら話は早い　早くない　1に何してもgcdは1
+AとB両方に登場するとは限らない
+ある数について指定の場所に置かないといけない
+あとは自由 comboで求める
+3 3
+5 9 7
+3 6 9
+  5 9 7
+3
+6
+9
 
-N <= 10000より　1 * n, 2 * n, 3 * n...とするのは諦める
-ターゲットとなるgcdの数は小さくないと間に合わない
-2と3で統一してみれば
-3の
-3の倍数を偶数個足すと偶数になる
-でも偶数と3の倍数である奇数のgcdは1
-要素は3万以下であることに注意
+9を置く
+  5 9 7
+3
+6
+9   9
+8を置く　置けない！
 
-2 ~ 30000までの偶数(15000個)
-3 ~ 30000までの3の倍数かつ奇数の数(5000個) できる！！！
+二次元累積和？
+N * M ~ 1まで１つずつ数を置いていく
+iがAにある and Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+・置けるとこ
+1箇所　今回解放されるとこのクロス
 
-偶数の個数は
-N % 3 == 0の時 6の倍数を先頭に
-30000 + 29997, 29991
-N % 3 == 1の時
-2, 4 + 3, 9 逆から
-N % 3 == 2の時
-2, 4, 6 + 3, 9 楽
+iがAにある ^ Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ
+・置けるとこ
+今回解放されたとこのいずれかに置く
 
-制限ないと楽だけど
-限界まで2の倍数を並べればいい
-N % 3 == 0　2の倍数N - 2個
-N % 3 == 1  2の倍数N - 2個
-N % 3 == 2  2の倍数N - 2個
-
-N = 3の時は注意
-
-上限を15000にすると3の個数が変動する
+A,Bにない
+現在解放されているマスのどこにでも置ける
 """
 
-N = getN()
-
-def cnter(ans):
-    two = 0
-    three = 0
-    tw_l = 0
-    th_l = 0
-    for i in ans:
-        if i % 2 == 0:
-            two += 1
-            tw_l += i
-        elif i % 3 == 0:
-            three += 1
-            th_l += i
-
-    return tw_l % 3, th_l % 2, two, three, max(ans), min(ans)
-
-if N == 3:
-    print(2, 5, 63)
+N, M = getNM()
+A = set(getList())
+B = set(getList())
+if len(A) < N or len(B) < M: # A,B内で数字がダブってたら0
+    print(0)
     exit()
 
-if N % 3 == 0:
-    even = min(N - 2, 15000) # 偶数の個数
-    three = N - even # 基本的には2 これは偶数個でないといけない
+ans = 1
+opened = 0 # 解放されたマス
+a_allowed = 0 # 解放された行
+b_allowed = 0 # 解放された列
 
-    caution = False
-    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
-        caution = True
-        three += 1
-
-    ans = [i * 2 for i in range(15000, 15000 - even, -1)]
-    if caution: # 調整2 even -= 1
-        ans.pop(0) # 30000を抜き取る
-
-    for i in range(three):
-        ans.append(i * 6 + 3)
-
-    print(*ans)
-
-else: # 2と3が絶対に並ぶのでgcd = 1
-    even = min(N - 2, 15000) # 偶数の個数
-    three = N - even
-
-    caution = False
-    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
-        caution = True
-        three += 1
-
-    ans = [i * 2 for i in range(1, even + 1)]
-    if caution: # 調整2
-        ans.pop() # 30000を抜き取る
-
-    for i in range(three):
-        ans.append(i * 6 + 3)
-
-    print(*ans)
-
-# Judge System Update Test Contest 202004 D - Calculating GCD
-
-# Q個のSiについて次の問いに答えよ
-
-N, Q = getNM()
-A = getList()
-S = getList()
-
-gc = [0] * N # 最終的なXの値を求めるため
-gc[0] = A[0]
-# 共通因数として持っておかないといけない数が増えていく
-# nowの値とA[i]に共通因数があれば残る
-# 6 12 6 9 の場合は
-# 2 or 3 2 or 3 2 or 3 3のみ [6, 6, 6, 3]
-# gcd(S1, gc[i]) > 1なら通過 == 1なら値を出力
-
-# gc[i]は指数関数的に減少していくんじゃ！
-index = [0]
-for i in range(1, N):
-    gc[i] = math.gcd(gc[i - 1], A[i])
-    if gc[i] < gc[i - 1]:
-        index.append(i)
-
-# gcdが変化する部分だけでgcdすればいいとわかる
-# 精々2 ** 30なので30回程度
-for s in S:
-    for j in index:
-        opt = math.gcd(s, gc[j])
-        if opt == 1:
-            print(j + 1)
-            break
+for i in range(N * M, 0, -1):
+    if (i in A) and (i in B):
+        # 解放はできる
+        opened += (a_allowed + b_allowed) + 1 # 今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+        a_allowed += 1
+        b_allowed += 1
+        opened -= 1 # 解放されたマスに置く
+        # ans *= 1 # 置けるのは1箇所　今回解放されるとこのクロス
+    elif (i in A):
+        opened += b_allowed # 解放する行 * 解放されている列
+        a_allowed += 1
+        ans *= b_allowed # 今回解放された行のいずれかに置く
+        opened -= 1
+    elif (i in B):
+        opened += a_allowed
+        b_allowed += 1
+        ans *= a_allowed
+        opened -= 1
     else:
-        print(math.gcd(s, gc[-1]))
+        ans *= opened # 解放されている部分のどこに置いても良い
+        opened -= 1
+
+    ans %= mod
+
+print(ans)
+
+# SoundHound Inc. Programming Contest 2018 -Masters Tournament- C - Ordinary Beauty
+
+"""
+差の絶対値がdであるものだけをピックアップ
+合計でn ** m通り
+期待値　通りの数は求めなくていい
+m - 1の内1 ~ m - 1箇所について
+1つめの数字 n通り
+2つめの数字 n通りあるが、この内条件を満たす通りは
+上向き　1つ目 1なら 1 + d
+　　　　 　　 2なら 2 + d...(n - d)通り
+            n - dなら n
+下向きも同様に (n - d)通り
+合計2 * (n - d)通り
+つまりm - 1のうちの一つの谷間が条件を満たす確率は
+2(n - d) / n ** 2
+あとは美しさが1, 2...m - 1のものを足し合わせるだけ
+comboすら必要ない？
+
+足し合わせで求められる
+1つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
+2つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
+1つ目が条件を満たす　と　2つ目が条件を満たす　は互いに独立
+n - dが0になることもそうすれば求める値は0
+またDが0なら上向き下向きではなく同じ値しか取れない
+"""
+
+N, M, D = getNM()
+# (M - 1): 1 ~ M - 1まで足し合わせる
+# 2 * (N - D): 2 * (N - D)) / (N ** 2) * (n ** M）を(n ** M）で割って平均値を出す
+if D == 0:
+    print((M - 1) * (max(0, N - D)) / (N ** 2))
+else:
+    print((M - 1) * 2 * (max(0, N - D)) / (N ** 2))
