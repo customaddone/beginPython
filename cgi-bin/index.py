@@ -49,215 +49,439 @@ mod = 998244353
 # Main Code #
 #############
 
-# ARC027 B - 大事な数なのでZ回書きまLた。
+# ABC005 C - おいしいたこ焼きの売り方
+# マッチング問題だが貪欲
+T = getN()
+N = getN()
+sell = getList()
+M = getN()
+buy = getList()
 
-"""
-N桁の数字を覚えて置きたい
-大文字アルファベットがそれぞれ0 ~ 9のうちのどれかの数字に対応している
+# 来る客1, 2に売れるか
+for cus in buy:
+    flag = False
+    for i in range(N):
+        if sell[i] <= cus <= sell[i] + T:
+            flag = True
+            sell[i] = mod
+            break
+    if not flag:
+        print('no')
+        exit()
+print('yes')
 
-Unionfindとか最大流とか
-N <= 18 bit　dpまで狙える
+# ABC080 D - Recording
+# 使ってない録画機は他のチャンネルにスイッチできる
+# 同時にいくつ放送が流れているか
+N, C = getNM()
+query = [getList() for i in range(N)]
+dp = [[0] * (C + 1) for i in range(10 ** 5 + 2)]
+for i in range(N):
+    s, t, c = query[i]
+    dp[s][c] += 1
+    dp[t + 1][c] -= 1
 
-覚えておく数字について何通り考えられるか
-10 ** 18通りの数字があるがその中で？
-ただし制約がある
-候補を絞って全探索
+for i in range(1, 10 ** 5 + 2):
+    for j in range(C + 1):
+        dp[i][j] += dp[i - 1][j]
 
-アルファベットと各数字を対応させる通りは10 ** 26通り
-4
-1XYX
-1Z48 の場合
-X - Zは同じ
-Y - 4は同じ
-X - 8は同じ
-なのでZ - 8
-S1とS2に出てくる文字がどの数字と対応しているかを求めればいい
+ans = 0
+for i in range(10 ** 5 + 2):
+    cnt = 0
+    for j in dp[i]:
+        if j > 0:
+            cnt += 1
+    ans = max(ans, cnt)
+print(ans)
 
-6
-PRBLMB
-ARC027 の時
+# ABC085 D - Katana Thrower
+N, H = getNM()
 
-P - A
-B - C
-L - 0
-M - 2
-B - 7
-B - 7よりC - B - 7
-P - AグループとRに対応する数字を求めればいい
+a = []
+b = []
 
-UnionFindする
-出現した文字のリスト
-出現した文字が何の数字か
-"""
+for i in range(N):
+  x, y = map(int, input().split())
+  a.append(x)
+  b.append(y)
+
+# 振った場合の最大値
+max_a = max(a)
+
+ans = 0
+# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
+# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
+# 両方利用することができる
+# 実は投げてしまった刀も振ることができるというルールに変更しても
+# 問題の答えは変わらない
+# 実際のムーブとしては
+# ①最も攻撃力が高い振り刀で攻撃する
+# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
+# という流れになる
+for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
+    H -= x
+    ans += 1
+    if H <= 0: break
+
+ans += max(0, (H + max_a - 1) // max_a)
+print(ans)
+
+# ABC091 C - 2D Plane 2N Points
 
 N = getN()
-S1 = input()
-S2 = input()
-str_c = [0] * 26 # 文字が出現したか
-number = [-1] * 26 # どの文字が割り当てられているか
-ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+# Rはループさせるのでソートさせる必要ない
+R = [getList() for i in range(N)]
+R_l = [1] * N
 
-U = UnionFind(26)
-# 通りが0の場合もあるが
+B = [getList() for i in range(N)]
+B.sort()
+
+# 貪欲法でペア作りする問題
+# ABC005 C - おいしいたこ焼きの売り方の時と同様に
+# それとしか繋げないもの　を優先的に繋いでいく
+
+# 条件Aの通過が厳しい順に対象bをソートし、
+# たこ焼き　条件A:客が来る前にたこ焼きができてないといけない
+#  　　　　      客を来るのが早い順に並べる（最初から並んでる）
+# 今回     条件A:赤星のx座標が青星のx座標より小さくないといけない
+#  　　　　　　　 青星をx座標が小さい順に並べる
+
+# 条件A, 条件Bをクリアしたものの中で、最も条件Bの通過が厳しい対象aと結ぶ
+# たこ焼き　条件B:たこ焼きが賞味期限より前のものでないといけない
+#  　　　　      できるだけ古いものを売る（最初から並んでる）
+# 今回     条件B:赤星のy座標が青星のy座標より小さくないといけない
+#  　　　　　　　 条件をクリアしたもののうちでできるだけy座標が大きいものを選ぶ
+
+ans = 0
+for b in B:
+    max_y = -1
+    max_index = -1
+    for i, a in enumerate(R):
+        # x, y座標が小さいもののうちでまた使ってないもの
+        if a[0] < b[0] and a[1] < b[1] and R_l[i] == 1:
+            # あるならY座標が最も大きいもの
+            if a[1] > max_y:
+                max_y = a[1]
+                max_index = i
+    if max_y >= 0:
+        R_l[max_index] = 0
+        ans += 1
+
+# ABC100 D - Patisserie ABC
+# 8パターン全部調べる
+
+N,M = getNM()
+data = [[] for i in range(8)]
+for _ in range(N):
+    x,y,z = getNM()
+    data[0].append(x + y + z)
+    data[1].append(x + y - z)
+    data[2].append(x - y + z)
+    data[3].append(x - y - z)
+    data[4].append(- x + y + z)
+    data[5].append(- x + y - z)
+    data[6].append(- x - y + z)
+    data[7].append(- x - y - z)
+
+ans = -mod
+for i in range(8):
+    data[i].sort(reverse = True)
+    ans = max(ans,sum(data[i][:M]))
+print(ans)
+
+# ABC103 D - Islands War
+N, M = getNM()
+que = []
+for i in range(M):
+    a, b = getNM()
+    que.append([a - 1, b - 1])
+
+# N個の島　各島間には橋がある
+# 要望が1 ~ 5, 1 ~ 3の時
+# 例えば1 - 2間を取り除けばいい
+# 要望が1 ~ 2, 1 ~ 3, 1 ~ 4の時
+# 1 - 2間の橋を取り除く
+# 逆に言えば1 ~ 2の時は1 ~ 2間の橋を取り除くしかない
+
+# 間隔が狭いものから調べていく
+# 間隔1の橋を取り除く、間隔2の橋を取り除く...
+# 間隔2のどちらの橋を取り除く
+
+# 1 ~ 2, 1 ~ 3, 1 ~ 4の時
+# 1 - 2間の橋を取り除く
+# 2 ~ 3, 1 ~ 3, 1 ~ 4の時
+# 1 - 2の橋は取り除かなくていい
+# するとこれは2スタートの2 ~ 3, 2 ~ 3, 2 ~ 4の要望に答える問題に変換できる
+# 終点をソートして左側から順に橋を落とすか落とさないか決めていく
+
+que.sort(key = lambda i:i[1])
+# a ~ bで繋がっているならb - 1 ~ b間の橋を取り除く
+# queryの区間は左にスライドしていき、次のqueryに最も関係あるのは右の方の橋なので
+
+ans = 0
+destroy = -1 # 最後に落とした橋
+for a, b in que:
+    if destroy <= a: # 範囲外なら橋を新しく落とす
+        ans += 1
+        destroy = b
+print(ans)
+
+
+# ABC116 D - Various Sushi
+N, K = getNM()
+various = defaultdict(list)
+que = [getList() for i in range(N)]
+
+ans = 0
+num = []
+var_s = set()
+
+# 美味しい順にK個とった時の幸福度
+que.sort(reverse = True, key = lambda i: i[1])
+for i in range(K):
+    ans += que[i][1]
+    # もし２番手以降ならあとで交換する用にとっておく
+    if que[i][0] in var_s:
+        num.append(que[i][1])
+    var_s.add(que[i][0])
+
+var = len(var_s)
+ans += var ** 2
+
+# 使ってない種類について各種類で一番大きさが大きいもの
+left_l = defaultdict(int)
 for i in range(N):
-    # 両方文字ならグループ化
-    if (S1[i] in ascii_uppercase) and (S2[i] in ascii_uppercase):
-        str_c[ord(S1[i]) - ord('A')] = 1
-        str_c[ord(S2[i]) - ord('A')] = 1
-        U.union(ord(S1[i]) - ord('A'), ord(S2[i]) - ord('A'))
-    if not (S1[i] in ascii_uppercase) and not (S2[i] in ascii_uppercase):
-        if int(S1[i]) != int(S2[i]): # そもそも数字同士が違う
-            print(0)
-            exit()
+    if not que[i][0] in var_s:
+        left_l[que[i][0]] = max(left_l[que[i][0]], que[i][1])
 
-# グループ化し終わったら数字を対応させる
-# あるグループにアクセスするときはU.find(i)でアクセスする
-# するとグループの代表者が出てきてくれる
-# そのグループの代表者にどの文字と対応しているか、先頭の文字かを尋ねる
-for i in range(N):
-    if (S1[i] in ascii_uppercase) and not (S2[i] in ascii_uppercase): # S1が文字
-        str_c[ord(S1[i]) - ord('A')] = 1
-        if number[U.find(ord(S1[i]) - ord('A'))] == -1: # 未登録
-            number[U.find(ord(S1[i]) - ord('A'))] = int(S2[i])
-        else:
-            if number[U.find(ord(S1[i]) - ord('A'))] != int(S2[i]): # 矛盾する
-                print(0)
-                exit()
+num.sort(reverse = True)
+left_l = [i[1] for i in left_l.items()]
+left_l.sort()
 
-    if not (S1[i] in ascii_uppercase) and (S2[i] in ascii_uppercase): # S2が文字
-        str_c[ord(S2[i]) - ord('A')] = 1
-        if number[U.find(ord(S2[i]) - ord('A'))] == -1:
-            number[U.find(ord(S2[i]) - ord('A'))] = int(S1[i])
-        else:
-            if number[U.find(ord(S2[i]) - ord('A'))] != int(S1[i]):
-                print(0)
-                exit()
-
-first = [0] * 26 # 一番前の数字か
-if (S1[0] in ascii_uppercase):
-    first[U.find(ord(S1[0]) - ord('A'))] = 1
-    if number[U.find(ord(S1[0]) - ord('A'))] == 0: # 一番最初の文字に0が登録されていたら
-        print(0)
-        exit()
-
-if (S2[0] in ascii_uppercase):
-    first[U.find(ord(S2[0]) - ord('A'))] = 1
-    if number[U.find(ord(S2[0]) - ord('A'))] == 0:
-        print(0)
-        exit()
-
-ans = 1
-# 未登録の数字については0 ~ 9または1 ~ 9になる可能性がある
-for i in range(26):
-    if str_c[i] and number[U.find(i)] == -1: # 未登録なら
-        if first[U.find(i)]:
-            ans *= 9 # 1 ~ 9
-            number[U.find(i)] = 10
-        else:
-            ans *= 10
-            number[U.find(i)] = 11
+# M回交換する
+opt = ans
+M = min(len(num), len(left_l))
+for i in range(M):
+    u = num.pop()
+    s = left_l.pop()
+    # 寿司単体の幸福度
+    opt -= (u - s)
+    # 種類が増える分
+    opt += 2 * var + 1
+    var += 1
+    ans = max(opt, ans)
 
 print(ans)
 
-# AtCoder Petrozavodsk Contest 001 D - Forest
+# ABC119 D - Lazy Faith
+A, B, Q = getNM()
+# 神社
+S = getArray(A)
+# 寺
+T = getArray(B)
+query = getArray(Q)
 
-"""
-森です Unionfind?
-森を連結にする最小コスト
-制約的に最大流無理
+S.insert(0, -float('inf'))
+T.insert(0, -float('inf'))
+S.append(float('inf'))
+T.append(float('inf'))
 
-Impossibleの条件
-一つ繋ぐごとに頂点が２つ減り、森が一つ減る
-森が2個以上でもう繋げなくなったらimpossible
+def close(data, point):
+    west = data[bisect_left(data, point) - 1]
+    east = data[bisect_left(data, point)]
 
-小さい例から考える
-7 5
-1 2 3 4 5 6 7
-3 0
-4 0
-1 2
-1 3
-5 6　の時
+    return west, east
 
-1 - 2 - 3 - 4 - 5
-6 - 7
+for i in range(Q):
+    now = query[i]
+    shrine_west, shrine_east = close(S, now)
+    temple_west, temple_east = close(T, now)
 
-1と6を繋げばいい
-1 - 2
-3 - 4 - 5
-6 - 7
-の場合
-motherを一つ決める(例えば1 - 2)
-childは3 - 4 - 5, 6 - 7
-motherの一番小さい奴とchildの一番小さい奴を消費して連結する
-グループ分けする
-[1, 2]
-[3, 4, 5]
-[6, 7] 全部ヒープキュー
-小さい2つを消費(ansに加える)
-併合
+    ww = now - min(shrine_west, temple_west)
+    we_1 = (now - shrine_west) * 2 + (temple_east - now)
+    we_2 = (now - temple_west) * 2 + (shrine_east - now)
+    ee = max(shrine_east, temple_east) - now
+    ew_1 = (shrine_east - now) * 2 + (now - temple_west)
+    ew_2 = (temple_east - now) * 2 + (now - shrine_west)
 
-motherは一番でかい奴から！！！
-ゆとりのある順に並べる
+    print(min(ww, we_1, we_2, ee, ew_1, ew_2))
 
-motherは慎重に決めないといけない
-各グループの先頭列をみる
-小さい順に使いたい
-各グループの先頭は必ず使う
-合計で2 * (g_n - 1)頂点いる
-g_n - 1については各グループの先頭にしないといけない　他のは？
-あとは自分以外のところから自由に　全てmotherの所有物
-足すのはg_n - 1回だけでいい
-
-groupの隣同士を併合するだけでいい
-要素にグループ番号をつけて前から並べる
-unionしてなかったら
-motherは決めない
-
-先頭の奴は絶対に使う
-あとは小さい順から　自分以外のとこの適当なグループの先頭に繋げてやればよい
-
-UnionFindの問題は先頭とそれ以外　という考え方をする
-"""
-
+# ABC137 D - Summer Vacation
+# ヒープ使った貪欲
 N, M = getNM()
-A = getList()
-que = [getList() for i in range(M)]
+query = [getList() for i in range(N)]
 
-# グループ分け
-U = UnionFind(N)
-for a, b in que:
-    U.union(a, b)
+A_list = [[] for i in range(10 ** 5 + 1)]
+for a, b in query:
+    A_list[a].append(b)
 
-group = [[] for i in range(N)]
-for i in range(N):
-    group[U.find(i)].append(A[i])
-group = [sorted(i) for i in group if len(i) > 0]
-
-if len(group) == 1:
-    print(0)
-    exit()
-
-g_n = len(group)
+job = []
+heapq.heapify(job)
 
 ans = 0
-l = []
+for i in range(1, M + 1):
+    for j in A_list[i]:
+        heapq.heappush(job, -j)
+    if len(job) > 0:
+        u = heapq.heappop(job)
+        ans += -u
+print(ans)
 
-# 先頭の絶対使う奴と二番手以降の遊撃隊に分ける
-for i in range(g_n):
-    ans += group[i][0]
-    while len(group[i]) > 1:
-        u = group[i].pop()
-        l.append(u)
+# ABC169 E - Count Median
+N = getN()
+A = []
+B = []
+for i in range(N):
+    a, b = getNM()
+    A.append(a)
+    B.append(b)
+A.sort()
+B.sort()
 
-l.sort(reverse = True)
+# 範囲がN個ある
+# Xは整数
+# 中央値のmin, maxは？
+# Nが偶数、奇数の場合
+# 奇数の場合 中央値は絶対に整数
+# 中央値のmin: Aの中央値、max: Bの中央値
+# 偶数の場合
+# 中央値のmin: (Ai-1 + Ai) / 2 max: (Bi-1 + Bi) / 2
+# いくつある？
 
-# 残りの頂点は小さい順
-for i in range(g_n - 2):
-    if l:
-        u = l.pop()
-        ans += u
+# 中央値は最低でも0.5刻み
+# 偶数の場合は奇数の2N - 1になる？
+# Ai-1とAiを自由にいじることで0.5, 1, 1.5と言う風に中間値を作れそう
+
+if N % 2 == 0:
+    opt_a = (A[(N // 2) - 1] + A[N // 2]) / 2
+    opt_b = (B[(N // 2) - 1] + B[N // 2]) / 2
+    # opt_b - opt_aを0.5で割って +1
+    # intで出せ
+    print(int((opt_b - opt_a) * 2 + 1))
+else:
+    opt_a = A[N // 2]
+    opt_b = B[N // 2]
+    # 中央値は絶対に整数
+    print(opt_b - opt_a + 1)
+
+# AGC029 B - Powers of two
+# N = getN()
+# A = getList() # ボール
+N = getN()
+A = getList()
+A.sort()
+# ボールからペアを作ってその和が２冪(2 ** iになる)になるようにしたい
+
+# 最大でいくつペアを作れるか
+# 最大流？Nが大きいから無理
+
+# M <= 2 * 10 ** 5
+# 数字aのペアの候補は？
+# 1なら3 (4), 7 (8), 15(16)...
+# 2なら2 (4), 6 (8), 14(16)...
+# 探索して求められるか？
+# 2冪の数はだいたい30個 各要素のペアになるものは求められる
+powers = [1] * 32
+for i in range(1, 32):
+    powers[i] = powers[i - 1] * 2
+
+# Aの中に30個の候補のどれかが含まれているか
+# 二分探索でどのペアかもわかる
+
+# ペアとなるbがあったとして、どれにくっつけるのが有効か？
+# 数を絞れば最大流できる Aが同じ数の場合があるのでできない
+# dp?
+
+# 実は大きい数の方がペアになる条件は厳しくなる
+# 貪欲ペアは厳しい順からペアにしていく
+flag = [0] * N
+ans = 0
+while A:
+    u = A.pop() # 自身とペアにならないようにpop
+    if flag[len(A)]: # uのフラグが立っていたなら飛ばす
+        continue
+    # 自身より大きい２冪の数の中で最も小さいもの
+    # これがAの中に存在するか
+    opt = powers[bisect_right(powers, u)] - u
+    # 存在するか二分探索
+    left = bisect_left(A, opt)
+    right = bisect_left(A, opt + 1)
+    # 存在する'1, 1, 1...'のうちフラグが立っていないものとペアに
+    # 後ろから探索する
+    for i in range(right - 1, left - 1, -1):
+        if not flag[i]:
+            ans += 1
+            flag[i] = 1
+            break
+print(ans)
+
+# キーエンス プログラミング コンテスト 2020 B - Robot Arms
+# 区間スケジューリング問題
+# 終点をソート
+N = getN()
+query = [getList() for i in range(N)]
+
+r_l = []
+for x, l in query:
+    r_l.append([x - l, x + l])
+r_l.sort(key = lambda i:i[1])
+
+cnt = 0
+last = r_l[0][1]
+for i in range(1, N):
+    if r_l[i][0] < last:
+        cnt += 1
     else:
-        print('Impossible')
-        exit()
+        last = r_l[i][1]
+print(N - cnt)
+
+# CODE FESTIVAL 2016 qual B D - Greedy customers 
+
+"""
+greedy?
+Aは各人の所持金
+Pを指定する　減らせる人については減らす
+1で売ったらええんちゃう？
+
+Aの最小値 - 1を各要素から引く(できる限り1で売る)
+3
+2 3 5の時
+1 2 4 になる
+もう一度1は不可能
+2もだめ
+3売るか
+Aでかいしループは無理　リストにもできない
+セグ？セグ×　貪欲でなんとかなる
+
+前の奴 + 1でできる限り売る
+買うのは最初の人だけか
+
+A [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9]
+3に1を２回提示 3が1に
+4に2を1回提示 4が2に
+5に3を1回提示 5が2に
+
+後ろの奴を効率的に優先席にできない？
+間の邪魔な奴を1にできれば
+"""
+
+N = getN()
+A = getArray(N)
+
+ans = A[0] - 1 # 最初は先頭にA[0] - 1回売りつける
+now = 2 # 先頭に売らないよう2に
+
+for i in range(1, N):
+    if now == A[i]: # 減らせないし次からnow円で売れない
+        now += 1
+    if now < A[i]: # 売れる　その場合は適当に調整して1にする
+        # now = 2 A[i] = 8なら
+        # 2, 2, 3を売りつければA[i] = 1になる
+        if A[i] % now == 0:
+            cnt = (A[i] // now) - 1
+            ans += cnt
+        else:
+            cnt = A[i] // now
+            ans += cnt
+
 print(ans)
