@@ -49,125 +49,215 @@ mod = 998244353
 # Main Code #
 #############
 
-# キーエンス プログラミング コンテスト 2019 D - Double Landscape
+# ARC027 B - 大事な数なのでZ回書きまLた。
 
 """
-1 ~ N * M の整数を書き込む
-i行目の数字の最大の数字はA
-j行目の数字の最大の数字はB
+N桁の数字を覚えて置きたい
+大文字アルファベットがそれぞれ0 ~ 9のうちのどれかの数字に対応している
 
-反転数の数を求める時は列ごと入れ替え、列内入れ替えを行った
-書き込みの個数を求めよ dpかcombo?
+Unionfindとか最大流とか
+N <= 18 bit　dpまで狙える
 
-条件の満たし方を考える
-まず条件を満たすものを一つ出す
-Aiがn　i行目にはnとn以下の数字しか書かれていない
+覚えておく数字について何通り考えられるか
+10 ** 18通りの数字があるがその中で？
+ただし制約がある
+候補を絞って全探索
 
-AとB両方に登場するとは限らない
-ある数について指定の場所に置かないといけない
-あとは自由 comboで求める
-3 3
-5 9 7
-3 6 9
-  5 9 7
-3
+アルファベットと各数字を対応させる通りは10 ** 26通り
+4
+1XYX
+1Z48 の場合
+X - Zは同じ
+Y - 4は同じ
+X - 8は同じ
+なのでZ - 8
+S1とS2に出てくる文字がどの数字と対応しているかを求めればいい
+
 6
-9
+PRBLMB
+ARC027 の時
 
-9を置く
-  5 9 7
-3
-6
-9   9
-8を置く　置けない！
+P - A
+B - C
+L - 0
+M - 2
+B - 7
+B - 7よりC - B - 7
+P - AグループとRに対応する数字を求めればいい
 
-二次元累積和？
-N * M ~ 1まで１つずつ数を置いていく
-iがAにある and Bにある
-・解放する部分
-今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
-・置けるとこ
-1箇所　今回解放されるとこのクロス
-
-iがAにある ^ Bにある
-・解放する部分
-今まで解放された部分と今回解放する部分の交わるとこ
-・置けるとこ
-今回解放されたとこのいずれかに置く
-
-A,Bにない
-現在解放されているマスのどこにでも置ける
+UnionFindする
+出現した文字のリスト
+出現した文字が何の数字か
 """
 
-N, M = getNM()
-A = set(getList())
-B = set(getList())
-if len(A) < N or len(B) < M: # A,B内で数字がダブってたら0
-    print(0)
-    exit()
+N = getN()
+S1 = input()
+S2 = input()
+str_c = [0] * 26 # 文字が出現したか
+number = [-1] * 26 # どの文字が割り当てられているか
+ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+U = UnionFind(26)
+# 通りが0の場合もあるが
+for i in range(N):
+    # 両方文字ならグループ化
+    if (S1[i] in ascii_uppercase) and (S2[i] in ascii_uppercase):
+        str_c[ord(S1[i]) - ord('A')] = 1
+        str_c[ord(S2[i]) - ord('A')] = 1
+        U.union(ord(S1[i]) - ord('A'), ord(S2[i]) - ord('A'))
+    if not (S1[i] in ascii_uppercase) and not (S2[i] in ascii_uppercase):
+        if int(S1[i]) != int(S2[i]): # そもそも数字同士が違う
+            print(0)
+            exit()
+
+# グループ化し終わったら数字を対応させる
+# あるグループにアクセスするときはU.find(i)でアクセスする
+# するとグループの代表者が出てきてくれる
+# そのグループの代表者にどの文字と対応しているか、先頭の文字かを尋ねる
+for i in range(N):
+    if (S1[i] in ascii_uppercase) and not (S2[i] in ascii_uppercase): # S1が文字
+        str_c[ord(S1[i]) - ord('A')] = 1
+        if number[U.find(ord(S1[i]) - ord('A'))] == -1: # 未登録
+            number[U.find(ord(S1[i]) - ord('A'))] = int(S2[i])
+        else:
+            if number[U.find(ord(S1[i]) - ord('A'))] != int(S2[i]): # 矛盾する
+                print(0)
+                exit()
+
+    if not (S1[i] in ascii_uppercase) and (S2[i] in ascii_uppercase): # S2が文字
+        str_c[ord(S2[i]) - ord('A')] = 1
+        if number[U.find(ord(S2[i]) - ord('A'))] == -1:
+            number[U.find(ord(S2[i]) - ord('A'))] = int(S1[i])
+        else:
+            if number[U.find(ord(S2[i]) - ord('A'))] != int(S1[i]):
+                print(0)
+                exit()
+
+first = [0] * 26 # 一番前の数字か
+if (S1[0] in ascii_uppercase):
+    first[U.find(ord(S1[0]) - ord('A'))] = 1
+    if number[U.find(ord(S1[0]) - ord('A'))] == 0: # 一番最初の文字に0が登録されていたら
+        print(0)
+        exit()
+
+if (S2[0] in ascii_uppercase):
+    first[U.find(ord(S2[0]) - ord('A'))] = 1
+    if number[U.find(ord(S2[0]) - ord('A'))] == 0:
+        print(0)
+        exit()
 
 ans = 1
-opened = 0 # 解放されたマス
-a_allowed = 0 # 解放された行
-b_allowed = 0 # 解放された列
-
-for i in range(N * M, 0, -1):
-    if (i in A) and (i in B):
-        # 解放はできる
-        opened += (a_allowed + b_allowed) + 1 # 今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
-        a_allowed += 1
-        b_allowed += 1
-        opened -= 1 # 解放されたマスに置く
-        # ans *= 1 # 置けるのは1箇所　今回解放されるとこのクロス
-    elif (i in A):
-        opened += b_allowed # 解放する行 * 解放されている列
-        a_allowed += 1
-        ans *= b_allowed # 今回解放された行のいずれかに置く
-        opened -= 1
-    elif (i in B):
-        opened += a_allowed
-        b_allowed += 1
-        ans *= a_allowed
-        opened -= 1
-    else:
-        ans *= opened # 解放されている部分のどこに置いても良い
-        opened -= 1
-
-    ans %= mod
+# 未登録の数字については0 ~ 9または1 ~ 9になる可能性がある
+for i in range(26):
+    if str_c[i] and number[U.find(i)] == -1: # 未登録なら
+        if first[U.find(i)]:
+            ans *= 9 # 1 ~ 9
+            number[U.find(i)] = 10
+        else:
+            ans *= 10
+            number[U.find(i)] = 11
 
 print(ans)
 
-# SoundHound Inc. Programming Contest 2018 -Masters Tournament- C - Ordinary Beauty
+# AtCoder Petrozavodsk Contest 001 D - Forest
 
 """
-差の絶対値がdであるものだけをピックアップ
-合計でn ** m通り
-期待値　通りの数は求めなくていい
-m - 1の内1 ~ m - 1箇所について
-1つめの数字 n通り
-2つめの数字 n通りあるが、この内条件を満たす通りは
-上向き　1つ目 1なら 1 + d
-　　　　 　　 2なら 2 + d...(n - d)通り
-            n - dなら n
-下向きも同様に (n - d)通り
-合計2 * (n - d)通り
-つまりm - 1のうちの一つの谷間が条件を満たす確率は
-2(n - d) / n ** 2
-あとは美しさが1, 2...m - 1のものを足し合わせるだけ
-comboすら必要ない？
+森です Unionfind?
+森を連結にする最小コスト
+制約的に最大流無理
 
-足し合わせで求められる
-1つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
-2つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
-1つ目が条件を満たす　と　2つ目が条件を満たす　は互いに独立
-n - dが0になることもそうすれば求める値は0
-またDが0なら上向き下向きではなく同じ値しか取れない
+Impossibleの条件
+一つ繋ぐごとに頂点が２つ減り、森が一つ減る
+森が2個以上でもう繋げなくなったらimpossible
+
+小さい例から考える
+7 5
+1 2 3 4 5 6 7
+3 0
+4 0
+1 2
+1 3
+5 6　の時
+
+1 - 2 - 3 - 4 - 5
+6 - 7
+
+1と6を繋げばいい
+1 - 2
+3 - 4 - 5
+6 - 7
+の場合
+motherを一つ決める(例えば1 - 2)
+childは3 - 4 - 5, 6 - 7
+motherの一番小さい奴とchildの一番小さい奴を消費して連結する
+グループ分けする
+[1, 2]
+[3, 4, 5]
+[6, 7] 全部ヒープキュー
+小さい2つを消費(ansに加える)
+併合
+
+motherは一番でかい奴から！！！
+ゆとりのある順に並べる
+
+motherは慎重に決めないといけない
+各グループの先頭列をみる
+小さい順に使いたい
+各グループの先頭は必ず使う
+合計で2 * (g_n - 1)頂点いる
+g_n - 1については各グループの先頭にしないといけない　他のは？
+あとは自分以外のところから自由に　全てmotherの所有物
+足すのはg_n - 1回だけでいい
+
+groupの隣同士を併合するだけでいい
+要素にグループ番号をつけて前から並べる
+unionしてなかったら
+motherは決めない
+
+先頭の奴は絶対に使う
+あとは小さい順から　自分以外のとこの適当なグループの先頭に繋げてやればよい
+
+UnionFindの問題は先頭とそれ以外　という考え方をする
 """
 
-N, M, D = getNM()
-# (M - 1): 1 ~ M - 1まで足し合わせる
-# 2 * (N - D): 2 * (N - D)) / (N ** 2) * (n ** M）を(n ** M）で割って平均値を出す
-if D == 0:
-    print((M - 1) * (max(0, N - D)) / (N ** 2))
-else:
-    print((M - 1) * 2 * (max(0, N - D)) / (N ** 2))
+N, M = getNM()
+A = getList()
+que = [getList() for i in range(M)]
+
+# グループ分け
+U = UnionFind(N)
+for a, b in que:
+    U.union(a, b)
+
+group = [[] for i in range(N)]
+for i in range(N):
+    group[U.find(i)].append(A[i])
+group = [sorted(i) for i in group if len(i) > 0]
+
+if len(group) == 1:
+    print(0)
+    exit()
+
+g_n = len(group)
+
+ans = 0
+l = []
+
+# 先頭の絶対使う奴と二番手以降の遊撃隊に分ける
+for i in range(g_n):
+    ans += group[i][0]
+    while len(group[i]) > 1:
+        u = group[i].pop()
+        l.append(u)
+
+l.sort(reverse = True)
+
+# 残りの頂点は小さい順
+for i in range(g_n - 2):
+    if l:
+        u = l.pop()
+        ans += u
+    else:
+        print('Impossible')
+        exit()
+print(ans)
