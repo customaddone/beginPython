@@ -18,36 +18,20 @@ mod = 10 ** 9 + 7
 #############
 
 
-T = getN()
-"""
-通りの数を求める問題 dp?数え上げcombo?
-白い正方形の中に赤い正方形と青い正方形を置く通りが何通りあるか答える
-T個 <= 10 ** 5のqueryに答える
-各queryにO(1)で
+# 0でわるな
+def distance(p1, p2):
+    return ((p1[0] - p2[0]) ** 2) + ((p1[1] - p2[1]) ** 2)
 
-赤い正方形の左上の座標を全部探索
-重ならないようにとは?
-comboっぽい
-重なる通りを控除する？
-赤を置く通りは(N - A + 1) ** 2通り
-青を置く通りは(N - B + 1) ** 2通り
-赤が端っこにある時、真ん中にある時、重なるパターンは？
-青の左端 < 赤の右端かつ青の上側 < 赤の下側 または
-赤の左端 < 青の右端かつ赤の上側 < 青の下側 または
-赤の右端はA,A + 1...N
-赤の下側はA,A + 1...N
-そのそれぞれについて
+N = getN()
+dot = [getList() for i in range(N)]
+for i in range(N):
+    for j in range(i + 1, N):
+        for k in range(j + 1, N):
+            dis12 = distance(dot[i], dot[j])
+            dis13 = distance(dot[i], dot[k])
+            dis23 = distance(dot[j], dot[k])
+            if (dis12 + dis13 == dis23) or (dis12 + dis23 == dis13) or (dis13 + dis23 == dis12):
+                print('Yes')
+                exit()
 
-対照性があるからO(1)でいけるはず
-部分的に入っている,　完全に入っている
-"""
-
-
-for i in range(T):
-    n, a, b = getNM()
-    opt = abs(n - a - b + 1)
-    print(((4 * (n - a + 1) * (n - b + 1)) - ((opt ** 2) * 4)) % mod)
-
-opt1 = dp[bit] + dist[j][i] # 以前巡回していた
-opt2 = dp[bit & ~(1 << j)] + dist[j][i] # 以前巡回していない
-dp[bit] = min(dp[bit], opt1, opt2)
+print('No')
