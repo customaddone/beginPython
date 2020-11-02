@@ -49,368 +49,147 @@ mod = 998244353
 # Main Code #
 #############
 
-A = [3, 4, -8]
-# array内の連続する区間の総和
-def imos_sum(A):
-    n = len(A)
-    imos = [0]
-    for i in range(n):
-        imos.append(imos[i] + A[i])
-    for i in range(n):
-        for j in range(i + 1, n + 1):
-            print(imos[j] - imos[i])
-imos_sum(A)
+N, K = 7, 6
+S = [4, 3, 1, 1, 2, 10, 2]
 
-# roopする配列の長さk以下の区間和
-def roop_imos(array, k):
-    n = len(array)
-    alta = copy.deepcopy(array)
-    alta += alta
-    imos = [0]
-    for i in range(len(alta)):
-        imos.append(imos[i] + alta[i])
-    for i in range(n):
-        for j in range(1, k + 1):
-            print(imos[i + j] - imos[i])
-# roop_imos(A, 2)
+# 左を伸ばしていく
+# その部分列に含まれる全ての要素の値の積は「K以下」である。
+# lはrをオーバーすることもある
 
-# ABC005 D - おいしいたこ焼きの焼き方
-N = getN()
-maze = [getList() for i in range(N)]
-Q = getN()
-query = getArray(Q)
-
-# 二次元累積和
-dp = [[0] * N for i in range(N)]
-# 縦１行目、横１行目
-for i in range(N):
-    dp[i][0] = maze[i][0]
-for i in range(N):
-    for j in range(1, N):
-        dp[i][j] = dp[i][j - 1] + maze[i][j]
-# 全て
-for i in range(1, N):
-    for j in range(N):
-        dp[i][j] += dp[i - 1][j]
-
-# 採点マシーン
-def judge(sx, sy, ex, ey):
-    mother = dp[ey][ex]
-    minus1 = 0
-    minus2 = 0
-    plus = 0
-    if sx > 0:
-        minus1 = dp[ey][sx - 1]
-    if sy > 0:
-        minus2 = dp[sy - 1][ex]
-    if sx > 0 and sy > 0:
-        plus = dp[sy - 1][sx - 1]
-    return mother - minus1 - minus2 + plus
-
-# 「大きさNの時の美味しさ」のリスト
-anslist = [0] * (N ** 2 + 1)
-for nsx in range(N):
-    for nex in range(nsx, N):
-        for nsy in range(N):
-            for ney in range(nsy, N):
-                opt = judge(nsx, nsy, nex, ney)
-                #print(opt, [nsx, nsy, nex, ney])
-                index = (nex - nsx + 1) * (ney - nsy + 1)
-                anslist[index] = max(anslist[index], opt)
-
-# 「大きさN以下の時の美味しさ」のリスト
-ans_alta = [0] * (N ** 2 + 1)
-for i in range(1, len(ans_alta)):
-    ans_alta[i] = max(ans_alta[i - 1], anslist[i])
-
-for i in query:
-    print(ans_alta[i])
-
-# ABC014 atcolor
-n = int(input())
-lista = []
-for i in range(n):
-    a, b = map(int, input().split())
-    lista.append([a, b])
-listb = [0] * (10 ** 6 + 2)
-for i in lista:
-    listb[i[0]] += 1
-    listb[i[1] + 1] -= 1
-listc = [0]
-for i in range(10 ** 6 + 2):
-    listc.append(listb[i] + listc[i])
-print(max(listc))
-
-# ABC017 C - ハイスコア
-
-# 全ての区間を選ばないように
-# 二次元累積?
-# 区間累積
-
-# queryを「lでスタートするもの」と「rでゴールするもの」という２つの捉え方をする
-
-# N:遺跡(query) M:宝石
-N, M = getNM()
-query = [getList() for i in range(N)]
-if M == 1:
-    print(0)
+if 0 in S:
+    print(N)
     exit()
-
-# r以前の宝石を獲得する遺跡を探索する累積和
-imos_up = [0] * M
-# l以降の宝石を獲得する遺跡を探索する累積和
-imos_down = [0] * M
-
-for l, r, s in query:
-    imos_up[r - 1] += s
-    imos_down[l - 1] += s
-
-for i in range(1, M):
-    imos_up[i] += imos_up[i - 1]
-    imos_down[M - i - 1] += imos_down[M - i]
-
-ans = 0
-for i in range(M):
-    # i - 1個以前の宝石を獲得する遺跡、i + 1個以降の遺跡を獲得する遺跡を探索する
-    if i == 0:
-        opt = imos_down[i + 1]
-    elif i == M - 1:
-        opt = imos_up[i - 1]
-    else:
-        opt = imos_up[i - 1] + imos_down[i + 1]
-    ans = max(ans, opt)
+else:
+    l, ans, total = 0, 0, 1
+    for r in range(N):
+        total *= S[r]
+        while total > K and l <= r:
+            total //= S[l]
+            l += 1
+        ans = max(ans, r - l + 1)
 print(ans)
 
-H, W = 3, 4
-# maze = [getList() for i in range(H)]
-maze = [
-[1, 2, 1, 2],
-[2, 3, 2, 3],
-[1, 3, 1, 3]
-]
+# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
+N, K = 4, 10
+A = [6, 1, 2, 7]
 
-# 二次元累積和
-dp_sum = [[0] * W for i in range(H)]
-dp_1 = [[0] * W for i in range(H)]
-dp_2 = [[0] * W for i in range(H)]
-dp_3 = [[0] * W for i in range(H)]
+left = 0
+total = 0
+ans = 0
 
-# x = 0 ~ i, y = 0 ~ j までの数の合計
-def bi_cumul_sum(dp_n):
-    # 縦１行目、横１行目
-    for i in range(H):
-        dp_n[i][0] = maze[i][0]
-    for i in range(H):
-        for j in range(1, W):
-            dp_n[i][j] = dp_n[i][j - 1] + maze[i][j]
-    # 全て
-    for i in range(1, H):
-        for j in range(W):
-            dp_n[i][j] += dp_n[i - 1][j]
-bi_cumul_sum(dp_sum)
-# print(dp_sum)
+for right in range(0, N):
+    total += A[right]
+    while total >= K:
+        ans += N - right
+        total -= A[left]
+        left += 1
+print(ans)
 
-# x = 0 ~ i, y = 0 ~ j までに出るnumの回数の合計
-def bi_cumul_cnt(num, dp_m):
-    # 縦１行目、横１行目
-    for i in range(H):
-        if maze[i][0] == num:
-            dp_m[i][0] = 1
-    for i in range(H):
-        for j in range(1, W):
-            if maze[i][j] == num:
-                dp_m[i][j] = dp_m[i][j - 1] + 1
-            else:
-                dp_m[i][j] = dp_m[i][j - 1]
-    # 全て
-    for i in range(1, H):
-        for j in range(W):
-            dp_m[i][j] += dp_m[i - 1][j]
-bi_cumul_cnt(3, dp_3)
-# print(dp_1)
-
-# x = sx ~ ex y = sy ~ eyまで
-def judge(sx, sy, ex, ey, dp_l):
-    mother = dp_l[ey][ex]
-    minus1 = 0
-    minus2 = 0
-    plus = 0
-    if sx > 0:
-        minus1 = dp_l[ey][sx - 1]
-    if sy > 0:
-        minus2 = dp_l[sy - 1][ex]
-    if sx > 0 and sy > 0:
-        plus = dp_l[sy - 1][sx - 1]
-    return mother - minus1 - minus2 + plus
-
-print(judge(1, 1, 3, 2, dp_sum))
-print(judge(2, 1, 3, 2, dp_3))
-
-N, M, Q = 10, 3, 2
-query = [
-[1, 5],
-[2, 8],
-[7, 10],
-[1, 7],
-[3, 10]
-]
-
-# l から rまで行く鉄道の数
-lr = [[0 for i in range(N + 1)] for j in range(N + 1)]
-# l から r以前のどこかまで行く鉄道の数
-imos = [[0 for i in range(N + 1)] for j in range(N + 1)]
-imos2 = [[0 for i in range(N + 1)] for j in range(N + 1)]
-
-for i in query:
-    l, r = i
-    lr[l][r] += 1
-
-for i in range(1, N + 1):
-    for j in range(1, N + 1):
-        # j - 1以前のどこかまで行くもの　+ jまで行くもの
-        imos[i][j] = imos[i][j - 1] + lr[i][j]
-
-for i in range(1, N + 1):
-    for j in range(1, N + 1):
-        # i - 1以前のどこかからスタート + iスタート
-        imos2[i][j] = imos2[i - 1][j] + lr[i][j]
-
-print(imos2)
-
-"""
-# 飛ばし累積和
 N = 10
-num = [i for i in range(1, N + 1)]
-D = 2
-lista = [0] * N
-for i in range(D):
-    for j in range(i, N, D):
-        if j == i:
-            lista[j] = num[j]
-        else:
-            lista[j] = num[j] + lista[j - D]
-# [1, 2, 4, 6, 9, 12, 16, 20, 25, 30]
-print(lista)
-# 9番目までの奇数の数字の合計 - 1番目までの奇数の数字の合計
-# 3 + 5 + 7 + 9
-print(lista[8] - lista[0])
-"""
+S = 15
+A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
+right = 0
+total = 0
+ans = 0
+# S以上を求める場合にはこの形で
+for left in range(N):
+    while right < N and total < S:
+        total += A[right]
+        right += 1
+    if total < S:
+        break
+    if left == right:
+        right += 1
+    total -= A[left]
 
-# Dかそれぞれのqueryで固定なのでこの問題は解ける
-H, W, D = getNM()
-maze = []
-for i in range(H):
-    a = getList()
-    maze.append(a)
-Q = getN()
-# piece[0]からpiece[1]まで
-# 4 → 6　→ 8
-piece = []
-for i in range(Q):
-    l, r = getNM()
-    piece.append([l, r])
+# 要素の種類についての問題
+# 全ての要素を含む
+P = 5
+A = [1, 8, 8, 8, 1]
+dict = {}
+for i in A:
+    dict[i] = 0
+# 要素の種類数
+V = len(dict.items())
 
-place_list = [[-1, -1] for i in range(H * W)]
+# 事象の数をカウント
+cnt = 0
+right = 0
+# １つ目から全ての事象をカバーするまでrightを進める
+while right < P:
+    if dict[A[right]] == 0:
+        cnt += 1
+    dict[A[right]] += 1
 
-for y in range(H):
-    for x in range(W):
-        place_list[maze[y][x] - 1] = [x, y]
+    if cnt == len(dict.items()):
+        break
 
-# 飛ばし累積和
-x_plus = [0] * (H * W)
-y_plus = [0] * (H * W)
-for i in range(D):
-    for j in range(i, H * W, D):
-        if j == i:
-            opt_x = 0
-            opt_y = 0
-        else:
-            opt_x = abs(place_list[j][0] - place_list[j - D][0])
-            opt_y = abs(place_list[j][1] - place_list[j - D][1])
-            x_plus[j] = opt_x + x_plus[j - D]
-            y_plus[j] = opt_y + y_plus[j - D]
+    right += 1
+print(l, r)
 
-def past_exam(piece_query):
-    start = piece_query[0]
-    goal = piece_query[1]
+l = 0
+# 右を一つ進めて左をできる限り進める
+for r in range(right + 1, P):
+    # 新しく一つ加える
+    dict[A[r]] += 1
+    while True:
+        # もし要素が一つしか無かったら削れない
+        if dict[A[l]] == 1:
+            break
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
 
-    x_point = x_plus[goal - 1] - x_plus[start - 1]
-    y_point = y_plus[goal - 1] - y_plus[start - 1]
-    return x_point + y_point
+# 各要素にダブりがない範囲
+N = 6
+A = [1, 2, 2, 3, 4, 4]
 
-for i in range(Q):
-    print(past_exam(piece[i]))
+dict = defaultdict(int)
+l = 0
+for r in range(N):
+    while dict[A[r]] == 1:
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
+    dict[A[r]] += 1
 
-# ABC179 D - Leaping Tak
-# 遅延セグ木
-N, K = getNM()
-que = [getList() for i in range(K)]
+N = 4
+A = 2, 5, 4, 6
 
-dp = [0] * (N + 1) # dp[i] iの時の通りの数
-imos = [0] * (N + 1) # imos[i]: dp[1] ~ dp[i]までの累計
-dp[1] = 1
-imos[1] = 1
+r, tmp = 0, 0
+# l:左端
+cnt = 0
+# 一つオーバーさせる
+for l in range(N):
+    while r < N and tmp ^ A[r] == tmp + A[r]:
+        # 右端を伸ばす
+        tmp += A[r]
+        r += 1
+    # 計算
+    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
+    # (r - l + 1) - 1
+    cnt += r - l
 
-# 貰うdp
-# dp += dp[l] - dp[r]
+    if l == r:
+        r += 1
+    tmp -= A[l]
+print(cnt)
 
-for i in range(2, N + 1):
-    for l, r in que:
-        if i - l >= 0:
-            dp[i] += imos[i - l] - imos[max((i - r - 1), 0)]
-            dp[i] %= mod
-    imos[i] = dp[i]
-    imos[i] += imos[i - 1]
-    imos[i] %= mod
+N, K = 10, 4
+A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
 
-print(dp[N] % mod)
-
-# 配るdp
-
-dp = [0] * (N + 1)
-dp[1] = 1
-dp[2] = -1
-
-for i in range(1, N + 1):
-    dp[i] += dp[i - 1]
-    dp[i] %= mod
-    for l, r in que:
-        if i + l <= N:
-            dp[i + l] += dp[i]
-        if i + r + 1 <= N:
-            dp[i + r + 1] -= dp[i]
-print(dp[N] % mod)
-
-# ARC043 B - 難易度
-# つまりsnuke festival
-N = getN()
-D = getArray(N)
-D.sort()
-
-# a3を選んだ時のありうるa4の数字の通り
-num_3 = [0] * N
-for i in range(N):
-    index = bisect_left(D, D[i] * 2)
-    num_3[i] = N - index
-
-imos_1 = copy.deepcopy(num_3)
-# a2を選んだ時にありうるa4の通り
-num_2 = [0] * N
-for i in range(N - 1):
-    imos_1[-i - 2] += imos_1[-i - 1]
-for i in range(N):
-    if num_3[i] > 0:
-        num_2[i] = imos_1[N - num_3[i]]
-
-imos_2 = copy.deepcopy(num_2)
-# a1を選んだ時にありうるa4の通り
-num_1 = [0] * N
-for i in range(N - 1):
-    imos_2[-i - 2] += imos_2[-i - 1]
-for i in range(N):
-    if num_2[i] > 0:
-        num_1[i] = imos_2[N - num_3[i]]
-print(sum(num_1) % mod)
+right, ans = 0, 0
+for left in range(N):
+    # 単調増加するとこまでもしくは長さKになるまで
+    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
+        right += 1
+    # もし長さKまで伸ばせたらans += 1
+    if right - left == K - 1:
+        ans += 1
+    # 前に進めないならright += 1
+    if left == right and right < N:
+        right += 1
+print(ans)
 
 # 第5回 ドワンゴからの挑戦状 予選 C - k-DMC
 
@@ -444,51 +223,34 @@ a ~ c間にあるbの個数を累積和で求める
 間のbについては0 ~ cまで - 0 ~ aまで
 
 二重累積和 + 計算量logNの改善
+累積二分探索は尺取り法使える
 """
 
 N = getN()
 S = list(input())
-S = [ord(s) for s in S]
 Q = getN()
 K = getList()
 
-A = []
-B = []
-C = []
-b_imos = [0] * N
-for i in range(N):
-    if S[i] == ord('D'):
-        A.append(i)
-    if S[i] == ord('M'):
-        B.append(i)
-        b_imos[i] += 1
-    if S[i] == ord('C'):
-        C.append(i)
-
-for i in range(1, N):
-    b_imos[i] += b_imos[i - 1]
-
-c_imos = [0] * len(C) # i ~ j間のcを選択した時の0 ~ c間のbの数の累積
-for i in range(len(C)):
-    c_imos[i] = b_imos[C[i]]
-
-for i in range(1, len(C)):
-    c_imos[i] += c_imos[i - 1]
-c_imos.insert(0, 0) # 1-indexに
-
-# Q回二分探索するのは間に合わない
-# 全ての数値について二分探索をし、テーブルで残しておく
-index_table = [0] * ((2 * 10 ** 6) + 1)
-for i in range(0, (2 * 10 ** 6) + 1):
-    index_table[i] = bisect_left(C, i)
-
 for k in K:
     ans = 0
-    for a in A:
-        start = index_table[a] # スタートのaから最寄りのc
-        end = index_table[a + k] # ゴール a + Kから最寄りのc
-        if start == len(C): # 範囲内にcがない
-            continue
-        ans += c_imos[end] - c_imos[start] - b_imos[a] * (end - start)
+    d_cnt = 0 # dの数
+    m_cnt = 0 # mの数
+    dm_cnt = 0 # dとmの組み合わせの数
+    for i in range(N):
+        # 上限超えたので捨てる
+        if i - k >= 0:
+            if S[i - k] == "D":
+                d_cnt -= 1 # dを一つ捨て
+                dm_cnt -= m_cnt # 捨てたdはmを現在ホールドしてる個数持っているので（dが左端にあるから）
+            elif S[i - k] == "M":
+                m_cnt -= 1 # mを捨てる
+
+        if S[i] == "D":
+            d_cnt += 1
+        elif S[i] == "M":
+            m_cnt += 1
+            dm_cnt += d_cnt # 現在のd * 新しく入ったm(1つ)
+        elif S[i] == "C":
+            ans += dm_cnt # dm_cntの数 * 新しく入ったc(1つ)
 
     print(ans)
