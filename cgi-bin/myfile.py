@@ -18,20 +18,28 @@ mod = 10 ** 9 + 7
 #############
 
 
-# 0でわるな
-def distance(p1, p2):
-    return ((p1[0] - p2[0]) ** 2) + ((p1[1] - p2[1]) ** 2)
+logk = Q.bit_length() - 1
+doubling = [[-1] * N for _ in range(logk)]
 
-N = getN()
-dot = [getList() for i in range(N)]
-for i in range(N):
-    for j in range(i + 1, N):
-        for k in range(j + 1, N):
-            dis12 = distance(dot[i], dot[j])
-            dis13 = distance(dot[i], dot[k])
-            dis23 = distance(dot[j], dot[k])
-            if (dis12 + dis13 == dis23) or (dis12 + dis23 == dis13) or (dis13 + dis23 == dis12):
-                print('Yes')
-                exit()
+# doubling[0][i]: 回数、場所
+for i in range(N): # 1回目の移動
+    if S[i] == P[0]:
+        if D[0] == 'L':
+            doubling[0][i] = i - 1
+        else:
+            doubling[0][i] = i + 1
+    else:
+        doubling[0][i] = i
 
-print('No')
+for i in range(1, logk): # 2回目以降
+    for j in range(N):
+        if 0 <= doubling[i - 1][j] < N: # 範囲内にある場合
+            if S[1 << i] == P[1 << i]: # 一致
+                if D[1 << i] == 'L':
+                    doubling[i][j] = doubling[i - 1][doubling[i - 1][j]] - 1
+                else:
+                    doubling[i][j] = doubling[i - 1][doubling[i - 1][j]] + 1
+            else: # 一致しない
+                doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+        else: # 範囲内にない場合は欄外
+            doubling[i][j] = doubling[i - 1][j]
