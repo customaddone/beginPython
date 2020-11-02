@@ -49,208 +49,71 @@ mod = 998244353
 # Main Code #
 #############
 
-N, K = 7, 6
-S = [4, 3, 1, 1, 2, 10, 2]
-
-# 左を伸ばしていく
-# その部分列に含まれる全ての要素の値の積は「K以下」である。
-# lはrをオーバーすることもある
-
-if 0 in S:
-    print(N)
-    exit()
-else:
-    l, ans, total = 0, 0, 1
-    for r in range(N):
-        total *= S[r]
-        while total > K and l <= r:
-            total //= S[l]
-            l += 1
-        ans = max(ans, r - l + 1)
-print(ans)
-
-# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
-N, K = 4, 10
-A = [6, 1, 2, 7]
-
-left = 0
-total = 0
-ans = 0
-
-for right in range(0, N):
-    total += A[right]
-    while total >= K:
-        ans += N - right
-        total -= A[left]
-        left += 1
-print(ans)
-
-N = 10
-S = 15
-A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
-right = 0
-total = 0
-ans = 0
-# S以上を求める場合にはこの形で
-for left in range(N):
-    while right < N and total < S:
-        total += A[right]
-        right += 1
-    if total < S:
-        break
-    if left == right:
-        right += 1
-    total -= A[left]
-
-# 要素の種類についての問題
-# 全ての要素を含む
-P = 5
-A = [1, 8, 8, 8, 1]
-dict = {}
-for i in A:
-    dict[i] = 0
-# 要素の種類数
-V = len(dict.items())
-
-# 事象の数をカウント
-cnt = 0
-right = 0
-# １つ目から全ての事象をカバーするまでrightを進める
-while right < P:
-    if dict[A[right]] == 0:
-        cnt += 1
-    dict[A[right]] += 1
-
-    if cnt == len(dict.items()):
-        break
-
-    right += 1
-print(l, r)
-
-l = 0
-# 右を一つ進めて左をできる限り進める
-for r in range(right + 1, P):
-    # 新しく一つ加える
-    dict[A[r]] += 1
-    while True:
-        # もし要素が一つしか無かったら削れない
-        if dict[A[l]] == 1:
-            break
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
-
-# 各要素にダブりがない範囲
-N = 6
-A = [1, 2, 2, 3, 4, 4]
-
-dict = defaultdict(int)
-l = 0
-for r in range(N):
-    while dict[A[r]] == 1:
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
-    dict[A[r]] += 1
-
-N = 4
-A = 2, 5, 4, 6
-
-r, tmp = 0, 0
-# l:左端
-cnt = 0
-# 一つオーバーさせる
-for l in range(N):
-    while r < N and tmp ^ A[r] == tmp + A[r]:
-        # 右端を伸ばす
-        tmp += A[r]
-        r += 1
-    # 計算
-    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
-    # (r - l + 1) - 1
-    cnt += r - l
-
-    if l == r:
-        r += 1
-    tmp -= A[l]
-print(cnt)
-
-N, K = 10, 4
-A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
-
-right, ans = 0, 0
-for left in range(N):
-    # 単調増加するとこまでもしくは長さKになるまで
-    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
-        right += 1
-    # もし長さKまで伸ばせたらans += 1
-    if right - left == K - 1:
-        ans += 1
-    # 前に進めないならright += 1
-    if left == right and right < N:
-        right += 1
-print(ans)
-
-# 第5回 ドワンゴからの挑戦状 予選 C - k-DMC
+# CODE FESTIVAL 2016 Final D. Pair Cards
 
 """
-Q <= 75?
-文字列 dpか
-k-DMCを求めよ
-整数の組の個数 dp or combo
-D, M, Cの順で並んでおり、文字の長さがk以下である
-文字の長さを伸ばしていく
-k = 1, 2... Qについて k - DMC数の数は？
-累積の数を求める
+個数の最大値を求める
+ペア
 
-長さがiのものをレコードしていく
-文字の長さはaとcのみに依存する
+最も条件がきついものからペアにしていく
+条件　どちらか
+同じ整数
+Mの倍数になる
 
-A = []
-B = []
-C = []
-for i in range(N):
-    if S[i] == 'D':
-        A.append(i)
-    if S[i] == 'M':
-        B.append(i)
-    if S[i] == 'C':
-        C.append(i)
-これだとO(N ** 2)
+Mが奇数の場合と偶数の場合
+奇数の場合
+mod mが
+0: 自身と
+i: m - iと
+偶数の場合
+0, m // 2: 自身と
+i: m - iと
 
-a ~ c間にあるbの個数を累積和で求める
-あるaについて対応するcが何個あるかは二分探索で求められる
-間のbについては0 ~ cまで - 0 ~ aまで
+効率のいい組み合わせ
+きつい順から
+min(len(i), len(m - i))になるが差分については同じ数同士をペアにできる
 
-二重累積和 + 計算量logNの改善
-累積二分探索は尺取り法使える
+同じ数がグループにある数はその同じ数と結ぶことができるし、m - iのグループの数と結ぶことも
+できる　条件は緩い
+そうではない条件が厳しいものを優先して結ぶ
 """
 
-N = getN()
-S = list(input())
-Q = getN()
-K = getList()
+N, M = getNM()
+X = getList()
 
-for k in K:
-    ans = 0
-    d_cnt = 0 # dの数
-    m_cnt = 0 # mの数
-    dm_cnt = 0 # dとmの組み合わせの数
-    for i in range(N):
-        # 上限超えたので捨てる
-        if i - k >= 0:
-            if S[i - k] == "D":
-                d_cnt -= 1 # dを一つ捨て
-                dm_cnt -= m_cnt # 捨てたdはmを現在ホールドしてる個数持っているので（dが左端にあるから）
-            elif S[i - k] == "M":
-                m_cnt -= 1 # mを捨てる
+modulo = [[] for i in range(M)]
+for x in X:
+    modulo[x % M].append(x)
 
-        if S[i] == "D":
-            d_cnt += 1
-        elif S[i] == "M":
-            m_cnt += 1
-            dm_cnt += d_cnt # 現在のd * 新しく入ったm(1つ)
-        elif S[i] == "C":
-            ans += dm_cnt # dm_cntの数 * 新しく入ったc(1つ)
+ans = (len(modulo[0]) // 2) + (len(modulo[M // 2]) // 2) * (M % 2 == 0)
+half = M // 2 if M % 2 == 0 else (M // 2) + 1
 
-    print(ans)
+for i in range(1, half):
+    pair1 = 0
+    dict1 = defaultdict(int)
+    for j in modulo[i]: # 同じ数
+        if dict1[j] == 1:
+            dict1[j] -= 1
+            pair1 += 1
+        else:
+            dict1[j] += 1
+
+    pair2 = 0
+    dict2 = defaultdict(int)
+    for j in modulo[M - i]:
+        if dict2[j] == 1:
+            dict2[j] -= 1
+            pair2 += 1
+        else:
+            dict2[j] += 1
+
+    if len(modulo[i]) > len(modulo[M - i]): # pair1を使う
+        ans += len(modulo[M - i])
+        diff = abs(len(modulo[i]) - len(modulo[M - i])) // 2
+        ans += min(diff, pair1)
+    else:
+        ans += len(modulo[i])
+        diff = abs(len(modulo[i]) - len(modulo[M - i])) // 2
+        ans += min(diff, pair2)
+
+print(ans)
