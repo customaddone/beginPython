@@ -49,295 +49,179 @@ mod = 998244353
 # Main Code #
 #############
 
-# mod不使用ver
-def cmb_1(n, r):
-    r = min(n - r, r)
-    if (r < 0) or (n < r):
-        return 0
+# キーエンス プログラミング コンテスト 2019 D - Double Landscape
 
-    if r == 0:
-        return 1
+"""
+1 ~ N * M の整数を書き込む
+i行目の数字の最大の数字はA
+j行目の数字の最大の数字はB
 
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
+反転数の数を求める時は列ごと入れ替え、列内入れ替えを行った
+書き込みの個数を求めよ dpかcombo?
 
-# 10
-print(cmb_1(5, 3))
+条件の満たし方を考える
+まず条件を満たすものを一つ出す
+Aiがn　i行目にはnとn以下の数字しか書かれていない
 
-# mod使用ver
-# nが大きい場合に
-def cmb_2(x,y):
-    r = 1
-    for i in range(1, y + 1):
-        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
-    return r
+AとB両方に登場するとは限らない
+ある数について指定の場所に置かないといけない
+あとは自由 comboで求める
+3 3
+5 9 7
+3 6 9
+  5 9 7
+3
+6
+9
 
-# 10
-print(cmb_2(5, 3))
+9を置く
+  5 9 7
+3
+6
+9   9
+8を置く　置けない！
 
-# 逆元事前処理ver
-# nが小さい場合に
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
+二次元累積和？
+N * M ~ 1まで１つずつ数を置いていく
+iがAにある and Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+・置けるとこ
+1箇所　今回解放されるとこのクロス
 
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
+iがAにある ^ Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ
+・置けるとこ
+今回解放されたとこのいずれかに置く
 
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-# 120
-print(cmb(10, 3))
+A,Bにない
+現在解放されているマスのどこにでも置ける
+"""
 
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
+N, M = getNM()
+A = set(getList())
+B = set(getList())
+if len(A) < N or len(B) < M: # A,B内で数字がダブってたら0
+    print(0)
+    exit()
 
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
+ans = 1
+opened = 0 # 解放されたマス
+a_allowed = 0 # 解放された行
+b_allowed = 0 # 解放された列
 
-# 階乗
-def factorial(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    return fact[n] * factinv[n - r] % mod
+for i in range(N * M, 0, -1):
+    if (i in A) and (i in B):
+        # 解放はできる
+        opened += (a_allowed + b_allowed) + 1 # 今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+        a_allowed += 1
+        b_allowed += 1
+        opened -= 1 # 解放されたマスに置く
+        # ans *= 1 # 置けるのは1箇所　今回解放されるとこのクロス
+    elif (i in A):
+        opened += b_allowed # 解放する行 * 解放されている列
+        a_allowed += 1
+        ans *= b_allowed # 今回解放された行のいずれかに置く
+        opened -= 1
+    elif (i in B):
+        opened += a_allowed
+        b_allowed += 1
+        ans *= a_allowed
+        opened -= 1
+    else:
+        ans *= opened # 解放されている部分のどこに置いても良い
+        opened -= 1
 
-# print(factorial(5, 3))
+    ans %= mod
 
-# 重複組み合わせ
-# 10個のものから重複を許して3つとる
-print(cmb_1(10 + 3 - 1, 3))
-
-# modが素数じゃない時
-def cmb_compose(n, k, mod):
-    dp = [[0] * (k + 1) for i in range(n + 1)]
-    dp[0][0] = 1
-    for i in range(1, n + 1):
-        dp[i][0] = 1
-        for j in range(1, k + 1):
-            # nCk = n - 1Ck - 1 + n - 1Ck
-            dp[i][j] = (dp[i - 1][j - 1] + dp[i - 1][j]) % mod
-
-    return dp[n][k]
-
-print(cmb_compose(10, 3, 50))
-
-A, B, C = 144949225, 545897619, 393065978
-
-# kCc / k+1Cc = k - c + 1 / k + 1
-# k+1Cc+1 / kCc = k + 1 / c + 1
-# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
-x = (C * pow(A, mod - 2, mod)) % mod
-y = (B * pow(A, mod - 2, mod)) % mod
-
-n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
-k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
-print((n - k) % mod, k % mod)
-
-
-# 再帰で組み合わせ
-N = 4
-L = [1, 1]
-root = 5
-
-# root ** Nでループ
-def four_pow(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-    for j in range(root):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-# four_pow(0, [])
-
-# 組み合わせ
-def comb_pow(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-    # ここの4を変えてrootを変更
-    last = -1
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last + 1, root):
-        new_array = array + [j]
-        comb_pow(i + 1, new_array)
-#comb_pow(0, [])
-
-# 1スタート
-def comb_pow_2(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-    # ここの4を変えてrootを変更
-    last = 0
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last + 1, root + 1):
-        new_array = array + [j]
-        comb_pow_2(i + 1, new_array)
-# comb_pow_2(0, [])
-
-# 重複組み合わせ
-def rep_comb_pow(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-    # ここの4を変えてrootを変更
-    last = 0
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last, root):
-        new_array = array + [j]
-        rep_comb_pow(i + 1, new_array)
-# rep_comb_pow(0, [])
-
-N = 2
-root = 5
-
-# 1スタート
-def rep_comb_pow_2(i, array):
-    global cnt
-    if i == N:
-        print(array)
-        return
-
-    last = 0
-    if len(array) > 0:
-        last = array[-1]
-
-    for j in range(last + 1, root + 1):
-        new_array = array + [j]
-        rep_comb_pow_2(i + 1, new_array)
-# rep_comb_pow_2(0, [])
-
-N, K = 10, 5
-
-c1 = cmb(N, K)
-
-# 完全順列（モンモール数）
-dp = [0] * (K + 1)
-dp[2] = 1
-for i in range(3, K + 1):
-    dp[i] = (i - 1) * (dp[i - 1] + dp[i - 2]) % mod
-c2 = dp[K]
-
-ans = c1 * c2 % mod
 print(ans)
 
-# ABC008 C - コイン
-
-n = getN()
-c = getArray(n)
-sumans = 0
-
-for i in c:
-    lista = [j for j in c if i % j == 0]
-    count = len(lista)
-    sumans += math.ceil(count / 2) / count
-print(sumans)
-
-# 第6回 ドワンゴからの挑戦状 予選 B - Fusing Slimes
+# SoundHound Inc. Programming Contest 2018 -Masters Tournament- C - Ordinary Beauty
 
 """
-操作をN - 1回行う
-1 ~ N - 1のどれかを右隣のスライムの位置まで移動させる　そして消す
-その通りは(N - 1)!通りあるがそれの総和を求めよ
-考え方を変えてみるか
+差の絶対値がdであるものだけをピックアップ
+合計でn ** m通り
+期待値　通りの数は求めなくていい
+m - 1の内1 ~ m - 1箇所について
+1つめの数字 n通り
+2つめの数字 n通りあるが、この内条件を満たす通りは
+上向き　1つ目 1なら 1 + d
+　　　　 　　 2なら 2 + d...(n - d)通り
+            n - dなら n
+下向きも同様に (n - d)通り
+合計2 * (n - d)通り
+つまりm - 1のうちの一つの谷間が条件を満たす確率は
+2(n - d) / n ** 2
+あとは美しさが1, 2...m - 1のものを足し合わせるだけ
+comboすら必要ない？
 
-3
-1 2 3　の場合
-
-  2 3 →    3 1 + 1移動
-1   3 →    3 1 + 2移動 答えは5
-
-1の移動する距離 + 2の移動する距離 +...
-1が移動する距離の通りは？
-1 2 3 4 の場合 3! = 6通り
-距離1: 1番目に1が選択される 2! = 2, 3 → 1 3通り
-2が選択されない状態で1が選ばれる
-距離2: 2 → 1 1通り
-距離3: 3 → 2 → 1, 2 → 3 → 1
-
-距離1:
-1 2この順番は確定
-残りの3については○ 1 ○ 2 ○　の3箇所のどこかに置く
-
-距離2:
-同様に○ 1 ○ 3 ○ だが
-○ 1 2 3 ○ と ○ 1 ○ 3 2　はダブりがあるので引く
-
-(既に置いたものの順列) 1 (target) その他についてはこれの間に自由に置いて良い
-startが2の場合は1がどの時点で選ばれても強制でその他にしても問題ない
-N <= 10 ** 5
-うまくまとめる
-
-case1
-start1: 1
-next1: 2
-と
-case2
-start2: 2
-next2: 3
-はそれぞれ
-
-○ start ○ next ○　になるので通りの数は同じ
-つまり同じ距離のindexを移動する場合は通りの数が同じ　その通りの数は距離をiとすると
-n = (i - 1)! + 2 既に置いたものの順列 + start + next + 1
-r = (N - 1) - (i + 1) の nPr i <= N - 2
-距離N - 1は(N - 2)!
-
-同じ距離のindexを移動する場合は通りの数が同じ
-o = (既に置いたもの(i - 1) + 自身)とすると
-o + 1に残りのもの - 1を置いていく
-(i - 1)! * (N - 2) // oが N-1Po+1が通りの数
-
-N個目がゴールであるものは別にする
-
-まとめて計算するのには変わりはない
-1 2 3 4の時
-3 が 4に飛ぶ確率 1
-2 が 4に飛ぶ確率　先に3が選ばれないといけない 1 / 2
-1 が 4に飛ぶ確率　先に2, 3が選ばれないといけない 1 / 3 * 1 / 2 * 2!
-...
-1 が xに飛ぶ確率　先に2, 3...x - 1が選ばれないと 1 / (x - 1) * (1 / (x - 2)... * (x - 2)!)消える
-これに(n - 1)!をかける
-
-各区間についてどのスライムが通過するかをまとめる
+足し合わせで求められる
+1つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
+2つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
+1つ目が条件を満たす　と　2つ目が条件を満たす　は互いに独立
+n - dが0になることもそうすれば求める値は0
+またDが0なら上向き下向きではなく同じ値しか取れない
 """
 
-N = getN()
-X = getList()
-MOD = 10 ** 9 + 7
+N, M, D = getNM()
+# (M - 1): 1 ~ M - 1まで足し合わせる
+# 2 * (N - D): 2 * (N - D)) / (N ** 2) * (n ** M）を(n ** M）で割って平均値を出す
+if D == 0:
+    print((M - 1) * (max(0, N - D)) / (N ** 2))
+else:
+    print((M - 1) * 2 * (max(0, N - D)) / (N ** 2))
 
-S = 0
-res = 0
-F = 1
-# 小さいスケールのものから考える
-for i in range(1, N): # 区間0 ~ 1, 1 ~ 2...を通過するか
-    S += pow(i, MOD - 2, MOD) # 1, 1 / 2, 1 / 3...をその都度足していく
-    res += (X[i] - X[i - 1]) * S # S = 1 + 1 / 2 + 1 / 3...
-                                 # これは1: i - 1がi - 1 ~ iを通過する確率、 i - 2が...
-    res %= MOD
-    F *= i # 最終的に(N - 1)!になる
-    F %= MOD
-print(res * F % MOD)
+# AGC025 B - RGB Coloring
+
+"""
+数え上げcomboだろ
+rgbなのでbitもある
+
+ブロックが縦一列にあり、これを塗っていく
+赤色: A点
+緑色: A + B点
+青色: B点
+KはでかいがN, A, Bは小さい
+塗らないブロックがあってもいい　→ 塗らないブロックが1個、2個...N個の場合
+
+4 1 2 5 の場合
+緑色1つ、青色1つ 4 * 3
+赤色1つ、青色2つ 4 * 3
+赤色2つ、緑色1つ 4 * 3
+赤色3つ、青色1つ 4 * 1
+の40通り
+組み合わせを考えればいい
+
+赤を固定すると 各O(1)で
+赤0個, 赤1個, 赤2個...赤N個
+緑の個数を決めれば青の個数も定まる　これだとO(N ** 2)
+緑色: A + B点 が奇妙
+緑色: 赤と青を同時に塗ると考えれば
+A点加算されるブロックがi個(0 <= i <= N), B点加算されるブロックがj個
+A点が0個、1個...N個の場合を調べる
+4 1 2 5 の場合
+A点: 0個　なし
+A点: 1個(1点) B点は2個(4点)
+A点: 2個(2点) なし
+A点: 3個(3点) B点は1個(2点)
+A点: 4個(4点) なし
+
+A点に重ねて置いたB点（緑色になる）とそうでないB点は区別される
+
+数え上げの問題は包除原理使ってダブったのを捨てたり
+既に目標を達成した部分集合のcnt, まだ目標を達成してない部分集合とその達成度のcntを保持したり
+今回のように分解して解いたりできる
+"""
+
+N, A, B, K = getNM()
+ans = 0
+# A点が0個、1個...N個の場合を調べる
+for alpha in range(N + 1):
+    if (K - (A * alpha)) % B != 0:
+        continue
+    beta = (K - (A * alpha)) // B
+    ans += (cmb(N, alpha) * cmb(N, beta)) % mod
+    ans %= mod
+
+print(ans)
