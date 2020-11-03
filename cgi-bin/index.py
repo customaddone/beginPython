@@ -49,179 +49,147 @@ mod = 998244353
 # Main Code #
 #############
 
-# キーエンス プログラミング コンテスト 2019 D - Double Landscape
+# CODE FESTIVAL 2016 Final D. Pair Cards
 
 """
-1 ~ N * M の整数を書き込む
-i行目の数字の最大の数字はA
-j行目の数字の最大の数字はB
-
-反転数の数を求める時は列ごと入れ替え、列内入れ替えを行った
-書き込みの個数を求めよ dpかcombo?
-
-条件の満たし方を考える
-まず条件を満たすものを一つ出す
-Aiがn　i行目にはnとn以下の数字しか書かれていない
-
-AとB両方に登場するとは限らない
-ある数について指定の場所に置かないといけない
-あとは自由 comboで求める
-3 3
-5 9 7
-3 6 9
-  5 9 7
-3
-6
-9
-
-9を置く
-  5 9 7
-3
-6
-9   9
-8を置く　置けない！
-
-二次元累積和？
-N * M ~ 1まで１つずつ数を置いていく
-iがAにある and Bにある
-・解放する部分
-今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
-・置けるとこ
-1箇所　今回解放されるとこのクロス
-
-iがAにある ^ Bにある
-・解放する部分
-今まで解放された部分と今回解放する部分の交わるとこ
-・置けるとこ
-今回解放されたとこのいずれかに置く
-
-A,Bにない
-現在解放されているマスのどこにでも置ける
+個数の最大値を求める
+ペア
+最も条件がきついものからペアにしていく
+条件　どちらか
+同じ整数
+Mの倍数になる
+Mが奇数の場合と偶数の場合
+奇数の場合
+mod mが
+0: 自身と
+i: m - iと
+偶数の場合
+0, m // 2: 自身と
+i: m - iと
+効率のいい組み合わせ
+きつい順から
+min(len(i), len(m - i))になるが差分については同じ数同士をペアにできる
+同じ数がグループにある数はその同じ数と結ぶことができるし、m - iのグループの数と結ぶことも
+できる　条件は緩い
+そうではない条件が厳しいものを優先して結ぶ
 """
 
 N, M = getNM()
-A = set(getList())
-B = set(getList())
-if len(A) < N or len(B) < M: # A,B内で数字がダブってたら0
-    print(0)
-    exit()
+X = getList()
 
-ans = 1
-opened = 0 # 解放されたマス
-a_allowed = 0 # 解放された行
-b_allowed = 0 # 解放された列
+modulo = [[] for i in range(M)]
+for x in X:
+    modulo[x % M].append(x)
 
-for i in range(N * M, 0, -1):
-    if (i in A) and (i in B):
-        # 解放はできる
-        opened += (a_allowed + b_allowed) + 1 # 今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
-        a_allowed += 1
-        b_allowed += 1
-        opened -= 1 # 解放されたマスに置く
-        # ans *= 1 # 置けるのは1箇所　今回解放されるとこのクロス
-    elif (i in A):
-        opened += b_allowed # 解放する行 * 解放されている列
-        a_allowed += 1
-        ans *= b_allowed # 今回解放された行のいずれかに置く
-        opened -= 1
-    elif (i in B):
-        opened += a_allowed
-        b_allowed += 1
-        ans *= a_allowed
-        opened -= 1
+ans = (len(modulo[0]) // 2) + (len(modulo[M // 2]) // 2) * (M % 2 == 0)
+half = M // 2 if M % 2 == 0 else (M // 2) + 1
+
+for i in range(1, half):
+    pair1 = 0
+    dict1 = defaultdict(int)
+    for j in modulo[i]: # 同じ数
+        if dict1[j] == 1:
+            dict1[j] -= 1
+            pair1 += 1
+        else:
+            dict1[j] += 1
+
+    pair2 = 0
+    dict2 = defaultdict(int)
+    for j in modulo[M - i]:
+        if dict2[j] == 1:
+            dict2[j] -= 1
+            pair2 += 1
+        else:
+            dict2[j] += 1
+
+    if len(modulo[i]) > len(modulo[M - i]): # pair1を使う
+        ans += len(modulo[M - i])
+        diff = abs(len(modulo[i]) - len(modulo[M - i])) // 2
+        ans += min(diff, pair1)
     else:
-        ans *= opened # 解放されている部分のどこに置いても良い
-        opened -= 1
-
-    ans %= mod
+        ans += len(modulo[i])
+        diff = abs(len(modulo[i]) - len(modulo[M - i])) // 2
+        ans += min(diff, pair2)
 
 print(ans)
 
-# SoundHound Inc. Programming Contest 2018 -Masters Tournament- C - Ordinary Beauty
+# AGC040 B - Two Contests
 
 """
-差の絶対値がdであるものだけをピックアップ
-合計でn ** m通り
-期待値　通りの数は求めなくていい
-m - 1の内1 ~ m - 1箇所について
-1つめの数字 n通り
-2つめの数字 n通りあるが、この内条件を満たす通りは
-上向き　1つ目 1なら 1 + d
-　　　　 　　 2なら 2 + d...(n - d)通り
-            n - dなら n
-下向きも同様に (n - d)通り
-合計2 * (n - d)通り
-つまりm - 1のうちの一つの谷間が条件を満たす確率は
-2(n - d) / n ** 2
-あとは美しさが1, 2...m - 1のものを足し合わせるだけ
-comboすら必要ない？
+数え切れないほどたくさんの人がコンテストに参加する
+N問の問題がある
+区間[L, R]の人は正解する　この区間は広いのでセグ木使えない
+数学問か？
 
-足し合わせで求められる
-1つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
-2つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
-1つ目が条件を満たす　と　2つ目が条件を満たす　は互いに独立
-n - dが0になることもそうすれば求める値は0
-またDが0なら上向き下向きではなく同じ値しか取れない
+N問をいずれかのコンテストで出す　どちらのコンテストも１問以上出す
+できるだけダブりを出す
+最大の値を出す　二分探索か
+貪欲っぽい
+[[1, 4], [2, 5], [4, 7], [5, 8]] の時
+[1, 4], [2, 5] と [4, 7], [5, 8]に分ける
+[1, 4]を選択する場合、スタートが5以上になるものは選ばない
+最初の一つを選ぶと上限が決まる
+片方のグループは上限を見て、もう片方は下限を見る？
+
+場合によっては片方にいらないものを押し付けることも
+多分貪欲
+区間スケジューリングはダブらないようにやった
+[[4, 17], [3, 18], [2, 19], [1, 20]]
+二分探索がしたい　だめです
+上限と下限が独立ではない
+
+１つのコンテストのmaxが一番広い幅を選んだ時
+[1, 20] これに加算していってもう一つのコンテストを緩和していく
+
+Liの最大値をとるindexをp, Riの最小値をとるindexをq
+片方にいらないものを押し付ける
+pとqが同じグループ もう片方は最大の幅を取るもの
+pとqが違うグループ
+lを昇順に並べて先頭からi個目までをqの方に
+それ以外をqの方に置く
 """
 
-N, M, D = getNM()
-# (M - 1): 1 ~ M - 1まで足し合わせる
-# 2 * (N - D): 2 * (N - D)) / (N ** 2) * (n ** M）を(n ** M）で割って平均値を出す
-if D == 0:
-    print((M - 1) * (max(0, N - D)) / (N ** 2))
-else:
-    print((M - 1) * 2 * (max(0, N - D)) / (N ** 2))
+N = getN()
+Q = [getList() for i in range(N)]
+Q.sort(reverse = True, key = lambda i:i[1])
+Q.sort()
 
-# AGC025 B - RGB Coloring
+max_l = N - 1 # ソートしているので最初から出ている
+min_r = 0
+for i in range(N): # min_rのインデックスを探す
+    if Q[i][1] <= Q[min_r][1]:
+        min_r = i
 
-"""
-数え上げcomboだろ
-rgbなのでbitもある
-
-ブロックが縦一列にあり、これを塗っていく
-赤色: A点
-緑色: A + B点
-青色: B点
-KはでかいがN, A, Bは小さい
-塗らないブロックがあってもいい　→ 塗らないブロックが1個、2個...N個の場合
-
-4 1 2 5 の場合
-緑色1つ、青色1つ 4 * 3
-赤色1つ、青色2つ 4 * 3
-赤色2つ、緑色1つ 4 * 3
-赤色3つ、青色1つ 4 * 1
-の40通り
-組み合わせを考えればいい
-
-赤を固定すると 各O(1)で
-赤0個, 赤1個, 赤2個...赤N個
-緑の個数を決めれば青の個数も定まる　これだとO(N ** 2)
-緑色: A + B点 が奇妙
-緑色: 赤と青を同時に塗ると考えれば
-A点加算されるブロックがi個(0 <= i <= N), B点加算されるブロックがj個
-A点が0個、1個...N個の場合を調べる
-4 1 2 5 の場合
-A点: 0個　なし
-A点: 1個(1点) B点は2個(4点)
-A点: 2個(2点) なし
-A点: 3個(3点) B点は1個(2点)
-A点: 4個(4点) なし
-
-A点に重ねて置いたB点（緑色になる）とそうでないB点は区別される
-
-数え上げの問題は包除原理使ってダブったのを捨てたり
-既に目標を達成した部分集合のcnt, まだ目標を達成してない部分集合とその達成度のcntを保持したり
-今回のように分解して解いたりできる
-"""
-
-N, A, B, K = getNM()
-ans = 0
-# A点が0個、1個...N個の場合を調べる
-for alpha in range(N + 1):
-    if (K - (A * alpha)) % B != 0:
+# same(max_l, min_r)
+dmax = 0
+for i in range(N):
+    if i == max_l or i == min_r: # 飛ばす
         continue
-    beta = (K - (A * alpha)) // B
-    ans += (cmb(N, alpha) * cmb(N, beta)) % mod
-    ans %= mod
+    # 最大の幅を取るものを探す
+    if Q[i][1] - Q[i][0] > Q[dmax][1] - Q[dmax][0]:
+        dmax = i
+d1 = max(0, Q[min_r][1] - Q[max_l][0] + 1) # pとqが同じグループにある方の楽しさ
+d2 = max(0, Q[dmax][1] - Q[dmax][0] + 1)
+ans = d1 + d2
+
+# !same(max_l, min_r)
+# 最小のrを取る地点から順に
+# それ以前はmin_rの幅より広くなるので無視して良い
+min_r_list = [Q[i][1] for i in range(N)]
+for i in range(N - 2, -1, -1):
+    min_r_list[i] = min(min_r_list[i], min_r_list[i + 1])
+
+q_group = [float('inf'), Q[min_r][1]]
+p_group = [Q[max_l][0], 0]
+# 最初が一番q_groupの幅が広い
+for i in range(min_r, max_l):
+    left, right = Q[i]
+
+    q_group = [left, Q[min_r][1]] # i番目まで
+    p_group = [Q[max_l][0], min_r_list[i + 1]] # i + 1番目以降
+    d1 = max(0, p_group[1] - p_group[0] + 1)
+    d2 = max(0, q_group[1] - q_group[0] + 1)
+    ans = max(ans, d1 + d2)
 
 print(ans)
