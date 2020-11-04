@@ -49,147 +49,524 @@ mod = 998244353
 # Main Code #
 #############
 
-# CODE FESTIVAL 2016 Final D. Pair Cards
+# NOMURA プログラミングコンテスト 2020 C - Folia
+"""
+N = 3
+A = [0, 1, 1, 2]の場合
+葉の数を求める
+まず完全二分木から考える
+ここから取り除く
+深さ3の葉は4つある
+深さ4の葉は8つある
+深さnの葉は2 ** (n - 1)つある
+深さ3の葉は4つある完全二分木について
+A = [0, 0, 0, 4]
+深さ3の葉を一つ刈ると
+A = [0, 0, 0, 3]
+二つ刈ってみる　この時、１つ目と同じ親のを刈ると
+A = [0, 0, 1, 2]
+違うのを刈ると
+A = [0, 0, 0, 2]
+根となる頂点を１つ作る
+A[0] = 1ならその頂点は葉（下に頂点を繋げない)
+A[0] = 0ならその頂点は生きる
+頂点の最大値を求めるなら
+なるべく大きく分岐させた方がいい
+エッジ貼らなくても頂点数求めるだけでいい
+A[i]を探索するたびに ans += する
+現在用意している仮の頂点数を保持しておく
+確定させた頂点数も抑えておく
+A = [0, 0, 1, 0, 2]を逆から見ると
+psuedo = [1, 2, 4, 8, 16]
+psuedoのそれぞれとA[4]どちらか小さい方をpsuedoから引く
+psuedo = [0, 0, 2, 6, 14]
+left[0] ~ left[i]のそれぞれでA[i]を引けるだけ引く
+順に見ると
+psuedo = []
+left = [] # ansに加える値
+A[0] = 0
+psuedo = [1]
+left = [1]
+A[1] = 0
+psuedo = [1, 2]
+left = [1, 2]
+A[2] = 1
+psuedo = [1, 2, 3]
+left = [0, 1, 3]
+A[3] = 0
+psuedo = [1, 2, 3, 6]
+left = [0, 1, 3, 6]
+A[4] = 2
+psuedo = [1, 2, 3, 6, 10]
+left = [0, 0, 1, 4, 10]
+葉にならない点の上限を考える
+"""
+
+# 根から探索するか
+# 葉から探索するか
+
+# 私は根から
+# 総和には累積和が効く
+N = getN()
+A = getList()
+
+# 深さ0の二分木の場合
+if N == 0:
+    if A[0] == 1:
+        print(1)
+    else:
+        print(-1)
+    exit()
+
+if A[0] == 0:
+    psuedo = [1]
+    left = [1] # 確定させる用
+else:
+    psuedo = [0]
+    left = [0]
+
+alta = deepcopy(A)
+for i in range(N - 1, -1, -1):
+    alta[i] += alta[i + 1]
+ma = max(alta)
+
+# i + 1番目について調べる
+for i in range(1, N + 1):
+    opt = min(psuedo[-1] * 2, ma) # stop指数爆発 今回max(alta)以上の数字は必要ない
+    psuedo.append(opt)
+    left.append(opt)
+    if psuedo[-1] - A[i] < 0:
+        print(-1)
+        exit()
+    psuedo[-1] -= A[i]
+    # 確定させていく
+    """
+    明らか追いつかないので累積する
+    for j in range(i, -1, -1):
+        if dete[j] == 0:
+            break
+        add = min(dete[j], A[i])
+        ans += add
+        dete[j] -= add
+    """
+
+ans = 0
+
+for i in range(N + 1):
+    ans += min(left[i], alta[i])
+print(ans)
+
+# ARC011 ダブレット
+# つまり最短経路問題
+s1, s2 = input().split(' ')
+N = getN()
+S = set()
+
+S.add(s1)
+S.add(s2)
+
+for i in range(N):
+    S.add(input())
+
+if s1 == s2:
+    print(0)
+    print(s1)
+    print(s2)
+    exit()
+
+S = list(S)
+N = len(S)
+
+# 2つにエッジを貼れるか
+def judge(s1, s2):
+    cnt = 0
+    n = len(s1)
+    for i in range(n):
+        if s1[i] != s2[i]:
+            cnt += 1
+    if cnt <= 1:
+        return True
+    else:
+        return False
+
+dist = [[] for i in range(N)]
+d = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    for j in range(i + 1, N):
+        if judge(S[i], S[j]):
+            dist[i].append(j)
+            dist[j].append(i)
+            d[i][j] = 1
+            d[j][i] = 1
+
+sta = 0
+end = 0
+for i in range(N):
+    if S[i] == s1:
+        sta = i
+        break
+for i in range(N):
+    if S[i] == s2:
+        end = i
+        break
+
+# ダイクストラする
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        di, now = heapq.heappop(pq)
+        if (di > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i] > dist[now] + d[i][now]:
+                dist[i] = dist[now] + d[i][now]
+                heapq.heappush(pq, (dist[i], i))
+    return dist
+
+distance = dij(sta, dist)
+if distance[end] == float('inf'):
+    print(-1)
+    exit()
+
+# 最短経路を示す矢印を求める
+# ダイクストラと同じ要領で
+def router(n, sta):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    ignore[sta] = 0
+    path[sta] = -1
+
+    while pos:
+        u = pos.popleft()
+
+        for i in dist[u]:
+            if ignore[i] != 1 and distance[i] == ignore[u] + d[i][u]:
+                path[i] = u
+                ignore[i] = ignore[u] + d[i][u]
+                pos.append(i)
+
+    return path
+
+path = router(N, sta)
+ans = [S[end]]
+now = end
+while True:
+    now = path[now]
+    ans.append(S[now])
+    if now == sta:
+        break
+
+print(len(ans) - 2)
+for i in range(len(ans)):
+    print(ans[-i - 1])
+
+# AGC014 B - Unplanned Queries
 
 """
-個数の最大値を求める
-ペア
-最も条件がきついものからペアにしていく
-条件　どちらか
-同じ整数
-Mの倍数になる
-Mが奇数の場合と偶数の場合
-奇数の場合
-mod mが
-0: 自身と
-i: m - iと
-偶数の場合
-0, m // 2: 自身と
-i: m - iと
-効率のいい組み合わせ
-きつい順から
-min(len(i), len(m - i))になるが差分については同じ数同士をペアにできる
-同じ数がグループにある数はその同じ数と結ぶことができるし、m - iのグループの数と結ぶことも
-できる　条件は緩い
-そうではない条件が厳しいものを優先して結ぶ
+どこかの点を基準とする
+・どの辺を見ても書かれている数が偶数になった
+性質を満たす木が存在するか
+色々な木で考えてみよう
+最終的に最適な木の構造がわかる？
+頂点xを基準に見ると
+x - 1 - 2の木の場合 [1, 2]のクエリは
+x - 1 ① 2 xを経由すると
+x ② 1 ① 2
+他の辺の偶奇を変えずに1 - 2間だけ数字を加算することができた
+最も単純なスターグラフを考えると、x - i間の辺の数字 = クエリに何回iが出たか
+適当な頂点を根として、根付き木にする。この根を r とする。
+・クエリ(p, a) + (p, b)とクエリ(a, b)は同じ
+まず、クエリ (a, b) を考えたとき、これ を (r, a), (r, b) と分解することができる。
+これは、(a, b) の LCA を p としたとき、クエリ (a, b) ではパス a − p, b − p に +1 しており、
+クエリ (r, a), (r, b) ではパス a − p, b − p に +1、パス r − p に +2 するため、
+mod 2 で考えると同一視できるので明らかである。
+基準点をrとすると、クエリ全体では (r, i (i = 1 ~ N))を繰り返すことと同値である
+(r, v(vはrから一番深い点))のクエリを偶数回行う時、途中の辺についても偶数回加算されている
 """
 
 N, M = getNM()
-X = getList()
+list = [0] * (N + 1)
+for i in range(M):
+    a, b = getNM()
+    list[a] += 1
+    list[b] += 1
 
-modulo = [[] for i in range(M)]
-for x in X:
-    modulo[x % M].append(x)
+for i in range(1, N + 1):
+    if list[i] % 2 != 0:
+        print('NO')
+        exit()
+print('YES')
 
-ans = (len(modulo[0]) // 2) + (len(modulo[M // 2]) // 2) * (M % 2 == 0)
-half = M // 2 if M % 2 == 0 else (M // 2) + 1
-
-for i in range(1, half):
-    pair1 = 0
-    dict1 = defaultdict(int)
-    for j in modulo[i]: # 同じ数
-        if dict1[j] == 1:
-            dict1[j] -= 1
-            pair1 += 1
-        else:
-            dict1[j] += 1
-
-    pair2 = 0
-    dict2 = defaultdict(int)
-    for j in modulo[M - i]:
-        if dict2[j] == 1:
-            dict2[j] -= 1
-            pair2 += 1
-        else:
-            dict2[j] += 1
-
-    if len(modulo[i]) > len(modulo[M - i]): # pair1を使う
-        ans += len(modulo[M - i])
-        diff = abs(len(modulo[i]) - len(modulo[M - i])) // 2
-        ans += min(diff, pair1)
-    else:
-        ans += len(modulo[i])
-        diff = abs(len(modulo[i]) - len(modulo[M - i])) // 2
-        ans += min(diff, pair2)
-
-print(ans)
-
-# AGC040 B - Two Contests
+# AGC013 B - Hamiltonish Path
 
 """
-数え切れないほどたくさんの人がコンテストに参加する
-N問の問題がある
-区間[L, R]の人は正解する　この区間は広いのでセグ木使えない
-数学問か？
+木構造ではない
+N頂点にM辺
+・２個以上の頂点を通る
+・同じ頂点を通らない
+・パスの少なくとも一方の端点と直接辺で結ばれている頂点は、必ずパスに含まれる
+いくつかあるうちの一つ答えよ
+端点と端点をつなぐと輪になる
+端点の頂点数は2でないといけないのでは　そんなことはない
+端点の候補はどんなものがあるか
+端点の１つ目はなんでもいいのか
+グリッドグラフを考えた場合に中央の点を指定してもうまく条件を満たすのでいけそう
+ただし、子要素に葉があればだめ
+端点に葉が2つあれば余裕
+端点を一つ選ぶ　→
+隣接する辺を全て通るパスを考える　
+7 8
+1 2
+2 3
+3 4
+4 5
+5 6
+6 7
+3 5
+2 6　の時
+もし2 6のパスがなければ3を端点にできない
+パスグラフを考えると
+パスグラフの端っこ２つを端点にしないと作れない
+大元となるパスグラフを見つける
+寄り道しないといけない場合であってもすぐ戻ってこれるような
+端点を一つ決める
+端点を2にしてもう片方の端点を考える時、1が邪魔
+端点を2から1にずらせれば楽
+適当な点１つを選んでそこから端点1に行くパス、端点2に行くパスを書いていく
+これ完全グラフだとTLEするんじゃ？
+今回Mの数が小さい
+作れる最大の完全グラフはN = 400 (N(N + 1) // 2 = 80000ぐらい)なのでOK
+"""
 
-N問をいずれかのコンテストで出す　どちらのコンテストも１問以上出す
-できるだけダブりを出す
-最大の値を出す　二分探索か
-貪欲っぽい
-[[1, 4], [2, 5], [4, 7], [5, 8]] の時
-[1, 4], [2, 5] と [4, 7], [5, 8]に分ける
-[1, 4]を選択する場合、スタートが5以上になるものは選ばない
-最初の一つを選ぶと上限が決まる
-片方のグループは上限を見て、もう片方は下限を見る？
+N, M = getNM()
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-場合によっては片方にいらないものを押し付けることも
-多分貪欲
-区間スケジューリングはダブらないようにやった
-[[4, 17], [3, 18], [2, 19], [1, 20]]
-二分探索がしたい　だめです
-上限と下限が独立ではない
+parent = [-1] * N
+ignore = [0] * N
+ignore[0] = 1
+dot1 = 0
+dot1_flag = True
+dot2 = 0
+dot2_flag = True
 
-１つのコンテストのmaxが一番広い幅を選んだ時
-[1, 20] これに加算していってもう一つのコンテストを緩和していく
+# 端点が見つかる（行き止まりになる）まで探索
+while dot1_flag or dot2_flag:
+    dot1_flag = False
+    for i in dist[dot1]:
+        if ignore[i] == 0:
+            ignore[i] = 1
+            parent[dot1] = i
+            dot1 = i
+            dot1_flag = True
+            break
 
-Liの最大値をとるindexをp, Riの最小値をとるindexをq
-片方にいらないものを押し付ける
-pとqが同じグループ もう片方は最大の幅を取るもの
-pとqが違うグループ
-lを昇順に並べて先頭からi個目までをqの方に
-それ以外をqの方に置く
+    dot2_flag = False
+    for i in dist[dot2]:
+        if ignore[i] == 0:
+            ignore[i] = 1
+            parent[i] = dot2
+            dot2 = i
+            dot2_flag = True
+            break
+
+ans = [dot2 + 1]
+now = dot2
+while now != dot1:
+    now = parent[now]
+    ans.append(now + 1)
+
+ans = list(reversed(ans))
+
+print(len(ans))
+print(*ans)
+
+# AGC033 C - Removing Coins
+# 木の直径 + nim 
+
+"""
+最適行動する
+ある形に収束する
+相手の手がどうであれ
+全ての通りを試してみる
+
+木の問題であり、nimの問題である
+
+一つ頂点を選び、コインを取る
+その後他のコインを吸い寄せる
+
+ある点iを選択する
+iから各コインへの距離が1小さくなる
+
+各コインへの最短距離の最大値が1になると負け
+木なのでコインが２つ隣り合うだけになったら負け
+
+コインの木の直径が2で回ってきたら負け
+コインの木はちぎれることはない
+コインの木の直径を2にする
+
+1 - 2 - 3 - 4 - 5のパスグラフを考える
+1を選ぶと木の直径は1 - 2 - 3 - 4で4になる
+そのあと2を選ぶと2 - 3になり直径2で勝ち
+端っこを取ると木の直径が1減る
+端以外を取ると木の直径が2減る
+
+1 - 2 - 3 - 4 - 5
+
+firが1取る 1 - 2 - 3 - 4 → secが2取る 2 - 3
+firが2取る 2 - 3 - 4 → secが4取る 3 - 4
+
+1 - 2 - 3 - 4 - 5 - 6
+fir 1取る 1 - 2 - 3 - 4 - 5 firの勝ち
+相手に直径5になるように回す　
+firは6か7で回ってきたら勝ち　8で回ってきたら
+2 + 3 * iで回ってきたら負け 2, 5, 8...
+2 * (3 * i) + 1 端を選ぶ
+2 * (3 * i) + 2 真ん中を選ぶ
+
+直径を取るパスの端じゃない点か関係ない点を取ると-2される
+N = 1なら自動的に勝ち
 """
 
 N = getN()
-Q = [getList() for i in range(N)]
-Q.sort(reverse = True, key = lambda i:i[1])
-Q.sort()
+Q = [getList() for i in range(N - 1)]
 
-max_l = N - 1 # ソートしているので最初から出ている
-min_r = 0
-for i in range(N): # min_rのインデックスを探す
-    if Q[i][1] <= Q[min_r][1]:
-        min_r = i
+G = [[] for i in range(N)]
+for i in range(N - 1):
+    s, t = Q[i]
+    G[s - 1].append(t - 1)
+    G[t - 1].append(s - 1)
 
-# same(max_l, min_r)
-dmax = 0
+# 木の直径を求める
+def bfs(s):
+    dist = [-1] * N
+    que = deque([s])
+    dist[s] = 1
+
+    while que:
+        u = que.popleft()
+        for i in G[u]:
+            if dist[i] >= 0:
+                continue
+            dist[i] = dist[u] + 1
+            que.append(i)
+    d = max(dist)
+    # 全部並べて一番値がでかいやつ
+    return dist.index(d), d
+
+# 0から最も遠い点uを求める
+u, _ = bfs(0)
+# uから最も遠い点vとその距離を求める（つまり直径）
+v, d = bfs(u)
+
+# 2 + 3 * iで回ってきたら負け
+if (d - 2) % 3 == 0:
+    print('Second')
+else:
+    print('First')
+
+
+# AGC039 B - Graph Partition
+
+"""
+N頂点M辺
+N <= 200
+O(n ** 3)までいける
+ワーシャルフロイドか
+01
+10
+1 - 2
+
+頂点集合V1, V2, V3...をできる限り作る
+頂点集合の最大値
+どの辺も番号が隣り合う頂点集合の頂点同士をつなぐ
+頂点を分解する
+いろいろやってみる
+
+頂点を一つずつ前から調べてみる
+頂点1をV1に入れると
+V1とVkだけ不利な気がする
+
+隣接する頂点は隣に置く
+距離が2ある頂点については自身と同じ場所に置ける
+[[1, 3, 4], [0, 2, 5], [1, 3], [0, 2], [0], [1]]の場合
+
+0を置く 0
+1を置く 0 1
+2を置く 0 1 2
+3を置く時 0 - 3にエッジがあるため2の向こうに置くことはできない
+0 1 2
+  3
+
+全ての辺について条件を満たす
+辺をいい感じに配置する
+1, 3について、[0, 2]は共通して隣にいないといけない
+輪ができる　輪を潰す
+
+最短距離の位置に配置すれば良い
+繋がってなければ何してもいい
+
+偶数か奇数か　繋がっていれば隣
+２つに分けることは可能か
+距離奇数のものを向こうに、偶数のものをこっちに
+判定可能
+距離を伸ばすということは？
+
+まず２つのグループに分けられるか
+分けられるならAi ~ Ajの最短距離の最長が答え
+"""
+
+N = getN()
+S = [[int(i) for i in list(input())] for j in range(N)]
+
+edges = [[] for i in range(N)]
 for i in range(N):
-    if i == max_l or i == min_r: # 飛ばす
-        continue
-    # 最大の幅を取るものを探す
-    if Q[i][1] - Q[i][0] > Q[dmax][1] - Q[dmax][0]:
-        dmax = i
-d1 = max(0, Q[min_r][1] - Q[max_l][0] + 1) # pとqが同じグループにある方の楽しさ
-d2 = max(0, Q[dmax][1] - Q[dmax][0] + 1)
-ans = d1 + d2
+    for j in range(N):
+        if S[i][j] == 1:
+            edges[i].append(j)
 
-# !same(max_l, min_r)
-# 最小のrを取る地点から順に
-# それ以前はmin_rの幅より広くなるので無視して良い
-min_r_list = [Q[i][1] for i in range(N)]
-for i in range(N - 2, -1, -1):
-    min_r_list[i] = min(min_r_list[i], min_r_list[i + 1])
+# まず２つのグループに分けられるか
+group = [-1] * N
+group[0] = 0
 
-q_group = [float('inf'), Q[min_r][1]]
-p_group = [Q[max_l][0], 0]
-# 最初が一番q_groupの幅が広い
-for i in range(min_r, max_l):
-    left, right = Q[i]
+pos = deque([0])
+while pos:
+    u = pos.popleft()
+    for i in edges[u]:
+        if group[i] == -1: # 未確定
+            group[i] = 1 if group[u] == 0 else 0
+            pos.append(i)
+        else: # 確定済み
+            if group[u] == group[i]:
+                print(-1)
+                exit()
 
-    q_group = [left, Q[min_r][1]] # i番目まで
-    p_group = [Q[max_l][0], min_r_list[i + 1]] # i + 1番目以降
-    d1 = max(0, p_group[1] - p_group[0] + 1)
-    d2 = max(0, q_group[1] - q_group[0] + 1)
-    ans = max(ans, d1 + d2)
+# ２つのグループに分けられるなら
+# Sをdistに使う
+for i in range(N):
+    for j in range(N):
+        if i != j and S[i][j] == 0:
+            S[i][j] = float('inf')
+
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
+
+S = warshall_floyd(S)
+ans = 2 # 連結ってことは絶対に2以上
+for i in S:
+    ans = max(ans, max(i) + 1)
 
 print(ans)
