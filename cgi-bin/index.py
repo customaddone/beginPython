@@ -49,258 +49,384 @@ mod = 998244353
 # Main Code #
 #############
 
-# ABC027 C - 倍々ゲーム
-# ２人が最善を尽くす時、どちらが勝つか
-# パターン1:ある状態になるように収束させれば必ず勝つ
-# パターン2:ある場所を目指せば必ず勝つようになる
-# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
+# ABC030 D - へんてこ辞書
 
-# まずは全通り試してみる　その中で勝ちが偏っている部分がある
-N = getN()
-k = N
-depth = 0
-while k > 1:
-    k //= 2
-    depth += 1
-x = 1
+N, A = getNM()
+K = getN()
+B = getList()
+A -= 1
+B = [i - 1 for i in B]
+
+visited = [-1] * N
+visited[A] = 1
+
 cnt = 1
-if depth % 2:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-        else:
-            x *= 2
-            x += 1
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
+to = B[A]
+
+while cnt < K:
+    cnt += 1
+    if visited[to] >= 0:
+        cnt += ((K - cnt) // (cnt - visited[to])) * (cnt - visited[to])
+        visited = [-1] * N
+    visited[to] = cnt
+    to = B[to]
+
+print(to + 1)
+
+# ABC138 E - Strings of Impurity
+
+s = input()
+t = input()
+
+# 各文字について
+p = {c: [] for c in s}
+for i in range(len(s)):
+    p[s[i]].append(i)
+
+z = 0
+l = -1
+for c in t:
+    if c not in p:
+        print(-1)
+        break
+    # 文字cのうちもっとも近い未来にあるもの
+    x = bisect_right(p[c], l)
+    # 一周するなら
+    if x == len(p[c]):
+        x = 0
+        z += 1
+    l = p[c][x]
 else:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-            x += 1
-        else:
-            x *= 2
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
+    print(z * len(s) + l + 1)
 
-# ABC048 D - An Ordinary Game
-# 最終的にどのような形で終わるか
-S = input()
-if (S[0] != S[-1]) ^ (len(S) % 2):
-    print('Second')
-else:
-    print('First')
+# ABC167 D - Teleporter
 
-# ABC059 D - Alice&Brown
-# まずは全通り試してみる
-
-# 最終形をイメージする →
-# 1 0 操作出来ない　終わり
-# 1 1 操作出来ない　終わり
-# 逆に2 0 や 3 0 なら操作できる
-# 2以上開く、０か１開くを繰り返す
-X, Y = getNM()
-X = int(X)
-Y = int(Y)
-
-if (X - Y) ** 2 > 1:
-    print("Alice")
-else:
-    print("Brown")
-
-# AGC033 LRUD Game
-
-"""
-制約よりゲーム木とも違う
-つまりnim
-スタート地点にコマが置いてある　これを２人で動かす
-S[i]の方向に動かす、もしくは動かさない
-盤上から落ちるか残るか
-逆から見てみると
-
-最適行動　とは？
-中央に寄るように、もしくは遠ざかるように？
-
-全ての行動をシミュレートして偏りを探す
-RとLの数の差、UとDの数の差によって勝敗がわかる
-
-高橋くんが如何なる行為をしても青木くんは盤上に残すことができる
-青木くんが如何なる行為をしても高橋くんは盤上から落とすことができる
-
-高橋くんは駒の振れ幅を大きくする
-青木くんは駒の振れ幅を小さくする
-基本高橋くん有利？
-
-2人は相手の行動を先読みできるか
-あとで相手がRを大量に持っている　→　できるだけ左にずらす
-最後のL or Rの処理のあと、コマが残っている
-相手の最悪の行動に対応できるか
-高橋と青木のLRUDの差で考える
-LL
-  RRRの場合
-
-２人が最適な行動をするとは
-相手が最悪の行動をしてくるということ
-コマが一番左にいても絶対に落とせる
-L, R, U, Dのそれぞれが独立に
-R, L, D, Uと対戦できる
-"""
-
-H, W, N = getNM() # H:縦 W:横
-start = getList()
-S = input()
-T = input()
-
-LRUD_range = [start[1], start[1], start[0], start[0]]
-
-for i in range(N):
-    # 高橋のターン
-    if S[i] == 'L': # 高橋のL対青木のR
-        LRUD_range[0] -= 1
-    elif S[i] == 'R':
-        LRUD_range[1] += 1
-    elif S[i] == 'U':
-        LRUD_range[2] -= 1
-    else:
-        LRUD_range[3] += 1
-
-    if LRUD_range[0] < 1 or W < LRUD_range[1] or LRUD_range[2] < 1 or H < LRUD_range[3]:
-        print('NO')
-        exit()
-
-    # 青木のターン
-    if T[i] == 'L': # 高橋のR対青木のL ただしleftできるのは1まで
-        LRUD_range[1] = max(1, LRUD_range[1] - 1)
-    elif T[i] == 'R':
-        LRUD_range[0] = min(W, LRUD_range[0] + 1)
-    elif T[i] == 'U':
-        LRUD_range[3] = max(1, LRUD_range[3] - 1)
-    else:
-        LRUD_range[2] = min(H, LRUD_range[2] + 1)
-
-print('YES')
-
-# AGC033 C - Removing Coins
-# 木の直径 + nim
-
-"""
-最適行動する
-ある形に収束する
-
-相手の手がどうであれ
-全ての通りを試してみる
-
-木の問題であり、nimの問題である
-
-一つ頂点を選び、コインを取る
-その後他のコインを吸い寄せる
-ある点iを選択する
-iから各コインへの距離が1小さくなる
-
-各コインへの最短距離の最大値が1になると負け
-木なのでコインが２つ隣り合うだけになったら負け
-コインの木の直径が2で回ってきたら負け
-コインの木はちぎれることはない
-
-コインの木の直径を2にする
-
-1 - 2 - 3 - 4 - 5のパスグラフを考える
-1を選ぶと木の直径は1 - 2 - 3 - 4で4になる
-そのあと2を選ぶと2 - 3になり直径2で勝ち
-端っこを取ると木の直径が1減る
-端以外を取ると木の直径が2減る
-
-1 - 2 - 3 - 4 - 5
-firが1取る 1 - 2 - 3 - 4 → secが2取る 2 - 3
-firが2取る 2 - 3 - 4 → secが4取る 3 - 4
-
-1 - 2 - 3 - 4 - 5 - 6
-fir 1取る 1 - 2 - 3 - 4 - 5 firの勝ち
-
-相手に直径5になるように回す　
-firは6か7で回ってきたら勝ち　8で回ってきたら
-
-2 + 3 * iで回ってきたら負け 2, 5, 8...
-2 * (3 * i) + 1 端を選ぶ
-2 * (3 * i) + 2 真ん中を選ぶ
-
-直径を取るパスの端じゃない点か関係ない点を取ると-2される
-N = 1なら自動的に勝ち
-"""
-
-N = getN()
-Q = [getList() for i in range(N - 1)]
-
-G = [[] for i in range(N)]
-for i in range(N - 1):
-    s, t = Q[i]
-    G[s - 1].append(t - 1)
-    G[t - 1].append(s - 1)
-
-# 木の直径を求める
-def bfs(s):
-    dist = [-1] * N
-    que = deque([s])
-    dist[s] = 1
-
-    while que:
-        u = que.popleft()
-        for i in G[u]:
-            if dist[i] >= 0:
-                continue
-            dist[i] = dist[u] + 1
-            que.append(i)
-    d = max(dist)
-    # 全部並べて一番値がでかいやつ
-    return dist.index(d), d
-
-# 0から最も遠い点uを求める
-u, _ = bfs(0)
-# uから最も遠い点vとその距離を求める（つまり直径）
-v, d = bfs(u)
-
-# 2 + 3 * iで回ってきたら負け
-if (d - 2) % 3 == 0:
-    print('Second')
-else:
-    print('First')
-
-# 全国統一プログラミング王 予選　C - Different Strokes
-
-"""
-一つの数字を最大化できないか
-結局青木さんの点数は高橋くんが選ばなかったもののBの総和になる
-つまり高橋くんがi個目を選ぶとAi獲得するだけでなくBi特することになる
-逆に青木さんがj個目を選ぶとBi獲得するだけでなくAi高橋くんを損させられる
-高橋くん、青木さんはAi + Biが大きい順に取っていく
-"""
-
-N = getN()
-dish = []
-for i in range(N):
-    a, b = getNM()
-    dish.append([a, b, a + b])
-
-dish.sort(key = lambda i:i[2])
-
-ans = 0
+n, k = getList()
+# dist
+nums = [0] + getList()
+cnt = 1
+if k == 1:
+    print(1)
+    exit()
+cur = 1
+visited = [-1 for i in range(n + 1)]
+visited[1] = 1
+rooped = False
 while True:
-    if dish: # 高橋くん
-        a, b, total = dish.pop()
-        ans += a
-    else:
+    # cur 行き先
+    cur = nums[cur]
+    cnt += 1
+
+    # １回目に訪れていたら
+    if visited[cur] != -1:
+        # ループの周期
+        roop = cnt - visited[cur]
+        # 途中を飛ばす
+        k -= ((k-cnt) // roop) * roop
+        rooped = True
+    if not rooped:
+        # １回目に訪れたのであれば
+        visited[cur] = cnt
+
+    if cnt == k:
+        print(nums[cur])
         break
 
-    if dish: # 青木さん
-        a, b, total = dish.pop()
-        ans -= b
+# ABC175 D - Moving Piece
+
+N, K = getNM()
+P = [i - 1 for i in getList()]
+C = getList()
+
+ignore = [-1] * N
+ans = -float('inf')
+for i in range(N):
+    if ignore[i] >= 0:
+        continue
+    ### ループ生成 ###
+    ignore[i] = 1
+    opt_l = [i]
+    to = P[i]
+    while ignore[to] == -1:
+        opt_l.append(to)
+        ignore[to] = 1
+        to = P[to]
+    ###
+    ### 作成したループで得点リスト生成 ###
+    n = len(opt_l)
+    point = [0] * n
+    for i in range(n):
+        point[i] = C[opt_l[i]]
+    ###
+    ### 得点リスト内の連続する区間の総和のうちの最大値を累積和を使って求める ###
+    sum_roop = sum(point)
+    # ループの累積和作成
+    imos = [0]
+    point += point
+    for i in range(len(point)):
+        imos.append(imos[i] + point[i])
+    #
+    ran = min(n, K)
+    for i in range(n):
+        # 区間の大きさran以下についての総和を求める
+        for j in range(1, ran + 1):
+            if sum_roop >= 0:
+                opt = imos[i + j] - imos[i] + ((K - j) // n) * sum_roop
+            else:
+                opt = imos[i + j] - imos[i]
+            ans = max(ans, opt)
+    ###
+    
+print(ans)
+
+# AGC036 B - Do Not Duplicate
+
+"""
+長さN * K の数列Xがある
+Xは数列AがK回続く
+
+s = []
+Xの全ての要素について
+sがXiを含んでない場合append
+sがXiを含んでいる場合末尾を削って削ってXiを取り除く
+
+A内の要素についてもダブっている場合がある
+Kは大きい <= 10 ** 12
+X内の要素の個数について　順番は置いといて
+A内に奇数個ある and Kが奇数 とは限らない　途中で削除に巻き込まれているかも
+
+小さい例から試してみる
+1 2 3 1 2 3の場合
+２回目の1が出てくると前回の1が出る直前まで巻き戻り、2, 3だけが残る
+1 2 3 1 2 3 1 2 3 の場合
+2回目の3まで [2, 3]
+3回目の1 [2, 3, 1]
+3回目の2 全部削れる []
+3回目の3 [3]
+
+Kが大きいので一回の操作をO(1)で見つけても無理
+法則性を見つける
+
+・まず全ての要素が異なる場合
+1 2 3
+1番前の要素が真っ先に反応する　2, 3が残る
+2番目の要素が反応する 3が残る
+3番目の要素が反応する 何も残らない　最初に戻る
+
+K % (N + 1)をする
+1なら 1 2 3
+2なら   2 3
+3なら     3
+4なら
+5なら 1 2 3
+6なら   2 3
+7なら     3
+8なら
+
+同じ要素が出てきた場合
+1 2 3 2 1 2 3 2 1 2 3 2
+1周目
+1周目2回目の2で2以下が全て削れる [1]
+
+2周目
+1が出る []
+2周目2回目の2で全て削れる　[]
+
+3周目
+1周目と同じ [1]
+どこかでループするんでは
+
+同じものが出てきたら、その同じ要素 + 間のものが全て消える
+Xiが偶数個しか出ないのであれば話は簡単
+奇数個出る場合は？
+シミュレーションすればいいのでは
+
+3 1 4 1 5 9 2 6 5 3 5 の場合
+先頭の3 次は2番目の3の次 5まで飛ぶ [5]
+5は1番目の5の次9まで
+9は1番目の9の次2まで　一周してる
+飛んだ先がN - 1ならループ
+ループを検出する　ループが検出できる
+飛んだ先のindexを保存すればいいのでは
+
+最大でも周期N + 1のループのはず
+"""
+
+N, K = getNM()
+A = getList()
+L = [[] for i in range(max(A) + 1)]
+for i in range(N):
+    L[A[i]].append(i)
+
+roop = 1 # 現在のループ数
+roop_index = [0] * (N + 1 + 1) # mod N回目はこのindex以降から始まる
+now = 0
+
+while now != N: # N - 1に飛ぶまで回す
+    next_index = bisect_right(L[A[now]], now)
+    if next_index == len(L[A[now]]): # roopが1進む
+        roop += 1
+        now = L[A[now]][0] + 1
+    else: # 進まない
+        now = L[A[now]][next_index] + 1
+
+    roop_index[roop] = now
+
+# ここからは実際にやってみよう
+opt = A[roop_index[K % roop]:]
+flag = [0] * (max(opt) + 1)
+
+ans = []
+for i in opt:
+    if flag[i]:
+        while flag[i]:
+            u = ans.pop()
+            flag[u] = 0
     else:
-        break
+        ans.append(i)
+        flag[i] = 1
+
+print(*ans)
+
+
+
+class Roop:
+    def __init__(self, array):
+        self.n = len(array)
+        self.array = array
+        # ループ検出
+        self.roops = []
+        # iはどのループのものか
+        self.roop_dict = [-1] * self.n
+        # ループ内の何番目にあるか
+        self.opt_dic = [-1] * self.n
+        ignore = [-1] * self.n
+        cnt = 0
+        for i in range(self.n):
+            if ignore[i] >= 0:
+                continue
+            opt = [i]
+            # opt内の何番目にあるか
+            self.opt_dic[i] = 0
+            c = 1
+            # 探索したらフラグを立てる
+            ignore[i] = cnt
+            # i → array[i]
+            to = array[i]
+            # ループが詰まるまで回す
+            while True:
+                if ignore[to] == cnt:
+                    # 作成してないならループ作成
+                    for j in range(self.opt_dic[to], len(opt)):
+                        self.roop_dict[opt[j]] = cnt
+                    self.roops.append(opt[self.opt_dic[to]:])
+                    # 次のループはcnt + 1番
+                    cnt += 1
+                    break
+                opt.append(to)
+                ignore[to] = cnt
+                self.opt_dic[to] = c
+                c += 1
+                to = array[to]
+
+    # xがどの番号のループにあるか
+    def roop_n(self, x):
+        return self.roop_dict[x]
+
+    # xが入っているループは何か
+    # ループ内になければFalse
+    def inspect(self, x):
+        if self.roop_n(x) == -1:
+            return False
+        return self.roops[self.roop_dict(x)]
+
+    # ループの大きさ
+    def roop_len(self, x):
+        return len(self.roops[self.roop_n(x)])
+
+    # xからk回移動してどの場所に行けるか
+    def move(self, x, k):
+        cnt = k
+        to = x
+        # ループに入る前にどのルートを通ったか
+        # スタート地点から既にループに入っていた場合、headは空になる
+        head = []
+        # ループ脱出後どのルートを通るか
+        tail = []
+        # 何回ループしたか
+        time = -1
+        res = 0
+        while cnt > 0:
+            to = self.array[to]
+            cnt -= 1
+            # まだループしておらず、踏んだ場所がループ内にある場合
+            if time == -1 and self.roop_n(to) >= 0:
+                r = self.roops[self.roop_n(to)]
+                time = (cnt // len(r))
+                cnt -= time * len(r)
+            # ループ前なら
+            if time == -1:
+                head.append(to)
+            # ループ後なら
+            else:
+                tail.append(to)
+        # 例: N, K = 6 727202214173249351
+        # A = [6, 5, 2, 5, 3, 2]の時
+        # 1回目の移動 1 → 6
+        # 2回目の移動 6 → ### ここからループが始まる ### → 2
+        # ... 242400738057749783回ループ
+        # 727202214173249351回目の移動 3 → 2
+        # to, head, tail, time = (1, [5], [1], 242400738057749783)
+        return to
+
+N, A = getNM()
+A -= 1
+K = getN()
+B = [i - 1 for i in getList()]
+roop = Roop(B)
+print(roop.move(A, K) + 1)
+
+
+
+# ABC167 D - Teleporter
+N, K = getNM()
+N -= 1
+A = [i - 1 for i in getList()]
+roop = Roop(A)
+print(roop.move(0, K) + 1)
+
+
+
+# ABC175 D - Moving Piece
+N, K = getNM()
+P = [i - 1 for i in getList()]
+C = getList()
+# ループ検出
+roop = Roop(P)
+
+# 各ループごと調べる
+ans = -float('inf')
+for r in roop.roops:
+    n = len(r)
+    # ループに対応するスコアリストを用意
+    alta = []
+    for i in range(n):
+        alta.append(C[r[i]])
+    # １回ループすると何点getできるか
+    one_roop = sum(alta)
+    alta += alta
+    imos = [0]
+    for i in range(len(alta)):
+        imos.append(imos[i] + alta[i])
+
+    t = min(n, K)
+    for i in range(n):
+        # 長さ1からtまでの区間の総和の最大値を探索
+        for j in range(1, t + 1):
+            if one_roop >= 0:
+                opt = (imos[i + j] - imos[i]) + ((K - j) // n) * one_roop
+            else:
+                opt = imos[i + j] - imos[i]
+            ans = max(ans, opt)
 
 print(ans)
