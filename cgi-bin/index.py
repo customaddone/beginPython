@@ -49,429 +49,340 @@ mod = 998244353
 # Main Code #
 #############
 
-# 文字列を整数に変換
-N = 26
-
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
-    else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
-
-# z
-print(num2alpha(N))
-
-n = N
-lista = []
-digit = 26
-i = 0
-
-while n != 0:
-    opt = n % digit
-    lista.insert(0, opt)
-    if n % digit == 0:
-        n = n // digit - 1
-    else:
-        n = n // digit
-    i += 1
-
-str_list = 'abcdefghijklmnopqrstuvwxyz'
-ans = ''
-for i in range(len(lista)):
-    ans += str_list[lista[i] - 1]
-
-# z
-print(ans)
-
-#  最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
-
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
-
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
-
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
-
-# ABC009 C - 辞書式順序ふたたび
-
-N,K = getNM()
-S = list(input())
-T = sorted(S)
-diff = 0
-ans = ""
-
-for i in range(N):
-    s = S[i]
-    # 残りの文字を全ループさせる
-    for t in T:
-        # tを追加して良いか確かめる
-        diff1 = diff + (s != t)
-        count = Counter(T)
-        count[t] -= 1
-        diff2 = sum((Counter(S[i + 1:]) - count).values())
-        # 追加していいなら
-        if diff1 + diff2 <= K:
-            diff = diff1
-            ans += t
-            T.remove(t)
-            break
-print(ans)
-
-# ABC031 語呂合わせ
-
-# 1 ~ Kまでの数字がどの単語に当てはまるか
-# 1 ~ Kに対し文字の候補は26 ** 3通り?
-
-# 文字列は総文字数、アルファベットの種類（２６種類、定数倍）で捉えられる
+# ABC161 D - Lunlun Number
+K = 13
+que = []
+heapify(que)
+for i in range(1, 10):
+    que.append(i)
+for i in range(K):
+    u = heappop(que)
+    if u % 10 != 0:
+        heappush(que, 10 * u + (u % 10) - 1)
+    heappush(que, 10 * u + (u % 10))
+    if u % 10 != 9:
+        heappush(que, 10 * u + (u % 10) + 1)
+print(u)
 
 N, M = getNM()
-que = []
+weight = []
+key = []
+for _ in range(M):
+    a, b = getNM()
+    weight.append(a)
+    c = getList()
+    key.append(c)
+dp = [float('inf')] * (1 << N)
+dp[0] = 0
 for i in range(M):
-    v, w = input().split()
-    que.append([v, w])
-root = 3
+    bit = 0
+    for item in key[i]:
+        bit |= (1 << (item - 1))
+    for j in range(1 << N):
+        dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
+print(dp)
 
-def judge(array):
-    # 1 ~ Kに割り当てた文字数が正しいか
-    for v, w in que:
-        cnt = 0
-        for i in range(len(v)):
-            cnt += array[int(v[i]) - 1]
-        if cnt != len(w):
-            return
-    # 文字数が適合するなら
-    str_list = [''] * N
-    for v, w in que:
-        cnt = 0
-        # 文字を区切っていく
-        for i in range(len(v)):
-            str_len = array[int(v[i]) - 1]
-            opt = w[cnt: cnt + str_len]
-            if str_list[int(v[i]) - 1] == '':
-                str_list[int(v[i]) - 1] = opt
-            else:
-                if str_list[int(v[i]) - 1] != opt:
-                    return
-            cnt += str_len
 
-    # 全て適合するなら
-    for i in str_list:
-        print(i)
-    exit()
-
-# 1 ~ Kの文字数が何文字かについて3 ** Kを全探索
-def four_pow(i, array):
-    global cnt
-    if i == N:
-        judge(array)
-        return
-    for j in range(1, root + 1):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-four_pow(0, [])
-
-K, N = getNM()
-G = []
+# ARC028 B-特別賞
+N, K = getNM()
+A = getList()
+young = [0] * N
+# i番目に若い人の順位はyoung[i]位
 for i in range(N):
-    v, w = map(str, input().split())
-    # 桁ごとに数字を分ける
-    v = list(v)
-    v = [int(d) - 1 for d in v]
-    G.append((v, w))
-
-# それぞれの語呂数に対して長さ1 ~ 3を割り当てる
-for p in product(range(1, 4), repeat = K):
-    S = [[] for _ in range(K)]
-    for v, w in G:
-        c = 0
-        # 長さが正しいか判定するパート
-        for d in v:
-            # 使われた語呂数の長さを足し合わせる
-            c += p[d]
-        if c != len(w):
-            break
-        # 文字列を割り当てるパート
-        else:
-            cur = 0
-            for d in v:
-                # 長さごとに文字列を切っていく
-                S[d].append(w[cur: cur + p[d]])
-                cur += p[d]
-    # 長さが整合したものが見つかれば
+    young[A[i] - 1] = i
+A = [-i for i in A]
+# Aの前からK個のリストを作る
+prized = []
+for i in range(K):
+    prized.append(A[i])
+heapq.heapify(prized)
+# K個数字があるうちの最大値（K番目の数字）を取ってくる
+now = heapq.heappop(prized)
+print(young[-now - 1] + 1)
+for i in range(K, N):
+    # もし現在のK番目の数字より小さい数字がきたら
+    if A[i] > now:
+        # prizedリストに混ぜて（計K個入っている）
+        heapq.heappush(prized, A[i])
+        # 再びK個数字があるうちの最大値（K番目の数字）を取ってくる
+        now = heapq.heappop(prized)
+        print(young[-now - 1] + 1)
+    # もし現在のK番目の数字より小さい数字がきたら捨てる
     else:
-        for i in range(K):
-            # 任意の語呂数に対する文字列が一意に定まらなければ
-            # 112: abcで 1 = a, 1 = B, 2 = cになるみたいなケース
-            if len(set(S[i])) != 1:
-                break
-        else:
-            for i in range(K):
-                print(S[i][0])
-            exit()
+        print(young[-now - 1] + 1)
 
-# ABC043 D - アンバランス
-# i文字目を見る場合
-# i - 1文字目が同じ文字ならアウト
-# i - 2文字目が同じでもアウト
-S = input()
-N = len(S)
-
-ans = [-1, -1]
-for i in range(1, N):
-    if S[i] == S[i - 1]:
-        ans = [i, i + 1]
-        break
-    if i > 1 and S[i] == S[i - 2]:
-        ans = [i - 1, i + 1]
-        break
-print(*ans)
-
-# ABC049 C - 白昼夢
-
-S = input()
-
-while len(S) >= 5:
-    # Sを４つの単語で順に調べて刈っていく
-    if len(S) >= 7 and S[-7:] == "dreamer":
-        S = S[:-7]
-        continue
-
-    if len(S) >= 6 and S[-6:] == "eraser":
-        S = S[:-6]
-        continue
-
-    elif S[-5:] == "dream" or S[-5:] == "erase":
-        S = S[:-5]
-        continue
-
-    else:
-        break
-
-if len(S) == 0:
-    print("YES")
-else:
-    print("NO")
-
-# ARC019 B - こだわりの名前
-S = input()
-N = len(S)
-bi = N // 2
-str_f = []
-for i in range(bi):
-    str_f.append(S[i])
-str_b = []
-for i in range(bi):
-    str_b.append(S[-i - 1])
-
-cnt = 0
-for i in range(bi):
-    if str_f[i] != str_b[i]:
-        cnt += 1
-
-# 全て一致
-if cnt == 0:
-    # 真ん中以外は何に変えても回文にならない
-    # 真ん中は何に変えても回文になる
-    print(2 * bi * 25)
-elif cnt == 1:
-    if N % 2 == 0:
-        print(25 * bi * 2 - 2)
-    else:
-        # 真ん中は何に変えても回文にならない
-        print(25 * bi * 2 - 2 + 25)
-else:
-    print(25 * N)
-
-# AGC048 A - atcoder < S
-
-"""
-スワップの最小回数は
-１文字目 a
-どこかにaより上がいたらそれをスワップして終了
-aならそのまま
-a以下なら？
-counterする？
-
-前から探索する
-スワップしなくていいならスワップしない
-target[i] > alta[i]の時スワップする
-前のとスワップするかも
-そもそもatcoderは6文字
-スワップの最大回数は6回
-次の文字にいくのはtarget[i] = alta[i]だった時のみ
-target[i] < alta[i]: 終了
-target[i] = alta[i]: 次に
-target[i] > alta[i]: スワップ要
-
-target'atcoder'が任意の文字(例:topcoder)、任意の二箇所（隣接しなくていい）をスワップできるなら
-一文字目を見る
-target[i] < alta[i]: 終了
-target[i] = alta[i]: 次に
-target[i] > alta[i]: スワップ要
-その文字以降を探索 target[i]を上回るものがあればスワップ += 1終了
-無い場合　target[i]と同じものが見つかればそのうち一番右のものとスワップ
-　　　　　target[i]を下回るものしかなければ終了
-
-たぶん
-"""
-
-T = getN()
-S = [input() for i in range(T)]
-
-for s in S:
-    if s.count('a') == len(s):
-        print(-1)
-        continue
-
-    if s > 'atcoder':
-        print(0)
-        continue
-
-    n = len(s)
-    for i in range(n):
-        # aより上の要素をスワップを繰り返し運送する
-
-        # i - 1回運送すると2番目の位置にくる
-        # もしord('t') < ord(i)なら条件を満たし終了
-        # そうでなければもう一つ前に運送する
-
-        # i回運送すると１番目の位置に来る
-        # ord('a') < ord(i)より条件を満たす
-        if s[i] > 'a':
-            if s[i] > 't':
-                print(i - 1)
-            else:
-                print(i)
-            break
-
-# C - String Coloring
-
-"""
-長さ2N
-何通りありますか　comboかdp
-Sの各文字を赤か青で塗る
-2 ** 2Nあるがこれを2 ** Nに落としたい
-2NからN個選ぶ
-36C18 9,075,135,300通り
-意外とでかいな　これを減らす
-
-まず構成する数字の個数が一致してないと
-4
-cabaacba の場合
-[[1, 3, 4, 7], [2, 6], [0, 5], [], [], [],
-a * 2, b * 1, c * 1
-indexの選び方は左右対象でなければならない
-1選ぶと7も選ばれる
-3を選ばない（相手側になる）と4も選ばれない（相手側になる）
-aの場所の配分は
-1, 3 + 4, 7でも1, 7 + 3, 4でもいい
-他の文字との位置関係が大事
-
-もちろん全通り出すのは無理
-左から右に読んだ文字列と右から左に読んだ文字列が一致するとは
-最終的には2 ** Nでいい
-明らかダメそうなやつを削る
-もちろん全ての文字を使わないといけない
-掛け算する形になると思う
-
-cabaacba で最初のcを選んだら最後のbaが青になるのは許されない
-グループ１になる組み合わせとグループ２になる組み合わせの裏表
-順番があるのでindexをとってうにうにはできない
-
-各要素を赤か青か　これを2 ** 18
-2 ** Nまでしかできない　2 ** Nを
-fore = S[:N]
-back = list(reversed(S[N:])) の両方でやってdict
-
-やってることはただのbit全探索半分全列挙
-"""
-
-string = 'abcdefghijklmnopqrstuvwxyz'
+# ABC062 D - 3N Numbers
 N = getN()
-S = list([ord(i) - ord('a') for i in input()])
+A = getList()
+# foreとbackの境界線を移動させる
+# [3 1 4 1 5 9]の場合
+# foreは[3 1], [3 1 4], [3, 1, 4, 1]の場合
+# backは[5 9], [1 5 9], [4, 1, 5, 9]の場合を前計算
+# 前から計算
+fore = A[:N]
+# 後ろから計算
+back = A[2 * N:]
+back = [-i for i in back]
+for_sum = sum(fore)
+back_sum = sum(back)
+heapify(fore)
+heapify(back)
 
-fore = S[:N]
-back = list(reversed(S[N:]))
+fore_list = []
+back_list = []
+for i in range(N):
+    fore_list.append(for_sum)
+    back_list.append(back_sum)
+    in_fore = A[N + i]
+    heappush(fore, in_fore)
+    out_fore = heappop(fore)
+    for_sum += in_fore - out_fore
 
-# 26進数シリーズ
-# アルファベット → 数値
-def alpha2num(alpha):
-    num=0
-    for index, item in enumerate(list(alpha)):
-        num += pow(26, len(alpha) - index - 1) * (ord(item) - ord('a') + 1)
-    return num
+    in_back = (-1) * A[-N - i - 1]
+    heappush(back, in_back)
+    out_back = heappop(back)
+    back_sum += in_back - out_back
 
-# 数値 → アルファベット
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
-    else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
+fore_list.append(for_sum)
+back_list.append(back_sum)
 
-def array2num(array):
-    num = 0
-    for index, item in enumerate(array):
-        num += pow(26, len(array) - index - 1) * (item + 1)
-    return num
+ans = -float('inf')
+for i in range(N + 1):
+    opt = fore_list[i] + back_list[N - i]
+    ans = max(ans, opt)
+print(ans)
 
-l = defaultdict(lambda: defaultdict(int))
-for bit in range(1 << N):
-    g1 = [] # 赤色
-    g2 = [] # 青色
-    for i in range(N):
-        if bit & (1 << i):
-            g1.append(fore[i])
-        else:
-            g2.append(fore[i])
-    g1 = array2num(g1)
-    g2 = array2num(g2)
-    l[g1][g2] += 1
+# ABC123 D - Cake 123
+X, Y, Z, K = getNM()
+A = sorted([-i for i in getList()])
+B = sorted([-i for i in getList()])
+C = sorted([-i for i in getList()])
+pos = []
+heapify(pos)
+dict = defaultdict(int)
+u = (A[0] + B[0] + C[0], 0, 0, 0)
+heappush(pos, u)
+dict[u] = 1
+for i in range(K):
+    p, i, j, l = heappop(pos)
+    print(-p)
+    # 取り出すごとにA, B, Cについての次の値をpush
+    if i + 1 < X:
+        opt_a = (A[i + 1] + B[j] + C[l], i + 1, j, l)
+        if dict[opt_a] == 0:
+            heappush(pos, opt_a)
+            dict[opt_a] = 1
+    if j + 1 < Y:
+        opt_b = (A[i] + B[j + 1] + C[l], i, j + 1, l)
+        if dict[opt_b] == 0:
+            heappush(pos, opt_b)
+            dict[opt_b] = 1
+    if l + 1 < Z:
+        opt_c = (A[i] + B[j] + C[l + 1], i, j, l + 1)
+        if dict[opt_c] == 0:
+            heappush(pos, opt_c)
+            dict[opt_c] = 1
+
+# ABC137 D - Summer Vacation
+
+N, M = getNM()
+query = [getList() for i in range(N)]
+
+A_list = [[] for i in range(10 ** 5 + 1)]
+for a, b in query:
+    A_list[a].append(b)
+
+job = []
+heapq.heapify(job)
 
 ans = 0
-for bit in range(1 << N):
-    g1 = [] # 赤色
-    g2 = [] # 青色
-    for i in range(N):
-        if bit & (1 << i):
-            g1.append(back[i])
-        else:
-            g2.append(back[i])
+for i in range(1, M + 1):
+    for j in A_list[i]:
+        heapq.heappush(job, -j)
+    if len(job) > 0:
+        u = heapq.heappop(job)
+        ans += -u
+print(ans)
 
-    g1 = array2num(g1)
-    g2 = array2num(g2)
-    ans += l[g1][g2]
+# ABC149 E - Handshake
+# Mがクソデカイので使用不可
+# 二分探索使ってね
+N, M = getNM()
+A = sorted([-i for i in getList()])
+
+pos = []
+heapify(pos)
+dict = defaultdict(int)
+u = (A[0] + A[0], 0, 0)
+heappush(pos, u)
+dict[u] = 1
+
+ans = 0
+# 大きい値M番目まで全て求まる
+for i in range(M):
+    p, i, j = heappop(pos)
+    ans += -p
+    if i + 1 < N:
+        opt_a = (A[i + 1] + A[j], i + 1, j)
+        if dict[opt_a] == 0:
+            heappush(pos, opt_a)
+            dict[opt_a] = 1
+    if j + 1 < N:
+        opt_b = (A[i] + A[j + 1], i, j + 1)
+        if dict[opt_b] == 0:
+            heappush(pos, opt_b)
+            dict[opt_b] = 1
+print(ans)
+
+# Code Formula 2014 予選A C - 決勝進出者
+
+"""
+N: 予選の回数
+K: 招待人数
+最高順位が高い順に　どこかの予選でハイスコアを出せばOK
+最高順位が同じ場合は、最高順位を取った予選が開かれた時期が早い方から先に選ばれる。
+現在の試合を含めた残り試合数 = dとすると
+(K + d - 1) // dの人数分上から順番にとる
+2 11
+1 2 3 4 5 6 7 8 9 10 11
+1 2 15 14 13 16 17 18 19 20 21
+
+の場合
+[[1, 2, 3, 4, 5, 6], [15, 14, 13]] ここまでいける
+[1 2 3 4 5 6] 7 8 9 10 11
+[1 2 15 14 13] 16 17 18 19 20 21
+1番目の6位までと2番目以降の5位までは問答無用で確定する
+後をどうするか
+枠が空く　このまま順調に取っていっても枠が余る場合は
+枠が空いた場合は再計算
+N <= 50しかない
+優先度何番目かをレコードする
+枠が空くたびにボーダーが下がる
+
+4 5
+1 2 3 4 5
+2 1 3 4 5
+1 2 3 4 5
+2 1 3 4 5 の場合
+
+一番最初に2人通過できる？
+制約が小さいので50回全探索できる
+
+iを一つ進めるごとに候補がA[i]の分だけ増える
+これをヒープキューで優先度が高い（数字が小さい）順に取る
+"""
+
+N, K = getNM()
+A = [[] for i in range(N)]
+for i in range(N):
+    a = getList()
+    for j in range(K):
+        A[i].append([j * N + i + 1, a[j]])
+
+ans = [[] for i in range(N)]
+L = []
+heapify(L)
+passed = set()
+
+for i in range(N):
+    for j in A[i]:
+        heappush(L, j)
+    while L and L[0][0] <= K: # whileで抜き取る時は要素が残っているか気をつけよう
+        pref, id = heappop(L)
+        if id in passed:
+            K += 1
+        else:
+            ans[i].append(id)
+            passed.add(id)
+
+for i in ans:
+    print(*sorted(i))
+
+# ARC098 E - Range Minimum Queries
+
+"""
+数列A
+長さKの連続する部分列を1つ選ぶ　
+その中の最小のものを取り除く　infにすれば？
+取り除いた要素の最大値 - 最小値をマイナスにしたい　二分探索とかできる?
+最終形をイメージする
+
+一番望ましいのは
+Q個について最小区間のQ個を取ること
+それより小さい要素を取らずに都合のいいとこだけ取りたい
+小さい順に仕切りを立てていく
+まず小さい順に1 2 3 4...これは必ず取れる　（1 2 3 5...とかは1234より大きくなる）
+次に2 3 4 5を取れるか
+N個目の数って難しくない？
+
+5 3 2
+4 3 1 5 2 の場合
+4 3 [1 5 2]
+4 [3 5 2]
+
+N <= 2000なので 1, 2, 3, 4で区切っていくのはできそう
+Qの中に1を入れる場合、求める値はAq - A1
+
+1 1 3 5 6 7 の場合
+1番目の1以降を使うと 1 1 3 5
+2番目の1以降を使うと 1 3 5 6
+3以降を使うと       3 5 6 7
+なので3以降を使う方がいい
+Q = 4の時、候補となるのは
+[小さい方から1番目、2番目、3番目...] or
+[小さい方から2番目、3番目、4番目...] or...
+
+ただし、[小さい方から2番目、3番目、4番目...]を作るには選択範囲に小さい方から1番目を含めないことが必要
+4 3 1 5 2 の場合
+　　 ×     1は障害物になる
+ブロック1:[4, 3]
+ブロック2:[5, 2] の中でしかKを回せない
+[小さい方から3番目、4番目、5番目...]の場合
+ブロック1:[4, 3]
+ブロック2:[5]
+"""
+
+N, K, Q = getNM()
+A = getList()
+A = [[A[i], i] for i in range(N)]
+
+flag = [0] * N
+# 区切り0
+l = deepcopy(sorted(A))
+opt = []
+l.sort()
+for i in range(Q):
+    opt.append(l[i][0])
+ans = opt[-1] - opt[0]
+
+# 区切り1個以上
+for i in range(N):
+    # indexの位置はlを再利用
+    flag[l[i][1]] = 1 # A[i][1]はindex
+    parent = []
+    child = []
+    # フラグの立っているところで区切る
+    # 要素の探索はAを使う
+    for j in range(N):
+        if flag[j] == 0:
+            child.append(A[j][0])
+        else:
+            child.sort()
+            parent.append(child)
+            child = []
+    if len(child):
+        child.sort()
+        parent.append(child)
+
+    # 値を求める
+    # 各childから取れるだけ取る(配列操作を行う)
+    opt = []
+    for array in parent:
+        for j in range(len(array) - K + 1): # childの長さ - K + 1だけ値を取れる
+            opt.append(array[j])
+    # Q個取れたなら
+    if len(opt) >= Q:
+        opt.sort()
+        ans = min(ans, opt[Q - 1] - opt[0])
 
 print(ans)
