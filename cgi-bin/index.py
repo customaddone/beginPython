@@ -44,255 +44,111 @@ from bisect import bisect_left, bisect_right
 import sys
 sys.setrecursionlimit(1000000000)
 mod = 998244353
+MOD = 10 ** 9 + 7
 
 #############
 # Main Code #
 #############
 
-# ABC007 幅優先探索
-r, c = map(int, input().split())
-sy, sx = map(int, input().split())
-gx, gy = map(int, input().split())
-sy -= 1
-sx -= 1
-gx -= 1
-gy -= 1
-
-maze = []
-ans = float('inf')
-
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-
-pos = deque([[sx, sy, 0]])
-dp = [[-1] * (c + 1) for i in range(r + 1)]
-dp[sx][sy] = 0
-
-for i in range(r):
-    c = input()
-    maze.append(list(c))
-
-while len(pos) > 0:
-    x, y, depth = pos.popleft()
-    if x == gx and y == gy:
-        break
-    maze[x][y] = '#'
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if maze[nx][ny] == "." and dp[nx][ny] == -1:
-            pos.append([nx, ny, depth + 1])
-            dp[nx][ny] = dp[x][y] + 1
-print(dp[gx][gy])
-
-# ABC176 D - Wizard in Maze
-H, W = getNM()
-Ch, Cw = getNM()
-Dh, Dw = getNM()
-maze = [input() for i in range(H)]
-Ch -= 1
-Cw -= 1
-Dh -= 1
-Dw -= 1
-
-# ワープを最低で何回使うか
-# 上下左右2つ向こうまでの範囲内でワープできる
-# 隣接する'.'が領域
-
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-
-pos = deque([[Ch, Cw]])
-dp = [[-1] * W for i in range(H)]
-dp[Ch][Cw] = 0
-
-while len(pos) > 0:
-    y, x = pos.popleft()
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        # 歩いて移動
-        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] == "." and (dp[ny][nx] == -1 or dp[y][x] < dp[ny][nx]):
-            # 0-1 bfs
-            # 先頭に置く
-            pos.appendleft([ny, nx])
-            dp[ny][nx] = dp[y][x]
-    # ワープ
-    for i in range(-2, 3):
-        for j in range(-2, 3):
-            wy = y + i
-            wx = x + j
-            # 歩いて移動不可能でないと使わない
-            if 0 <= wx < W and 0 <= wy < H and maze[wy][wx] == "." and dp[wy][wx] == -1:
-                pos.append([wy, wx])
-                dp[wy][wx] = dp[y][x] + 1
-
-print(dp[Dh][Dw])
-
-# AGC033 A - Darker and Darker
+# Mujin Programming Challenge 2017 A - Robot Racing
 
 """
-一番近い#までの距離
-100万マスあるので一回の探索で済むように
-黒マスの周囲４マスを探索
-用が済めばポイ　同じマスについて探索する必要はない
-これで計算量は4 * H * W
+N体のロボット
+座標は全て異なり1 <= xi <= 10 ** 9 二分探索できる
+dpしたいけどxが大きいのでdpできない
+現在の座標から-1, -2のどちらかに進める　ダブルと他のを待たないといけない
+N体のロボットがゴールする順番は何通りありますか
+トポソか？
+トポソの通りは求められる
+どれがどれより先でないといけないかわかれば
+
+前からdpしていくのかな
+理想的な状態であればN!
+
+ロボットiがjより先にゴールする条件
+1 2 3 の場合
+全部で3!
+1 2 3
+1 3 2
+2 1 3
+2 3 1
+3 1 2
+3 2 1 ある
+ただし3は1, 2より先にゴールできない
+  , i, , jの場合
+  , i, j,
+ j, i,  ,でjはiより先に行ける
+
+  , i, j,  の状態にできればjはiを飛び越せる
+  , i, j, lの場合でも
+ i,  , j, lとすればiの直後に隙間ができるので飛び越せる
+できない条件は
+a, b, c, i, j, lだとしても適当にa, bを動かしたら
+ ,  ,  , i, j, l前に隙間ができるので動かせる
+iが2番目以降にあれば後ろの駒は飛び越せそうだけど
+jがiを飛び越せる→同じルートを通ってその後ろのkも飛び越せる
+
+連なってる部分があると難しくなるみたい
+トポソではなさそう
+
+8
+1 2 3 5 7 11 13 17 だと10080(8! // 4)
+
+iが一番最初にゴールできるか
+１番目にあるとできない では2番目は
+1, 2, 3, , 5, 6, 7　なら
+ , 2, 3, , 5, 6, 7
+lim = 現在の場所 // 2個以下の駒があれば通過できる　偶数番目だとお得
+前に駒がplace[i] // 2個しかなければ1位通過できる
+つまり (i - (place[i] // 2)) + 1位通過できる
+1, 2, 3の場合
+2 1位通過はできる
+3 2位通過はできる
+前にある駒 - lim位通過はできる
+1, 2, 3, 4位の場合
+ , 2, 3, 4 4は2位通過はできる
+1, 2, 3, 4, 5の場合
+ , 2, 3, 4, 5 5は3位通過はできる
+1: (0 - (1 // 2)) + 1 = 1
+2: (1 - (2 // 2)) + 1 = 1
+3: (2 - (3 // 2)) + 1 = 2
+4: (3 - (4 // 2)) + 1 = 2
+5: (4 - (5 // 2)) + 1 = 3
+
+更にi番目がn番目以降でしかゴールできないなら、それより後ろのjがn - 1番目でゴールできるわけない
+l[i] = max(l[i - 1], opt)
+1, 2, 3, 4, 5
+3が一つ遅延するので4, 5も遅延する
+4に影響するのは2 2は遅延しないが4自身が遅延するのでdp[2] + 1
+5は3が遅延するし5自身も遅延する
+前の駒は全て1, 3, 5...と配置する
+配置できない場合は+= 1
 """
 
-H, W = getNM()
-maze = [list(input()) for i in range(H)]
-prev = []
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == '#':
-            prev.append((i, j))
+N = getN()
+X = getList()
+l = [1] * N
+now = 0
+cnt = 1
 
-dx = [0, 1, 0, -1]
-dy = [1, 0, -1, 0]
-
-flag = True
-ans = 0
-while flag:
-    flag = False
-    next = []
-    while prev:
-        y, x = prev.pop()
-        for i in range(4):
-            ny = y + dy[i]
-            nx = x + dx[i]
-            if 0 <= ny < H and 0 <= nx < W and maze[ny][nx] == '.':
-                flag = True
-                maze[ny][nx] = '#'
-                next.append((ny, nx))
-    prev = next
-    if flag:
-        ans += 1
-
-print(ans)
-
-# AGC043 A - Range Flip Find Route
-
-"""
-白いとこだけ踏んでゴールを目指す
-スタートやゴールが黒いこともある
-
-操作をすると選択した長方形空間内の白黒が反転する
-最小で何回操作するか
-効率の良い操作方法を考える
-
-黒い部分を白くすることだけを考える？
-白だけ踏んでいけるとは？
-二回反転させれば元どおり
-
-白から黒に、黒から白に侵入するときだけ += 1する？
-"""
-
-H, W = getNM()
-maze = [list(input()) for i in range(H)]
-dp = [[float('inf')] * W for i in range(H)]
-dp[0][0] = 0
-if maze[0][0] == "#":
-    dp[0][0] = 1
-
-dy = [0, 1]
-dx = [1, 0]
-
-pos = deque([[0, 0]])
-
-# 0 - 1bfs?
-while pos:
-    y, x = pos.popleft()
-    for i in range(2):
-        ny = y + dy[i]
-        nx = x + dx[i]
-        if 0 <= ny < H and 0 <= nx < W: # 領域内
-            # 同じ色の場合
-            if maze[y][x] == maze[ny][nx] and dp[ny][nx] > dp[y][x]:
-                pos.appendleft([ny, nx])
-                dp[ny][nx] = dp[y][x]
-            # 違う色の場合
-            if maze[y][x] != maze[ny][nx]:
-                # 入るときだけでいい
-                if maze[y][x] == "." and dp[ny][nx] > dp[y][x] + 1:
-                    pos.append([ny, nx])
-                    dp[ny][nx] = dp[y][x] + 1
-                elif maze[y][x] == "#" and dp[ny][nx] > dp[y][x]:
-                    pos.appendleft([ny, nx])
-                    dp[ny][nx] = dp[y][x]
-
-print(dp[H - 1][W - 1])
-
-# AGC014 C - Closed Rooms
-
-"""
-H行W列
-K回まで移動できる　K個の部屋を解放する
-端っこの'.'を目指す　またダイクストラか
-
-黒を移動できると考えてもいい
-全探索する
-端っこの部屋についての最短距離を求める
-0-1bfsか
-
-最初の１回は['.']の部分だけ移動できる
-次からは['.'] + ['#']を移動できる
-
-端っこまで黒何個消しで行けるか
-単純な距離　と
-黒を何個消すか　を求める
-
-1回目白マス行けるとこまで移動する　
-あとは自由に航行できる（前回のでKマス部屋を開いて今回Kマス進むため）
-
-ほぼほぼ'#'は関係がない
-posの中身を途中で書き換える問題
-"""
-
-H, W, K = getNM()
-maze = [list(input()) for i in range(H)]
-
-start = [-1, -1]
-# スタート位置特定
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == 'S':
-            start = [i, j]
-            break
+for i in range(N):
+    l[i] = cnt
+    if X[i] < 2 * now + 1:
+        cnt += 1
     else:
-        continue
-    break
+        now += 1
 
-dy = [1, 0, -1, 0]
-dx = [0, 1, 0, -1]
+power = [0] * (N + 1)
+for i in range(N):
+    power[l[i]] += 1
 
-dis = [[-1] * W for i in range(H)]
-dis[start[0]][start[1]] = 0
+# 最高位が決まっているときの順列の通りの求め方
+ans = 1
+acc = 0
+for i in range(N):
+    acc += power[i + 1]
+    ans *= acc
+    ans %= MOD
+    acc -= 1
 
-# 最初の１回 白マス内だけをK回まで移動する
-# これらで移動したものは全てK回移動でカウントする
-pos = deque([[start[0], start[1], 0]])
-alta = [[start[0], start[1], K]]
-while len(pos) > 0:
-    y, x, d = pos.popleft()
-    if d == K:
-        continue
-    for i in range(4):
-        ny = y + dy[i]
-        nx = x + dx[i]
-        if 0 <= ny < H and 0 <= nx < W and dis[ny][nx] == -1 and maze[ny][nx] == ".":
-            dis[ny][nx] = d + 1
-            alta.append([ny, nx, K])
-            pos.append([ny, nx, d + 1])
-
-ans = float('inf')
-# あとはそのまま直進して壁にぶつかるだけ
-for y, x, d in alta:
-    up = y
-    down = (H - 1) - y
-    left = x
-    right = (W - 1) - x
-    opt = ((min(up, down, left, right) + K - 1) // K) + 1
-
-    ans = min(ans, opt)
-
-print(ans)
+print(ans % MOD)
