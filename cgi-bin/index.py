@@ -50,353 +50,158 @@ MOD = 10 ** 9 + 7
 # Main Code #
 #############
 
-# AGC022 B - GCD Sequence
+# JOI本戦 B - IOI饅頭（IOI Manju）
+M, N = getNM() # M:饅頭 N:箱
+sweets = getArray(M)
+box = [getList() for i in range(N)] # 最大C個, E円　1個ずつ
+# 菓子の価格 - 箱の価格 の最大値
+# M <= 10000, N <= 500
+# dp?
 
-"""
-Aの各要素は全て異なる
-どのaiについても
-gcd(ai, sum(A) - ai)が1ではない
-aiとsum(A) - aiが共通因数をもつ
+sweets.sort(reverse = True)
+imos = [0]
+for i in range(M):
+    imos.append(imos[i] + sweets[i])
 
-aiとsum(A)が共通因数を持つ
+# 箱に詰める饅頭の価格を大きく、箱の価格を小さくする
+# 合計でi個詰められる箱を用意した時の箱の価格の最小値
+# 貪欲に前から?
+# grid dp無理め? M <= 10000なのでそこまで求めるだけでいい
+# 500 * 10000
+prev = [float('inf')] * 10001
+prev[0] = 0
 
-Aの全ての要素を同じ因数を持つものに変えれば簡単
-全ての要素の最大公約数が1である　の場合は？
-互いに素なものが１つでもあればOK
-
-1 2 3 は条件を満たす　完全数なら話は早い　早くない　1に何してもgcdは1
-
-N <= 10000より　1 * n, 2 * n, 3 * n...とするのは諦める
-ターゲットとなるgcdの数は小さくないと間に合わない
-2と3で統一してみれば
-3の
-3の倍数を偶数個足すと偶数になる
-でも偶数と3の倍数である奇数のgcdは1
-要素は3万以下であることに注意
-
-2 ~ 30000までの偶数(15000個)
-3 ~ 30000までの3の倍数かつ奇数の数(5000個) できる！！！
-
-偶数の個数は
-N % 3 == 0の時 6の倍数を先頭に
-30000 + 29997, 29991
-N % 3 == 1の時
-2, 4 + 3, 9 逆から
-N % 3 == 2の時
-2, 4, 6 + 3, 9 楽
-
-制限ないと楽だけど
-限界まで2の倍数を並べればいい
-N % 3 == 0　2の倍数N - 2個
-N % 3 == 1  2の倍数N - 2個
-N % 3 == 2  2の倍数N - 2個
-
-N = 3の時は注意
-
-上限を15000にすると3の個数が変動する
-"""
-
-N = getN()
-
-def cnter(ans):
-    two = 0
-    three = 0
-    tw_l = 0
-    th_l = 0
-    for i in ans:
-        if i % 2 == 0:
-            two += 1
-            tw_l += i
-        elif i % 3 == 0:
-            three += 1
-            th_l += i
-
-    return tw_l % 3, th_l % 2, two, three, max(ans), min(ans)
-
-if N == 3:
-    print(2, 5, 63)
-    exit()
-
-if N % 3 == 0:
-    even = min(N - 2, 15000) # 偶数の個数
-    three = N - even # 基本的には2 これは偶数個でないといけない
-
-    caution = False
-    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
-        caution = True
-        three += 1
-
-    ans = [i * 2 for i in range(15000, 15000 - even, -1)]
-    if caution: # 調整2 even -= 1
-        ans.pop(0) # 30000を抜き取る
-
-    for i in range(three):
-        ans.append(i * 6 + 3)
-
-    print(*ans)
-
-else: # 2と3が絶対に並ぶのでgcd = 1
-    even = min(N - 2, 15000) # 偶数の個数
-    three = N - even
-
-    caution = False
-    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
-        caution = True
-        three += 1
-
-    ans = [i * 2 for i in range(1, even + 1)]
-    if caution: # 調整2
-        ans.pop() # 30000を抜き取る
-
-    for i in range(three):
-        ans.append(i * 6 + 3)
-
-    print(*ans)
-
-# Judge System Update Test Contest 202004 D - Calculating GCD
-
-# Q個のSiについて次の問いに答えよ
-
-N, Q = getNM()
-A = getList()
-S = getList()
-
-gc = [0] * N # 最終的なXの値を求めるため
-gc[0] = A[0]
-# 共通因数として持っておかないといけない数が増えていく
-# nowの値とA[i]に共通因数があれば残る
-# 6 12 6 9 の場合は
-# 2 or 3 2 or 3 2 or 3 3のみ [6, 6, 6, 3]
-# gcd(S1, gc[i]) > 1なら通過 == 1なら値を出力
-
-# gc[i]は指数関数的に減少していくんじゃ！
-index = [0]
-for i in range(1, N):
-    gc[i] = math.gcd(gc[i - 1], A[i])
-    if gc[i] < gc[i - 1]:
-        index.append(i)
-
-# gcdが変化する部分だけでgcdすればいいとわかる
-# 精々2 ** 30なので30回程度
-for s in S:
-    for j in index:
-        opt = math.gcd(s, gc[j])
-        if opt == 1:
-            print(j + 1)
-            break
-    else:
-        print(math.gcd(s, gc[-1]))
-
-# AGC026 B - rng_10s
-
-"""
-ジュースの在庫A本
-B本減ります
-C本以下だった場合はD本増えます
-永遠にジュースを買えるか判定
-各Tについて答える
-数学問題か
-
-当たり前だけどB > DならNo
-A < BならNo
-else
-B <= CならYes
-B <= D, B <= AかつB > Cの場合について（閾値が低い場合）について考える
-
-ジュースの推移は折れ線グラフみたいになるが、
-これが0を下回らないか
-√Nぐらいまでならいける
-Aの大きさによってはめんどくさいことになる
-AをBで割ってみると
-試行回数を増やすことで0に近づけることを何回もできる
-0付近の動きがどうかにかかっている
-9 7 5 9の場合
-9 2
-5以下になったので9補充 11
-11 4
-5以下になったので9補充 13
-6 → ×
-9 7 6 9 の場合だと通る
-ループ検知はCが大きいので無理
-AをBで引き続けるとB未満の数になる
-B未満の全ての値を取りそうだが
-引き続けてC以下になるとsafe
-C + 1, C + 2... < Bだとout
-C < i < Bとなるiを取らなければOK
-BとDの倍数関係による
-9 7 5 9
-A + xD - yBがC + 1, C + 2...になるか　なるならout
-x = 0, y = 0 9
-x = 0, y = 1 2
-x = 1, y = 1 11
-x = 1, y = 2 4
-x = 2, y = 2 13
-x = 2, y = 3 6    out
-
-互いに素ならC + 1 == Bでない限りoutになる
-C + 1 < Bの場合について考える okになる場合がある
-CとC + 1は少なくとも偶奇は違う　互いに素である
-gcdをとる
-gcdでデッドゾーンを飛び越えればOK
-
-14 10 7 12 out 4 2
-4に着地 8にも着地する out
-14 10 7 11 out 4 1
-14 10 8 11 out 4 1
-
-10 10 5 10 safe 0 10
-11 10 5 10 safe 1 10
-1に着地　11にも着地 safe
-16 10 5 10 out  6 10
-10で引くと
-
-着地点がC + 1 ~ B - 1の範囲内に入るか
-
-A基点でmath.gcd(b, d)の部分にしか飛ばないのに気づく
-"""
-
-T = getN()
-apple = [getList() for i in range(T)]
-
-for a, b, c, d in apple:
-    if b > a or b > d:
-        print('No')
-    else:
-        if b <= c + 1:
-            print('Yes')
+for c, e in box:
+    for j in range(10000, -1, -1): # 逆順に
+        if j - c >= 0:
+            prev[j] = min(prev[j], prev[j - c] + e)
         else:
-            base = a - (a // b) * b
-            split = math.gcd(b, d)
-            cnt = (c + 1 - base) // split
-            # 割り切れる場合 base + cnt * split = c + 1
-            # 割り切れない場合 base + (cnt + 1) * split が c + 1を超える
-            opt1 = base + cnt * split
-            opt2 = base + (cnt + 1) * split
-            # どちらかがデッドゾーンを踏んでればout
-            if c + 1 <= opt1 <= b - 1 or c + 1 <= opt2 <= b - 1:
-                print('No')
-            else:
-                print('Yes')
+            prev[j] = min(prev[j], prev[0] + e)
 
-# AGC010 B - Boxes 
+ans = 0
+for i in range(1, M + 1):
+    ans = max(ans, imos[i] - prev[i])
+print(ans)
+
+# JOI11予選 D - パスタ (Pasta)
+N, K = getNM()
+pasta = [[] for i in range(N)]
+for i in range(K):
+    a, b = getNM()
+    pasta[a - 1].append(b - 1)
+
+# 通りの数を求める: dp, 数え上げ組み合わせ
+# n日前のことが関係する: n次元のdpを作れる
+
+# modが10000
+# パスタは3種類
+# dp[j][k]: 本日jのパスタで、前日kのパスタの通り
+
+prev = [[0] * 3 for i in range(3)]
+# 1日目
+if pasta[0]:
+    prev[pasta[0][0]][(pasta[0][0] + 1) % 3] = 1
+else:
+    for i in range(3):
+        prev[i][(i + 1) % 3] = 1
+
+# 2日目以降
+for p in pasta[1:]:
+    next = [[0] * 3 for i in range(3)]
+    # すでに決められているなら
+    if p:
+        j = p[0]
+        # 本日のパスタjは確定
+        # その前の日のパスタnext[]j[k]のk, prev[j][k]のjは3通り
+        # そのまた前日のパスタprev[j][k]のkは3通り
+        for k in range(3):
+            for p_k in range(3):
+                if j == k and k == p_k:
+                    continue
+                next[j][k] += prev[k][p_k]
+                next[j][k] %= 10000
+    else:
+        for j in range(3):
+            for k in range(3):
+                for p_k in range(3):
+                    if j == k and k == p_k:
+                        continue
+                    next[j][k] += prev[k][p_k]
+                    next[j][k] %= 10000
+    prev = next
+
+ans = 0
+for i in range(3):
+    for j in range(3):
+        ans += prev[i][j]
+        ans %= 10000
+print(ans)
+
+# Code Formula 2014 本選 D - 映画の連続視聴
 
 """
-N個の箱が円環状に並んでいる　ループする
-全ての石が取り除けるか判定せよ
-iを一つ選ぶ
-i + 1個目は1個、i + 2個目は2個...i - 1個目はN - 1個、i個目はN個取り除いていく
-1 2 3 4...のピラミッドをいい感じに積んでいくとAにできるか
+N <= 3000 O(N ** 2)まで
+Mの映画が[S ~ E]までの間上映されている
+同じ映画を見ることでより多くの幸福感
+違う映画を見るとリセットされる
+上映時刻がダブってなければ連続して視聴可能
 
-5
-4 5 1 2 3 は 4 5 + 1 2 3のピラミッドを一つ積む
+まず貪欲を考える
+区間スケジューリング
+終わりの時刻でソート
+[[2, 10, 40], [1, 0, 120], [1, 15, 135], [1, 240, 330]]
+どの映画を１回見ても幸福度は同じ　出来るだけ連続させた方がいい？
+連続してみると幸福度は絶対上がる
+全探索？
+同じ映画を見た場合、違う映画を見た場合
+S, Eが小さいのでDPできそうO(N ** 2)できるので
+同じ種類のものは連結して考えられる
+1: [1, 0, 120], [1, 15, 135], [1, 240, 330]
+2:    [2, 10, 40]
+[2, 10, 40]をとる　次取れるのは[1, 240, 330]
+[2, 10, 40]をとらない
+2 → 3と繋いで100しか上がらなくでも、3 → 4とつなぐと100000上がるかもしれない
+streak1: 何個
+streak2: 何個..という風に数える
+合成して区間スケジューリングかも
+3 + 2がバッティングしても2 + 2なら通るかもしれない
+2 + 2より3 + 1の方が強い
+MAX連続を想定する
 
-5
-6 9 12 10 8 は　
-
-1 2 3 4 5
-2 3 4 5 1
-3 4 5 1 2 のピラミッドを積む
-
-簡単なものだと
-1 2 3 4 5
-1 2 3 4 5
-2 4 6 8 10 この状態から初めていく 一個ずらすと
-
-1 2 3 4 5 ○
-5 1 2 3 4
-6 3 5 7 9 二個ずらすと
-
-1 2 3 4 5 △
-4 5 1 2 3
-5 7 4 6 8 三個ずらす
-
-1 2 3 4 5 △
-3 4 5 1 2
-4 6 8 5 7 四個ずらす
-
-1 2 3 4 5 ○
-2 3 4 5 1
-3 5 7 9 6 パターンは少ない？
-
-1 2 3 4 5 6
-1 2 3 4 5 6: 2 4 6 8 10 12
-2 3 4 5 6 1: 3 5 7 9 11 7 ○
-3 4 5 6 1 2: 4 6 8 10 6 8 △
-4 5 6 1 2 3: 5 7 9 5 7 9 □
-5 6 1 2 3 4: 6 8 4 6 8 10 △
-6 1 2 3 4 5: 7 3 5 7 9 11 ○
-
-iとN - iは同じ系統
-iは固定したものを基準に、N - iは動かしたものを基準にしたものだから
-
-1 2 3 4
-2 3 4 1 3 5 7 5
-3 4 1 2
-6 9 8 7
-
-1 2 3 4
-2 3 4 1
-2 3 4 1
-5 8 11 6
-所定の山を作るには
-
-1 2 3...N
-N + 1, 1 + 2, 2 + 3...N - 1 + N
-もっとも高いところ、低いところを見て判定する？
-6 + 9 + 12 + 10 + 8 = 45
-1 + 2 + 3 + 4 + 5 = 15を3回積めばいい
-例えば12は5 + 5 + 2 この時9は 4 + 4 + 1 6は?
-12 = 5 + 4 + 3 9 = 4 + 3 + 2 6 = 3 + 2 + 1
-5 と 1との間で崖ができる　崖の大きさはN - 1
-5をどの位置に置けるか
-
-1 2 3 4
-1 2 3 4
-1 2 3 4
-3 6 9 12
-N <= 10 ** 5
-cnt: 積む回数
-A1 = xと置くと、A1とA2の間に崖が存在しない場合はA2 = x + (1 * cnt)となる
-だが崖がある場合は1の代わりに(N - 1)を引く
-崖の個数をc(0 <= c <= N)とすると
-A2 = A1 + c * (N - 1) + 1 * (cnt - c)
-A2 - A1 = cN - c + cnt - c
-        = c(N - 2) + cnt
-N, cntは定数なので崖の個数は求められる
-
-崖になるなら+1 - N, ならないなら+1する
-これで崖がcnt個できるか
-
-コーナーケース
-2
-1 5 がプラスになる
-
-di = Ai+1 − Ai の変化を考える数学問題
+### 今いくつ連続してるかを考えなくていいようにする ###
+1つ連続させたもの、2つ連続させたもの...をmovieに混ぜ込む
+セグ木を使う
+合成したものを混ぜ込む
 """
 
 N = getN()
-A = getList()
+H = getList()
+for i in  range(N - 1):
+    H[i + 1] += H[i]
+movie = [getList() for i in range(N)]
+movie.sort(key = lambda i: i[2])
 
-if N == 1:
-    print('YES') # A1からA1回１を引くだけ
-    exit()
-
-split = N * (N + 1) // 2
-if sum(A) % split != 0:
-    print('NO')
-    exit()
-cnt = sum(A) // split # 積む回数
-criff = [0] * N
-
+# セグ木を使わないver
+dp = [0] * (10 ** 5 + 7)
+prev = 0
 for i in range(N):
-    opt = (A[i] + cnt) - A[(i + 1) % N]# 崖がないときに想定されるAiと実際のAiの差
-    if opt < 0 or opt % N != 0:
-        print('NO')
-        exit()
-    criff[i] = opt // N
+    m, s, e = movie[i]
+    # 初期化
+    for j in range(prev + 1, e + 1):
+        dp[j] = max(dp[j], dp[j - 1])
+    prev = e
 
-# 判定
-if sum(criff) == cnt:
-    print('YES')
-else:
-    print('NO')
+    dp[e] = max(dp[e], dp[s] + H[0])
+    cnt = 0
+
+    # 現在のtargetから区間スケジューリング
+    for j in range(i + 1, N):
+        nm, ns, ne = movie[j]
+        if nm != m:
+            continue
+        if e <= ns:
+            cnt += 1
+            e = ne
+            dp[e] = max(dp[e], dp[s] + H[cnt])
+
+print(max(dp))
