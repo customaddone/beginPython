@@ -50,73 +50,135 @@ MOD = 10 ** 9 + 7
 # Main Code #
 #############
 
-# AGC005 C - Tree Restoring
+# ARC060 D - 桁和
 
 """
-頂点数N Nは小さいが...
-木です　
-頂点1, 2... について最も遠い頂点がAi
-距離iがいくつあるかcntする
+n < bの時 f(b, n) = n
+n >= bの時 f(b, (n // b)) + (n % b)
+b, b ** 2, b *** 3で割っていく
+b進数は存在するか
+bはそんなに大きくなさそう
+def f(b):
+    n = N
+    res = 0
+    while n:
+        res += n % b
+        n //= b
 
-最遠N - 1の距離が作れるのはパスグラフ
-1 - 2 - 3 - 4 距離3が作れる
-この時距離3は2つ、距離2は2つ
-1 - 2 - 3
-      - 4 の場合
-距離2が3つ、距離1が1つ
-まずパスグラフから考える
-1 - 2 - 3 - 4 距離3が2つできる
-              距離2は2つ
-1 - 2 - 3 - 4
-    　　　 - 5 距離3が3つできる
+    return res
+でできるけど
+単調増加にはならないので二分探索もできない
+存在しない条件はなに
+法則性なさそうなので全探索？
+√nぐらいにしたい
+b進数の一番上の桁は安定している
 
-距離n - 1に一つ頂点をつなぐと距離nの頂点ができる
-1 - 2 - 3
-最初のパスグラフを作った時、max - 1, max - 2...の頂点が2個ずつできる
-残った頂点を順番にパスグラフに刺していく
+bを増やすと等間隔で数が減っていく
+a(i + 1)**2 + b(i + 1) + c
+ai ** 2 + 2ai + a + bi + b + c
+ai ** 2 + (2a + b)i + (a + b + c)
 
-距離n - 1に一つ頂点をつなぐと距離nの頂点ができる
+二項
+10 ** 6まで全探索
 """
 
 N = getN()
+S = getN()
+
+def f(b):
+    n = N
+    res = 0
+    while n:
+        res += n % b
+        n //= b
+
+    return res
+
+# 10 ** 6なので一応可能
+for i in range(2, 10 ** 6 + 1):
+    ans = f(i)
+    if ans == S:
+        print(i)
+        exit()
+
+# 10 ** 6 + 1以降について
+# 割ってiになるbの最大値、最小値、そしてf(b)のとる値
+for i in range(N // 10 ** 6, 0, -1):
+    # 割ってiになるbの最小はN // (i + 1) + 1
+    b1 = N // (i + 1) + 1
+    opt1 = f(b1)
+    # 割ってiになる値の最大は N // i
+    b2 = N // i
+    opt2 = f(b2)
+    if opt2 <= S <= opt1 and (S - opt2) % i == 0:
+        # 87654の場合
+        # b1 = 9740 f(b1) = 10962
+        # b2 = 10956 f(b2) = 14
+        # opt1 - S を iで割った分をb1からひく
+        print(b2 - ((S - opt2) // i))
+        exit()
+
+# 割って0になる
+# これのf(b)はN
+if N == S:
+    print(N + 1)
+    exit()
+
+# どうもできない
+print(-1)
+
+# AGC004 B - Colorful Slimes
+
+"""
+N色のスライムがいる
+全色のスライムが飼いたい
+・iのスライムをaiで変色させる
+・手持ちのiのスライムの全てをxで変色させる
+
+iのスライムを入手する方法
+・iのスライムをaiで購入する
+・i-1のスライムをai-1で購入 + x使う
+・i-2のスライムをai-2で購入 + x * 2使う...
+前からやっていこう
+
+これループする
+色iのスライム買う
+魔法
+色iのスライム買う
+魔法
+で色 i+1, i+2のスライムを作れる
+
+色iのスライム買う
+魔法
+魔法
+色iのスライム買う
+魔法
+で色 i + 1, i + 3のスライムが作れる
+Ai * 個数 + (iからの最長距離 * x)でいくらでもできる
+各スライムについて変更した方がいいスライムについての最長距離を保持する
+
+各スライムごとループさせる]
+小さい順に？
+
+一括に巻き込んだ方がいい場合も
+4 1
+4 2 3 1の場合
+1を4つ買う + 魔法3回
+ここまでまとめ買い変色させた方がいい境界は
+
+魔法の回数をK回に固定すると
+Ai ~ Ai-kの範囲でスライムが買える
+"""
+
+N, X = getNM()
 A = getList()
 
-distance = [0] * N
-for i in range(N):
-    distance[A[i]] += 1
+mi = [float('inf')] * N
+ans = float('inf')
 
-opt = [0] * N # 現在距離iの頂点はいくつあるか
-left = N # 残り頂点数
-for i in range(N - 1, -1, -1):
-    if distance[i] > 0:
-        if distance[i] == 1: # 最遠は必ず2つ以上ある
-            print('Impossible')
-            exit()
-        else:
-            # 最初のパスグラフを引く
-            for j in range(i + 1):
-                left -= 1
-                opt[max(i - j, j)] += 1
-            break
+for k in range(N): # 魔法の回数をk回に固定
+    for i in range(N):
+        mi[i] = min(mi[i], A[i - k])
+    ans = min(ans, sum(mi) + k * X)
 
-# distance（クエリ）とopt(パスグラフ)を見比べる
-for i in range(N - 1, 0, -1):
-    # optは基礎的に存在する頂点
-    # それを下回るようであればout
-    if distance[i] < opt[i]:
-        print('Impossible')
-        exit()
-    else:
-        diff = distance[i] - opt[i]
-        if diff: # 足さないといけない場合、距離がd - 1の頂点がなければいけない
-            if opt[i - 1] == 0:
-                print('Impossible')
-                exit()
-            else:
-                left -= diff
-                opt[i] += diff
-
-if left == 0: # 頂点をちょうど使い切ったら
-    print('Possible')
-else:
-    print('Impossible')
+print(ans)
