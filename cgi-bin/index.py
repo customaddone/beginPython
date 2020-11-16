@@ -43,170 +43,384 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
-mod = 998244353
 MOD = 10 ** 9 + 7
 
 #############
 # Main Code #
 #############
 
-# エイシング プログラミング コンテスト 2019 D - Nearest Card Game
+N = 4
+inf = float('inf')
+
+d = [
+[0, 2, inf, inf],
+[inf, 0, 3, 9],
+[1, inf, 0, 6],
+[inf, inf, 4, 0]
+]
+
+dp = [[-1] * N for i in range(1 << N)]
+
+def rec(s, v, dp):
+    if dp[s][v] >= 0:
+        return dp[s][v]
+    if s == (1 << N) - 1 and v == 0:
+        dp[s][v] = 0
+        return 0
+    res = float('inf')
+    for u in range(N):
+        if s & (1 << u) == 0:
+            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
+    dp[s][v] = res
+    return res
+# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
+print(rec(0,0,dp))
+
+# ABC054 C - One-stroke Path
+
+N, M = getNM()
+dist = [[] for i in range(N + 1)]
+for i in range(M):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+cnt = 0
+
+pos = deque([[1 << 0, 0]])
+
+while len(pos) > 0:
+    s, v = pos.popleft()
+    if s == (1 << N) - 1:
+        cnt += 1
+    for u in dist[v]:
+        if s & (1 << u):
+            continue
+        pos.append([s | (1 << u), u])
+print(cnt)
 
 """
-つまりnim
-青木君がXiを指定する
-高橋くん→青木くんの順番でAから数字を取っていく
-高橋くん: 最も大きい数字を取る
-青木くん: Xに最も近い数字を取る　複数あれば小さい方
-カードがなくなれば終了　
-各Xについて高橋くんが取るカードの合計を求めよ
-O(1)でやる　テーブルで累積和とかなんかを前処理してO(1)で参照する
-Nが偶数: 高橋くんはN // 2枚のカードを取る
-Nが奇数: 高橋くんはN // 2 + 1枚のカードを取る
-
-Xが変化するごとに取るカードがどのように変化するか
-5 5
-3 5 7 11 13
-X = 1の時、近いカードは順に3, 5, 7, 11, 13
-つまり高橋くんは13, 11, 7を取る
-X = 4の時、近いカードは順に3, 5, 7, 11, 13
-X = 9の時、近いカードは順に7, 11, 5, 13, 3
-X = 10の時             11,  7,13,  5, 3
-
-X = 10の場合　7,  5, 3...
-            11, 13...
-高橋くんの取るカードは    13, 11, 7,  5, 3
-7と5がスキップされるので、13 + 11 + 3 = 27
-高橋くん、青木くんの取る順番がわかれば得点をO(1)でもとめれればいいのだが
-13, 11, 7, 5, 3
-7, 11, 5, 13, 3 互いにスキップされ合う
-高橋くんがiを取るスピードが青木くんより早い、もしくは同じなら取得できる
-そうでなければ青木くんが取得する
-X = 23の場合
-高橋: 13, 11, 7, 5, 3
-青木: 13, 11, 7, 5, 3
-13 + 7 + 3で23 これを各O(1)で求めたいが
-累積和しそうだ
-NlogNまでならいける　各XiについてlogNで
-青木くんが取る順番は求めなくていい？
-高橋くんが取れるどうかだけ？
-X = 4からの距離
-1, 1, 3, 7, 9: 3 5 7 11 13
-X = 5
-2, 0, 2, 6, 8: 5 3 7 11 13
-X = 6
-3, 1, 1, 5, 7: 5 7 3 11 13
-X = 7
-4, 2, 0, 4, 6: 7 5 3 11 13
-X = 8
-5, 3, 1, 3, 5: 7 5 11 3 13
-X = 9
-6, 4, 2, 2, 4: 7 11 5 13 3
-スワップしていく？
-
-X = 1の時
-3, 5, 7, 11, 13
-X = 4の時
-5, 7, 11, 13
-3
-X = 9の時
-11, 13
-7, 5, 3
-Xiから近い順とA[-1]から近い順
-3 5 7 11 13
-     10  13
-bisect_rightでXiでのスタート地点は求められる
-Xi-1の時と何が違うか
-
-A1, A3...の合計とA2, A4...の合計を求める
-Aは[(高橋と青木が交互に取るゾーン), (青木が取るゾーン), (高橋が取るゾーン)]になる
-その境界を求める
-"""
-
-N, Q = getNM()
-A = getList()
-X = getArray(Q)
-
-csum = [0]
-for i in range(N):
-    csum.append(csum[-1] + A[i])
-csum_even = [0]
-for i in range(0, N, 2):
-    csum_even.append(csum_even[-1] + A[i])
-csum_odd = [0]
-for i in range(1, N, 2):
-    csum_odd.append(csum_odd[-1] + A[i])
-
-#t回でX以下のAのみとなってしまうような最小のtを求める。
-def calc_t(X):
-    ok = -1
-    ng = N + 1
-    while ng - ok > 1:
-        mid = (ok + ng) // 2
-        aoki = mid // 2
-        taka = mid - aoki
-        aoki_max = A[-taka]
-        aoki_min_index = bisect_left(A, 2 * X - aoki_max)
-        if N - taka - aoki_min_index < aoki:
-            ng = mid
-        else:
-            ok = mid
-
-    return ok
-
-for x in X:
-    t = calc_t(x)
-    s = csum[N] - csum[N - (t + 1) // 2]
-
-    if N % 2 == 0:
-        s += csum_odd[(N - t) // 2]
-    else:
-        s += csum_even[(N - t + 1) // 2]
-    print(s)
-
-# CODE FESTIVAL 2015 予選A D - 壊れた電車 
-
-"""
-N両編成 M人の整備士
-隣に行くのに1分かかる
-全ての車両を周回するのにかかる時間は
-
-それぞれについて境界値を求める問題
-一方通行するのとジグザグに行くの２パターンある
-二分探索したい k分でどこまで周回できるか
-振った方が有利なのか
-
-出来る限り右の車両を点検する
-絶対にこの人にしか周回できない場所を考える
-絶対に誰にもいけない左端があればout
+全ての場所を一度だけ通り巡回する通りの数
+bit(1 << N)を小さい順から探索する
+①bit & (1 << 0)
+最初に0を踏んでないということだから飛ばす
+②現在の場所sを探すためN個探索する
+③次の場所tを探すためN個探索する
+④渡すdpする
 """
 
 N, M = getNM()
-X = getArray(M)
+G = [[0] * N for i in range(N)]
+for i in range(M):
+    a, b = getNM()
+    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
+    G[b - 1][a - 1] = 1
 
-def judge(x):
-    now = 0
-    for i in range(M): # 2 ~ N番目の人について
-        # now + 1番目を点検しないといけない
-        # 左側にいくつ進まないといけないか
-        want = max(0, X[i] - (now + 1)) # そこまで行かないといけない
-        if want > x: # 時間が足りない場合False
-            return False
-        else:
-            # 左行って右行くか、右行って左行くかどちらか大きい方
-            now = max(now, X[i], X[i] + max(x - 2 * want, (x - want) // 2))
+# 状態bitから次の状態へ渡すdpするというのはよくやる
+# [0](001) → [0, 1](011) → [0, 1, 2](111)
+#          → [0, 2](101) → [0, 1, 2](111)
+def counter(sta):
+    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
+    dp = [[0] * N for i in range(1 << N)]
+    dp[1 << sta][sta] = 1
 
-    return now >= N # 最後まで整備できたか
+    for bit in range(1, 1 << N):
+        if not bit & (1 << sta):
+            continue
+        # s:現在の場所
+        for s in range(N):
+            # sを踏んだことになっていなければ飛ばす
+            if not bit & (1 << s):
+                continue
+            # t:次の場所
+            for t in range(N):
+                # tを過去踏んでいない and s → tへのエッジがある
+                if (bit & (1 << t)) == 0 and G[s][t]:
+                    dp[bit|(1 << t)][t] += dp[bit][s]
 
-ok = 2 * (10 ** 9 + 7)
-ng = -1 # 0回の周回でいい場合もある
+    return sum(dp[(1 << N) - 1])
 
-while ok - ng > 1:
-    mid = (ok + ng) // 2
+print(counter(0))
 
-    if judge(mid):
-        ok = mid
+# ABC104 C - All Green
+# 特別ボーナスがある問題は大抵bit dp
+# 目標700点
+D, G = getNM()
+query = []
+for i in range(D):
+    p, c = getNM()
+    query.append([i + 1, p, c])
+
+ans_cnt = float('inf')
+
+for bit in range(1 << D):
+    sum = 0
+    cnt = 0
+    for i in range(D):
+        if bit & (1 << i):
+            sum += query[i][0] * query[i][1] * 100 + query[i][2]
+            cnt += query[i][1]
+
+    if sum < G:
+        for j in range(D - 1, -1, -1):
+            if not bit & (1 << j):
+                left = G - sum
+                fire = query[j][0] * 100
+                opt = min(query[j][1], (left + fire - 1) // fire)
+                sum += opt * query[j][0] * 100
+                cnt += opt
+                break
+
+    if sum >= G:
+        ans_cnt = min(ans_cnt, cnt)
+
+print(ans_cnt)
+
+# ABC119 C - Synthetic Kadomatsu
+N, A, B, C = getNM()
+L = getArray(N)
+
+def counter(array):
+    if (1 in array) and (2 in array) and (3 in array):
+        opt = [0, 0, 0, 0]
+        # 合成に10pかかる
+        cnt = 0
+        for i in range(len(array)):
+            if opt[array[i]] > 0:
+                cnt += 1
+            if array[i] >= 1:
+                opt[array[i]] += L[i]
+
+        res = cnt * 10
+        res += abs(opt[1] - A)
+        res += abs(opt[2] - B)
+        res += abs(opt[3] - C)
+
+        return res
+
     else:
-        ng = mid
+        return float('inf')
 
-print(ok)
+ans = float('inf')
+def four_pow(i, array):
+    global ans
+    if i == N:
+        ans = min(ans, counter(array))
+        return
+    # 4 ** Nループ
+    for j in range(4):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+
+four_pow(0, [])
+print(ans)
+
+N, M = 4, 6
+weight = [67786, 3497, 44908, 2156, 26230, 86918]
+value = [[1, 3, 4], [2], [2, 3, 4], [2, 3, 4], [2], [3]]
+
+# N個のものを全て手に入れるのに必要なコストの最小値
+# コストを1にすれば最小個数がわかる
+# Nの数が十分に小さいと使用可能
+# Mの数が十分小さければMをbitdpする
+def get_everything(n, weight, value):
+    m = len(weight)
+    dp = [float("inf")] * (1 << n)
+    dp[0] = 0
+
+    for i in range(m):
+        bit = 0
+        for item in value[i]:
+            bit |= (1 << (item - 1))
+
+        for j in range(1 << n):
+            dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
+
+    return dp[(1 << N) - 1]
+
+ans = get_everything(N, weight, value)
+if ans == float("inf"):
+    print(-1)
+else:
+    print(ans)
+
+# N:ブロックの個数 M;ブロックの色 Y:コンボボーナス Z:全色ボーナス
+# N <= 5000, M <= 10
+N, M, Y, Z = getNM()
+# 色ボーナス
+d = dict()
+for i in range(M):
+    c, p = input().split()
+    d[c] = (i, int(p))
+# 落ちてくるブロックの種類
+B = input()
+
+# 全通り出してみよう
+# 2 ** N通り
+# 単色でやってみる?
+# どれを取ればいいか
+# 前から順に＾
+# どの色をコンボしても点数は同じ
+
+# dp?
+
+# dp[i][j]: 直前の色がi, 全部でjの色を使った
+dp = [[-float('inf')] * (1 << M) for _ in range(M + 1)]
+dp[M][0] = 0
+
+# 交換するdpの要領
+for e in B:
+    # B[i]番目の色ポイント
+    i, p = d[e]
+    # 色iを含む状態について調べる
+    # 色が少ないものから順に巻き込んでいく感じ
+    for j in range((1 << M) - 1, -1, -1):
+        if j & (1 << i) == 0:
+            continue
+
+        # 候補1: 直前の色が違うものだった and 以前に使った色を使った
+        num1 = max(dp[k][j] for k in range(M + 1) if k != i) + p
+        # 候補2: 直前の色が同じものだった
+        num2 = dp[i][j] + p + Y
+        # 候補3: 直前の色が違うものだった and 以前に使っってない色を使った
+        num3 = max(dp[k][j ^ (1 << i)] for k in range(M + 1) if k != i) + p
+        dp[i][j] = max(dp[i][j], num1, num2, num3)
+
+# 全色ボーナス
+for i in range(M):
+    dp[i][(1 << M) - 1] += Z
+
+ans = 0
+for row in dp:
+    ans = max(ans, max(row))
+print(ans)
+
+# JOI16 D-ぬいぐるみの整理 (Plush Toys)
+
+# N個のぬいぐるみはM種類のうちのどれか
+# 同じ種類のぬいぐるみが全て連続するように
+N, M = getNM()
+T = getArray(N)
+T = [i - 1 for i in T]
+
+# 20!は間に合わないが2 ** 20は間に合う
+# 取り出すぬいぐるみの最小値
+# ai, a2...と決めていった時
+# 違う場所にあるものを全て取り出せばOK
+
+# 20!を2 ** 20に改善する
+
+cnt_toys = [0] * M # 種類iのぬいぐるみの数
+cnt_acc = [[0] * (N + 1) for i in range(M)] # [l, r]の区間で種類iを指定した時に変えないといけないぬいぐるみの数
+
+
+for i in range(M): # 種類
+    for j in range(N): # 左から何番目のぬいぐるみ
+        if T[j] != i:
+            cnt_acc[i][j + 1] = 1
+        cnt_acc[i][j + 1] += cnt_acc[i][j]
+    cnt_toys[i] = N - cnt_acc[i][-1]
+
+dp = [float('inf')] * (1 << M)
+dp[0] = 0
+# bit dpする
+for s in range(1 << M):
+    # 今まで置いてきたぬいぐるみの総計 左側に詰めて置く
+    left = sum([cnt_toys[i] for i in range(M) if s & (1 << i)])
+    # 種類jを新たにその右に置く
+    for j in range(M):
+        if s & (1 << j):
+            continue
+        length = cnt_toys[j]
+        cnt = cnt_acc[j][left + length] - cnt_acc[j][left] # 今まで置いてきたぬいぐるみの右側に種類jのぬいぐるみを指定する
+        dp[s | (1 << j)] = min(dp[s | (1 << j)], dp[s] + cnt)
+
+print(dp[-1])
+
+# 天下一プログラマーコンテスト2014予選A C - 天下一文字列集合
+
+"""
+英小文字は26文字
+ワイルドカード部分は無視していい
+Pの全ての要素が入っているようなX = ['????', '????'...]の要素の最小値を求めよ
+二分探索したくなる
+
+まずは愚直に
+a*x*
+*xx*
+*x*b
+**cb
+**** の場合
+
+1: a*x*
+X = [a*x*]を用意する
+2: *xx*
+a*x*が使えそうなのでX = [axx*]
+3: *x*b
+axx*が使えそうなのでX = [axxb]
+4: **cb
+axxbは使えない　X = [axxb, **cb]を置く
+そもそもNが小さい
+X = [a*x*, *xx*, *x*b, **cb, ****]を用意して適当にjointする
+結合しなかったらout
+計算量はN ** N * M 間に合わない
+無駄な部分を減らす　計算量を落とそう
+矛盾するものを組み合わせても当然ダメ
+グループ1: [a*x*]
+グループ2: [**cb]
+disjointするグループは別に置く
+
+どれとどれが矛盾しないか
+グループ内の任意の２つが矛盾しなければひとまとまりにできる
+全探索かunionか
+ベースとなる7つを選ぶ　とすると
+14C5が2002
+14C6が3003
+14C7が3432
+14C8が3003
+14C9が2002
+jointするもの同士だけでグループを作る
+bit全探索でグループを２つにできる
+"""
+
+N, M = getNM()
+word = [list(input()) for i in range(N)]
+
+# 判定
+same = [[0] * N for _ in range(N)]
+for i in range(N - 1):
+    S = word[i]
+    for j in range(i + 1, N):
+        T = word[j]
+        isOK = 1
+        for s, t in zip(S, T):
+            if s == t:
+                continue
+            if s == "*" or t == "*":
+                continue
+            isOK = 0
+            break
+        same[i][j] = isOK
+
+# どの文字iの組み合わせで１つの集合を作れるか
+dp = [N] * (1 << N)
+for bit in range(1 << N):
+    bl = 1
+    for i in range(N - 1):
+        if (bit >> i) & 1:
+            for j in range(i + 1, N):
+                if (bit >> j) & 1:
+                    bl &= same[i][j]
+    if bl:
+        dp[bit] = 1
+
+# あとはget_everythingみたいに
+for bit in range(1 << N):
+    sub = bit
+    while True:
+        dp[bit] = min(dp[bit], dp[sub] + dp[bit & ~sub])
+        sub = (sub - 1) & bit
+        if bit == sub:
+            break
+
+print(dp[(1 << N) - 1])
