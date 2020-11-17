@@ -43,182 +43,265 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
-MOD = 10 ** 9 + 7
+mod = 10 ** 9 + 7
 
 #############
 # Main Code #
 #############
 
-# ABC025 C - 双子と○×ゲーム
-# ゲーム木
-
-b1 = getList()
-b2 = getList()
-c1 = getList() + [0]
-c2 = getList() + [0]
-c3 = getList() + [0]
-b = b1 + b2
-c = c1 + c2 + c3
-S = sum(b) + sum(c)
-
-def counter(array):
-    male = 0
-    for i in range(9):
-        # bの得点
-        if i <= 5:
-            if array[i] == array[i + 3]:
-                male += b[i]
-        # cの得点
-        if i % 3 == 0 or i % 3 == 1:
-            if array[i] == array[i + 1]:
-                male += c[i]
-    return male
-
-memo = {}
-
-def solve(array):
-    # メモ呼び出し
-    if str(array) in memo:
-        return memo[str(array)]
-    # ターンの計算
-    turn = 1
-    for i in array:
-        if i == 0 or i == 1:
-            turn += 1
-    if turn == 10:
-        return counter(array)
-
-    if turn % 2 == 0:
-        point = S
-    else:
-        point = -S
-
-    # i番目に駒を置いた時の全通りを探索して最善の手を呼び出す
-    # 今の盤面 + αを置いた時の点数が全て帰ってくる その中で
-    # turn % 2 == 0なら最小値、turn % 2 != 0 なら最大値を選ぶ
-    for i in range(9):
-        if array[i] == -1:
-            new = copy.deepcopy(array)
-            if turn % 2 == 0:
-                new[i] = 1
-                point = min(point, solve(new))
-            else:
-                new[i] = 0
-                point = max(point, solve(new))
-    memo[str(array)] = point
-    return point
-
-opt = [-1] * 9
-ans = solve(opt)
-print(ans)
-print(S - ans)
-
-# Indeedなう（予選A）D - パズル
+# キーエンス プログラミング コンテスト 2019 D - Double Landscape
 
 """
-最小回数を求めよ
+1 ~ N * M の整数を書き込む
+i行目の数字の最大の数字はA
+j行目の数字の最大の数字はB
+
+反転数の数を求める時は列ごと入れ替え、列内入れ替えを行った
+書き込みの個数を求めよ dpかcombo?
+
+条件の満たし方を考える
+まず条件を満たすものを一つ出す
+Aiがn　i行目にはnとn以下の数字しか書かれていない
+
+AとB両方に登場するとは限らない
+ある数について指定の場所に置かないといけない
+あとは自由 comboで求める
 3 3
-1 0 2
-4 5 3
-7 8 6 なら
+5 9 7
+3 6 9
+  5 9 7
+3
+6
+9
 
-1 2 0
-4 5 3
-7 8 6
+9を置く
+  5 9 7
+3
+6
+9   9
+8を置く　置けない！
 
-1 2 3
-4 5 0
-7 8 6
+二次元累積和？
+N * M ~ 1まで１つずつ数を置いていく
+iがAにある and Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+・置けるとこ
+1箇所　今回解放されるとこのクロス
 
-1 2 3
-4 5 6
-7 8 0 で3回
+iがAにある ^ Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ
+・置けるとこ
+今回解放されたとこのいずれかに置く
 
-全ての数字が所定の場所にいる
-回数無視でまずはどうすれば行けるか
-任意の回数行えるなら、各数字は好きな場所に行ける
-
-1 3
-2 0 の場合
-
-1 0
-2 3
-
-0 1
-2 3
-
-2 1
-0 3
-
-2 1
-3 0
-
-3 2 1がぐるぐる回るだけだから永遠に無理
-最小操作数が24回以内なので絶対に成功するケースのみ出る
-
-全探索4 * 24　無理
-戻る必要はないので3 ** 24
-多分全探索なんだろう
-一つの行動で最大1合わせることができる
-枝刈りする
-
-ngはマンハッタン距離で持つ
+A,Bにない
+現在解放されているマスのどこにでも置ける
 """
 
-H, W = getNM()
-C = [getList() for i in range(H)]
+N, M = getNM()
+A = set(getList())
+B = set(getList())
+if len(A) < N or len(B) < M: # A,B内で数字がダブってたら0
+    print(0)
+    exit()
 
-def manh(point):
-    ny = (point - 1) // W
-    nx = (point - 1) % W
-    return ny, nx
+ans = 1
+opened = 0 # 解放されたマス
+a_allowed = 0 # 解放された行
+b_allowed = 0 # 解放された列
 
-ng = 0
-sta = [0, 0]
-for i in range(H):
-    for j in range(W):
-        if C[i][j] == 0:
-            sta = [i, j]
-            continue
-        ny, nx = manh(C[i][j])
-        ng += abs(ny - i) + abs(nx - j)
+for i in range(N * M, 0, -1):
+    if (i in A) and (i in B):
+        # 解放はできる
+        opened += (a_allowed + b_allowed) + 1 # 今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+        a_allowed += 1
+        b_allowed += 1
+        opened -= 1 # 解放されたマスに置く
+        # ans *= 1 # 置けるのは1箇所　今回解放されるとこのクロス
+    elif (i in A):
+        opened += b_allowed # 解放する行 * 解放されている列
+        a_allowed += 1
+        ans *= b_allowed # 今回解放された行のいずれかに置く
+        opened -= 1
+    elif (i in B):
+        opened += a_allowed
+        b_allowed += 1
+        ans *= a_allowed
+        opened -= 1
+    else:
+        ans *= opened # 解放されている部分のどこに置いても良い
+        opened -= 1
 
-dy = [1, 0, -1, 0]
-dx = [0, 1, 0, -1]
+    ans %= mod
 
-memo = {}
-ans = float('inf')
-
-def dfs(turn, array, y, x, direct, ng):
-    global ans
-    if str(array) in memo and memo[str(array)] <= turn:
-        return
-
-    if ng == 0:
-        ans = min(ans, turn)
-        return
-
-    if turn > 24 - ng or ans <= turn:
-        return
-
-    for i in range(4):
-        if i == (direct + 2) % 4:
-            continue
-        ny = y + dy[i]
-        nx = x + dx[i]
-        if 0 <= ny < H and 0 <= nx < W:
-            new_array = deepcopy(array)
-            new_ng = ng
-            # 0と入れ替える数字について
-            my, mx = manh(array[ny][nx])
-            new_ng -= (abs(my - ny) + abs(mx - nx))
-            new_ng += (abs(my - y) + abs(mx - x))
-
-            new_array[ny][nx] = array[y][x] # 0
-            new_array[y][x] = array[ny][nx]
-            dfs(turn + 1, new_array, ny, nx, i, new_ng)
-
-    memo[str(array)] = turn
-
-dfs(0, C, sta[0], sta[1], float('inf'), ng)
 print(ans)
+
+# SoundHound Inc. Programming Contest 2018 -Masters Tournament- C - Ordinary Beauty
+
+"""
+差の絶対値がdであるものだけをピックアップ
+合計でn ** m通り
+期待値　通りの数は求めなくていい
+m - 1の内1 ~ m - 1箇所について
+1つめの数字 n通り
+2つめの数字 n通りあるが、この内条件を満たす通りは
+上向き　1つ目 1なら 1 + d
+　　　　 　　 2なら 2 + d...(n - d)通り
+            n - dなら n
+下向きも同様に (n - d)通り
+合計2 * (n - d)通り
+つまりm - 1のうちの一つの谷間が条件を満たす確率は
+2(n - d) / n ** 2
+あとは美しさが1, 2...m - 1のものを足し合わせるだけ
+comboすら必要ない？
+
+足し合わせで求められる
+1つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
+2つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
+1つ目が条件を満たす　と　2つ目が条件を満たす　は互いに独立
+n - dが0になることもそうすれば求める値は0
+またDが0なら上向き下向きではなく同じ値しか取れない
+"""
+
+N, M, D = getNM()
+# (M - 1): 1 ~ M - 1まで足し合わせる
+# 2 * (N - D): 2 * (N - D)) / (N ** 2) * (n ** M）を(n ** M）で割って平均値を出す
+if D == 0:
+    print((M - 1) * (max(0, N - D)) / (N ** 2))
+else:
+    print((M - 1) * 2 * (max(0, N - D)) / (N ** 2))
+
+# AGC025 B - RGB Coloring
+
+"""
+数え上げcomboだろ
+rgbなのでbitもある
+
+ブロックが縦一列にあり、これを塗っていく
+赤色: A点
+緑色: A + B点
+青色: B点
+KはでかいがN, A, Bは小さい
+塗らないブロックがあってもいい　→ 塗らないブロックが1個、2個...N個の場合
+
+4 1 2 5 の場合
+緑色1つ、青色1つ 4 * 3
+赤色1つ、青色2つ 4 * 3
+赤色2つ、緑色1つ 4 * 3
+赤色3つ、青色1つ 4 * 1
+の40通り
+組み合わせを考えればいい
+
+赤を固定すると 各O(1)で
+赤0個, 赤1個, 赤2個...赤N個
+緑の個数を決めれば青の個数も定まる　これだとO(N ** 2)
+緑色: A + B点 が奇妙
+緑色: 赤と青を同時に塗ると考えれば
+A点加算されるブロックがi個(0 <= i <= N), B点加算されるブロックがj個
+A点が0個、1個...N個の場合を調べる
+4 1 2 5 の場合
+A点: 0個　なし
+A点: 1個(1点) B点は2個(4点)
+A点: 2個(2点) なし
+A点: 3個(3点) B点は1個(2点)
+A点: 4個(4点) なし
+
+A点に重ねて置いたB点（緑色になる）とそうでないB点は区別される
+
+数え上げの問題は包除原理使ってダブったのを捨てたり
+既に目標を達成した部分集合のcnt, まだ目標を達成してない部分集合とその達成度のcntを保持したり
+今回のように分解して解いたりできる
+"""
+
+N, A, B, K = getNM()
+ans = 0
+# A点が0個、1個...N個の場合を調べる
+for alpha in range(N + 1):
+    if (K - (A * alpha)) % B != 0:
+        continue
+    beta = (K - (A * alpha)) // B
+    ans += (cmb(N, alpha) * cmb(N, beta)) % mod
+    ans %= mod
+
+print(ans)
+
+# ABC127 E - Cell Distance
+
+"""
+全ての場合　＝　全ての通りの数をまず考える
+そのあと、ある事象が出現する確率を求める
+
+全ての通りは nmCk
+平均値の考え方　
+つまりO(N + M)の足し合わせみたいな
+ダブった奴は割ったり引いたりすればいい
+
+2 2 2なら
+4 * 3 // 2! = 6通り　順列分あとでわる
+nCr通りある
+この中でマスiとjが同時に出現する確率は　一定のはず
+iとjが同時に出現するのはn-2Ck-2通り
+iとjの選び方 nC2通り
+コストiになるペアがいくつあるか
+iとjのコスト * n-2Ck-2 をnC2通りやる
+nC2通りのうちいくつがコストi
+H - a * W - b コストa + b
+コストのとり方は最大でもN + M - 2数え上げ
+
+マンハッタン距離は上下と左右別々に求められる
+
+こういう問題でコストiを何回足したらいいかを考えるのは鉄則
+コストの規則性が分かりづらい　分けて考える
+コストiを何回足したらいいかは難しそう　マスiについてのコストの総和を求めればいい
+
+(1, 1)について
+横方向のマンハッタン距離
+距離1: 1 * H個
+距離2: 1 * H個...
+距離W - 1: 1 * H個
+つまり(1, 1)についてコストの合計はW(W - 1) // 2 * H * (n-2Ck-2)
+これを(1, 1) ~ (H, 1)までH回やる
+
+(1, 2)について
+距離1: 1 * H個
+距離2: 1 * H個...
+距離W - 2: 1 * H個
+(1, 2)についてコストの合計は(W - 1)(W - 2) // 2 * H * (n-2Ck-2)
+これを(1, 2) ~ (H, 2)までH回やる
+
+これを縦方向のマンハッタン距離でもやる
+
+巨大数のcmbをどうやる？
+n-2Ck-2
+"""
+
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+N, M, K = getNM()
+
+ans = 0
+for i in range(M - 1, 0, -1):
+    ans += i * (i + 1) * (N ** 2) // 2
+    ans %= mod
+
+for i in range(N - 1, 0, -1):
+    ans += i * (i + 1) * (M ** 2) // 2
+    ans %= mod
+
+print(ans * cmb(N * M - 2, K - 2) % mod)
