@@ -49,222 +49,198 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# JOI本戦 B - IOI饅頭（IOI Manju）
-M, N = getNM() # M:饅頭 N:箱
-sweets = getArray(M)
-box = [getList() for i in range(N)] # 最大C個, E円　1個ずつ
-# 菓子の価格 - 箱の価格 の最大値
-# M <= 10000, N <= 500
-# dp?
-
-sweets.sort(reverse = True)
-imos = [0]
-for i in range(M):
-    imos.append(imos[i] + sweets[i])
-
-# 箱に詰める饅頭の価格を大きく、箱の価格を小さくする
-# 合計でi個詰められる箱を用意した時の箱の価格の最小値
-# 貪欲に前から?
-# grid dp無理め? M <= 10000なのでそこまで求めるだけでいい
-# 500 * 10000
-prev = [float('inf')] * 10001
-prev[0] = 0
-
-for c, e in box:
-    for j in range(10000, -1, -1): # 逆順に
-        if j - c >= 0:
-            prev[j] = min(prev[j], prev[j - c] + e)
-        else:
-            prev[j] = min(prev[j], prev[0] + e)
-
-ans = 0
-for i in range(1, M + 1):
-    ans = max(ans, imos[i] - prev[i])
-print(ans)
-
-# JOI11予選 D - パスタ (Pasta)
-N, K = getNM()
-pasta = [[] for i in range(N)]
-for i in range(K):
-    a, b = getNM()
-    pasta[a - 1].append(b - 1)
-
-# 通りの数を求める: dp, 数え上げ組み合わせ
-# n日前のことが関係する: n次元のdpを作れる
-
-# modが10000
-# パスタは3種類
-# dp[j][k]: 本日jのパスタで、前日kのパスタの通り
-
-prev = [[0] * 3 for i in range(3)]
-# 1日目
-if pasta[0]:
-    prev[pasta[0][0]][(pasta[0][0] + 1) % 3] = 1
-else:
-    for i in range(3):
-        prev[i][(i + 1) % 3] = 1
-
-# 2日目以降
-for p in pasta[1:]:
-    next = [[0] * 3 for i in range(3)]
-    # すでに決められているなら
-    if p:
-        j = p[0]
-        # 本日のパスタjは確定
-        # その前の日のパスタnext[]j[k]のk, prev[j][k]のjは3通り
-        # そのまた前日のパスタprev[j][k]のkは3通り
-        for k in range(3):
-            for p_k in range(3):
-                if j == k and k == p_k:
-                    continue
-                next[j][k] += prev[k][p_k]
-                next[j][k] %= 10000
-    else:
-        for j in range(3):
-            for k in range(3):
-                for p_k in range(3):
-                    if j == k and k == p_k:
-                        continue
-                    next[j][k] += prev[k][p_k]
-                    next[j][k] %= 10000
-    prev = next
-
-ans = 0
-for i in range(3):
-    for j in range(3):
-        ans += prev[i][j]
-        ans %= 10000
-print(ans)
-
-# Code Formula 2014 本選 D - 映画の連続視聴
+# ARC060 D - 桁和
 
 """
-N <= 3000 O(N ** 2)まで
-Mの映画が[S ~ E]までの間上映されている
-同じ映画を見ることでより多くの幸福感
-違う映画を見るとリセットされる
-上映時刻がダブってなければ連続して視聴可能
+n < bの時 f(b, n) = n
+n >= bの時 f(b, (n // b)) + (n % b)
+b, b ** 2, b *** 3で割っていく
+b進数は存在するか
+bはそんなに大きくなさそう
+def f(b):
+    n = N
+    res = 0
+    while n:
+        res += n % b
+        n //= b
 
-まず貪欲を考える
-区間スケジューリング
-終わりの時刻でソート
-[[2, 10, 40], [1, 0, 120], [1, 15, 135], [1, 240, 330]]
-どの映画を１回見ても幸福度は同じ　出来るだけ連続させた方がいい？
-連続してみると幸福度は絶対上がる
-全探索？
-同じ映画を見た場合、違う映画を見た場合
-S, Eが小さいのでDPできそうO(N ** 2)できるので
-同じ種類のものは連結して考えられる
-1: [1, 0, 120], [1, 15, 135], [1, 240, 330]
-2:    [2, 10, 40]
-[2, 10, 40]をとる　次取れるのは[1, 240, 330]
-[2, 10, 40]をとらない
-2 → 3と繋いで100しか上がらなくでも、3 → 4とつなぐと100000上がるかもしれない
-streak1: 何個
-streak2: 何個..という風に数える
-合成して区間スケジューリングかも
-3 + 2がバッティングしても2 + 2なら通るかもしれない
-2 + 2より3 + 1の方が強い
-MAX連続を想定する
+    return res
+でできるけど
+単調増加にはならないので二分探索もできない
+存在しない条件はなに
+法則性なさそうなので全探索？
+√nぐらいにしたい
+b進数の一番上の桁は安定している
 
-### 今いくつ連続してるかを考えなくていいようにする ###
-1つ連続させたもの、2つ連続させたもの...をmovieに混ぜ込む
-セグ木を使う
-合成したものを混ぜ込む
+bを増やすと等間隔で数が減っていく
+a(i + 1)**2 + b(i + 1) + c
+ai ** 2 + 2ai + a + bi + b + c
+ai ** 2 + (2a + b)i + (a + b + c)
+
+二項
+10 ** 6まで全探索
 """
 
 N = getN()
-H = getList()
-for i in  range(N - 1):
-    H[i + 1] += H[i]
-movie = [getList() for i in range(N)]
-movie.sort(key = lambda i: i[2])
+S = getN()
 
-# セグ木を使わないver
-dp = [0] * (10 ** 5 + 7)
-prev = 0
-for i in range(N):
-    m, s, e = movie[i]
-    # 初期化
-    for j in range(prev + 1, e + 1):
-        dp[j] = max(dp[j], dp[j - 1])
-    prev = e
+def f(b):
+    n = N
+    res = 0
+    while n:
+        res += n % b
+        n //= b
 
-    dp[e] = max(dp[e], dp[s] + H[0])
-    cnt = 0
+    return res
 
-    # 現在のtargetから区間スケジューリング
-    for j in range(i + 1, N):
-        nm, ns, ne = movie[j]
-        if nm != m:
-            continue
-        if e <= ns:
-            cnt += 1
-            e = ne
-            dp[e] = max(dp[e], dp[s] + H[cnt])
+# 10 ** 6なので一応可能
+for i in range(2, 10 ** 6 + 1):
+    ans = f(i)
+    if ans == S:
+        print(i)
+        exit()
 
-print(max(dp))
+# 10 ** 6 + 1以降について
+# 割ってiになるbの最大値、最小値、そしてf(b)のとる値
+for i in range(N // 10 ** 6, 0, -1):
+    # 割ってiになるbの最小はN // (i + 1) + 1
+    b1 = N // (i + 1) + 1
+    opt1 = f(b1)
+    # 割ってiになる値の最大は N // i
+    b2 = N // i
+    opt2 = f(b2)
+    if opt2 <= S <= opt1 and (S - opt2) % i == 0:
+        # 87654の場合
+        # b1 = 9740 f(b1) = 10962
+        # b2 = 10956 f(b2) = 14
+        # opt1 - S を iで割った分をb1からひく
+        print(b2 - ((S - opt2) // i))
+        exit()
 
-# みんなのプロコン2019 D - Ears
+# 割って0になる
+# これのf(b)はN
+if N == S:
+    print(N + 1)
+    exit()
+
+# どうもできない
+print(-1)
+
+# AGC004 B - Colorful Slimes
 
 """
-必要な回数の最小値　効率的な方法を考える
-散歩開始と終了地点は任意
+N色のスライムがいる
+全色のスライムが飼いたい
+・iのスライムをaiで変色させる
+・手持ちのiのスライムの全てをxで変色させる
 
-0 ○ 1 ○ 2 ○ 3 ○ 4
-地点iを
-前方向に i += 1
-後方向に i-1 += 1
+iのスライムを入手する方法
+・iのスライムをaiで購入する
+・i-1のスライムをai-1で購入 + x使う
+・i-2のスライムをai-2で購入 + x * 2使う...
+前からやっていこう
 
-出発の回数はsum(A)
-diffの最小値を目指す　二分探索したい
+これループする
+色iのスライム買う
+魔法
+色iのスライム買う
+魔法
+で色 i+1, i+2のスライムを作れる
 
-1 - 2の周回で無限に地点2の石を増やせる
-ただし偶奇によって状況は変わる
-0が多い場合は避けるといいぞ
-範囲内は確実に1は増える
-L <= 10 ** 5
-偶奇または0の累積
-セグ木も使える
+色iのスライム買う
+魔法
+魔法
+色iのスライム買う
+魔法
+で色 i + 1, i + 3のスライムが作れる
+Ai * 個数 + (iからの最長距離 * x)でいくらでもできる
+各スライムについて変更した方がいいスライムについての最長距離を保持する
 
-(ゼロゾーン)(偶数ゾーン)(奇数ゾーン)(偶数ゾーン)(ゼロゾーン)
-両端の偶数ゾーンはなくてもいい
-0の処理は
-LC2でもダメ
-区切りは1つだけ 累積してみる
-任意のゼロゾーンを
+各スライムごとループさせる]
+小さい順に？
 
-独立してゾーンを考えられるはず
-まず奇数ゾーンを置く
+一括に巻き込んだ方がいい場合も
+4 1
+4 2 3 1の場合
+1を4つ買う + 魔法3回
+ここまでまとめ買い変色させた方がいい境界は
 
-偶数ゾーン2つがそれぞれ存在する場合、しない場合を考える
-ゼロも偶数として考えるか
-
-奇数の方がいい区間
-中央で分ける
-それぞれ
-(ゼロゾーン)(偶数ゾーン)
-左側の最小コスト + 右側の最小コスト
-セグ木使えば
-
-マーブルと同じようにDP
+魔法の回数をK回に固定すると
+Ai ~ Ai-kの範囲でスライムが買える
 """
 
-L = getN()
-A = getArray(L)
+N, X = getNM()
+A = getList()
 
-dp = [[0] * (L + 1) for _ in range(5)]
+mi = [float('inf')] * N
+ans = float('inf')
 
-for i in range(L):
-    if A[i] == 0: # 0のとこに突入するなら
-        t = 2
-    else:
-        t = A[i] % 2
-    # それぞれ前の状態から遷移できる
-    dp[0][i + 1] = dp[0][i] + A[i]
-    dp[1][i + 1] = min(dp[0][i + 1], dp[1][i] + t)
-    dp[2][i + 1] = min(dp[1][i + 1], dp[2][i] + (A[i] + 1) % 2)
-    dp[3][i + 1] = min(dp[2][i + 1], dp[3][i] + t)
-    dp[4][i + 1] = min(dp[3][i + 1], dp[4][i] + A[i])
+for k in range(N): # 魔法の回数をk回に固定
+    for i in range(N):
+        mi[i] = min(mi[i], A[i - k])
+    ans = min(ans, sum(mi) + k * X)
 
-print(dp[4][L])
+print(ans)
+
+# diverta 2019 Programming Contest 2 D - Squirrel Merchant
+
+"""
+N個のどんぐり
+2回する　ピッタリ整数dp
+
+Aでは 金をga, 銀をsa, 銅をbaで交換できる
+最初のAは買うだけ
+Bでは 金をgb, 銀をsb, 銅をbbで交換できる
+もちろん全て換金してからやる
+1: 金をgb / ga倍、銀を...をする
+2: 金をga / gb倍、銀を...をする
+
+1でドングリの数が5000倍になっていることもある
+
+O(N ** 2)で1の操作の結果のドングリの最大値はわかる 25,000,000になる
+1で増やした金属は2では使わないんだから、残り最大2種類の金属を使えばいい
+ga > gb, sa > sb, ba > bbの場合はドングリは5000個のまんまだから
+"""
+
+def multi(n, ga, gb, sa, sb, ba, bb):
+    res = n
+    for g in range(n + 1):
+        for s in range(n + 1):
+            # 購入金額についてオーバーしてないか
+            if g * ga + s * sa > n:
+                break
+            b = (n - (g * ga + s * sa)) // ba
+            opt = g * gb + s * sb + b * bb + (n - (g * ga + s * sa + b * ba))
+            res = max(res, opt)
+
+    return res
+
+def multi_two(n, ga, gb, sa, sb):
+    res = n
+    for g in range(n + 1):
+        if g * ga > n:
+            break
+        s = (n - (g * ga)) // sa
+        opt = g * gb + s * sb + (n - (g * ga + s * sa))
+        res = max(res, opt)
+    return res
+
+N = getN()
+Ga, Sa, Ba = getNM()
+Gb, Sb, Bb = getNM()
+
+opt1 = multi(N, Ga, Gb, Sa, Sb, Ba, Bb)
+opt2 = 0
+opt3 = 0
+opt4 = 0
+opt5 = 0
+
+if opt1 == N:
+    # 1回目で何もしなかった場合のみ逆向きでmulti
+    opt2 = multi(N, Gb, Ga, Sb, Sa, Bb, Ba)
+
+opt3 = multi_two(opt1, Gb, Ga, Sb, Sa)
+opt4 = multi_two(opt1, Gb, Ga, Bb, Ba)
+opt5 = multi_two(opt1, Sb, Sa, Bb, Ba)
+
+print(max(opt1, opt2, opt3, opt4, opt5))
