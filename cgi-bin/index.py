@@ -49,300 +49,420 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ARC027 B - 大事な数なのでZ回書きまLた。
+# ABC161 D - Lunlun Number
+K = 13
+que = []
+heapify(que)
+for i in range(1, 10):
+    que.append(i)
+for i in range(K):
+    u = heappop(que)
+    if u % 10 != 0:
+        heappush(que, 10 * u + (u % 10) - 1)
+    heappush(que, 10 * u + (u % 10))
+    if u % 10 != 9:
+        heappush(que, 10 * u + (u % 10) + 1)
+print(u)
+
+N, M = getNM()
+weight = []
+key = []
+for _ in range(M):
+    a, b = getNM()
+    weight.append(a)
+    c = getList()
+    key.append(c)
+dp = [float('inf')] * (1 << N)
+dp[0] = 0
+for i in range(M):
+    bit = 0
+    for item in key[i]:
+        bit |= (1 << (item - 1))
+    for j in range(1 << N):
+        dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
+print(dp)
+
+
+# ARC028 B-特別賞
+N, K = getNM()
+A = getList()
+young = [0] * N
+# i番目に若い人の順位はyoung[i]位
+for i in range(N):
+    young[A[i] - 1] = i
+A = [-i for i in A]
+# Aの前からK個のリストを作る
+prized = []
+for i in range(K):
+    prized.append(A[i])
+heapq.heapify(prized)
+# K個数字があるうちの最大値（K番目の数字）を取ってくる
+now = heapq.heappop(prized)
+print(young[-now - 1] + 1)
+for i in range(K, N):
+    # もし現在のK番目の数字より小さい数字がきたら
+    if A[i] > now:
+        # prizedリストに混ぜて（計K個入っている）
+        heapq.heappush(prized, A[i])
+        # 再びK個数字があるうちの最大値（K番目の数字）を取ってくる
+        now = heapq.heappop(prized)
+        print(young[-now - 1] + 1)
+    # もし現在のK番目の数字より小さい数字がきたら捨てる
+    else:
+        print(young[-now - 1] + 1)
+
+# ABC062 D - 3N Numbers
+N = getN()
+A = getList()
+# foreとbackの境界線を移動させる
+# [3 1 4 1 5 9]の場合
+# foreは[3 1], [3 1 4], [3, 1, 4, 1]の場合
+# backは[5 9], [1 5 9], [4, 1, 5, 9]の場合を前計算
+# 前から計算
+fore = A[:N]
+# 後ろから計算
+back = A[2 * N:]
+back = [-i for i in back]
+for_sum = sum(fore)
+back_sum = sum(back)
+heapify(fore)
+heapify(back)
+
+fore_list = []
+back_list = []
+for i in range(N):
+    fore_list.append(for_sum)
+    back_list.append(back_sum)
+    in_fore = A[N + i]
+    heappush(fore, in_fore)
+    out_fore = heappop(fore)
+    for_sum += in_fore - out_fore
+
+    in_back = (-1) * A[-N - i - 1]
+    heappush(back, in_back)
+    out_back = heappop(back)
+    back_sum += in_back - out_back
+
+fore_list.append(for_sum)
+back_list.append(back_sum)
+
+ans = -float('inf')
+for i in range(N + 1):
+    opt = fore_list[i] + back_list[N - i]
+    ans = max(ans, opt)
+print(ans)
+
+# ABC123 D - Cake 123
+X, Y, Z, K = getNM()
+A = sorted([-i for i in getList()])
+B = sorted([-i for i in getList()])
+C = sorted([-i for i in getList()])
+pos = []
+heapify(pos)
+dict = defaultdict(int)
+u = (A[0] + B[0] + C[0], 0, 0, 0)
+heappush(pos, u)
+dict[u] = 1
+for i in range(K):
+    p, i, j, l = heappop(pos)
+    print(-p)
+    # 取り出すごとにA, B, Cについての次の値をpush
+    if i + 1 < X:
+        opt_a = (A[i + 1] + B[j] + C[l], i + 1, j, l)
+        if dict[opt_a] == 0:
+            heappush(pos, opt_a)
+            dict[opt_a] = 1
+    if j + 1 < Y:
+        opt_b = (A[i] + B[j + 1] + C[l], i, j + 1, l)
+        if dict[opt_b] == 0:
+            heappush(pos, opt_b)
+            dict[opt_b] = 1
+    if l + 1 < Z:
+        opt_c = (A[i] + B[j] + C[l + 1], i, j, l + 1)
+        if dict[opt_c] == 0:
+            heappush(pos, opt_c)
+            dict[opt_c] = 1
+
+# ABC137 D - Summer Vacation
+
+N, M = getNM()
+query = [getList() for i in range(N)]
+
+A_list = [[] for i in range(10 ** 5 + 1)]
+for a, b in query:
+    A_list[a].append(b)
+
+job = []
+heapq.heapify(job)
+
+ans = 0
+for i in range(1, M + 1):
+    for j in A_list[i]:
+        heapq.heappush(job, -j)
+    if len(job) > 0:
+        u = heapq.heappop(job)
+        ans += -u
+print(ans)
+
+# ABC149 E - Handshake
+# Mがクソデカイので使用不可
+# 二分探索使ってね
+N, M = getNM()
+A = sorted([-i for i in getList()])
+
+pos = []
+heapify(pos)
+dict = defaultdict(int)
+u = (A[0] + A[0], 0, 0)
+heappush(pos, u)
+dict[u] = 1
+
+ans = 0
+# 大きい値M番目まで全て求まる
+for i in range(M):
+    p, i, j = heappop(pos)
+    ans += -p
+    if i + 1 < N:
+        opt_a = (A[i + 1] + A[j], i + 1, j)
+        if dict[opt_a] == 0:
+            heappush(pos, opt_a)
+            dict[opt_a] = 1
+    if j + 1 < N:
+        opt_b = (A[i] + A[j + 1], i, j + 1)
+        if dict[opt_b] == 0:
+            heappush(pos, opt_b)
+            dict[opt_b] = 1
+print(ans)
+
+# Code Formula 2014 予選A C - 決勝進出者
 
 """
-N桁の数字を覚えて置きたい
-大文字アルファベットがそれぞれ0 ~ 9のうちのどれかの数字に対応している
+N: 予選の回数
+K: 招待人数
+最高順位が高い順に　どこかの予選でハイスコアを出せばOK
+最高順位が同じ場合は、最高順位を取った予選が開かれた時期が早い方から先に選ばれる。
+現在の試合を含めた残り試合数 = dとすると
+(K + d - 1) // dの人数分上から順番にとる
+2 11
+1 2 3 4 5 6 7 8 9 10 11
+1 2 15 14 13 16 17 18 19 20 21
 
-Unionfindとか最大流とか
-N <= 18 bit　dpまで狙える
+の場合
+[[1, 2, 3, 4, 5, 6], [15, 14, 13]] ここまでいける
+[1 2 3 4 5 6] 7 8 9 10 11
+[1 2 15 14 13] 16 17 18 19 20 21
+1番目の6位までと2番目以降の5位までは問答無用で確定する
+後をどうするか
+枠が空く　このまま順調に取っていっても枠が余る場合は
+枠が空いた場合は再計算
+N <= 50しかない
+優先度何番目かをレコードする
+枠が空くたびにボーダーが下がる
 
-覚えておく数字について何通り考えられるか
-10 ** 18通りの数字があるがその中で？
-ただし制約がある
-候補を絞って全探索
+4 5
+1 2 3 4 5
+2 1 3 4 5
+1 2 3 4 5
+2 1 3 4 5 の場合
 
-アルファベットと各数字を対応させる通りは10 ** 26通り
-4
-1XYX
-1Z48 の場合
-X - Zは同じ
-Y - 4は同じ
-X - 8は同じ
-なのでZ - 8
-S1とS2に出てくる文字がどの数字と対応しているかを求めればいい
+一番最初に2人通過できる？
+制約が小さいので50回全探索できる
 
-6
-PRBLMB
-ARC027 の時
+iを一つ進めるごとに候補がA[i]の分だけ増える
+これをヒープキューで優先度が高い（数字が小さい）順に取る
+"""
 
-P - A
-B - C
-L - 0
-M - 2
-B - 7
-B - 7よりC - B - 7
-P - AグループとRに対応する数字を求めればいい
+N, K = getNM()
+A = [[] for i in range(N)]
+for i in range(N):
+    a = getList()
+    for j in range(K):
+        A[i].append([j * N + i + 1, a[j]])
 
-UnionFindする
-出現した文字のリスト
-出現した文字が何の数字か
+ans = [[] for i in range(N)]
+L = []
+heapify(L)
+passed = set()
+
+for i in range(N):
+    for j in A[i]:
+        heappush(L, j)
+    while L and L[0][0] <= K: # whileで抜き取る時は要素が残っているか気をつけよう
+        pref, id = heappop(L)
+        if id in passed:
+            K += 1
+        else:
+            ans[i].append(id)
+            passed.add(id)
+
+for i in ans:
+    print(*sorted(i))
+
+# ARC098 E - Range Minimum Queries
+
+"""
+数列A
+長さKの連続する部分列を1つ選ぶ　
+その中の最小のものを取り除く　infにすれば？
+取り除いた要素の最大値 - 最小値をマイナスにしたい　二分探索とかできる?
+最終形をイメージする
+
+一番望ましいのは
+Q個について最小区間のQ個を取ること
+それより小さい要素を取らずに都合のいいとこだけ取りたい
+小さい順に仕切りを立てていく
+まず小さい順に1 2 3 4...これは必ず取れる　（1 2 3 5...とかは1234より大きくなる）
+次に2 3 4 5を取れるか
+N個目の数って難しくない？
+
+5 3 2
+4 3 1 5 2 の場合
+4 3 [1 5 2]
+4 [3 5 2]
+
+N <= 2000なので 1, 2, 3, 4で区切っていくのはできそう
+Qの中に1を入れる場合、求める値はAq - A1
+
+1 1 3 5 6 7 の場合
+1番目の1以降を使うと 1 1 3 5
+2番目の1以降を使うと 1 3 5 6
+3以降を使うと       3 5 6 7
+なので3以降を使う方がいい
+Q = 4の時、候補となるのは
+[小さい方から1番目、2番目、3番目...] or
+[小さい方から2番目、3番目、4番目...] or...
+
+ただし、[小さい方から2番目、3番目、4番目...]を作るには選択範囲に小さい方から1番目を含めないことが必要
+4 3 1 5 2 の場合
+　　 ×     1は障害物になる
+ブロック1:[4, 3]
+ブロック2:[5, 2] の中でしかKを回せない
+[小さい方から3番目、4番目、5番目...]の場合
+ブロック1:[4, 3]
+ブロック2:[5]
+"""
+
+N, K, Q = getNM()
+A = getList()
+A = [[A[i], i] for i in range(N)]
+
+flag = [0] * N
+# 区切り0
+l = deepcopy(sorted(A))
+opt = []
+l.sort()
+for i in range(Q):
+    opt.append(l[i][0])
+ans = opt[-1] - opt[0]
+
+# 区切り1個以上
+for i in range(N):
+    # indexの位置はlを再利用
+    flag[l[i][1]] = 1 # A[i][1]はindex
+    parent = []
+    child = []
+    # フラグの立っているところで区切る
+    # 要素の探索はAを使う
+    for j in range(N):
+        if flag[j] == 0:
+            child.append(A[j][0])
+        else:
+            child.sort()
+            parent.append(child)
+            child = []
+    if len(child):
+        child.sort()
+        parent.append(child)
+
+    # 値を求める
+    # 各childから取れるだけ取る(配列操作を行う)
+    opt = []
+    for array in parent:
+        for j in range(len(array) - K + 1): # childの長さ - K + 1だけ値を取れる
+            opt.append(array[j])
+    # Q個取れたなら
+    if len(opt) >= Q:
+        opt.sort()
+        ans = min(ans, opt[Q - 1] - opt[0])
+
+print(ans)
+
+# AGC037 C - Numbers on a Circle
+
+"""
+円環
+AiをBiに合わせる
+一個前 + i + 一個後をiと入れ替える
+def c(i):
+    A[i] = A[i - 1] + A[i] + A[(i + 1) % N]
+
+最小値を求めよ
+増やした部分については入れる必要がある
+
+まず効率のいい方法を考える
+dpみたいになる？
+小さい数字から合わせると良さそう
+Ai-1 + Ai + Ai+1の合計がBiになるように
+超えてはいけない
+任意のiでこれを超えてない場合は可能なのかも
+倍数が関係ある？
+
+あまりにも規則性がわからない
+指数関数的に増加するので全探索したい　だめ
+c(0)
+A[0] = A[4] + A[0] + A[1]
+c(1)
+A[1] = A[4] + A[0] + A[1] + A[1] + A[2]
+c(0)
+A[0] = A[4] + A[4] + A[4] + A[0] + A[0] + A[1] + A[1] + A[1] + A[2]
+
+c(i)した時に絶対に足さないといけないのは
+
+適当に数を増やして行って適当な場所から始める
+再帰させる
+[13, 5, 7]の一つ前は
+[1, 5, 7] これを繰り返す
+両端の合計が自分より小さいものについて可能
+
+そんなに試行回数は多くないだろ、多分
+1 999999 1 1 1...とかの場合は？
+ループしてカットしたい
+
+ヒープキューでやってみる
+完成形から逆算する心を忘れない
 """
 
 N = getN()
-S1 = input()
-S2 = input()
-str_c = [0] * 26 # 文字が出現したか
-number = [-1] * 26 # どの文字が割り当てられているか
-ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+A = getList()
+B = getList()
 
-U = UnionFind(26)
-# 通りが0の場合もあるが
+Q = []
 for i in range(N):
-    # 両方文字ならグループ化
-    if (S1[i] in ascii_uppercase) and (S2[i] in ascii_uppercase):
-        str_c[ord(S1[i]) - ord('A')] = 1
-        str_c[ord(S2[i]) - ord('A')] = 1
-        U.union(ord(S1[i]) - ord('A'), ord(S2[i]) - ord('A'))
-    if not (S1[i] in ascii_uppercase) and not (S2[i] in ascii_uppercase):
-        if int(S1[i]) != int(S2[i]): # そもそも数字同士が違う
-            print(0)
+    heappush(Q, (-B[i], i))
+ans = 0
+cnt = 0
+
+while Q:
+    _, i = heappop(Q)
+
+    split = B[(i - 1) % N] + B[(i + 1) % N]
+    if (B[i] - A[i]) % split == 0:
+        ans += (B[i] - A[i]) // split
+        cnt += 1
+        B[i] = A[i]
+    else:
+        tmp = (B[i] - 1) // split
+
+        if tmp == 0:
+            print(-1)
             exit()
 
-# グループ化し終わったら数字を対応させる
-# あるグループにアクセスするときはU.find(i)でアクセスする
-# するとグループの代表者が出てきてくれる
-# そのグループの代表者にどの文字と対応しているか、先頭の文字かを尋ねる
-for i in range(N):
-    if (S1[i] in ascii_uppercase) and not (S2[i] in ascii_uppercase): # S1が文字
-        str_c[ord(S1[i]) - ord('A')] = 1
-        if number[U.find(ord(S1[i]) - ord('A'))] == -1: # 未登録
-            number[U.find(ord(S1[i]) - ord('A'))] = int(S2[i])
-        else:
-            if number[U.find(ord(S1[i]) - ord('A'))] != int(S2[i]): # 矛盾する
-                print(0)
-                exit()
+        B[i] -= tmp * split
+        ans += tmp
+        heappush(Q, (-B[i], i))
 
-    if not (S1[i] in ascii_uppercase) and (S2[i] in ascii_uppercase): # S2が文字
-        str_c[ord(S2[i]) - ord('A')] = 1
-        if number[U.find(ord(S2[i]) - ord('A'))] == -1:
-            number[U.find(ord(S2[i]) - ord('A'))] = int(S1[i])
-        else:
-            if number[U.find(ord(S2[i]) - ord('A'))] != int(S1[i]):
-                print(0)
-                exit()
-
-first = [0] * 26 # 一番前の数字か
-if (S1[0] in ascii_uppercase):
-    first[U.find(ord(S1[0]) - ord('A'))] = 1
-    if number[U.find(ord(S1[0]) - ord('A'))] == 0: # 一番最初の文字に0が登録されていたら
-        print(0)
+    if cnt == N:
+        print(ans)
         exit()
 
-if (S2[0] in ascii_uppercase):
-    first[U.find(ord(S2[0]) - ord('A'))] = 1
-    if number[U.find(ord(S2[0]) - ord('A'))] == 0:
-        print(0)
-        exit()
-
-ans = 1
-# 未登録の数字については0 ~ 9または1 ~ 9になる可能性がある
-for i in range(26):
-    if str_c[i] and number[U.find(i)] == -1: # 未登録なら
-        if first[U.find(i)]:
-            ans *= 9 # 1 ~ 9
-            number[U.find(i)] = 10
-        else:
-            ans *= 10
-            number[U.find(i)] = 11
-
-print(ans)
-
-# AtCoder Petrozavodsk Contest 001 D - Forest
-
-"""
-森です Unionfind?
-森を連結にする最小コスト
-制約的に最大流無理
-
-Impossibleの条件
-一つ繋ぐごとに頂点が２つ減り、森が一つ減る
-森が2個以上でもう繋げなくなったらimpossible
-
-小さい例から考える
-7 5
-1 2 3 4 5 6 7
-3 0
-4 0
-1 2
-1 3
-5 6　の時
-
-1 - 2 - 3 - 4 - 5
-6 - 7
-
-1と6を繋げばいい
-1 - 2
-3 - 4 - 5
-6 - 7
-の場合
-motherを一つ決める(例えば1 - 2)
-childは3 - 4 - 5, 6 - 7
-motherの一番小さい奴とchildの一番小さい奴を消費して連結する
-グループ分けする
-[1, 2]
-[3, 4, 5]
-[6, 7] 全部ヒープキュー
-小さい2つを消費(ansに加える)
-併合
-
-motherは一番でかい奴から！！！
-ゆとりのある順に並べる
-
-motherは慎重に決めないといけない
-各グループの先頭列をみる
-小さい順に使いたい
-各グループの先頭は必ず使う
-合計で2 * (g_n - 1)頂点いる
-g_n - 1については各グループの先頭にしないといけない　他のは？
-あとは自分以外のところから自由に　全てmotherの所有物
-足すのはg_n - 1回だけでいい
-
-groupの隣同士を併合するだけでいい
-要素にグループ番号をつけて前から並べる
-unionしてなかったら
-motherは決めない
-
-先頭の奴は絶対に使う
-あとは小さい順から　自分以外のとこの適当なグループの先頭に繋げてやればよい
-
-UnionFindの問題は先頭とそれ以外　という考え方をする
-"""
-
-N, M = getNM()
-A = getList()
-que = [getList() for i in range(M)]
-
-# グループ分け
-U = UnionFind(N)
-for a, b in que:
-    U.union(a, b)
-
-group = [[] for i in range(N)]
-for i in range(N):
-    group[U.find(i)].append(A[i])
-group = [sorted(i) for i in group if len(i) > 0]
-
-if len(group) == 1:
-    print(0)
-    exit()
-
-g_n = len(group)
-
-ans = 0
-l = []
-
-# 先頭の絶対使う奴と二番手以降の遊撃隊に分ける
-for i in range(g_n):
-    ans += group[i][0]
-    while len(group[i]) > 1:
-        u = group[i].pop()
-        l.append(u)
-
-l.sort(reverse = True)
-
-# 残りの頂点は小さい順
-for i in range(g_n - 2):
-    if l:
-        u = l.pop()
-        ans += u
-    else:
-        print('Impossible')
-        exit()
-print(ans)
-
-# ABC183 F - Confluence
-
-class UnionFind():
-    def __init__(self,n):
-        self.n = n
-        self.parents = [i for i in range(n)]
-        self.C = [defaultdict(int) for _ in range(n)]
-        self.size = [1] * n # サイズの大きさ
-
-    def find(self,x):
-        if self.parents[x] == x:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-    def unite(self, x, y):
-        xRoot = self.find(x)
-        yRoot = self.find(y)
-        if xRoot == yRoot:
-            return
-
-        # サイズに基づいてrootを決める
-        if self.size[xRoot] < self.size[yRoot]:
-            xRoot, yRoot = yRoot, xRoot
-
-        self.parents[yRoot] = xRoot
-        self.size[xRoot] += self.size[yRoot]
-        self.size[yRoot] = 0
-
-        # 小さいサイズのものを大きいサイズの方に入れる
-        for k,v in self.C[yRoot].items():
-            self.C[xRoot][k] += v
-
-    def members(self, x):
-        root = self.find(x)
-        return [i for i in range(self.n) if self.find(i) == root]
-
-    def roots(self):
-        return [i for i, x in enumerate(self.parents) if x < 0]
-
-    def all_group_members(self):
-        return {r: self.members(r) for r in self.roots()}
-
-N, Q = getNM()
-tree = UnionFind(N)
-C = getList()
-
-# 使いたいときは使ったらいい
-for i in range(N):
-    tree.C[i][C[i] - 1] += 1
-
-for _ in range(Q):
-    q, a, b = getNM()
-    if q == 1:
-        tree.unite(a - 1, b - 1)
-    else:
-        r = tree.find(a - 1)
-        print(tree.C[r][b - 1])
-
-# ABC049 D - 連結
-
-N, K, L = getNM()
-road = [getList() for i in range(K)]
-line = [getList() for i in range(L)]
-
-# 道路をやる
-R = UnionFind(N)
-for p, q in road:
-    R.union(p - 1, q - 1)
-
-L = UnionFind(N)
-for i in range(N): # 自分がどの道路グループにいるか
-    L.C[i][R.find(i)] += 1
-
-for r, s in line:
-    L.union(r - 1, s - 1)
-
-# 自分の線路グループL.find(i)にある自分の道路グループR.find(i)の数
-ans = [L.C[L.find(i)][R.find(i)] for i in range(N)]
-print(*ans)
+print(-1)
