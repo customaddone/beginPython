@@ -49,198 +49,278 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ARC060 D - 桁和
+# ARC027 B - 大事な数なのでZ回書きまLた。
 
 """
-n < bの時 f(b, n) = n
-n >= bの時 f(b, (n // b)) + (n % b)
-b, b ** 2, b *** 3で割っていく
-b進数は存在するか
-bはそんなに大きくなさそう
-def f(b):
-    n = N
-    res = 0
-    while n:
-        res += n % b
-        n //= b
+N桁の数字を覚えて置きたい
+大文字アルファベットがそれぞれ0 ~ 9のうちのどれかの数字に対応している
 
-    return res
-でできるけど
-単調増加にはならないので二分探索もできない
-存在しない条件はなに
-法則性なさそうなので全探索？
-√nぐらいにしたい
-b進数の一番上の桁は安定している
+Unionfindとか最大流とか
+N <= 18 bit　dpまで狙える
 
-bを増やすと等間隔で数が減っていく
-a(i + 1)**2 + b(i + 1) + c
-ai ** 2 + 2ai + a + bi + b + c
-ai ** 2 + (2a + b)i + (a + b + c)
+覚えておく数字について何通り考えられるか
+10 ** 18通りの数字があるがその中で？
+ただし制約がある
+候補を絞って全探索
 
-二項
-10 ** 6まで全探索
+アルファベットと各数字を対応させる通りは10 ** 26通り
+4
+1XYX
+1Z48 の場合
+X - Zは同じ
+Y - 4は同じ
+X - 8は同じ
+なのでZ - 8
+S1とS2に出てくる文字がどの数字と対応しているかを求めればいい
+
+6
+PRBLMB
+ARC027 の時
+
+P - A
+B - C
+L - 0
+M - 2
+B - 7
+B - 7よりC - B - 7
+P - AグループとRに対応する数字を求めればいい
+
+UnionFindする
+出現した文字のリスト
+出現した文字が何の数字か
 """
 
 N = getN()
-S = getN()
+S1 = input()
+S2 = input()
+str_c = [0] * 26 # 文字が出現したか
+number = [-1] * 26 # どの文字が割り当てられているか
+ascii_uppercase='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-def f(b):
-    n = N
-    res = 0
-    while n:
-        res += n % b
-        n //= b
+U = UnionFind(26)
+# 通りが0の場合もあるが
+for i in range(N):
+    # 両方文字ならグループ化
+    if (S1[i] in ascii_uppercase) and (S2[i] in ascii_uppercase):
+        str_c[ord(S1[i]) - ord('A')] = 1
+        str_c[ord(S2[i]) - ord('A')] = 1
+        U.union(ord(S1[i]) - ord('A'), ord(S2[i]) - ord('A'))
+    if not (S1[i] in ascii_uppercase) and not (S2[i] in ascii_uppercase):
+        if int(S1[i]) != int(S2[i]): # そもそも数字同士が違う
+            print(0)
+            exit()
 
-    return res
+# グループ化し終わったら数字を対応させる
+# あるグループにアクセスするときはU.find(i)でアクセスする
+# するとグループの代表者が出てきてくれる
+# そのグループの代表者にどの文字と対応しているか、先頭の文字かを尋ねる
+for i in range(N):
+    if (S1[i] in ascii_uppercase) and not (S2[i] in ascii_uppercase): # S1が文字
+        str_c[ord(S1[i]) - ord('A')] = 1
+        if number[U.find(ord(S1[i]) - ord('A'))] == -1: # 未登録
+            number[U.find(ord(S1[i]) - ord('A'))] = int(S2[i])
+        else:
+            if number[U.find(ord(S1[i]) - ord('A'))] != int(S2[i]): # 矛盾する
+                print(0)
+                exit()
 
-# 10 ** 6なので一応可能
-for i in range(2, 10 ** 6 + 1):
-    ans = f(i)
-    if ans == S:
-        print(i)
+    if not (S1[i] in ascii_uppercase) and (S2[i] in ascii_uppercase): # S2が文字
+        str_c[ord(S2[i]) - ord('A')] = 1
+        if number[U.find(ord(S2[i]) - ord('A'))] == -1:
+            number[U.find(ord(S2[i]) - ord('A'))] = int(S1[i])
+        else:
+            if number[U.find(ord(S2[i]) - ord('A'))] != int(S1[i]):
+                print(0)
+                exit()
+
+first = [0] * 26 # 一番前の数字か
+if (S1[0] in ascii_uppercase):
+    first[U.find(ord(S1[0]) - ord('A'))] = 1
+    if number[U.find(ord(S1[0]) - ord('A'))] == 0: # 一番最初の文字に0が登録されていたら
+        print(0)
         exit()
 
-# 10 ** 6 + 1以降について
-# 割ってiになるbの最大値、最小値、そしてf(b)のとる値
-for i in range(N // 10 ** 6, 0, -1):
-    # 割ってiになるbの最小はN // (i + 1) + 1
-    b1 = N // (i + 1) + 1
-    opt1 = f(b1)
-    # 割ってiになる値の最大は N // i
-    b2 = N // i
-    opt2 = f(b2)
-    if opt2 <= S <= opt1 and (S - opt2) % i == 0:
-        # 87654の場合
-        # b1 = 9740 f(b1) = 10962
-        # b2 = 10956 f(b2) = 14
-        # opt1 - S を iで割った分をb1からひく
-        print(b2 - ((S - opt2) // i))
+if (S2[0] in ascii_uppercase):
+    first[U.find(ord(S2[0]) - ord('A'))] = 1
+    if number[U.find(ord(S2[0]) - ord('A'))] == 0:
+        print(0)
         exit()
 
-# 割って0になる
-# これのf(b)はN
-if N == S:
-    print(N + 1)
-    exit()
-
-# どうもできない
-print(-1)
-
-# AGC004 B - Colorful Slimes
-
-"""
-N色のスライムがいる
-全色のスライムが飼いたい
-・iのスライムをaiで変色させる
-・手持ちのiのスライムの全てをxで変色させる
-
-iのスライムを入手する方法
-・iのスライムをaiで購入する
-・i-1のスライムをai-1で購入 + x使う
-・i-2のスライムをai-2で購入 + x * 2使う...
-前からやっていこう
-
-これループする
-色iのスライム買う
-魔法
-色iのスライム買う
-魔法
-で色 i+1, i+2のスライムを作れる
-
-色iのスライム買う
-魔法
-魔法
-色iのスライム買う
-魔法
-で色 i + 1, i + 3のスライムが作れる
-Ai * 個数 + (iからの最長距離 * x)でいくらでもできる
-各スライムについて変更した方がいいスライムについての最長距離を保持する
-
-各スライムごとループさせる]
-小さい順に？
-
-一括に巻き込んだ方がいい場合も
-4 1
-4 2 3 1の場合
-1を4つ買う + 魔法3回
-ここまでまとめ買い変色させた方がいい境界は
-
-魔法の回数をK回に固定すると
-Ai ~ Ai-kの範囲でスライムが買える
-"""
-
-N, X = getNM()
-A = getList()
-
-mi = [float('inf')] * N
-ans = float('inf')
-
-for k in range(N): # 魔法の回数をk回に固定
-    for i in range(N):
-        mi[i] = min(mi[i], A[i - k])
-    ans = min(ans, sum(mi) + k * X)
+ans = 1
+# 未登録の数字については0 ~ 9または1 ~ 9になる可能性がある
+for i in range(26):
+    if str_c[i] and number[U.find(i)] == -1: # 未登録なら
+        if first[U.find(i)]:
+            ans *= 9 # 1 ~ 9
+            number[U.find(i)] = 10
+        else:
+            ans *= 10
+            number[U.find(i)] = 11
 
 print(ans)
 
-# diverta 2019 Programming Contest 2 D - Squirrel Merchant
+# AtCoder Petrozavodsk Contest 001 D - Forest
 
 """
-N個のどんぐり
-2回する　ピッタリ整数dp
+森です Unionfind?
+森を連結にする最小コスト
+制約的に最大流無理
 
-Aでは 金をga, 銀をsa, 銅をbaで交換できる
-最初のAは買うだけ
-Bでは 金をgb, 銀をsb, 銅をbbで交換できる
-もちろん全て換金してからやる
-1: 金をgb / ga倍、銀を...をする
-2: 金をga / gb倍、銀を...をする
+Impossibleの条件
+一つ繋ぐごとに頂点が２つ減り、森が一つ減る
+森が2個以上でもう繋げなくなったらimpossible
 
-1でドングリの数が5000倍になっていることもある
+小さい例から考える
+7 5
+1 2 3 4 5 6 7
+3 0
+4 0
+1 2
+1 3
+5 6　の時
 
-O(N ** 2)で1の操作の結果のドングリの最大値はわかる 25,000,000になる
-1で増やした金属は2では使わないんだから、残り最大2種類の金属を使えばいい
-ga > gb, sa > sb, ba > bbの場合はドングリは5000個のまんまだから
+1 - 2 - 3 - 4 - 5
+6 - 7
+
+1と6を繋げばいい
+1 - 2
+3 - 4 - 5
+6 - 7
+の場合
+motherを一つ決める(例えば1 - 2)
+childは3 - 4 - 5, 6 - 7
+motherの一番小さい奴とchildの一番小さい奴を消費して連結する
+グループ分けする
+[1, 2]
+[3, 4, 5]
+[6, 7] 全部ヒープキュー
+小さい2つを消費(ansに加える)
+併合
+
+motherは一番でかい奴から！！！
+ゆとりのある順に並べる
+
+motherは慎重に決めないといけない
+各グループの先頭列をみる
+小さい順に使いたい
+各グループの先頭は必ず使う
+合計で2 * (g_n - 1)頂点いる
+g_n - 1については各グループの先頭にしないといけない　他のは？
+あとは自分以外のところから自由に　全てmotherの所有物
+足すのはg_n - 1回だけでいい
+
+groupの隣同士を併合するだけでいい
+要素にグループ番号をつけて前から並べる
+unionしてなかったら
+motherは決めない
+
+先頭の奴は絶対に使う
+あとは小さい順から　自分以外のとこの適当なグループの先頭に繋げてやればよい
+
+UnionFindの問題は先頭とそれ以外　という考え方をする
 """
 
-def multi(n, ga, gb, sa, sb, ba, bb):
-    res = n
-    for g in range(n + 1):
-        for s in range(n + 1):
-            # 購入金額についてオーバーしてないか
-            if g * ga + s * sa > n:
-                break
-            b = (n - (g * ga + s * sa)) // ba
-            opt = g * gb + s * sb + b * bb + (n - (g * ga + s * sa + b * ba))
-            res = max(res, opt)
+N, M = getNM()
+A = getList()
+que = [getList() for i in range(M)]
 
-    return res
+# グループ分け
+U = UnionFind(N)
+for a, b in que:
+    U.union(a, b)
 
-def multi_two(n, ga, gb, sa, sb):
-    res = n
-    for g in range(n + 1):
-        if g * ga > n:
-            break
-        s = (n - (g * ga)) // sa
-        opt = g * gb + s * sb + (n - (g * ga + s * sa))
-        res = max(res, opt)
-    return res
+group = [[] for i in range(N)]
+for i in range(N):
+    group[U.find(i)].append(A[i])
+group = [sorted(i) for i in group if len(i) > 0]
 
-N = getN()
-Ga, Sa, Ba = getNM()
-Gb, Sb, Bb = getNM()
+if len(group) == 1:
+    print(0)
+    exit()
 
-opt1 = multi(N, Ga, Gb, Sa, Sb, Ba, Bb)
-opt2 = 0
-opt3 = 0
-opt4 = 0
-opt5 = 0
+g_n = len(group)
 
-if opt1 == N:
-    # 1回目で何もしなかった場合のみ逆向きでmulti
-    opt2 = multi(N, Gb, Ga, Sb, Sa, Bb, Ba)
+ans = 0
+l = []
 
-opt3 = multi_two(opt1, Gb, Ga, Sb, Sa)
-opt4 = multi_two(opt1, Gb, Ga, Bb, Ba)
-opt5 = multi_two(opt1, Sb, Sa, Bb, Ba)
+# 先頭の絶対使う奴と二番手以降の遊撃隊に分ける
+for i in range(g_n):
+    ans += group[i][0]
+    while len(group[i]) > 1:
+        u = group[i].pop()
+        l.append(u)
 
-print(max(opt1, opt2, opt3, opt4, opt5))
+l.sort(reverse = True)
+
+# 残りの頂点は小さい順
+for i in range(g_n - 2):
+    if l:
+        u = l.pop()
+        ans += u
+    else:
+        print('Impossible')
+        exit()
+print(ans)
+
+# ABC183 F - Confluence
+
+class UnionFind():
+    def __init__(self,n):
+        self.n = n
+        self.parents = [i for i in range(n)]
+        self.C = [defaultdict(int) for _ in range(n)]
+        self.size = [1] * n # サイズの大きさ
+
+    def find(self,x):
+        if self.parents[x] == x:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def unite(self, x, y):
+        xRoot = self.find(x)
+        yRoot = self.find(y)
+        if xRoot == yRoot:
+            return
+
+        # サイズに基づいてrootを決める
+        if self.size[xRoot] < self.size[yRoot]:
+            xRoot, yRoot = yRoot, xRoot
+
+        self.parents[yRoot] = xRoot
+        self.size[xRoot] += self.size[yRoot]
+        self.size[yRoot] = 0
+
+        # 小さいサイズのものを大きいサイズの方に入れる
+        for k,v in self.C[yRoot].items():
+            self.C[xRoot][k] += v
+
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
+
+N, Q = getNM()
+tree = UnionFind(N)
+C = getList()
+
+# 使いたいときは使ったらいい
+for i in range(N):
+    tree.C[i][C[i] - 1] += 1
+
+for _ in range(Q):
+    q, a, b = getNM()
+    if q == 1:
+        tree.unite(a - 1, b - 1)
+    else:
+        r = tree.find(a - 1)
+        print(tree.C[r][b - 1])
