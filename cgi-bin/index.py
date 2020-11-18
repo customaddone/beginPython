@@ -324,3 +324,25 @@ for _ in range(Q):
     else:
         r = tree.find(a - 1)
         print(tree.C[r][b - 1])
+
+# ABC049 D - 連結
+
+N, K, L = getNM()
+road = [getList() for i in range(K)]
+line = [getList() for i in range(L)]
+
+# 道路をやる
+R = UnionFind(N)
+for p, q in road:
+    R.union(p - 1, q - 1)
+
+L = UnionFind(N)
+for i in range(N): # 自分がどの道路グループにいるか
+    L.C[i][R.find(i)] += 1
+
+for r, s in line:
+    L.union(r - 1, s - 1)
+
+# 自分の線路グループL.find(i)にある自分の道路グループR.find(i)の数
+ans = [L.C[L.find(i)][R.find(i)] for i in range(N)]
+print(*ans)
