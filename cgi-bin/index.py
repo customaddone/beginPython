@@ -49,420 +49,180 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# ABC161 D - Lunlun Number
-K = 13
-que = []
-heapify(que)
-for i in range(1, 10):
-    que.append(i)
-for i in range(K):
-    u = heappop(que)
-    if u % 10 != 0:
-        heappush(que, 10 * u + (u % 10) - 1)
-    heappush(que, 10 * u + (u % 10))
-    if u % 10 != 9:
-        heappush(que, 10 * u + (u % 10) + 1)
-print(u)
+# ABC021 C - 正直者の高橋くん
+# 経路の通りを求める問題
+N = 7
+a, b = 1, 7
+M = 8
+que = [
+[1, 2],
+[1, 3],
+[4, 2],
+[4, 3],
+[4, 5],
+[4, 6],
+[7, 5],
+[7, 6]
+]
+dist = [[] for i in range(N)]
+for x, y in que:
+    dist[x - 1].append(y - 1)
+    dist[y - 1].append(x - 1)
 
-N, M = getNM()
-weight = []
-key = []
-for _ in range(M):
-    a, b = getNM()
-    weight.append(a)
-    c = getList()
-    key.append(c)
-dp = [float('inf')] * (1 << N)
-dp[0] = 0
-for i in range(M):
-    bit = 0
-    for item in key[i]:
-        bit |= (1 << (item - 1))
-    for j in range(1 << N):
-        dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
-print(dp)
+# スタートからの最短距離測定
+def distance(sta):
+    # 木をstaから順にたどる（戻るの禁止）
+    pos = deque([sta])
+    ignore = [-1] * N
+    ignore[sta] = 0
 
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in dist[u]:
+            if ignore[i] == -1:
+                ignore[i] = ignore[u] + 1
+                pos.append(i)
 
-# ARC028 B-特別賞
-N, K = getNM()
-A = getList()
-young = [0] * N
-# i番目に若い人の順位はyoung[i]位
-for i in range(N):
-    young[A[i] - 1] = i
-A = [-i for i in A]
-# Aの前からK個のリストを作る
-prized = []
-for i in range(K):
-    prized.append(A[i])
-heapq.heapify(prized)
-# K個数字があるうちの最大値（K番目の数字）を取ってくる
-now = heapq.heappop(prized)
-print(young[-now - 1] + 1)
-for i in range(K, N):
-    # もし現在のK番目の数字より小さい数字がきたら
-    if A[i] > now:
-        # prizedリストに混ぜて（計K個入っている）
-        heapq.heappush(prized, A[i])
-        # 再びK個数字があるうちの最大値（K番目の数字）を取ってくる
-        now = heapq.heappop(prized)
-        print(young[-now - 1] + 1)
-    # もし現在のK番目の数字より小さい数字がきたら捨てる
-    else:
-        print(young[-now - 1] + 1)
+    return ignore
 
-# ABC062 D - 3N Numbers
+d = distance(a - 1)
+
+# スタートから特定の点まで最短距離で行く通りの数
+def counter(sta):
+    pos = deque([sta])
+    ignore = [0] * N
+    cnt = [0] * N
+    cnt[sta] = 1
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        if ignore[u] == 0:
+            ignore[u] = 1
+            # d[i] == d[u] + 1を満たすuの子ノード全てに
+            # 「スタートからuまでの通りの数」をプラス（他のルートからも来る）
+            for i in dist[u]:
+                if d[i] == d[u] + 1:
+                    cnt[i] += cnt[u]
+                    pos.append(i)
+    return cnt
+
+print(counter(a - 1)[b - 1] % mod)
+
+# ARC044 B - 最短路問題
+# 通りの数を求める問題
+# 深さ1のものは,深さ2のものは
 N = getN()
 A = getList()
-# foreとbackの境界線を移動させる
-# [3 1 4 1 5 9]の場合
-# foreは[3 1], [3 1 4], [3, 1, 4, 1]の場合
-# backは[5 9], [1 5 9], [4, 1, 5, 9]の場合を前計算
-# 前から計算
-fore = A[:N]
-# 後ろから計算
-back = A[2 * N:]
-back = [-i for i in back]
-for_sum = sum(fore)
-back_sum = sum(back)
-heapify(fore)
-heapify(back)
+M = max(A)
 
-fore_list = []
-back_list = []
-for i in range(N):
-    fore_list.append(for_sum)
-    back_list.append(back_sum)
-    in_fore = A[N + i]
-    heappush(fore, in_fore)
-    out_fore = heappop(fore)
-    for_sum += in_fore - out_fore
+if A[0] != 0:
+    print(0)
+    exit()
 
-    in_back = (-1) * A[-N - i - 1]
-    heappush(back, in_back)
-    out_back = heappop(back)
-    back_sum += in_back - out_back
-
-fore_list.append(for_sum)
-back_list.append(back_sum)
-
-ans = -float('inf')
-for i in range(N + 1):
-    opt = fore_list[i] + back_list[N - i]
-    ans = max(ans, opt)
-print(ans)
-
-# ABC123 D - Cake 123
-X, Y, Z, K = getNM()
-A = sorted([-i for i in getList()])
-B = sorted([-i for i in getList()])
-C = sorted([-i for i in getList()])
-pos = []
-heapify(pos)
-dict = defaultdict(int)
-u = (A[0] + B[0] + C[0], 0, 0, 0)
-heappush(pos, u)
-dict[u] = 1
-for i in range(K):
-    p, i, j, l = heappop(pos)
-    print(-p)
-    # 取り出すごとにA, B, Cについての次の値をpush
-    if i + 1 < X:
-        opt_a = (A[i + 1] + B[j] + C[l], i + 1, j, l)
-        if dict[opt_a] == 0:
-            heappush(pos, opt_a)
-            dict[opt_a] = 1
-    if j + 1 < Y:
-        opt_b = (A[i] + B[j + 1] + C[l], i, j + 1, l)
-        if dict[opt_b] == 0:
-            heappush(pos, opt_b)
-            dict[opt_b] = 1
-    if l + 1 < Z:
-        opt_c = (A[i] + B[j] + C[l + 1], i, j, l + 1)
-        if dict[opt_c] == 0:
-            heappush(pos, opt_c)
-            dict[opt_c] = 1
-
-# ABC137 D - Summer Vacation
-
-N, M = getNM()
-query = [getList() for i in range(N)]
-
-A_list = [[] for i in range(10 ** 5 + 1)]
-for a, b in query:
-    A_list[a].append(b)
-
-job = []
-heapq.heapify(job)
-
-ans = 0
-for i in range(1, M + 1):
-    for j in A_list[i]:
-        heapq.heappush(job, -j)
-    if len(job) > 0:
-        u = heapq.heappop(job)
-        ans += -u
-print(ans)
-
-# ABC149 E - Handshake
-# Mがクソデカイので使用不可
-# 二分探索使ってね
-N, M = getNM()
-A = sorted([-i for i in getList()])
-
-pos = []
-heapify(pos)
-dict = defaultdict(int)
-u = (A[0] + A[0], 0, 0)
-heappush(pos, u)
-dict[u] = 1
-
-ans = 0
-# 大きい値M番目まで全て求まる
-for i in range(M):
-    p, i, j = heappop(pos)
-    ans += -p
-    if i + 1 < N:
-        opt_a = (A[i + 1] + A[j], i + 1, j)
-        if dict[opt_a] == 0:
-            heappush(pos, opt_a)
-            dict[opt_a] = 1
-    if j + 1 < N:
-        opt_b = (A[i] + A[j + 1], i, j + 1)
-        if dict[opt_b] == 0:
-            heappush(pos, opt_b)
-            dict[opt_b] = 1
-print(ans)
-
-# Code Formula 2014 予選A C - 決勝進出者
-
-"""
-N: 予選の回数
-K: 招待人数
-最高順位が高い順に　どこかの予選でハイスコアを出せばOK
-最高順位が同じ場合は、最高順位を取った予選が開かれた時期が早い方から先に選ばれる。
-現在の試合を含めた残り試合数 = dとすると
-(K + d - 1) // dの人数分上から順番にとる
-2 11
-1 2 3 4 5 6 7 8 9 10 11
-1 2 15 14 13 16 17 18 19 20 21
-
-の場合
-[[1, 2, 3, 4, 5, 6], [15, 14, 13]] ここまでいける
-[1 2 3 4 5 6] 7 8 9 10 11
-[1 2 15 14 13] 16 17 18 19 20 21
-1番目の6位までと2番目以降の5位までは問答無用で確定する
-後をどうするか
-枠が空く　このまま順調に取っていっても枠が余る場合は
-枠が空いた場合は再計算
-N <= 50しかない
-優先度何番目かをレコードする
-枠が空くたびにボーダーが下がる
-
-4 5
-1 2 3 4 5
-2 1 3 4 5
-1 2 3 4 5
-2 1 3 4 5 の場合
-
-一番最初に2人通過できる？
-制約が小さいので50回全探索できる
-
-iを一つ進めるごとに候補がA[i]の分だけ増える
-これをヒープキューで優先度が高い（数字が小さい）順に取る
-"""
-
-N, K = getNM()
-A = [[] for i in range(N)]
-for i in range(N):
-    a = getList()
-    for j in range(K):
-        A[i].append([j * N + i + 1, a[j]])
-
-ans = [[] for i in range(N)]
-L = []
-heapify(L)
-passed = set()
-
-for i in range(N):
-    for j in A[i]:
-        heappush(L, j)
-    while L and L[0][0] <= K: # whileで抜き取る時は要素が残っているか気をつけよう
-        pref, id = heappop(L)
-        if id in passed:
-            K += 1
-        else:
-            ans[i].append(id)
-            passed.add(id)
-
-for i in ans:
-    print(*sorted(i))
-
-# ARC098 E - Range Minimum Queries
-
-"""
-数列A
-長さKの連続する部分列を1つ選ぶ　
-その中の最小のものを取り除く　infにすれば？
-取り除いた要素の最大値 - 最小値をマイナスにしたい　二分探索とかできる?
-最終形をイメージする
-
-一番望ましいのは
-Q個について最小区間のQ個を取ること
-それより小さい要素を取らずに都合のいいとこだけ取りたい
-小さい順に仕切りを立てていく
-まず小さい順に1 2 3 4...これは必ず取れる　（1 2 3 5...とかは1234より大きくなる）
-次に2 3 4 5を取れるか
-N個目の数って難しくない？
-
-5 3 2
-4 3 1 5 2 の場合
-4 3 [1 5 2]
-4 [3 5 2]
-
-N <= 2000なので 1, 2, 3, 4で区切っていくのはできそう
-Qの中に1を入れる場合、求める値はAq - A1
-
-1 1 3 5 6 7 の場合
-1番目の1以降を使うと 1 1 3 5
-2番目の1以降を使うと 1 3 5 6
-3以降を使うと       3 5 6 7
-なので3以降を使う方がいい
-Q = 4の時、候補となるのは
-[小さい方から1番目、2番目、3番目...] or
-[小さい方から2番目、3番目、4番目...] or...
-
-ただし、[小さい方から2番目、3番目、4番目...]を作るには選択範囲に小さい方から1番目を含めないことが必要
-4 3 1 5 2 の場合
-　　 ×     1は障害物になる
-ブロック1:[4, 3]
-ブロック2:[5, 2] の中でしかKを回せない
-[小さい方から3番目、4番目、5番目...]の場合
-ブロック1:[4, 3]
-ブロック2:[5]
-"""
-
-N, K, Q = getNM()
-A = getList()
-A = [[A[i], i] for i in range(N)]
-
-flag = [0] * N
-# 区切り0
-l = deepcopy(sorted(A))
-opt = []
-l.sort()
-for i in range(Q):
-    opt.append(l[i][0])
-ans = opt[-1] - opt[0]
-
-# 区切り1個以上
-for i in range(N):
-    # indexの位置はlを再利用
-    flag[l[i][1]] = 1 # A[i][1]はindex
-    parent = []
-    child = []
-    # フラグの立っているところで区切る
-    # 要素の探索はAを使う
-    for j in range(N):
-        if flag[j] == 0:
-            child.append(A[j][0])
-        else:
-            child.sort()
-            parent.append(child)
-            child = []
-    if len(child):
-        child.sort()
-        parent.append(child)
-
-    # 値を求める
-    # 各childから取れるだけ取る(配列操作を行う)
-    opt = []
-    for array in parent:
-        for j in range(len(array) - K + 1): # childの長さ - K + 1だけ値を取れる
-            opt.append(array[j])
-    # Q個取れたなら
-    if len(opt) >= Q:
-        opt.sort()
-        ans = min(ans, opt[Q - 1] - opt[0])
-
-print(ans)
-
-# AGC037 C - Numbers on a Circle
-
-"""
-円環
-AiをBiに合わせる
-一個前 + i + 一個後をiと入れ替える
-def c(i):
-    A[i] = A[i - 1] + A[i] + A[(i + 1) % N]
-
-最小値を求めよ
-増やした部分については入れる必要がある
-
-まず効率のいい方法を考える
-dpみたいになる？
-小さい数字から合わせると良さそう
-Ai-1 + Ai + Ai+1の合計がBiになるように
-超えてはいけない
-任意のiでこれを超えてない場合は可能なのかも
-倍数が関係ある？
-
-あまりにも規則性がわからない
-指数関数的に増加するので全探索したい　だめ
-c(0)
-A[0] = A[4] + A[0] + A[1]
-c(1)
-A[1] = A[4] + A[0] + A[1] + A[1] + A[2]
-c(0)
-A[0] = A[4] + A[4] + A[4] + A[0] + A[0] + A[1] + A[1] + A[1] + A[2]
-
-c(i)した時に絶対に足さないといけないのは
-
-適当に数を増やして行って適当な場所から始める
-再帰させる
-[13, 5, 7]の一つ前は
-[1, 5, 7] これを繰り返す
-両端の合計が自分より小さいものについて可能
-
-そんなに試行回数は多くないだろ、多分
-1 999999 1 1 1...とかの場合は？
-ループしてカットしたい
-
-ヒープキューでやってみる
-完成形から逆算する心を忘れない
-"""
-
-N = getN()
-A = getList()
-B = getList()
-
-Q = []
-for i in range(N):
-    heappush(Q, (-B[i], i))
-ans = 0
-cnt = 0
-
-while Q:
-    _, i = heappop(Q)
-
-    split = B[(i - 1) % N] + B[(i + 1) % N]
-    if (B[i] - A[i]) % split == 0:
-        ans += (B[i] - A[i]) // split
-        cnt += 1
-        B[i] = A[i]
-    else:
-        tmp = (B[i] - 1) // split
-
-        if tmp == 0:
-            print(-1)
-            exit()
-
-        B[i] -= tmp * split
-        ans += tmp
-        heappush(Q, (-B[i], i))
-
-    if cnt == N:
-        print(ans)
+lista = [0] * (M + 1)
+lista[0] = 1
+for i in range(1, N):
+    if A[i] == 0:
+        print(0)
         exit()
+    lista[A[i]] += 1
 
-print(-1)
+ans = 1
+for i in range(1, M + 1):
+    if lista[i] == 0:
+        print(0)
+        exit()
+    # 全ての距離i - 1の点とある距離iの点との辺について
+    # 繋いだ場合辺はi - 1の点の数だけあるが、これらのうち１つ以上と繋ぐ
+    opt1 = (pow(2, lista[i - 1], mod) - 1)
+    # それが距離iの点の数分ある
+    depth = pow(opt1, lista[i], mod)
+    # 距離i間の辺について
+    # 辺はlista[i] * (lista[i] - 1) // 2だけあるが、そのうち０本以上と繋ぐ
+    # これによって頂点の最短距離が変わることはない
+    width = pow(2, lista[i] * (lista[i] - 1) // 2, mod)
+    ans *=  depth * width
+    ans %= mod
+print(ans)
+
+# F - Pure
+
+"""
+強連結成分分解とかの話に繋がってくる
+つまりループを作ればいい
+1 - 2 - 3 - 4 - 1みたいな
+1 が2以外の例えば1 - 3みたいなパスがあれば
+1 - 3 - 4 - 1で作ればいい
+
+最小のループが答え
+bfsなら早々に最小のものが見つかる
+
+強連結
+有向グラフにおいて、すべての頂点間で互いに行き来できる
+強連結成分を一つの頂点に潰すと、DAGになる　トポソできる
+
+まずbfsする　その後、戻れるエッジがあるか
+あればその最小値が答え
+
+まずbfsしてDAGで考えるともう処理したものを考えなくていいのでいろいろ便利
+"""
+
+N, M = getNM()
+dist = [set() for i in range(N)]
+for i in range(M):
+    a, b = getNM()
+    dist[a - 1].add(b - 1)
+
+ignore = [-1] * N
+path = [set() for i in range(N)] # 始点からのパス
+parents = [-1] * N
+roop = [-1] * N #  ループの始点と終点
+roop_len = [-1] * N # ループの長さ
+
+for i in range(N):
+    if ignore[i] >= 0:
+        continue
+
+    ignore[i] = i
+    pos = deque([[i, 0]])
+    path[i].add(i)
+
+    while pos:
+        u, dis = pos.popleft()
+        for j in list(dist[u]):
+            if ignore[j] == -1:
+                ignore[j] = i
+                parents[j] = u
+                # ループ判定
+                path[j] = deepcopy(path[u])
+                path[j].add(j)
+                for i, e in enumerate(list(path[j])[::-1]): # 後ろから一つずつ
+                    if e in dist[j]: # もし戻るパスがあれば
+                        roop[j] = e # 終点j, 始点eのループがある
+                        roop_len[j] = i + 1 # ループの長さ
+                        break # 一番小さいのしかいらない
+
+                pos.append([j, dis + 1])
+
+# 最小のループを探す
+l = float('inf')
+index = -1
+for i in range(N):
+    if roop_len[i] >= 0 and roop_len[i] < l:
+        l = min(l, roop_len[i])
+        index = i
+
+if index == -1:
+    print(-1)
+    exit()
+
+# 構築
+ans = [index + 1]
+now = index
+while now != roop[index]: # 始点に戻るまで
+    now = parents[now]
+    ans.append(now + 1)
+
+print(l)
+for i in ans[::-1]:
+    print(i)
