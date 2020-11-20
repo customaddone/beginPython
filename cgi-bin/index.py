@@ -49,282 +49,235 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# Mujin Programming Challenge 2017 A - Robot Racing
+# angle度のtan
+def tan(angle):
+    return math.tan(math.radians(angle))
 
-"""
-N体のロボット
-座標は全て異なり1 <= xi <= 10 ** 9 二分探索できる
-dpしたいけどxが大きいのでdpできない
-現在の座標から-1, -2のどちらかに進める　ダブルと他のを待たないといけない
-N体のロボットがゴールする順番は何通りありますか
-トポソか？
-トポソの通りは求められる
-どれがどれより先でないといけないかわかれば
+# 余弦定理
+A, B, H, M = 3, 4, 10, 40
+minu = H * 60 + M
 
-前からdpしていくのかな
-理想的な状態であればN!
+# 時針の角度
+angh = minu / 2
+# 分針の角度
+angm = M * 6
 
-ロボットiがjより先にゴールする条件
-1 2 3 の場合
-全部で3!
-1 2 3
-1 3 2
-2 1 3
-2 3 1
-3 1 2
-3 2 1 ある
-ただし3は1, 2より先にゴールできない
-  , i, , jの場合
-  , i, j,
- j, i,  ,でjはiより先に行ける
+# 角度の差
+anglepre = abs(angh - angm)
+angle = min(360 - anglepre, anglepre)
 
-  , i, j,  の状態にできればjはiを飛び越せる
-  , i, j, lの場合でも
- i,  , j, lとすればiの直後に隙間ができるので飛び越せる
-できない条件は
-a, b, c, i, j, lだとしても適当にa, bを動かしたら
- ,  ,  , i, j, l前に隙間ができるので動かせる
-iが2番目以降にあれば後ろの駒は飛び越せそうだけど
-jがiを飛び越せる→同じルートを通ってその後ろのkも飛び越せる
+# ラジアンに直してからmath.cosとかmath.tanとか
+ans = (A ** 2) + (B ** 2) - (2 * A * B * math.cos(math.radians(angle)))
 
-連なってる部分があると難しくなるみたい
-トポソではなさそう
+# 三角形の面積4.564257194330056
+print(math.sqrt(ans))
 
-8
-1 2 3 5 7 11 13 17 だと10080(8! // 4)
+# 二つの点を通る直線の方程式を求める
+# y = line[0]x + line[1]
+# 傾きmaxならx = line[3]
+def line(Ax, Ay, Bx, By):
+    if Ay == By:
+        return 0, Ay, None
+    if Ax == Bx:
+        return float("inf"), 0, Ax
+    a = (Ay - By) / (Ax - Bx)
+    b = Ay - a * Ax
+    return a, b, None
 
-iが一番最初にゴールできるか
-１番目にあるとできない では2番目は
-1, 2, 3, , 5, 6, 7　なら
- , 2, 3, , 5, 6, 7
-lim = 現在の場所 // 2個以下の駒があれば通過できる　偶数番目だとお得
-前に駒がplace[i] // 2個しかなければ1位通過できる
-つまり (i - (place[i] // 2)) + 1位通過できる
-1, 2, 3の場合
-2 1位通過はできる
-3 2位通過はできる
-前にある駒 - lim位通過はできる
-1, 2, 3, 4位の場合
- , 2, 3, 4 4は2位通過はできる
-1, 2, 3, 4, 5の場合
- , 2, 3, 4, 5 5は3位通過はできる
-1: (0 - (1 // 2)) + 1 = 1
-2: (1 - (2 // 2)) + 1 = 1
-3: (2 - (3 // 2)) + 1 = 2
-4: (3 - (4 // 2)) + 1 = 2
-5: (4 - (5 // 2)) + 1 = 3
+# (1.0, 2.0, None)
+p1 = line(0, 2, 1, 3)
+print(p1)
 
-更にi番目がn番目以降でしかゴールできないなら、それより後ろのjがn - 1番目でゴールできるわけない
-l[i] = max(l[i - 1], opt)
-1, 2, 3, 4, 5
-3が一つ遅延するので4, 5も遅延する
-4に影響するのは2 2は遅延しないが4自身が遅延するのでdp[2] + 1
-5は3が遅延するし5自身も遅延する
-前の駒は全て1, 3, 5...と配置する
-配置できない場合は+= 1
-"""
+# 点[p1, p2]を通り、傾きslopeの直線に直行する直線を求める
+def perp(p1, p2, slope):
+    if slope == 0:
+        return float('inf'), 0, p1
+    if slope > 10 ** 12:
+        return 0, p2, None
+    opt_slope = (1 / slope) * (-1)
+    opt_inter = p2 - (opt_slope * p1)
 
-N = getN()
-X = getList()
-l = [1] * N
-now = 0
-cnt = 1
+    return opt_slope, opt_inter, None
 
-for i in range(N):
-    l[i] = cnt
-    if X[i] < 2 * now + 1:
-        cnt += 1
+def distance(Ax, Ay, Bx, By):
+    return math.hypot(Ax - Bx, Ay - By)
+
+# (-1.0, 2.0, None)
+p2 = perp(0, 2, 1)
+print(p2)
+
+# 二つの線がクロスするx,y座標を出す
+def cross(l1, l2):
+    a1, b1, xx1 = min(l1, l2)
+    a2, b2, xx2 = max(l1, l2)
+    if a1 == a2:
+        return None
+    elif a2 == float("inf"):
+        x = xx2
     else:
-        now += 1
+        x = (b1 - b2) / (a2 - a1)
+    y = a1 * x + b1
+    return x, y
 
-power = [0] * (N + 1)
-for i in range(N):
-    power[l[i]] += 1
+# (0.0, 2.0)
+print(cross(p1, p2))
 
-# 最高位が決まっているときの順列の通りの求め方
-ans = 1
-acc = 0
-for i in range(N):
-    acc += power[i + 1]
-    ans *= acc
-    ans %= MOD
-    acc -= 1
+# 正方形の点を二つ入れると残りの点２つが出てくる
+def square(x1, y1, x2, y2):
+    nx_1 = x1 - (y1 - y2)
+    ny_1 = y1 + (x1 - x2)
+    nx_2 = x2 - (y1 - y2)
+    ny_2 = y2 + (x1 - x2)
 
-print(ans % MOD)
+    return [nx_1, ny_1, nx_2, ny_2]
 
-# ABC150 E - Change a Little Bit
+print(*square(1, 1, 2, 4))
+
+N, K = 4, 4
+query = [
+[1, 4],
+[3, 3],
+[6, 2],
+[8, 1]
+]
+
+# x軸, y軸を作る
+x_axis = set()
+y_axis = set()
+for i in query:
+    x_axis.add(i[0])
+    y_axis.add(i[1])
+x_axis = sorted(list(x_axis))
+y_axis = sorted(list(y_axis))
+
+# 経路圧縮
+dp = [[0] * len(x_axis) for i in range(len(y_axis))]
+for i in query:
+    x = x_axis.index(i[0])
+    y = y_axis.index(i[1])
+    dp[y][x] += 1
+
+dp_n = [[0] * len(x_axis) for i in range(len(y_axis))]
+
+# 累積和
+def bi_cumul_sum(dp_n, dp_bef, h, w):
+    # 縦１行目、横１行目
+    for i in range(h):
+        dp_n[i][0] = dp_bef[i][0]
+    for i in range(h):
+        for j in range(1, w):
+            dp_n[i][j] = dp_n[i][j - 1] + dp_bef[i][j]
+    # 全て
+    for i in range(1, h):
+        for j in range(w):
+            dp_n[i][j] += dp_n[i - 1][j]
+
+bi_cumul_sum(dp_n, dp, len(y_axis), len(x_axis))
+
+# 範囲内に含まれる点の数を計算する
+def judge(sx, ex, sy, ey, dp):
+    mother = dp[ey][ex]
+    minus1 = 0
+    minus2 = 0
+    plus = 0
+    if sx > 0:
+        minus1 = dp[ey][sx - 1]
+    if sy > 0:
+        minus2 = dp[sy - 1][ex]
+    if sx > 0 and sy > 0:
+        plus = dp[sy - 1][sx - 1]
+    return mother - minus1 - minus2 + plus
+
+ans = float('inf')
+for sy in range(len(y_axis)):
+    for ey in range(sy, len(y_axis)):
+        for sx in range(len(x_axis)):
+            for ex in range(sx, len(x_axis)):
+                if judge(sx, ex, sy, ey, dp_n) >= K:
+                    opt = (x_axis[ex] - x_axis[sx]) * (y_axis[ey] - y_axis[sy])
+                    ans = min(ans, opt)
+print(ans)
+
+# ABC151 F - Enclose All
 
 """
-数列S, Tがある　これは0と1からできている xor?
-Sを操作してTにする　そのコストがf(S, T)
-Ciをちゃんと見る
+点全てを内包する円の半径の最小値は
+二点間の距離の最大値　にはならない
 
-f(S, T)の求め方からわからない
-Dの数はだんだん減っていく
-Cのコストが小さいものから先に処理すればいい
-
-2
-5 8 の場合は
-S: 01 00 10 11 のそれぞれについてTはそれ以外
-なので4 * (4 - 1) = 12
-例えばS = 01 T = 10の時
-1番目から先に処理 2番目は後で処理でいい
-Ciの要素がn番目に小さくなる場合　とか求めるんだろ
-N <= 10 ** 5 数え上げか
-間違いが1つの時
-間違いが２つの時
-...
-間違いがn個の時
-
-間違いが1つの時
-5のみ 8のみ
-間違えた部分 1 0 or 0 1
-合ってる部分 それぞれについて 1 1 or 0 0
-2C1 * (2 ** 2) = 8
-
-間違えが2つの時
-5, 8
-間違えた部分 2 ** (間違えた個数2) = 4
-合ってる部分 2 ** (合ってる部分0) = 1
-2C2 * (2 ** 2) = 4
-それぞれの場合についてf(S, T)を求めるが
-Ciの要素がd番目に大きくなる場合　とは
-
-5
-52 67 72 25 79 の時、ソート
-
-[79, 72, 67, 52, 25]
-間違えるn個を選ぶ　それぞれについて2 ** Nする
-
-間違えが2つの時
-79が1番大きくなる通りは
-4C1 もう片方を決める = 4
-72が1番大きくなる通りは
-3C1
-67が1番大きくなる通りは
-2C1
-
-79が2番目に大きくなる通りは
-0C1 = 0
-72が2番目に大きくなる通りは
-1C1 = 1
-67が2番目に大きくなる通りは
-2C1 = 2
-
-間違えが2つの時については楽に求められる
-
-間違えが1 ~ n個の時
-79が1番大きくなる通りは
-間違えが1個の時　
-4C0 = 1
-間違えが2個の時　
-4C1 = 4
-間違えが3個の時
-4C2 = 6
-間違えが4個の時
-4C3 = 4
-間違えが5個の時
-4C4 = 1
-全部合わせると2 ** 4 = 16通り
-同様に72については
-2 ** (n - 1) = 8通り
-67については
-2 ** (n - 2) = 4通り
-
-79が2番目に大きくなる
-間違えが1個の時　
-0C0 = 0
-間違えが2個の時
-0C1 = 0
-間違えが3個の時
-0C1 * 4C1 = 0...
-
-72が2番目に大きくなる
-間違えが1個
-できない
-間違えが2個
-1C1 * 3C0 = 1
-間違えが3個
-1C1 * 3C1 = 3
-間違えが4個
-1C1 * 3C2 = 3
-間違えが5個
-1C1 * 3C3 = 1 2 ** (n - 1) = 8通り
-
-72が3番目に大きくなる
-できない
-
-67が1番目
-1 + 2 + 1 = 4
-67が2番目
-1 + 2 + 1 = 4
-67が3番目
-1 + 2 + 1 = 4
-通りの数が同じ
-
-5
-52 67 72 25 79 の時、
-全通りは2 ** 5 * (2 ** 5 - 1) = 992通りある
-判定については2 ** 5 - 1 = 31通りだけ見てればいい
-79は16
-72は8 8
-67は4 4 4
-52は2 2 2 2
-25は1 1 1 1 1
-は？
-組み合わせじゃなくbitで!!
-
-79が一番大きい 2 ** 4 = 16
-72が一番大きい 79は1固定 8通り
-72が２番目に大きい 79は0固定　8通り
-67が1番目に大きい 79, 72は0固定　4通り
-67が2番目に大きい 2C1 * 4 = 8
-67が3番目 4通り
-52 1 2
-2 3C1 * 2 = 6
-3 3C2 * 2 = 6
-
-79 1 * 16
-72 1 1 * 8
-67 1 2 1 * 4
-52 1 3 3 1 * 2
-25 1 4 6 4 1 * 1
-
-足し合わせしたい
-O(N)で
-
-i時点で既にn個まで数字が出ている場合
-4個目までで4個出ている
-
-0 * nC0 + 1 * nC1 +...+n * nCn = n * 2 ** n-1になる
-nCk = n / k * n-1Ck-1 より
-
-それぞれの個数は2 ** n + n * 2 ** n-1
-"""
+def dis(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    return math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
 
 N = getN()
-C = getList()
-C.sort(reverse = True)
-# powだと遅い
-two_table = [1]
-for i in range(2 * 10 ** 5 + 7):
-    two_table.append(two_table[-1] * 2)
-    two_table[-1] %= mod
+P = [getList() for i in range(N)]
 
 ans = 0
 for i in range(N):
-    opt = C[i]
-    if i == 0:
-        # powの第2引数にマイナスを使えない
-        opt *= (two_table[i] + i * two_table[0]) % mod
+    for j in range(N):
+        ans = max(ans, dis(P[i], P[j]))
+
+正三角形になったら当てはまらない
+重心か？
+
+3
+0 0
+0 1
+1 0 の時重心は0.33だが実際の答えは√2/2, √2/2
+二分探索したいなぁ
+
+半径rで全てを包めるか
+
+各点を中心に半径rの円を書く
+全ての円が共有する部分があればその範囲内の1点を中心に円を書けるので
+もっとrを小さくできる
+"""
+
+N = getN()
+P = [getList() for i in range(N)]
+
+def check(d):
+    eps = 1 / (10 ** 10)
+    points = []
+    for i in range(N):
+        for j in range(N):
+            if i == j:
+                continue
+            x1, y1 = P[i]
+            x2, y2 = P[j]
+
+            dif = (x1 - x2) ** 2 + (y1 - y2) ** 2
+            # 半径を超えてないか
+            if(dif > 4 * d ** 2):
+                return False
+
+            h = (d ** 2 - dif / 4) ** 0.5
+            xm, ym = (x1 + x2) / 2, (y1 + y2) / 2
+
+            dx,dy = (y1 - y2), -1 * (x1 - x2)
+            dxy = (dx ** 2 + dy ** 2) ** 0.5
+
+            points.append((xm + dx * h / dxy, ym + dy * h / dxy))
+            points.append((xm - dx * h / dxy, ym - dy * h / dxy))
+
+    for xp, yp in points:
+        for i in range(N):
+            xi, yi = P[i]
+            dif = (xp - xi) ** 2 + (yp - yi) ** 2
+            if(dif > d ** 2 + eps):
+                break
+        else:
+            return True
+
+    return False
+
+ok = 1000
+ng = 0
+for _ in range(50):
+    mid = (ok + ng) / 2
+    if(check(mid)):
+        ok = mid
     else:
-        opt *= (two_table[i] + i * two_table[i - 1]) % mod
-    opt %= mod
-    opt *= two_table[N - i - 1]
-    opt %= mod
+        ng = mid
 
-    ans += opt
-    ans %= mod
-
-ans *= two_table[N]
-print(ans % mod)
+print(ok)
