@@ -49,235 +49,366 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# angle度のtan
-def tan(angle):
-    return math.tan(math.radians(angle))
+# キーエンス プログラミング コンテスト 2019 D - Double Landscape
 
-# 余弦定理
-A, B, H, M = 3, 4, 10, 40
-minu = H * 60 + M
+"""
+1 ~ N * M の整数を書き込む
+i行目の数字の最大の数字はA
+j行目の数字の最大の数字はB
 
-# 時針の角度
-angh = minu / 2
-# 分針の角度
-angm = M * 6
+反転数の数を求める時は列ごと入れ替え、列内入れ替えを行った
+書き込みの個数を求めよ dpかcombo?
 
-# 角度の差
-anglepre = abs(angh - angm)
-angle = min(360 - anglepre, anglepre)
+条件の満たし方を考える
+まず条件を満たすものを一つ出す
+Aiがn　i行目にはnとn以下の数字しか書かれていない
 
-# ラジアンに直してからmath.cosとかmath.tanとか
-ans = (A ** 2) + (B ** 2) - (2 * A * B * math.cos(math.radians(angle)))
+AとB両方に登場するとは限らない
+ある数について指定の場所に置かないといけない
+あとは自由 comboで求める
+3 3
+5 9 7
+3 6 9
+  5 9 7
+3
+6
+9
 
-# 三角形の面積4.564257194330056
-print(math.sqrt(ans))
+9を置く
+  5 9 7
+3
+6
+9   9
+8を置く　置けない！
 
-# 二つの点を通る直線の方程式を求める
-# y = line[0]x + line[1]
-# 傾きmaxならx = line[3]
-def line(Ax, Ay, Bx, By):
-    if Ay == By:
-        return 0, Ay, None
-    if Ax == Bx:
-        return float("inf"), 0, Ax
-    a = (Ay - By) / (Ax - Bx)
-    b = Ay - a * Ax
-    return a, b, None
+二次元累積和？
+N * M ~ 1まで１つずつ数を置いていく
+iがAにある and Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+・置けるとこ
+1箇所　今回解放されるとこのクロス
 
-# (1.0, 2.0, None)
-p1 = line(0, 2, 1, 3)
-print(p1)
+iがAにある ^ Bにある
+・解放する部分
+今まで解放された部分と今回解放する部分の交わるとこ
+・置けるとこ
+今回解放されたとこのいずれかに置く
 
-# 点[p1, p2]を通り、傾きslopeの直線に直行する直線を求める
-def perp(p1, p2, slope):
-    if slope == 0:
-        return float('inf'), 0, p1
-    if slope > 10 ** 12:
-        return 0, p2, None
-    opt_slope = (1 / slope) * (-1)
-    opt_inter = p2 - (opt_slope * p1)
+A,Bにない
+現在解放されているマスのどこにでも置ける
+"""
 
-    return opt_slope, opt_inter, None
+N, M = getNM()
+A = set(getList())
+B = set(getList())
+if len(A) < N or len(B) < M: # A,B内で数字がダブってたら0
+    print(0)
+    exit()
 
-def distance(Ax, Ay, Bx, By):
-    return math.hypot(Ax - Bx, Ay - By)
+ans = 1
+opened = 0 # 解放されたマス
+a_allowed = 0 # 解放された行
+b_allowed = 0 # 解放された列
 
-# (-1.0, 2.0, None)
-p2 = perp(0, 2, 1)
-print(p2)
-
-# 二つの線がクロスするx,y座標を出す
-def cross(l1, l2):
-    a1, b1, xx1 = min(l1, l2)
-    a2, b2, xx2 = max(l1, l2)
-    if a1 == a2:
-        return None
-    elif a2 == float("inf"):
-        x = xx2
+for i in range(N * M, 0, -1):
+    if (i in A) and (i in B):
+        # 解放はできる
+        opened += (a_allowed + b_allowed) + 1 # 今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
+        a_allowed += 1
+        b_allowed += 1
+        opened -= 1 # 解放されたマスに置く
+        # ans *= 1 # 置けるのは1箇所　今回解放されるとこのクロス
+    elif (i in A):
+        opened += b_allowed # 解放する行 * 解放されている列
+        a_allowed += 1
+        ans *= b_allowed # 今回解放された行のいずれかに置く
+        opened -= 1
+    elif (i in B):
+        opened += a_allowed
+        b_allowed += 1
+        ans *= a_allowed
+        opened -= 1
     else:
-        x = (b1 - b2) / (a2 - a1)
-    y = a1 * x + b1
-    return x, y
+        ans *= opened # 解放されている部分のどこに置いても良い
+        opened -= 1
 
-# (0.0, 2.0)
-print(cross(p1, p2))
+    ans %= mod
 
-# 正方形の点を二つ入れると残りの点２つが出てくる
-def square(x1, y1, x2, y2):
-    nx_1 = x1 - (y1 - y2)
-    ny_1 = y1 + (x1 - x2)
-    nx_2 = x2 - (y1 - y2)
-    ny_2 = y2 + (x1 - x2)
-
-    return [nx_1, ny_1, nx_2, ny_2]
-
-print(*square(1, 1, 2, 4))
-
-N, K = 4, 4
-query = [
-[1, 4],
-[3, 3],
-[6, 2],
-[8, 1]
-]
-
-# x軸, y軸を作る
-x_axis = set()
-y_axis = set()
-for i in query:
-    x_axis.add(i[0])
-    y_axis.add(i[1])
-x_axis = sorted(list(x_axis))
-y_axis = sorted(list(y_axis))
-
-# 経路圧縮
-dp = [[0] * len(x_axis) for i in range(len(y_axis))]
-for i in query:
-    x = x_axis.index(i[0])
-    y = y_axis.index(i[1])
-    dp[y][x] += 1
-
-dp_n = [[0] * len(x_axis) for i in range(len(y_axis))]
-
-# 累積和
-def bi_cumul_sum(dp_n, dp_bef, h, w):
-    # 縦１行目、横１行目
-    for i in range(h):
-        dp_n[i][0] = dp_bef[i][0]
-    for i in range(h):
-        for j in range(1, w):
-            dp_n[i][j] = dp_n[i][j - 1] + dp_bef[i][j]
-    # 全て
-    for i in range(1, h):
-        for j in range(w):
-            dp_n[i][j] += dp_n[i - 1][j]
-
-bi_cumul_sum(dp_n, dp, len(y_axis), len(x_axis))
-
-# 範囲内に含まれる点の数を計算する
-def judge(sx, ex, sy, ey, dp):
-    mother = dp[ey][ex]
-    minus1 = 0
-    minus2 = 0
-    plus = 0
-    if sx > 0:
-        minus1 = dp[ey][sx - 1]
-    if sy > 0:
-        minus2 = dp[sy - 1][ex]
-    if sx > 0 and sy > 0:
-        plus = dp[sy - 1][sx - 1]
-    return mother - minus1 - minus2 + plus
-
-ans = float('inf')
-for sy in range(len(y_axis)):
-    for ey in range(sy, len(y_axis)):
-        for sx in range(len(x_axis)):
-            for ex in range(sx, len(x_axis)):
-                if judge(sx, ex, sy, ey, dp_n) >= K:
-                    opt = (x_axis[ex] - x_axis[sx]) * (y_axis[ey] - y_axis[sy])
-                    ans = min(ans, opt)
 print(ans)
 
-# ABC151 F - Enclose All
+# SoundHound Inc. Programming Contest 2018 -Masters Tournament- C - Ordinary Beauty
 
 """
-点全てを内包する円の半径の最小値は
-二点間の距離の最大値　にはならない
+差の絶対値がdであるものだけをピックアップ
+合計でn ** m通り
+期待値　通りの数は求めなくていい
+m - 1の内1 ~ m - 1箇所について
+1つめの数字 n通り
+2つめの数字 n通りあるが、この内条件を満たす通りは
+上向き　1つ目 1なら 1 + d
+　　　　 　　 2なら 2 + d...(n - d)通り
+            n - dなら n
+下向きも同様に (n - d)通り
+合計2 * (n - d)通り
+つまりm - 1のうちの一つの谷間が条件を満たす確率は
+2(n - d) / n ** 2
+あとは美しさが1, 2...m - 1のものを足し合わせるだけ
+comboすら必要ない？
 
-def dis(p1, p2):
-    x1, y1 = p1
-    x2, y2 = p2
-    return math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
+足し合わせで求められる
+1つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
+2つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
+1つ目が条件を満たす　と　2つ目が条件を満たす　は互いに独立
+n - dが0になることもそうすれば求める値は0
+またDが0なら上向き下向きではなく同じ値しか取れない
+"""
 
-N = getN()
-P = [getList() for i in range(N)]
+N, M, D = getNM()
+# (M - 1): 1 ~ M - 1まで足し合わせる
+# 2 * (N - D): 2 * (N - D)) / (N ** 2) * (n ** M）を(n ** M）で割って平均値を出す
+if D == 0:
+    print((M - 1) * (max(0, N - D)) / (N ** 2))
+else:
+    print((M - 1) * 2 * (max(0, N - D)) / (N ** 2))
+
+# AGC025 B - RGB Coloring
+
+"""
+数え上げcomboだろ
+rgbなのでbitもある
+
+ブロックが縦一列にあり、これを塗っていく
+赤色: A点
+緑色: A + B点
+青色: B点
+KはでかいがN, A, Bは小さい
+塗らないブロックがあってもいい　→ 塗らないブロックが1個、2個...N個の場合
+
+4 1 2 5 の場合
+緑色1つ、青色1つ 4 * 3
+赤色1つ、青色2つ 4 * 3
+赤色2つ、緑色1つ 4 * 3
+赤色3つ、青色1つ 4 * 1
+の40通り
+組み合わせを考えればいい
+
+赤を固定すると 各O(1)で
+赤0個, 赤1個, 赤2個...赤N個
+緑の個数を決めれば青の個数も定まる　これだとO(N ** 2)
+緑色: A + B点 が奇妙
+緑色: 赤と青を同時に塗ると考えれば
+A点加算されるブロックがi個(0 <= i <= N), B点加算されるブロックがj個
+A点が0個、1個...N個の場合を調べる
+4 1 2 5 の場合
+A点: 0個　なし
+A点: 1個(1点) B点は2個(4点)
+A点: 2個(2点) なし
+A点: 3個(3点) B点は1個(2点)
+A点: 4個(4点) なし
+
+A点に重ねて置いたB点（緑色になる）とそうでないB点は区別される
+
+数え上げの問題は包除原理使ってダブったのを捨てたり
+既に目標を達成した部分集合のcnt, まだ目標を達成してない部分集合とその達成度のcntを保持したり
+今回のように分解して解いたりできる
+"""
+
+N, A, B, K = getNM()
+ans = 0
+# A点が0個、1個...N個の場合を調べる
+for alpha in range(N + 1):
+    if (K - (A * alpha)) % B != 0:
+        continue
+    beta = (K - (A * alpha)) // B
+    ans += (cmb(N, alpha) * cmb(N, beta)) % mod
+    ans %= mod
+
+print(ans)
+
+# ABC127 E - Cell Distance
+
+"""
+全ての場合　＝　全ての通りの数をまず考える
+そのあと、ある事象が出現する確率を求める
+
+全ての通りは nmCk
+平均値の考え方　
+つまりO(N + M)の足し合わせみたいな
+ダブった奴は割ったり引いたりすればいい
+
+2 2 2なら
+4 * 3 // 2! = 6通り　順列分あとでわる
+nCr通りある
+この中でマスiとjが同時に出現する確率は　一定のはず
+iとjが同時に出現するのはn-2Ck-2通り
+iとjの選び方 nC2通り
+コストiになるペアがいくつあるか
+iとjのコスト * n-2Ck-2 をnC2通りやる
+nC2通りのうちいくつがコストi
+H - a * W - b コストa + b
+コストのとり方は最大でもN + M - 2数え上げ
+
+マンハッタン距離は上下と左右別々に求められる
+
+こういう問題でコストiを何回足したらいいかを考えるのは鉄則
+コストの規則性が分かりづらい　分けて考える
+コストiを何回足したらいいかは難しそう　マスiについてのコストの総和を求めればいい
+
+(1, 1)について
+横方向のマンハッタン距離
+距離1: 1 * H個
+距離2: 1 * H個...
+距離W - 1: 1 * H個
+つまり(1, 1)についてコストの合計はW(W - 1) // 2 * H * (n-2Ck-2)
+これを(1, 1) ~ (H, 1)までH回やる
+
+(1, 2)について
+距離1: 1 * H個
+距離2: 1 * H個...
+距離W - 2: 1 * H個
+(1, 2)についてコストの合計は(W - 1)(W - 2) // 2 * H * (n-2Ck-2)
+これを(1, 2) ~ (H, 2)までH回やる
+
+これを縦方向のマンハッタン距離でもやる
+
+巨大数のcmbをどうやる？
+n-2Ck-2
+"""
+
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+N, M, K = getNM()
 
 ans = 0
-for i in range(N):
-    for j in range(N):
-        ans = max(ans, dis(P[i], P[j]))
+for i in range(M - 1, 0, -1):
+    ans += i * (i + 1) * (N ** 2) // 2
+    ans %= mod
 
-正三角形になったら当てはまらない
-重心か？
+for i in range(N - 1, 0, -1):
+    ans += i * (i + 1) * (M ** 2) // 2
+    ans %= mod
 
-3
-0 0
-0 1
-1 0 の時重心は0.33だが実際の答えは√2/2, √2/2
-二分探索したいなぁ
+print(ans * cmb(N * M - 2, K - 2) % mod)
 
-半径rで全てを包めるか
+# ABC168 E - ∙ (Bullet)
 
-各点を中心に半径rの円を書く
-全ての円が共有する部分があればその範囲内の1点を中心に円を書けるので
-もっとrを小さくできる
+"""
+美味しさA 香りB
+一匹以上を入れる通りの数
+そのままだと通りの数は2 ** N通り
+ただし、かけ合わせると0になるものは一緒に入れられない
+全て - NGの組み合わせを含むものもできる
+
+Ai * Aj = -1 * Bi * Bj になるとだめ
+マイナス逆数になるとだめ
+M = defaultdict(int)
+O = defaultdict(int)
+
+for a, b in I:
+    split = math.gcd(abs(a), abs(b))
+    M[(a // split), (b // split)] += 1
+    O[(a // split), (b // split)] += 1
+
+for a, b in I:
+    print(a, b)
+    print(O[(-b, a)], O[(b, -a)])
+個数でもつ
+dictで持てるんでは
+
+一緒にできないペアはわかった
+
+1番目までを使い、1番目を含む通り 2 ** 0 = 1通り
+2番目までを使い、2番目を含む通り 2 ** 1 = 2 通り
+3番目までを使い、3番目を含む通り 1は一緒に使えないので0(使わない)固定
+2 ** (2 - 1) = 2通り
+
+これまでに弾かれた通りを保持しておく
+10
+3 2
+3 2
+-1 1
+2 -1
+-3 -9
+-8 12
+7 7
+8 1
+8 2
+8 4
+
+-8 12 が存在する通り 2 ** 5 = 32通り
+そのうち32は登場しないようにするため2 ** (5 - 2) = 8通りのみ
+3 2登場 1通り
+3 2登場 前の3 2がある通り1通り + 無い通り1通り = 2通り
+
+どちらかが0の場合がある
+
+グループ組み合わせ掛け算
+(2, 1)と(-1, 2)は同時に選べないのでペアにする
+この時、(-1, 2)と(1, -2)は同値として扱う(1, 2, マイナス)とでもしとく
 """
 
 N = getN()
-P = [getList() for i in range(N)]
 
-def check(d):
-    eps = 1 / (10 ** 10)
-    points = []
-    for i in range(N):
-        for j in range(N):
-            if i == j:
-                continue
-            x1, y1 = P[i]
-            x2, y2 = P[j]
+d = defaultdict(int)
+z = 0
+for _ in range(N):
+    a, b = getNM()
+    if a == 0 and b == 0: # 後で足す
+        z += 1
+        continue
+    # a == 0の場合は(0, 1)で登録
+    if a == 0:
+        b = 1
+    if b == 0:
+        a = 1
+    if b < 0: # 強制的にbがプラスになるように
+        a, b = -a, -b
+    g = math.gcd(a, b)
+    a //= g
+    b //= g
+    d[(a, b)] += 1
 
-            dif = (x1 - x2) ** 2 + (y1 - y2) ** 2
-            # 半径を超えてないか
-            if(dif > 4 * d ** 2):
-                return False
+res = 1
+seen = set()
+for k in list(d):
+    a, b = k
+    if k in seen:
+        continue
 
-            h = (d ** 2 - dif / 4) ** 0.5
-            xm, ym = (x1 + x2) / 2, (y1 + y2) / 2
-
-            dx,dy = (y1 - y2), -1 * (x1 - x2)
-            dxy = (dx ** 2 + dy ** 2) ** 0.5
-
-            points.append((xm + dx * h / dxy, ym + dy * h / dxy))
-            points.append((xm - dx * h / dxy, ym - dy * h / dxy))
-
-    for xp, yp in points:
-        for i in range(N):
-            xi, yi = P[i]
-            dif = (xp - xi) ** 2 + (yp - yi) ** 2
-            if(dif > d ** 2 + eps):
-                break
-        else:
-            return True
-
-    return False
-
-ok = 1000
-ng = 0
-for _ in range(50):
-    mid = (ok + ng) / 2
-    if(check(mid)):
-        ok = mid
+    # 掛けると0になる相手を作る
+    if a < 0:
+        x, y = b, -a
     else:
-        ng = mid
+        x, y = -b, a
+    if a == 0:
+        x, y = 1, 0
+    if b == 0:
+        x, y = 0, 1
 
-print(ok)
+    # 計算
+    res *= pow(2, d[(a, b)], mod) + pow(2, d[(x, y)], mod) - 1
+    res %= mod
+    # print(res)
+    seen.add(k)
+    seen.add((x,y))
+
+res += z
+res -= 1
+
+print(res % mod)
