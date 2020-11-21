@@ -49,167 +49,76 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# 包除原理
-N = 100
-M = 3
-A = [2, 3, 8]
-A.sort(reverse = True)
-minus = [0] * (N + 1)
-
-ans = 0
-# (A & B & C)の個数について調べる
-# → A & Bの個数を計算したものから (A & B & C)の個数を引く
-for bit in range((1 << M) - 1, 0, -1):
-    prim = 1
-    for j in range(M):
-        if bit & (1 << j):
-            prim = prim // math.gcd(prim, A[j]) * A[j] # lcmの計算
-    mi = N // prim
-    for i in range(prim, N, prim):
-        mi -= minus[i]
-    if minus[prim] == 0:
-        minus[prim] = mi
-    ans += mi
-print(ans)
-
-# ABC162 E - Sum of gcd of Tuples (Hard)
-N,K = getNM()
-ans = 0
-rec = [0] * (K + 1)
-
 """
-集合A, B, Cについて
-A ⊆ B　かつ B ⊆ Cとすると
-集合が小さい順から数えて行って
-Bを数える時にB -= A
-Cを数える時にC -= Aすればダブらない
-"""
+N <= 10 ** 15
+kを決める
+k * (k + 1) // 2がNの倍数になるもののうち、最小のkを求めよ
+N = 11の時
+合計値11 だめ
+合計値22 だめ...
+合計値55 10 * 11 // 2 = 55 ok
 
-for X in range(K, 0, -1):
-    rec[X] = pow(K // X, N, mod)
-    for i in range(2, K // X + 1):
-        rec[X] -= rec[i * X] % mod
-    ans += (X * rec[X]) % mod
-print(ans % mod)
+2 * N * p = k * (k + 1)となるkがあるようなpを求めたい
+N = 12 = 2 * 2 * 3の時
+p = 1とすると
+k候補の2の個数 0個か1個か2個
+k候補の2の個数 0個か1個
 
-# ABC152 F - Tree and Constraints
+適当に数字を掛け合わせて隣り合う数字になるものを作りたい
+1 と 12
+2 と 6
+4 と 3
+3 と 4
+12 と 1
+これをp側でもやる
 
-"""
-Nが非常に小さい
-木の問題
-Mの制約的にbitでもいける
-小さい例から考えてみよう
-M個の制約を全て満たすもの
-3
-1 2
-2 3
-1
-1 3
+因数分解する　かけ合わせる　間に合わない
 
-bit dpか
-u ~ vのパスを真っ白にするにはどこが白ならいいか
-5
-1 2
-3 2
-3 4
-5 3
-3
-1 3
-2 4
-2 5 の時
+int = math.sqrt(2 * N * p)とするとint = kになりうるか
+N以下の全ての整数で試すのは無理
 
-1 ~ 3: [0, 1, 2]
-2 ~ 4: [1, 2, 3]
-2 ~ 5: [1, 2, 4]
-1 ~ 3のパスが条件を満たす = 0, 1, 2のどれかが黒
-0, 1, 2が白なら1 ~ 3は条件を満たさない
-
-これをbitする bit dpだろ
-M個のうちどれか一つでも違反するものがあれば
-1 ~ 3に違反: 4, 5free 00011, [00010], [00001], [00000]
-2 ~ 4に違反: 1, 5free 10001, [10000], 00001, [00000]
-2 ~ 5に違反: 1, 4free 10010, 10000, 00010, 00000
-2 ~ 4かつ2 ~ 5 10000, 00000
-ダブったのは捨てる
-
-集合{A1, A2...}で作る部分集合は過去の要素による部分集合とダブってないか
-奇数段の集合でできてるところは引く
-偶数段の集合でできてるところは足す
+22 * p = k * (k + 1)
+k * (k + 1) を2 * Nで割れるか
+k * (k + 1)は2と(Nの因数)を約数に持つか
+隣り合う整数は互いに素なので
+奇数と偶数 + 奇数混合に分ける
+奇数の因数のうち何個が混合の方に行くか
 """
 
-N = getN()
-dist = [[] for i in range(N)]
-dist_id = {}
-cnt = 0
-for i in range(N - 1):
-    a, b = getNM()
-    dist_id[(min(a - 1, b - 1), max(a - 1, b - 1))] = cnt
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-    cnt += 1
+def CRT(b1, m1, b2, m2):
+    def extGcd(a, b):
+        if a == 0:
+            return b, 0, 1
+        g, y, x = extGcd(b % a, a)
+        return g, x - (b // a) * y, y
 
-M = getN()
-Q = [getList() for i in range(M)]
+    d, p, q = extGcd(m1, m2)
+    if (b2 - b1) % d != 0:
+        return 0, -1
+    m = m1 * (m2 // d)
+    tmp = (b2 - b1) // d * p % (m2 // d)
+    r = (b1 + m1 * tmp) % m
+    return r, m
 
-def router(n, sta, end):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    path[sta] = -1
 
-    while pos[0] != end:
-        u = pos.popleft()
-        ignore[u] = 1
+def make_divisors(n):
+    divisors = []
+    for i in range(1, int(pow(n, 0.5)) + 1):
+        if n % i == 0:
+            divisors.append(i)
+            if i != n // i:
+                divisors.append(n // i)
+    divisors.sort()
+    return divisors
 
-        for i in dist[u]:
-            if ignore[i] != 1:
-                path[i] = u
-                pos.append(i)
+# CRTする
 
-    route = deque([end])
-    while True:
-        next = path[route[0]]
-        route.appendleft(next)
-        if route[0] == sta:
-            break
-
-    path = []
-    for i in range(len(route) - 1):
-        a = route[i]
-        b = route[i + 1]
-        if b < a:
-            a, b = b, a
-        path.append(dist_id[(a, b)])
-    return path
-
-opt = []
-origin = set()
-for i in range(cnt):
-    origin.add(i)
-
-for u, v in Q:
-    opt.append(origin ^ set(sorted(router(N, u - 1, v - 1))))
-
-# ABC162 E - Sum of gcd of Tuples (Hard)と違うところ
-# 集合Aがどの集合内に含まれるかすぐにわからないこと((2 ** M) ** 2かかる)
-
-# パスの本数はN - 1本
-S = [[] for i in range(M)]
-ans = 0
-for o in opt:
-    res = 2 ** len(o) # 初期値
-    # ダブった分を消していく
-    for i in range(M - 1, -1, -1):
-        for j in S[i]:
-            # 奇数回重なるところについては引く
-            if i % 2 == 0: # 引く
-                res -= 2 ** len(j & o)
-            # 偶数回重なるところは足す
-            else: # 足す
-                res += 2 ** len(j & o)
-            S[i + 1].append(j & o)
-
-    S[0].append(o)
-    ans += res
-
-print(2 ** (N - 1) - ans)
+n = getN()
+div = make_divisors(2 * n)
+res = float('inf')
+for x in div:
+    y = 2 * n // x
+    k = CRT(0, x, -1, y)
+    if k[0] != 0:
+        res = min(res, k[0])
+print(res)
