@@ -49,62 +49,140 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-# F - Knapsack for All Segments 
+# 集合[a1, a2...an]内で以下２つの条件を満たす部分集合の組(T, U)はいくつあるか問題
+# 1: U ⊆ Tである
+# 2: Uがある条件を満たす
+
+# Tの中にUがいくつか含まれる
+# ①iが進むごとにTの候補がn倍ずつ増えていく
+# ②その後、Uを組むためのカウントを進める
+
+ABC104 D - We Love ABC
+S = '????C?????B??????A???????'
+N = len(S)
+# dp[i][j]: i番目にjまで丸をつけ終えている通り
+dp = [[0] * 4 for _ in range(N + 1)]
+dp[0][0] = 1
+for i in range(N):
+    # 通りの数を増やす
+    for j in range(4):
+        if S[i] != '?':
+            dp[i + 1][j] += dp[i][j]
+            dp[i + 1][j] %= mod
+        else:
+            dp[i + 1][j] += 3 * dp[i][j]
+            dp[i + 1][j] %= mod
+
+    # カウントが進むものを加える
+    if S[i] == 'A' or S[i] == '?':
+        dp[i + 1][1] += dp[i][0]
+        dp[i + 1][1] %= mod
+    if S[i] == 'B' or S[i] == '?':
+        dp[i + 1][2] += dp[i][1]
+        dp[i + 1][2] %= mod
+    if S[i] == 'C' or S[i] == '?':
+        dp[i + 1][3] += dp[i][2]
+        dp[i + 1][3] %= mod
+print(dp[N][3] % mod)
+
+# F - Knapsack for All Segments
+
 """
-11111 P = 20 の場合
+尺取りしそうで
+要素分解する
+成立したらあとは単純にかけていくやつ
 
-11111 - 11 = 11100
-実際には111は20で割れないけど、
-[0, 1, 11, 11, 11, 11]
-11111を20で割った余りが11
-11を20で割った余りが11
-11100 = 111 * 100
-111は20で割れないけど、100が20で割れるので11100の余りが0になる
-100と20の効果を打ち消したい
-1[0000] * pw[4]
-1[000] * pw[3]
-1[00] * pw[2]
-1[0] * pw[1]
-1 * pw[0]
+成立したとこ: 左に伸ばす通り * 右に伸ばす通り
+l = 0
+total = 0
+for r in range(N):
+    total += A[r]
+    while total > S:
+        total -= A[l]
+        l += 1
+    if total == S:
+        print(l, r)
+N <= 3000?
+連続部分和ではないのでナップサック
+3 4
+2 2 4
+0:[1, 0, 0, 0, 0]
+1: 足し合わせる[1, 0, 1, 0, 0]
+ : 足し合わせない[1, 0, 1, 0, 0]
+2: 足し合わせる[1, 0, 2, 0, 1]
 
-1 * pw[4 - 2]
-1 * pw[3 - 2]
-1 * pw[2 - 2] の計算
+前からi個までの要素で作った連続部分列の数N(N + 1)//2
+f(none)[0]: 1
+f(1, 1)[0]: 1 2を足さない
+f(1, 1)[2]: 1 2を足す
 
-Pは素数 2とか5の場合もある
-それだけ場合分け
+2つめの2を考える
+f(none)[0] + [2] = f(2, 2)
+f(2, 2)[0]: 1 2を足さない
+f(2, 2)[2]: 1 2を足す
 
-4 2
-1111 の時　答えは0
-右端が偶数かどうか
+f(1, 1)[0] + [2] = f(1, 2)
+f(1, 2)[0]: 1 2を足さない
+f(1, 2)[2]: 1 2を足す
 
-4 5
-1111 の時　答えは0
-右端が0か5か
+f(1, 1)[2]: 1 2を足さない
+f(1, 2)[4]: 1 2を足す
+
+耳dpする
+0: まだ領域に入っていない
+1: 領域に入った
+2: 領域から出た
 """
 
-N, P = getNM()
-C = input()[::-1]
+N, S = getNM()
+A = getList()
+MOD = 998244353
 
-if P == 2:
-    ans = 0
-    for i in range(N):
-        if int(C[i]) % 2 == 0:
-            ans += N - i
-    print(ans)
+prev = [[0] * (S + 1) for j in range(3)]
+prev[0][0] = 1
 
-elif P == 5:
-    ans = 0
-    for i in range(N):
-        if int(C[i]) == 0 or int(C[i]) == 5:
-            ans += N - i
-    print(ans)
+for a in A:
+    next = [[0] * (S + 1) for j in range(3)]
 
-else:
-    mod = [0]
-    pw = 1 # 10 ** iをPで割った時の余り
-    for c in C:
-        mod.append((int(c) * pw + mod[-1]) % P)
-        pw = pw * 10 % P # 10 ** iをPで割った時の余りから10 ** (i + 1)をPで割った時の余りを求める
+    for j in range(S, -1, -1):
+        # 足し合わせない場合
+        next[0][j] += prev[0][j] # 1のみ
+        next[0][j] %= MOD
 
-    print(sum(v * (v - 1) // 2 for v in Counter(mod).values()))
+        # 状態変化する
+        next[1][j] += prev[0][j] + prev[1][j] # 既に侵入している通り + まだ侵入してない
+        next[1][j] %= MOD
+
+        # 足し合わせる場合
+        if j - a >= 0:
+            next[1][j] += prev[0][j - a] + prev[1][j - a]
+            next[1][j] %= MOD
+
+        # 状態変化する
+        next[2][j] += prev[1][j] + prev[2][j]
+        next[2][j] %= MOD
+
+    prev = next
+
+print((prev[1][-1] + prev[2][-1]) % MOD)
+
+
+# ABC169 F - Knapsack for All Subsets
+N, S = getNM()
+A = getList()
+MOD = 998244353
+
+dp = [[0] * (S + 1) for i in range(N + 1)]
+dp[0][0] = 1
+
+for i in range(N):
+    # 通りの数を増やす
+    for j in range(S + 1):
+        dp[i + 1][j] += dp[i][j] * 2
+        dp[i + 1][j] %= MOD
+    # カウントが進むものを加える
+    for j in range(S + 1):
+        if j - A[i] >= 0:
+            dp[i + 1][j] += dp[i][j - A[i]]
+            dp[i + 1][j] %= MOD
+print(dp[N][S] % MOD)
