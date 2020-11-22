@@ -18,12 +18,43 @@ mod = 10 ** 9 + 7
 #############
 
 """
-連結無向グラフ
-多重辺はあるかも 1 - 2 1 - 2 みたいな
-良い書き込みかたがあるかどうか
+Nちいさ　半分全列挙すらできる
+ナップサックでいいじゃ
+枝借りする
+relistの部分
 
-それぞれの頂点に整数を書き込む 同じ数字でもいい
-辺の両端に書かれた整数をx、yとするとx, yのどちらか一方のみがcと一致しないと辺が落ちる
-連結でいられるか
-連結である条件
+ソートがなければ
 """
+
+N, T = getNM()
+A = getList()
+
+# ソートでNlogN
+def relist(array):
+    fore_list = []
+    for bit in range(1 << len(array)):
+        time = 0
+        for i in range(1 << len(array)):
+            if bit & (1 << i):
+                time += array[i]
+        if time <= T:
+            fore_list.append(time)
+    fore_list.sort()
+
+    return fore_list
+
+F = relist(A[:N // 2])
+B = relist(A[N // 2:])
+
+ans = 0
+# NlogN
+r = 0
+for f in F:
+    if f > T:
+        break
+    index = bisect_right(B, T - f)
+    if index > 0:
+        opt = f + B[index - 1]
+        ans = max(ans, opt)
+
+print(ans)
