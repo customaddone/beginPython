@@ -51,223 +51,236 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N, K = 7, 6
-S = [4, 3, 1, 1, 2, 10, 2]
-
-# 左を伸ばしていく
-# その部分列に含まれる全ての要素の値の積は「K以下」である。
-# lはrをオーバーすることもある
-
-if 0 in S:
-    print(N)
-    exit()
-else:
-    l, ans, total = 0, 0, 1
-    for r in range(N):
-        total *= S[r]
-        while total > K and l <= r:
-            total //= S[l]
-            l += 1
-        ans = max(ans, r - l + 1)
-print(ans)
-
-# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
-N, K = 4, 10
-A = [6, 1, 2, 7]
-
-left = 0
-total = 0
-ans = 0
-
-for right in range(0, N):
-    total += A[right]
-    while total >= K:
-        ans += N - right
-        total -= A[left]
-        left += 1
-print(ans)
-
-N = 10
-S = 15
-A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
-right = 0
-total = 0
-ans = 0
-# S以上を求める場合にはこの形で
-for left in range(N):
-    while right < N and total < S:
-        total += A[right]
-        right += 1
-    if total < S:
-        break
-    if left == right:
-        right += 1
-    total -= A[left]
-
-# 要素の種類についての問題
-# 全ての要素を含む
-P = 5
-A = [1, 8, 8, 8, 1]
-dict = {}
-for i in A:
-    dict[i] = 0
-# 要素の種類数
-V = len(dict.items())
-
-# 事象の数をカウント
-cnt = 0
-right = 0
-# １つ目から全ての事象をカバーするまでrightを進める
-while right < P:
-    if dict[A[right]] == 0:
-        cnt += 1
-    dict[A[right]] += 1
-
-    if cnt == len(dict.items()):
-        break
-
-    right += 1
-print(l, r)
-
-l = 0
-# 右を一つ進めて左をできる限り進める
-for r in range(right + 1, P):
-    # 新しく一つ加える
-    dict[A[r]] += 1
-    while True:
-        # もし要素が一つしか無かったら削れない
-        if dict[A[l]] == 1:
-            break
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
-
-# 各要素にダブりがない範囲
-N = 6
-A = [1, 2, 2, 3, 4, 4]
-
-dict = defaultdict(int)
-l = 0
-for r in range(N):
-    while dict[A[r]] == 1:
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
-    dict[A[r]] += 1
-
-# ARC022 B - 細長いお菓子
-N = getN()
-A = [i - 1 for i in getList()]
-
-r = 0
-kind = [0] * (10 ** 5 + 7) # 常に1種類につき一つに限られるよう
-ans = 0
-for l in range(N):
-    # 半開区間で持つ方がいい
-    while r < N and kind[A[r]] == 0:
-        kind[A[r]] += 1
-        r += 1
-    ans = max(ans, r - l)
-    kind[A[l]] -= 1
-
-print(ans)
-
-N = 4
-A = 2, 5, 4, 6
-
-r, tmp = 0, 0
-# l:左端
-cnt = 0
-# 一つオーバーさせる
-for l in range(N):
-    while r < N and tmp ^ A[r] == tmp + A[r]:
-        # 右端を伸ばす
-        tmp += A[r]
-        r += 1
-    # 計算
-    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
-    # (r - l + 1) - 1
-    cnt += r - l
-
-    if l == r:
-        r += 1
-    tmp -= A[l]
-print(cnt)
-
-N, K = 10, 4
-A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
-
-right, ans = 0, 0
-for left in range(N):
-    # 単調増加するとこまでもしくは長さKになるまで
-    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
-        right += 1
-    # もし長さKまで伸ばせたらans += 1
-    if right - left == K - 1:
-        ans += 1
-    # 前に進めないならright += 1
-    if left == right and right < N:
-        right += 1
-print(ans)
-
-# 第5回 ドワンゴからの挑戦状 予選 C - k-DMC
+# エイシング プログラミング コンテスト 2019 D - Nearest Card Game
 
 """
-Q <= 75?
-文字列 dpか
-k-DMCを求めよ
-整数の組の個数 dp or combo
-D, M, Cの順で並んでおり、文字の長さがk以下である
-文字の長さを伸ばしていく
-k = 1, 2... Qについて k - DMC数の数は？
-累積の数を求める
+つまりnim
+青木君がXiを指定する
+高橋くん→青木くんの順番でAから数字を取っていく
+高橋くん: 最も大きい数字を取る
+青木くん: Xに最も近い数字を取る　複数あれば小さい方
+カードがなくなれば終了　
+各Xについて高橋くんが取るカードの合計を求めよ
+O(1)でやる　テーブルで累積和とかなんかを前処理してO(1)で参照する
+Nが偶数: 高橋くんはN // 2枚のカードを取る
+Nが奇数: 高橋くんはN // 2 + 1枚のカードを取る
 
-長さがiのものをレコードしていく
-文字の長さはaとcのみに依存する
+Xが変化するごとに取るカードがどのように変化するか
+5 5
+3 5 7 11 13
+X = 1の時、近いカードは順に3, 5, 7, 11, 13
+つまり高橋くんは13, 11, 7を取る
+X = 4の時、近いカードは順に3, 5, 7, 11, 13
+X = 9の時、近いカードは順に7, 11, 5, 13, 3
+X = 10の時             11,  7,13,  5, 3
 
-A = []
-B = []
-C = []
+X = 10の場合　7,  5, 3...
+            11, 13...
+高橋くんの取るカードは    13, 11, 7,  5, 3
+7と5がスキップされるので、13 + 11 + 3 = 27
+高橋くん、青木くんの取る順番がわかれば得点をO(1)でもとめれればいいのだが
+13, 11, 7, 5, 3
+7, 11, 5, 13, 3 互いにスキップされ合う
+高橋くんがiを取るスピードが青木くんより早い、もしくは同じなら取得できる
+そうでなければ青木くんが取得する
+X = 23の場合
+高橋: 13, 11, 7, 5, 3
+青木: 13, 11, 7, 5, 3
+13 + 7 + 3で23 これを各O(1)で求めたいが
+累積和しそうだ
+NlogNまでならいける　各XiについてlogNで
+青木くんが取る順番は求めなくていい？
+高橋くんが取れるどうかだけ？
+X = 4からの距離
+1, 1, 3, 7, 9: 3 5 7 11 13
+X = 5
+2, 0, 2, 6, 8: 5 3 7 11 13
+X = 6
+3, 1, 1, 5, 7: 5 7 3 11 13
+X = 7
+4, 2, 0, 4, 6: 7 5 3 11 13
+X = 8
+5, 3, 1, 3, 5: 7 5 11 3 13
+X = 9
+6, 4, 2, 2, 4: 7 11 5 13 3
+スワップしていく？
+
+X = 1の時
+3, 5, 7, 11, 13
+X = 4の時
+5, 7, 11, 13
+3
+X = 9の時
+11, 13
+7, 5, 3
+Xiから近い順とA[-1]から近い順
+3 5 7 11 13
+     10  13
+bisect_rightでXiでのスタート地点は求められる
+Xi-1の時と何が違うか
+
+A1, A3...の合計とA2, A4...の合計を求める
+Aは[(高橋と青木が交互に取るゾーン), (青木が取るゾーン), (高橋が取るゾーン)]になる
+その境界を求める
+"""
+
+N, Q = getNM()
+A = getList()
+X = getArray(Q)
+
+csum = [0]
 for i in range(N):
-    if S[i] == 'D':
-        A.append(i)
-    if S[i] == 'M':
-        B.append(i)
-    if S[i] == 'C':
-        C.append(i)
-これだとO(N ** 2)
+    csum.append(csum[-1] + A[i])
+csum_even = [0]
+for i in range(0, N, 2):
+    csum_even.append(csum_even[-1] + A[i])
+csum_odd = [0]
+for i in range(1, N, 2):
+    csum_odd.append(csum_odd[-1] + A[i])
 
-a ~ c間にあるbの個数を累積和で求める
-あるaについて対応するcが何個あるかは二分探索で求められる
-間のbについては0 ~ cまで - 0 ~ aまで
+#t回でX以下のAのみとなってしまうような最小のtを求める。
+def calc_t(X):
+    ok = -1
+    ng = N + 1
+    while ng - ok > 1:
+        mid = (ok + ng) // 2
+        aoki = mid // 2
+        taka = mid - aoki
+        aoki_max = A[-taka]
+        aoki_min_index = bisect_left(A, 2 * X - aoki_max)
+        if N - taka - aoki_min_index < aoki:
+            ng = mid
+        else:
+            ok = mid
 
-二重累積和 + 計算量logNの改善
-累積二分探索は尺取り法使える
+    return ok
+
+for x in X:
+    t = calc_t(x)
+    s = csum[N] - csum[N - (t + 1) // 2]
+
+    if N % 2 == 0:
+        s += csum_odd[(N - t) // 2]
+    else:
+        s += csum_even[(N - t + 1) // 2]
+    print(s)
+
+# CODE FESTIVAL 2015 予選A D - 壊れた電車
+
+"""
+N両編成 M人の整備士
+隣に行くのに1分かかる
+全ての車両を周回するのにかかる時間は
+
+それぞれについて境界値を求める問題
+一方通行するのとジグザグに行くの２パターンある
+二分探索したい k分でどこまで周回できるか
+振った方が有利なのか
+
+出来る限り右の車両を点検する
+絶対にこの人にしか周回できない場所を考える
+絶対に誰にもいけない左端があればout
 """
 
+N, M = getNM()
+X = getArray(M)
+
+def judge(x):
+    now = 0
+    for i in range(M): # 2 ~ N番目の人について
+        # now + 1番目を点検しないといけない
+        # 左側にいくつ進まないといけないか
+        want = max(0, X[i] - (now + 1)) # そこまで行かないといけない
+        if want > x: # 時間が足りない場合False
+            return False
+        else:
+            # 左行って右行くか、右行って左行くかどちらか大きい方
+            now = max(now, X[i], X[i] + max(x - 2 * want, (x - want) // 2))
+
+    return now >= N # 最後まで整備できたか
+
+ok = 2 * (10 ** 9 + 7)
+ng = -1 # 0回の周回でいい場合もある
+
+while ok - ng > 1:
+    mid = (ok + ng) // 2
+
+    if judge(mid):
+        ok = mid
+    else:
+        ng = mid
+
+print(ok)
+
+# 京都大学プログラミングコンテスト 2020 E - Sequence Partitioning
+
+"""
+Aをいくつかの部分列に分割する　幾つでもいい
+選んだ区間dのスコアは(区間内におけるbの最初の値) + (区間内におけるcの最後の値) + (区間内のaの総和)
+D = {d1, d2...}の最小値を最大化せよ
+
+N <= 10 ** 5
+dpする？
+区間をi個に分割する　を探索する？
+
+まずは全探索、貪欲で考える
+Aのみの最小値の最大化は？
+1 2 3 とかの場合は1つにまとめる
+-3 1 2 3の場合も一つにまとめる
+
+-3 -2 -1 とかの場合は分解する
+-3 -2 -1 7 の場合はそのまま　合計がプラスになるならひとまとまりの方がいい
+
+dp[i]: iまでで区切った時、ここまで分割した時の最小値
+dp[i] = min(dp[i - 1] + D[i-1:i], dp[i - 2] + D[i-2:i]...)
+これまでのdpの最小値だけならセグ木でいいがDが...
+更新できるものだけでいい
+
+小さすぎる数が出てくる　それは見なくていい
+dp[i]が小さかったら新しい区間の数が何であろうと関係なくdp[i]の数字がopt
+なので新しい数字を引っ張ってくるとしても0からor今までで一番大きいdpがあるindexからのみ
+
+dp + 二分探索で求める x以上にすることができるか
+"""
+
+def f(x):
+    p = B[0] # C[-1]に接続するpを決める
+    for i in range(1, N):
+        # p + C[i] >= xならp ~ iまで繋げる
+        # つなげる場合は一番大きなB[i]をpにする
+        # pの候補は ①Cに繋いだ時にxを超えるか（緩く）
+        # 　　　　　②その中でも一番大きなB[i](こだわる)
+        if p + C[i] >= x and p < B[i]:
+            p = B[i]
+    if p + C[-1] >= x:
+        return True
+    else:
+        return False
+
 N = getN()
-S = list(input())
-Q = getN()
-K = getList()
+A = [0] + getList()
+B = getList()
+C = [0] + getList()
 
-for k in K:
-    ans = 0
-    d_cnt = 0 # dの数
-    m_cnt = 0 # mの数
-    dm_cnt = 0 # dとmの組み合わせの数
-    for i in range(N):
-        # 上限超えたので捨てる
-        if i - k >= 0:
-            if S[i - k] == "D":
-                d_cnt -= 1 # dを一つ捨て
-                dm_cnt -= m_cnt # 捨てたdはmを現在ホールドしてる個数持っているので（dが左端にあるから）
-            elif S[i - k] == "M":
-                m_cnt -= 1 # mを捨てる
+for i in range(N):
+    A[i + 1] += A[i]
 
-        if S[i] == "D":
-            d_cnt += 1
-        elif S[i] == "M":
-            m_cnt += 1
-            dm_cnt += d_cnt # 現在のd * 新しく入ったm(1つ)
-        elif S[i] == "C":
-            ans += dm_cnt # dm_cntの数 * 新しく入ったc(1つ)
+# p + C[-1]するときにいい感じに累積が取れる
+# A[r] - A[l - 1]がしたいので、Bは右に一つずらす
+for i in range(N):
+    B[i] -= A[i]
+
+for i in range(N + 1):
+    C[i] += A[i]
+
+ok = -1
+ng = 2 * 10 ** 20
+
+while abs(ng - ok) > 1:
+    m = (ok + ng) // 2
+    if f(m - 10 ** 20):
+        ok = m
+    else:
+        ng = m
+
+print(ok - 10 ** 20)
