@@ -51,236 +51,419 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# エイシング プログラミング コンテスト 2019 D - Nearest Card Game
+# ルートの決定方法はいじれる
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
 
-"""
-つまりnim
-青木君がXiを指定する
-高橋くん→青木くんの順番でAから数字を取っていく
-高橋くん: 最も大きい数字を取る
-青木くん: Xに最も近い数字を取る　複数あれば小さい方
-カードがなくなれば終了　
-各Xについて高橋くんが取るカードの合計を求めよ
-O(1)でやる　テーブルで累積和とかなんかを前処理してO(1)で参照する
-Nが偶数: 高橋くんはN // 2枚のカードを取る
-Nが奇数: 高橋くんはN // 2 + 1枚のカードを取る
-
-Xが変化するごとに取るカードがどのように変化するか
-5 5
-3 5 7 11 13
-X = 1の時、近いカードは順に3, 5, 7, 11, 13
-つまり高橋くんは13, 11, 7を取る
-X = 4の時、近いカードは順に3, 5, 7, 11, 13
-X = 9の時、近いカードは順に7, 11, 5, 13, 3
-X = 10の時             11,  7,13,  5, 3
-
-X = 10の場合　7,  5, 3...
-            11, 13...
-高橋くんの取るカードは    13, 11, 7,  5, 3
-7と5がスキップされるので、13 + 11 + 3 = 27
-高橋くん、青木くんの取る順番がわかれば得点をO(1)でもとめれればいいのだが
-13, 11, 7, 5, 3
-7, 11, 5, 13, 3 互いにスキップされ合う
-高橋くんがiを取るスピードが青木くんより早い、もしくは同じなら取得できる
-そうでなければ青木くんが取得する
-X = 23の場合
-高橋: 13, 11, 7, 5, 3
-青木: 13, 11, 7, 5, 3
-13 + 7 + 3で23 これを各O(1)で求めたいが
-累積和しそうだ
-NlogNまでならいける　各XiについてlogNで
-青木くんが取る順番は求めなくていい？
-高橋くんが取れるどうかだけ？
-X = 4からの距離
-1, 1, 3, 7, 9: 3 5 7 11 13
-X = 5
-2, 0, 2, 6, 8: 5 3 7 11 13
-X = 6
-3, 1, 1, 5, 7: 5 7 3 11 13
-X = 7
-4, 2, 0, 4, 6: 7 5 3 11 13
-X = 8
-5, 3, 1, 3, 5: 7 5 11 3 13
-X = 9
-6, 4, 2, 2, 4: 7 11 5 13 3
-スワップしていく？
-
-X = 1の時
-3, 5, 7, 11, 13
-X = 4の時
-5, 7, 11, 13
-3
-X = 9の時
-11, 13
-7, 5, 3
-Xiから近い順とA[-1]から近い順
-3 5 7 11 13
-     10  13
-bisect_rightでXiでのスタート地点は求められる
-Xi-1の時と何が違うか
-
-A1, A3...の合計とA2, A4...の合計を求める
-Aは[(高橋と青木が交互に取るゾーン), (青木が取るゾーン), (高橋が取るゾーン)]になる
-その境界を求める
-"""
-
-N, Q = getNM()
-A = getList()
-X = getArray(Q)
-
-csum = [0]
-for i in range(N):
-    csum.append(csum[-1] + A[i])
-csum_even = [0]
-for i in range(0, N, 2):
-    csum_even.append(csum_even[-1] + A[i])
-csum_odd = [0]
-for i in range(1, N, 2):
-    csum_odd.append(csum_odd[-1] + A[i])
-
-#t回でX以下のAのみとなってしまうような最小のtを求める。
-def calc_t(X):
-    ok = -1
-    ng = N + 1
-    while ng - ok > 1:
-        mid = (ok + ng) // 2
-        aoki = mid // 2
-        taka = mid - aoki
-        aoki_max = A[-taka]
-        aoki_min_index = bisect_left(A, 2 * X - aoki_max)
-        if N - taka - aoki_min_index < aoki:
-            ng = mid
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
         else:
-            ok = mid
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-    return ok
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
 
-for x in X:
-    t = calc_t(x)
-    s = csum[N] - csum[N - (t + 1) // 2]
+        if x == y:
+            return
 
-    if N % 2 == 0:
-        s += csum_odd[(N - t) // 2]
-    else:
-        s += csum_even[(N - t + 1) // 2]
-    print(s)
+        if x > y: # よりrootのインデックスが小さい方が親
+            x, y = y, x
+        # if self.parents[x] > self.parents[y]:
+            # x, y = y, x
 
-# CODE FESTIVAL 2015 予選A D - 壊れた電車
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def size(self, x):
+        return -self.parents[self.find(x)]
+
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
+
+# ARC027 B - 大事な数なのでZ回書きまLた。
 
 """
-N両編成 M人の整備士
-隣に行くのに1分かかる
-全ての車両を周回するのにかかる時間は
+N桁の数字を覚えて置きたい
+大文字アルファベットがそれぞれ0 ~ 9のうちのどれかの数字に対応している
 
-それぞれについて境界値を求める問題
-一方通行するのとジグザグに行くの２パターンある
-二分探索したい k分でどこまで周回できるか
-振った方が有利なのか
+Unionfindとか最大流とか
+N <= 18 bit　dpまで狙える
 
-出来る限り右の車両を点検する
-絶対にこの人にしか周回できない場所を考える
-絶対に誰にもいけない左端があればout
+覚えておく数字について何通り考えられるか
+10 ** 18通りの数字があるがその中で？
+ただし制約がある
+候補を絞って全探索
+
+アルファベットと各数字を対応させる通りは10 ** 26通り
+4
+1XYX
+1Z48 の場合
+X - Zは同じ
+Y - 4は同じ
+X - 8は同じ
+なのでZ - 8
+S1とS2に出てくる文字がどの数字と対応しているかを求めればいい
+
+6
+PRBLMB
+ARC027 の時
+
+P - A
+B - C
+L - 0
+M - 2
+B - 7
+B - 7よりC - B - 7
+P - AグループとRに対応する数字を求めればいい
+
+UnionFindする
+出現した文字のリスト
+出現した文字が何の数字か
+"""
+
+def ord_chr(array, fanc):
+    if fanc == 0:
+        res = [ord(s) for s in array]
+        # res = [ord(s) - ord('a') for s in array]
+        return res
+
+    if fanc == 1:
+        res = [chr(i + ord('a')) for i in array]
+        res = ''.join(res)
+        return res
+
+N = getN()
+S1 = ord_chr(input(), 0)
+S2 = ord_chr(input(), 0)
+
+U = UnionFind(100) # 数字 + アルファベットのUnion
+
+# まず結合
+for s1, s2 in zip(S1, S2):
+    if 48 <= s1 <= 57: # 数字の場合
+        s1 -= 48
+    else: # アルファベット
+        s1 -= 65
+        s1 += 10 # 数字と区別するため段差をつける
+    if 48 <= s2 <= 57:
+        s2 -= 48
+    else:
+        s2 -= 65
+        s2 += 10
+
+    U.union(s1, s2) # UnionFindは数字が小さい方がrootになるよう操作
+
+tmp = -1 # S1の先頭の文字を記録
+ans = 1
+opt = set()
+for i, s1 in enumerate(S1):
+    if 48 <= s1 <= 57:
+        s1 -= 48
+    else:
+        s1 -= 65
+        s1 += 10
+
+    if i == 0: # 先頭の文字について
+        tmp = U.find(s1)
+        # アルファベットと繋がってたら
+        # 数字と結びついてたらans = 1のまま
+        if tmp >= 10:
+            ans = 9
+
+    opt.add(U.find(s1))
+
+opt.remove(tmp) # 先頭に使ったアルファベットを消す
+
+for o in opt:
+    if o >= 10: # 数字と結びついてなければ0 ~ 10を自由に選べる
+        ans *= 10
+
+print(ans)
+
+# AtCoder Petrozavodsk Contest 001 D - Forest
+
+"""
+森です Unionfind?
+森を連結にする最小コスト
+制約的に最大流無理
+
+Impossibleの条件
+一つ繋ぐごとに頂点が２つ減り、森が一つ減る
+森が2個以上でもう繋げなくなったらimpossible
+
+小さい例から考える
+7 5
+1 2 3 4 5 6 7
+3 0
+4 0
+1 2
+1 3
+5 6　の時
+
+1 - 2 - 3 - 4 - 5
+6 - 7
+
+1と6を繋げばいい
+1 - 2
+3 - 4 - 5
+6 - 7
+の場合
+motherを一つ決める(例えば1 - 2)
+childは3 - 4 - 5, 6 - 7
+motherの一番小さい奴とchildの一番小さい奴を消費して連結する
+グループ分けする
+[1, 2]
+[3, 4, 5]
+[6, 7] 全部ヒープキュー
+小さい2つを消費(ansに加える)
+併合
+
+motherは一番でかい奴から！！！
+ゆとりのある順に並べる
+
+motherは慎重に決めないといけない
+各グループの先頭列をみる
+小さい順に使いたい
+各グループの先頭は必ず使う
+合計で2 * (g_n - 1)頂点いる
+g_n - 1については各グループの先頭にしないといけない　他のは？
+あとは自分以外のところから自由に　全てmotherの所有物
+足すのはg_n - 1回だけでいい
+
+groupの隣同士を併合するだけでいい
+要素にグループ番号をつけて前から並べる
+unionしてなかったら
+motherは決めない
+
+先頭の奴は絶対に使う
+あとは小さい順から　自分以外のとこの適当なグループの先頭に繋げてやればよい
+
+UnionFindの問題は先頭とそれ以外　という考え方をする
 """
 
 N, M = getNM()
-X = getArray(M)
+A = getList()
+que = [getList() for i in range(M)]
 
-def judge(x):
-    now = 0
-    for i in range(M): # 2 ~ N番目の人について
-        # now + 1番目を点検しないといけない
-        # 左側にいくつ進まないといけないか
-        want = max(0, X[i] - (now + 1)) # そこまで行かないといけない
-        if want > x: # 時間が足りない場合False
-            return False
+# グループ分け
+U = UnionFind(N)
+for a, b in que:
+    U.union(a, b)
+
+group = [[] for i in range(N)]
+for i in range(N):
+    group[U.find(i)].append(A[i])
+group = [sorted(i) for i in group if len(i) > 0]
+
+if len(group) == 1:
+    print(0)
+    exit()
+
+g_n = len(group)
+
+ans = 0
+l = []
+
+# 先頭の絶対使う奴と二番手以降の遊撃隊に分ける
+for i in range(g_n):
+    ans += group[i][0]
+    while len(group[i]) > 1:
+        u = group[i].pop()
+        l.append(u)
+
+l.sort(reverse = True)
+
+# 残りの頂点は小さい順
+for i in range(g_n - 2):
+    if l:
+        u = l.pop()
+        ans += u
+    else:
+        print('Impossible')
+        exit()
+print(ans)
+
+# ABC183 F - Confluence
+
+class UnionFind():
+    def __init__(self,n):
+        self.n = n
+        self.parents = [i for i in range(n)]
+        self.C = [defaultdict(int) for _ in range(n)]
+        self.size = [1] * n # サイズの大きさ
+
+    def find(self,x):
+        if self.parents[x] == x:
+            return x
         else:
-            # 左行って右行くか、右行って左行くかどちらか大きい方
-            now = max(now, X[i], X[i] + max(x - 2 * want, (x - want) // 2))
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
 
-    return now >= N # 最後まで整備できたか
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
 
-ok = 2 * (10 ** 9 + 7)
-ng = -1 # 0回の周回でいい場合もある
+    def unite(self, x, y):
+        xRoot = self.find(x)
+        yRoot = self.find(y)
+        if xRoot == yRoot:
+            return
 
-while ok - ng > 1:
-    mid = (ok + ng) // 2
+        # サイズに基づいてrootを決める
+        if self.size[xRoot] < self.size[yRoot]:
+            xRoot, yRoot = yRoot, xRoot
 
-    if judge(mid):
-        ok = mid
+        self.parents[yRoot] = xRoot
+        self.size[xRoot] += self.size[yRoot]
+        self.size[yRoot] = 0
+
+        # 小さいサイズのものを大きいサイズの方に入れる
+        for k,v in self.C[yRoot].items():
+            self.C[xRoot][k] += v
+
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
+
+N, Q = getNM()
+tree = UnionFind(N)
+C = getList()
+
+# 使いたいときは使ったらいい
+for i in range(N):
+    tree.C[i][C[i] - 1] += 1
+
+for _ in range(Q):
+    q, a, b = getNM()
+    if q == 1:
+        tree.unite(a - 1, b - 1)
     else:
-        ng = mid
+        r = tree.find(a - 1)
+        print(tree.C[r][b - 1])
 
-print(ok)
+# ABC049 D - 連結
 
-# 京都大学プログラミングコンテスト 2020 E - Sequence Partitioning
+N, K, L = getNM()
+road = [getList() for i in range(K)]
+line = [getList() for i in range(L)]
+
+# 道路をやる
+R = UnionFind(N)
+for p, q in road:
+    R.union(p - 1, q - 1)
+
+L = UnionFind(N)
+for i in range(N): # 自分がどの道路グループにいるか
+    L.C[i][R.find(i)] += 1
+
+for r, s in line:
+    L.union(r - 1, s - 1)
+
+# 自分の線路グループL.find(i)にある自分の道路グループR.find(i)の数
+ans = [L.C[L.find(i)][R.find(i)] for i in range(N)]
+print(*ans)
+
+# ABC173 F - Intervals on Tree
+# ある意味Unionfindか
+# 新しい頂点を加えると、連結成分が1 - (既にある頂点へのエッジ)の分増える
 
 """
-Aをいくつかの部分列に分割する　幾つでもいい
-選んだ区間dのスコアは(区間内におけるbの最初の値) + (区間内におけるcの最後の値) + (区間内のaの総和)
-D = {d1, d2...}の最小値を最大化せよ
-
+木の問題
 N <= 10 ** 5
-dpする？
-区間をi個に分割する　を探索する？
+辺があると連結するので連結成分の個数が減る
+L,RをnC2通り求める
+bitは普通に間に合わない
 
-まずは全探索、貪欲で考える
-Aのみの最小値の最大化は？
-1 2 3 とかの場合は1つにまとめる
--3 1 2 3の場合も一つにまとめる
+やっぱり分解して考える
+小さいのから
+L = 1の時
+R = 1 ~ N これにO(1)で答える
+R = 1
+1
+R = 2 2は1と繋がってない
+1
+2 2
+R = 3 3は1, 2と繋がっている
+1 2 3 1
 
--3 -2 -1 とかの場合は分解する
--3 -2 -1 7 の場合はそのまま　合計がプラスになるならひとまとまりの方がいい
+頂点1は何回数えられるか
+頂点1が含まれるのは3回
+頂点2が含まれるのは4回
+頂点3が含まれるのは3回
 
-dp[i]: iまでで区切った時、ここまで分割した時の最小値
-dp[i] = min(dp[i - 1] + D[i-1:i], dp[i - 2] + D[i-2:i]...)
-これまでのdpの最小値だけならセグ木でいいがDが...
-更新できるものだけでいい
+木dpとか
+前から順にやる？
 
-小さすぎる数が出てくる　それは見なくていい
-dp[i]が小さかったら新しい区間の数が何であろうと関係なくdp[i]の数字がopt
-なので新しい数字を引っ張ってくるとしても0からor今までで一番大きいdpがあるindexからのみ
+Rで新しい数を入れると急に結合したりする
+数え上げでしょう
 
-dp + 二分探索で求める x以上にすることができるか
+ダブった部分を引く
+全ての部分木の大きさを求めるのは無理そう
+新しい要素は高々２つの要素を繋げるだけ
+
+for i in range(N - 1):
+    u, v = getNM()
+    if u > v:
+        u, v = v, u
+    # 前に戻るエッジのみ
+    dist[v - 1].append(u - 1)
+for i in range(N):
+    dist[i].sort()
+
+ans = 0
+for i in range(N): # L
+    cnt = 0
+    for j in range(i, N): # R
+        # 範囲外に伸びるエッジは無視
+        cnt += 1 - (len(dist[j]) - bisect_left(dist[j], i))
+        ans += cnt
+
+これはO(N ** 2)かかる
+[[], [], [], [], [2], [], [1, 3, 4], [3], [0, 7], [5, 8]]
+累積されていく
+何もなければ1 ~ 10の累積で55のはず
+しかし控除が累積して1 + 1 + 4(len([2] + len([1, 3, 4]))) + 5 + 7 + 9 = 27あるのでこれを引く
+dist[4]の位置にある2はL = 1の時も引っかかる
+dist[8]にある0は一回のみ引っかかって被害はN - 8 = 2
+
+エッジが伸びることでいくら減るか
 """
-
-def f(x):
-    p = B[0] # C[-1]に接続するpを決める
-    for i in range(1, N):
-        # p + C[i] >= xならp ~ iまで繋げる
-        # つなげる場合は一番大きなB[i]をpにする
-        # pの候補は ①Cに繋いだ時にxを超えるか（緩く）
-        # 　　　　　②その中でも一番大きなB[i](こだわる)
-        if p + C[i] >= x and p < B[i]:
-            p = B[i]
-    if p + C[-1] >= x:
-        return True
-    else:
-        return False
 
 N = getN()
-A = [0] + getList()
-B = getList()
-C = [0] + getList()
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    u, v = getNM()
+    # 前に行くように
+    if u > v:
+        u, v = v, u
+    dist[v - 1].append(u - 1)
 
+ans = 0
+cnt = 0
 for i in range(N):
-    A[i + 1] += A[i]
+    ans += (i + 1) * (i + 2) // 2
+    # distの探索
+    for j in dist[i]:
+        cnt += (j + 1) * (N - i)
 
-# p + C[-1]するときにいい感じに累積が取れる
-# A[r] - A[l - 1]がしたいので、Bは右に一つずらす
-for i in range(N):
-    B[i] -= A[i]
-
-for i in range(N + 1):
-    C[i] += A[i]
-
-ok = -1
-ng = 2 * 10 ** 20
-
-while abs(ng - ok) > 1:
-    m = (ok + ng) // 2
-    if f(m - 10 ** 20):
-        ok = m
-    else:
-        ng = m
-
-print(ok - 10 ** 20)
+print(ans - cnt)
