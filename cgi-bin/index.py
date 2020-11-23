@@ -51,246 +51,253 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ARC018 B - 格子点と整数
+# ARC021 B - Your Numbers are XORed...
+
+"""
+2 010 + 4 100 = 6 110
+3 0011 + 12 1100 = 15 1111
+
+元のA:{A1, A2...}を知りたい
+Bi = Ai xor Ai+1
+Bi+1 = Ai+1 xor Ai+2
+Bi xor Bi+1 = Ai xor Ai+1 xor Ai+1 xor Ai+2
+B1 xor B2 xor...Bn-1 = Ai xor An ?
+Bn = An xor A1
+
+B1 xor B2 xor...Bn = A1 xor A1 = 0 ?
+該当する数列が存在するならこれは成立つ
+B1 ^ A1 = A2
+B2 ^ A2 = B2 ^ (B1 ^ A1) = A3
+"""
+
+L = getN()
+B = getArray(L)
+
+now = B[0]
+for i in range(1, L):
+    now ^= B[i]
+
+if not now:
+    # A1は辞書順最小なので0に
+    a = 0
+    for i in range(L):
+        print(a)
+        a ^= B[i]
+else:
+    print(-1)
+
+# ABC098 D - Xor Sum 2
+# 連続する区間の長さを答える　尺取り
 
 N = getN()
-P = [getList() for i in range(N)]
+A = getList()
 
-ans = 0
-for i in range(N):
-    for j in range(i + 1, N):
-        for k in range(j + 1, N):
-            (a,b),(c,d),(e,f) = P[i], P[j], P[k]
-            # a ~ b間のベクトル: ((c - a), (d - b))
-            # a ~ c間のベクトル: ((e - a), (f - b))
-            # これらの外積 * 1 / 2が面積
-            t = abs((c - a) * (f - b) - (d - b) * (e - a))
-            ans += (t > 0 and t % 2 == 0)
+r, tmp = 0, 0
+# l:左端
+cnt = 0
+for l in range(N):
+    while r < N and tmp ^ A[r] == tmp + A[r]:
+        # 右端を伸ばす
+        tmp += A[r]
+        r += 1
+    # 計算
+    # r を一個進めて条件を満たさなくなった時点でループを終了しているので
+    # (r - l + 1) - 1
+    cnt += r - l
 
-print(ans)
-
-# angle度のtan
-def tan(angle):
-    return math.tan(math.radians(angle))
-
-# 余弦定理
-A, B, H, M = 3, 4, 10, 40
-minu = H * 60 + M
-
-# 時針の角度
-angh = minu / 2
-# 分針の角度
-angm = M * 6
-
-# 角度の差
-anglepre = abs(angh - angm)
-angle = min(360 - anglepre, anglepre)
-
-# ラジアンに直してからmath.cosとかmath.tanとか
-ans = (A ** 2) + (B ** 2) - (2 * A * B * math.cos(math.radians(angle)))
-
-# 三角形の面積4.564257194330056
-print(math.sqrt(ans))
-
-# 二つの点を通る直線の方程式を求める
-# y = line[0]x + line[1]
-# 傾きmaxならx = line[3]
-def line(Ax, Ay, Bx, By):
-    if Ay == By:
-        return 0, Ay, None
-    if Ax == Bx:
-        return float("inf"), 0, Ax
-    a = (Ay - By) / (Ax - Bx)
-    b = Ay - a * Ax
-    return a, b, None
-
-# (1.0, 2.0, None)
-p1 = line(0, 2, 1, 3)
-print(p1)
-
-# 点[p1, p2]を通り、傾きslopeの直線に直行する直線を求める
-def perp(p1, p2, slope):
-    if slope == 0:
-        return float('inf'), 0, p1
-    if slope > 10 ** 12:
-        return 0, p2, None
-    opt_slope = (1 / slope) * (-1)
-    opt_inter = p2 - (opt_slope * p1)
-
-    return opt_slope, opt_inter, None
-
-def distance(Ax, Ay, Bx, By):
-    return math.hypot(Ax - Bx, Ay - By)
-
-# (-1.0, 2.0, None)
-p2 = perp(0, 2, 1)
-print(p2)
-
-# 二つの線がクロスするx,y座標を出す
-def cross(l1, l2):
-    a1, b1, xx1 = min(l1, l2)
-    a2, b2, xx2 = max(l1, l2)
-    if a1 == a2:
-        return None
-    elif a2 == float("inf"):
-        x = xx2
+    if l == r:
+        r += 1
+        tmp -= A[l]
     else:
-        x = (b1 - b2) / (a2 - a1)
-    y = a1 * x + b1
-    return x, y
+        tmp -= A[l]
+print(cnt)
 
-# (0.0, 2.0)
-print(cross(p1, p2))
+# ABC117 D - XXOR
+N, K = getNM()
+A = getList()
 
-# 正方形の点を二つ入れると残りの点２つが出てくる
-def square(x1, y1, x2, y2):
-    nx_1 = x1 - (y1 - y2)
-    ny_1 = y1 + (x1 - x2)
-    nx_2 = x2 - (y1 - y2)
-    ny_2 = y2 + (x1 - x2)
+# 各X xor Aiについて
+# 各桁について
+# Xにフラグ立つ + Aiにフラグ立たない
+# Xにフラグ立たない + Aiにフラグ立つ　の時 2 ** iだけxorの値が増える
+# Aの各要素の2 ** iのフラグの合計がn本の時
+# Xの2 ** iのフラグを立てるとN - n * 2 ** i、立てないとn * 2 ** i　f(x)の値が増える
 
-    return [nx_1, ny_1, nx_2, ny_2]
+# 各桁のフラグが合計何本あるか
+flag = [0] * 61
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            flag[i] += 1
+for i in range(N):
+    splitbit(A[i])
 
-print(*square(1, 1, 2, 4))
+x = 0
+ans = 0
+for i in range(60, -1, -1):
+    # flag[i] < N - flag[i]ならフラグを立てるほうがお得
+    # だがKの制限があり立てたくても立てられないことがある
+    # Xの2 ** iのフラグを立ててもXがKを超えないか
+    if flag[i] < N - flag[i] and x + 2 ** i <= K:
+        # Xにフラグを立てる
+        x += 2 ** i
+        # f(x)の値が増える
+        ans += 2 ** i * (N - flag[i])
+    # flag[i] < N - flag[i]だがフラグを立てられない場合 +
+    # flag[i] >= N - flag[i]の時
+    else:
+        ans += 2 ** i * flag[i]
 
-N, K = 4, 4
-query = [
-[1, 4],
-[3, 3],
-[6, 2],
-[8, 1]
-]
-
-# x軸, y軸を作る
-x_axis = set()
-y_axis = set()
-for i in query:
-    x_axis.add(i[0])
-    y_axis.add(i[1])
-x_axis = sorted(list(x_axis))
-y_axis = sorted(list(y_axis))
-
-# 経路圧縮
-dp = [[0] * len(x_axis) for i in range(len(y_axis))]
-for i in query:
-    x = x_axis.index(i[0])
-    y = y_axis.index(i[1])
-    dp[y][x] += 1
-
-dp_n = [[0] * len(x_axis) for i in range(len(y_axis))]
-
-# 累積和
-def bi_cumul_sum(dp_n, dp_bef, h, w):
-    # 縦１行目、横１行目
-    for i in range(h):
-        dp_n[i][0] = dp_bef[i][0]
-    for i in range(h):
-        for j in range(1, w):
-            dp_n[i][j] = dp_n[i][j - 1] + dp_bef[i][j]
-    # 全て
-    for i in range(1, h):
-        for j in range(w):
-            dp_n[i][j] += dp_n[i - 1][j]
-
-bi_cumul_sum(dp_n, dp, len(y_axis), len(x_axis))
-
-# 範囲内に含まれる点の数を計算する
-def judge(sx, ex, sy, ey, dp):
-    mother = dp[ey][ex]
-    minus1 = 0
-    minus2 = 0
-    plus = 0
-    if sx > 0:
-        minus1 = dp[ey][sx - 1]
-    if sy > 0:
-        minus2 = dp[sy - 1][ex]
-    if sx > 0 and sy > 0:
-        plus = dp[sy - 1][sx - 1]
-    return mother - minus1 - minus2 + plus
-
-ans = float('inf')
-for sy in range(len(y_axis)):
-    for ey in range(sy, len(y_axis)):
-        for sx in range(len(x_axis)):
-            for ex in range(sx, len(x_axis)):
-                if judge(sx, ex, sy, ey, dp_n) >= K:
-                    opt = (x_axis[ex] - x_axis[sx]) * (y_axis[ey] - y_axis[sy])
-                    ans = min(ans, opt)
 print(ans)
 
-# ABC151 F - Enclose All
-
-"""
-点全てを内包する円の半径の最小値は
-二点間の距離の最大値　にはならない
-def dis(p1, p2):
-    x1, y1 = p1
-    x2, y2 = p2
-    return math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
-N = getN()
-P = [getList() for i in range(N)]
+# ABC121 D - XOR World
+A, B = getNM()
+# bit1桁目のフラグの個数
+# 周期は2 ** 1
+# 0と1が交互に
+# bit2桁目のフラグの個数
+# 周期は2 ** 2
+flags1 = [0] * 61
+flags2 = [0] * 61
+# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
+def bitflag(n, flaglist):
+    if n > 0:
+        for i in range(1, 61):
+            split = 2 ** i
+            flag1 = (n // split) * (split // 2)
+            flag2 = max(n % split + 1 - (split // 2), 0)
+            flaglist[i] += flag1 + flag2
+# 1 ~ A - 1について（Aは範囲に入っているため）
+bitflag(A - 1, flags1)
+bitflag(B, flags2)
+for i in range(61):
+    flags2[i] -= flags1[i]
 ans = 0
-for i in range(N):
-    for j in range(N):
-        ans = max(ans, dis(P[i], P[j]))
-正三角形になったら当てはまらない
-重心か？
-3
-0 0
-0 1
-1 0 の時重心は0.33だが実際の答えは√2/2, √2/2
-二分探索したいなぁ
-半径rで全てを包めるか
-各点を中心に半径rの円を書く
-全ての円が共有する部分があればその範囲内の1点を中心に円を書けるので
-もっとrを小さくできる
-"""
+# 奇数ならフラグが立つ
+for i in range(61):
+    if flags2[i] % 2 != 0:
+        ans += 2 ** (i - 1)
+print(ans)
+
+# ABC147 D - Xor Sum 4
 
 N = getN()
-P = [getList() for i in range(N)]
-
-def check(d):
-    eps = 1 / (10 ** 10)
-    points = []
-    for i in range(N):
-        for j in range(N):
-            if i == j:
-                continue
-            x1, y1 = P[i]
-            x2, y2 = P[j]
-
-            dif = (x1 - x2) ** 2 + (y1 - y2) ** 2
-            # 半径を超えてないか
-            if(dif > 4 * d ** 2):
-                return False
-
-            h = (d ** 2 - dif / 4) ** 0.5
-            xm, ym = (x1 + x2) / 2, (y1 + y2) / 2
-
-            dx,dy = (y1 - y2), -1 * (x1 - x2)
-            dxy = (dx ** 2 + dy ** 2) ** 0.5
-
-            points.append((xm + dx * h / dxy, ym + dy * h / dxy))
-            points.append((xm - dx * h / dxy, ym - dy * h / dxy))
-
-    for xp, yp in points:
-        for i in range(N):
-            xi, yi = P[i]
-            dif = (xp - xi) ** 2 + (yp - yi) ** 2
-            if(dif > d ** 2 + eps):
-                break
+A = getList()
+# Aの各数字の（２進数における）各桁ごとに分解して排他的論理和を求める
+# 例
+# 3
+# 1 2 3 →
+# 1, 10, 11
+# 2 ** 0の桁について(1 ^ 2) 1 ^ 0 = 1,(1 ^ 3) 1 ^ 1 = 0,(2 ^ 3) 0 ^ 1 = 1
+# 2 ** 1の桁について 0(1の2 ** 1の桁は0) ^ 1 = 1, 0 ^ 1 = 1, 1 ^ 1 = 0
+# 各桁について2 ** iの桁が1の数字の選び方 * 2 ** iの桁が0の数字の選び方 * 2 ** iを
+# 足し合わせる
+lista = [[0, 0] for i in range(61)]
+# bitの各桁が１か０かをlistaに収納
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            lista[i][1] += 1
         else:
-            return True
+            lista[i][0] += 1
+for i in A:
+    splitbit(i)
+ans = 0
+for i in range(61):
+    ans += ((lista[i][0] * lista[i][1]) * (2 ** i)) % mod
+print(ans % mod)
 
-    return False
+# ARC021 B - Your Numbers are XORed...
+L = getN()
+B = getArray(L)
+B_xor = B[0]
+for i in range(1, L - 1):
+    B_xor ^= B[i]
 
-ok = 1000
-ng = 0
-for _ in range(50):
-    mid = (ok + ng) / 2
-    if(check(mid)):
-        ok = mid
-    else:
-        ng = mid
+# B_xor ^ a1(aの最後) ^ a1 == Bの最後なら成立
+# この時aがどんな値であろうと条件が成立する
+if B_xor == B[-1]:
+    now = 0
+    print(now)
+    # a2 = B1 ^ a1
+    # a3 = B2 ^ a2
+    for j in range(L - 1):
+        now = B[j] ^ now
+        print(now)
+else:
+    print(-1)
 
-print(ok)
+# Tenka1 Programmer Contest D - IntegerotS
+
+"""
+Aのbitの総和がK以下になるように整数を集める
+ナップサック問題っぽいがAもBもおおきい
+貪欲に行く
+Kを超えた場合でも、他のでフラグを消せればいい
+
+まず全部足し、フラグを抜いていく？
+dpっぽいが2 ** 30の30を使う？
+フラグの数が奇数か偶数か
+
+bitwise or どちらかのビットが1なら1、そうでなければ0
+一度立てたフラグは消えない
+
+Kの各bitについて
+フラグを立てるか立てないか
+0 のbitlengthは0
+1 のbitlengthは1 (右から1番目に最初のフラグが立っている)
+2 のbitlengthは2
+3 のbitlengthは2
+
+[0, 0, 8, 4, 0, 0, 0,
+むやみにフラグを立てないように
+
+K = 101にどう従っていくか
+1本目を1にするなら それ以降の条件にも従ってもらう
+
+Kと比べた時に何本目まで従っているか
+K = 101
+a = 10の場合左から2番目が従えてない
+[[3, 3, 1], [4, 4, -1], [2, 5, 1]]
+
+別に30回回していい
+一本目のKについて
+立てるなら
+Kにフラグが立ってなかったら
+立ててはいけない
+
+K以下の値の2進数換算は
+Kのi番目の1のフラグを1 → 0にし、それ以下を自由にしたもの　である
+フラグの数が多い方がいいので
+整数を集めてできる数をXとすると
+K = 11010の場合は
+X = 01111, 10111, 11001 を見ていけばいい
+足してXになる数を求めればいい
+
+K以下の〜について
+最も有利な条件を並べてそれぞれで計算
+"""
+
+N, K = getNM()
+que = [getList() for i in range(N)]
+
+ans = 0
+# 足すとKのフラグになる
+opt = 0
+for a, b in que:
+    if K | a == K:
+        opt += b
+ans = max(ans, opt)
+
+# 足すとXのフラグになる
+for i in range(31, 0, -1):
+    opt = 0
+    if K & (1 << i): # フラグが立っていれば
+        X = (K ^ (1 << i)) | ((2 ** i) - 1) # 1 << iのフラグを消す + それ以下を全て1に
+        for a, b in que:
+            if X | a == X: # フラグの本数が変わらなければ
+                opt += b
+
+        ans = max(ans, opt)
+
+print(ans)
