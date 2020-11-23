@@ -44,10 +44,49 @@ from bisect import bisect_left, bisect_right
 import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
 #############
 # Main Code #
 #############
+
+# ARC005 C - 器物損壊！高橋君
+
+H, W = getNM()
+maze = [list(input()) for i in range(H)]
+
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == 's':
+            si = [i, j]
+            maze[i][j] = '.'
+        elif maze[i][j] == 'g':
+            gi = [i, j]
+            maze[i][j] = '.'
+
+pos = deque([[si[0], si[1]]])
+dist = [[-1] * W for j in range(H)]
+dist[si[0]][si[1]] = 0
+
+# 0-1bfs
+while pos:
+    y, x = pos.popleft()
+    for i in range(4):
+        ny = y + dy[i]
+        nx = x + dx[i]
+        if 0 <= ny < H and 0 <= nx < W and dist[ny][nx] == -1:
+            if maze[ny][nx] == '.':
+                dist[ny][nx] = dist[y][x]
+                pos.appendleft([ny, nx])
+            else:
+                dist[ny][nx] = dist[y][x] + 1
+                pos.append([ny, nx])
+
+if dist[gi[0]][gi[1]] <= 2:
+    print('YES')
+else:
+    print('NO')
 
 # ABC007 幅優先探索
 r, c = map(int, input().split())
@@ -74,9 +113,6 @@ for i in range(r):
 
 while len(pos) > 0:
     x, y, depth = pos.popleft()
-    if x == gx and y == gy:
-        break
-    maze[x][y] = '#'
     for i in range(4):
         nx = x + dx[i]
         ny = y + dy[i]
@@ -295,50 +331,4 @@ for y, x, d in alta:
 
     ans = min(ans, opt)
 
-print(ans)
-
-# ABC184 E - Third Avenue
-
-dx = [0, 1, 0, -1]
-dy = [1, 0, -1, 0]
-
-H, W = map(int, input().split())
-a = [input() for i in range(H)]
-
-cost = [[INF] * W for i in range(H)]
-tele = [list() for i in range(26)]
-
-for i in range(H):
-    for j in range(W):
-        if a[i][j].islower():
-            tele[ord(a[i][j]) - 97].append((i, j))
-        elif a[i][j] == 'S':
-            Sx, Sy = i, j
-        elif a[i][j] == 'G':
-            Gx, Gy = i, j
-
-cost[Sx][Sy] = 0
-q = deque([(Sx, Sy)])
-while q:
-    x, y = q.popleft()
-    c2 = cost[x][y] + 1
-    for d in range(4):
-        x2 = x + dx[d]
-        y2 = y + dy[d]
-        if x2 < 0 or x2 >= H or y2 < 0 or y2 >= W or a[x2][y2] == '#':
-            continue
-        if cost[x2][y2] > c2:
-            cost[x2][y2] = c2
-            q.append((x2, y2))
-    if a[x][y].islower():
-        t = ord(a[x][y]) - 97 # 小文字は97
-        for x2, y2 in tele[t]:
-            if cost[x2][y2] > c2:
-                cost[x2][y2] = c2
-                q.append((x2, y2))
-        tele[t].clear()
-
-ans = cost[Gx][Gy]
-if ans == INF:
-    ans = -1
 print(ans)
