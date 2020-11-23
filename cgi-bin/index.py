@@ -51,284 +51,105 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ARC005 C - 器物損壊！高橋君
+# ARC007 C - 節約生活
 
-H, W = getNM()
-maze = [list(input()) for i in range(H)]
+"""
+最低限のテレビ数を求める
+テレビの種類が1なので楽
+最小1 ~ 最大10
+最大の10から数を減らしていく
+"""
 
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == 's':
-            si = [i, j]
-            maze[i][j] = '.'
-        elif maze[i][j] == 'g':
-            gi = [i, j]
-            maze[i][j] = '.'
+C = [i == 'o' for i in input()]
+N = len(C)
 
-pos = deque([[si[0], si[1]]])
-dist = [[-1] * W for j in range(H)]
-dist[si[0]][si[1]] = 0
-
-# 0-1bfs
-while pos:
-    y, x = pos.popleft()
-    for i in range(4):
-        ny = y + dy[i]
-        nx = x + dx[i]
-        if 0 <= ny < H and 0 <= nx < W and dist[ny][nx] == -1:
-            if maze[ny][nx] == '.':
-                dist[ny][nx] = dist[y][x]
-                pos.appendleft([ny, nx])
-            else:
-                dist[ny][nx] = dist[y][x] + 1
-                pos.append([ny, nx])
-
-if dist[gi[0]][gi[1]] <= 2:
-    print('YES')
-else:
-    print('NO')
-
-# ABC007 幅優先探索
-r, c = map(int, input().split())
-sy, sx = map(int, input().split())
-gx, gy = map(int, input().split())
-sy -= 1
-sx -= 1
-gx -= 1
-gy -= 1
-
-maze = []
 ans = float('inf')
+for bit in range(1 << N): # 何台目を使うか
+    cnt = 0
+    judge = [0] * N
+    for i in range(N):
+        if bit & (1 << i):
+            cnt += 1
+            for j in range(N):
+                # C[(j + i) % N]: ループしたC
+                judge[j] |= C[(j + i) % N] # 0 |= 1 = 1, # 1 |= 1 = 1
 
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+    if sum(judge) == N:
+        ans = min(ans, cnt)
 
-pos = deque([[sx, sy, 0]])
-dp = [[-1] * (c + 1) for i in range(r + 1)]
-dp[sx][sy] = 0
+print(ans)
 
-for i in range(r):
-    c = input()
-    maze.append(list(c))
+# ABC002 派閥
+# 条件
+# n人の国会議員の集合A{A1, A2... An}の任意の二人i, jについて
+# (i, j)がqueryに含まれる
 
-while len(pos) > 0:
-    x, y, depth = pos.popleft()
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if maze[nx][ny] == "." and dp[nx][ny] == -1:
-            pos.append([nx, ny, depth + 1])
-            dp[nx][ny] = dp[x][y] + 1
-print(dp[gx][gy])
+# この人数nの最大値を求める
 
-# ABC176 D - Wizard in Maze
-H, W = getNM()
-Ch, Cw = getNM()
-Dh, Dw = getNM()
-maze = [input() for i in range(H)]
-Ch -= 1
-Cw -= 1
-Dh -= 1
-Dw -= 1
+# 集合Aの取り方は？
+# N <= 12なのでbit全探索で全ての集合について条件を満たすか判定できる
+N, M = getNM()
+mem = set()
+for i in range(M):
+    a, b = getNM()
+    mem.add((a - 1, b - 1))
 
-# ワープを最低で何回使うか
-# 上下左右2つ向こうまでの範囲内でワープできる
-# 隣接する'.'が領域
-
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-
-pos = deque([[Ch, Cw]])
-dp = [[-1] * W for i in range(H)]
-dp[Ch][Cw] = 0
-
-while len(pos) > 0:
-    y, x = pos.popleft()
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        # 歩いて移動
-        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] == "." and (dp[ny][nx] == -1 or dp[y][x] < dp[ny][nx]):
-            # 0-1 bfs
-            # 先頭に置く
-            pos.appendleft([ny, nx])
-            dp[ny][nx] = dp[y][x]
-    # ワープ
-    for i in range(-2, 3):
-        for j in range(-2, 3):
-            wy = y + i
-            wx = x + j
-            # 歩いて移動不可能でないと使わない
-            if 0 <= wx < W and 0 <= wy < H and maze[wy][wx] == "." and dp[wy][wx] == -1:
-                pos.append([wy, wx])
-                dp[wy][wx] = dp[y][x] + 1
-
-print(dp[Dh][Dw])
-
-# AGC033 A - Darker and Darker
-
-"""
-一番近い#までの距離
-100万マスあるので一回の探索で済むように
-黒マスの周囲４マスを探索
-用が済めばポイ　同じマスについて探索する必要はない
-これで計算量は4 * H * W
-"""
-
-H, W = getNM()
-maze = [list(input()) for i in range(H)]
-prev = []
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == '#':
-            prev.append((i, j))
-
-dx = [0, 1, 0, -1]
-dy = [1, 0, -1, 0]
-
-flag = True
 ans = 0
-while flag:
-    flag = False
-    next = []
-    while prev:
-        y, x = prev.pop()
-        for i in range(4):
-            ny = y + dy[i]
-            nx = x + dx[i]
-            if 0 <= ny < H and 0 <= nx < W and maze[ny][nx] == '.':
-                flag = True
-                maze[ny][nx] = '#'
-                next.append((ny, nx))
-    prev = next
+for bit in range(1 << N):
+    # 任意のi, jについてqueryに含まれているか判定
+    flag = True
+    for i in range(N):
+        for j in range(i + 1, N):
+            # 適当に選んだ２人がbitの中に含まれていれば
+            if bit & (1 << i) and bit & (1 << j):
+                if not (i, j) in mem:
+                    flag = False
+    # もし集合bitが条件を満たすなら人数を調べる
     if flag:
-        ans += 1
-
+        opt = bin(bit).count('1')
+        ans = max(ans, opt)
 print(ans)
 
-# AGC043 A - Range Flip Find Route
+# ABC018 D - バレンタインデー
+N, M, P, Q, R = getNM()
+que = []
 
-"""
-白いとこだけ踏んでゴールを目指す
-スタートやゴールが黒いこともある
+# 女子N人の中からP人、男子M人の中からR人選ぶ
+# 女子N人の中からP人選ぶ通りがNCR通り 最大18C9 = 役4万通り
+# 男子についてもう4万通りを選ぶのは無理
+# 逆に女子P人が選んだ時にチョコレートを選んで幸福度が最大になるようにしよう
+# 男子y1がいれば += z1
+# 男子y2がいれば += z2...
 
-操作をすると選択した長方形空間内の白黒が反転する
-最小で何回操作するか
-効率の良い操作方法を考える
+# 各通りについてチョコレート最大364通りを探索
+# チョコciについて選んだ女子にxiがいる場合はyiに幸福度を追加（yiが選ばれる場合の幸福度）
 
-黒い部分を白くすることだけを考える？
-白だけ踏んでいけるとは？
-二回反転させれば元どおり
+for i in range(R):
+    x, y, z = getNM()
+    que.append([x - 1, y - 1, z])
 
-白から黒に、黒から白に侵入するときだけ += 1する？
-"""
+def counter(array):
+    girls = set(array)
+    boys = [0] * M
+    for x, y, z in que:
+        if x in girls:
+            boys[y] += z
+    boys.sort(reverse = True)
+    return sum(boys[:Q])
 
-H, W = getNM()
-maze = [list(input()) for i in range(H)]
-dp = [[float('inf')] * W for i in range(H)]
-dp[0][0] = 0
-if maze[0][0] == "#":
-    dp[0][0] = 1
+ans = 0
+# 女子の全組み合わせを出す
+def comb_pow(i, array):
+    global ans
+    if i == P:
+        ans = max(ans, counter(array))
+        return
+    # ここの4を変えてrootを変更
+    last = -1
+    if len(array) > 0:
+        last = array[-1]
 
-dy = [0, 1]
-dx = [1, 0]
-
-pos = deque([[0, 0]])
-
-# 0 - 1bfs?
-while pos:
-    y, x = pos.popleft()
-    for i in range(2):
-        ny = y + dy[i]
-        nx = x + dx[i]
-        if 0 <= ny < H and 0 <= nx < W: # 領域内
-            # 同じ色の場合
-            if maze[y][x] == maze[ny][nx] and dp[ny][nx] > dp[y][x]:
-                pos.appendleft([ny, nx])
-                dp[ny][nx] = dp[y][x]
-            # 違う色の場合
-            if maze[y][x] != maze[ny][nx]:
-                # 入るときだけでいい
-                if maze[y][x] == "." and dp[ny][nx] > dp[y][x] + 1:
-                    pos.append([ny, nx])
-                    dp[ny][nx] = dp[y][x] + 1
-                elif maze[y][x] == "#" and dp[ny][nx] > dp[y][x]:
-                    pos.appendleft([ny, nx])
-                    dp[ny][nx] = dp[y][x]
-
-print(dp[H - 1][W - 1])
-
-# AGC014 C - Closed Rooms
-
-"""
-H行W列
-K回まで移動できる　K個の部屋を解放する
-端っこの'.'を目指す　またダイクストラか
-
-黒を移動できると考えてもいい
-全探索する
-端っこの部屋についての最短距離を求める
-0-1bfsか
-
-最初の１回は['.']の部分だけ移動できる
-次からは['.'] + ['#']を移動できる
-
-端っこまで黒何個消しで行けるか
-単純な距離　と
-黒を何個消すか　を求める
-
-1回目白マス行けるとこまで移動する　
-あとは自由に航行できる（前回のでKマス部屋を開いて今回Kマス進むため）
-
-ほぼほぼ'#'は関係がない
-posの中身を途中で書き換える問題
-"""
-
-H, W, K = getNM()
-maze = [list(input()) for i in range(H)]
-
-start = [-1, -1]
-# スタート位置特定
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == 'S':
-            start = [i, j]
-            break
-    else:
-        continue
-    break
-
-dy = [1, 0, -1, 0]
-dx = [0, 1, 0, -1]
-
-dis = [[-1] * W for i in range(H)]
-dis[start[0]][start[1]] = 0
-
-# 最初の１回 白マス内だけをK回まで移動する
-# これらで移動したものは全てK回移動でカウントする
-pos = deque([[start[0], start[1], 0]])
-alta = [[start[0], start[1], K]]
-while len(pos) > 0:
-    y, x, d = pos.popleft()
-    if d == K:
-        continue
-    for i in range(4):
-        ny = y + dy[i]
-        nx = x + dx[i]
-        if 0 <= ny < H and 0 <= nx < W and dis[ny][nx] == -1 and maze[ny][nx] == ".":
-            dis[ny][nx] = d + 1
-            alta.append([ny, nx, K])
-            pos.append([ny, nx, d + 1])
-
-ans = float('inf')
-# あとはそのまま直進して壁にぶつかるだけ
-for y, x, d in alta:
-    up = y
-    down = (H - 1) - y
-    left = x
-    right = (W - 1) - x
-    opt = ((min(up, down, left, right) + K - 1) // K) + 1
-
-    ans = min(ans, opt)
-
-print(ans)
+    for j in range(last + 1, N):
+        new_array = array + [j]
+        comb_pow(i + 1, new_array)
+comb_pow(0, [])
