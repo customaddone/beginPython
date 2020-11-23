@@ -195,6 +195,53 @@ for o in opt:
 
 print(ans)
 
+"""
+Lisか？
+各queryについてO(1)で
+lisとかbitとか使ってた
+lisならyの昇順にソートやってxをlisとかやってた
+
+単調増加ではない
+groupにするためunionfindする
+4
+1 4
+2 3
+3 1
+4 2 の場合
+
+[4, 3, 1, 2] BITでいいのでは 右側の自分より大きいの + 左側の自分より小さいの
+BITは誤読 3 3 ~ 5 5 ~ 1 4 は行ける
+lis貪欲とは少し違う
+unionfindでもできる
+
+[6, 7, 5, 3, 2, 4, 1]
+3 ~ 5, 2 ~ 5と繋いだら、次4が来れば 4 ~ 2 ~ 5とも行ける
+一番小さいやつにアクセスできればいい
+U.sizeでできるようになりたい
+[4, 7, 5, 2, 3, 6, 1] とかの場合
+"""
+
+N = getN()
+Q = [getList() for i in range(N)]
+que = deepcopy(Q) # Qはans用に残す
+que.sort(key = lambda i:i[1], reverse = True) # xは全て違う値なのでやらなくていい
+que.sort()
+
+U = UnionFind(N + 1)
+group = []
+
+for x, y in que:
+    mi = y
+    # yより小さいやつを消していく
+    while group and y > group[-1]:
+        l = group.pop()
+        U.union(l, y) # 自動的にインデックスが小さい方がrootになる
+    mi = U.find(y)
+    group.append(mi) # 一番小さいのをappend
+
+for i in range(N):
+    print(U.size(Q[i][1])) # yがiのもののサイズの大きさ
+
 # AtCoder Petrozavodsk Contest 001 D - Forest
 
 """
