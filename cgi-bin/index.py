@@ -51,50 +51,134 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ARC021 B - Your Numbers are XORed...
+N, K = 7, 6
+S = [4, 3, 1, 1, 2, 10, 2]
 
-"""
-2 010 + 4 100 = 6 110
-3 0011 + 12 1100 = 15 1111
+# 左を伸ばしていく
+# その部分列に含まれる全ての要素の値の積は「K以下」である。
+# lはrをオーバーすることもある
 
-元のA:{A1, A2...}を知りたい
-Bi = Ai xor Ai+1
-Bi+1 = Ai+1 xor Ai+2
-Bi xor Bi+1 = Ai xor Ai+1 xor Ai+1 xor Ai+2
-B1 xor B2 xor...Bn-1 = Ai xor An ?
-Bn = An xor A1
-
-B1 xor B2 xor...Bn = A1 xor A1 = 0 ?
-該当する数列が存在するならこれは成立つ
-B1 ^ A1 = A2
-B2 ^ A2 = B2 ^ (B1 ^ A1) = A3
-"""
-
-L = getN()
-B = getArray(L)
-
-now = B[0]
-for i in range(1, L):
-    now ^= B[i]
-
-if not now:
-    # A1は辞書順最小なので0に
-    a = 0
-    for i in range(L):
-        print(a)
-        a ^= B[i]
+if 0 in S:
+    print(N)
+    exit()
 else:
-    print(-1)
+    l, ans, total = 0, 0, 1
+    for r in range(N):
+        total *= S[r]
+        while total > K and l <= r:
+            total //= S[l]
+            l += 1
+        ans = max(ans, r - l + 1)
+print(ans)
 
-# ABC098 D - Xor Sum 2
-# 連続する区間の長さを答える　尺取り
+# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
+N, K = 4, 10
+A = [6, 1, 2, 7]
 
+left = 0
+total = 0
+ans = 0
+
+for right in range(0, N):
+    total += A[right]
+    while total >= K:
+        ans += N - right
+        total -= A[left]
+        left += 1
+print(ans)
+
+N = 10
+S = 15
+A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
+right = 0
+total = 0
+ans = 0
+# S以上を求める場合にはこの形で
+for left in range(N):
+    while right < N and total < S:
+        total += A[right]
+        right += 1
+    if total < S:
+        break
+    if left == right:
+        right += 1
+    total -= A[left]
+
+# 要素の種類についての問題
+# 全ての要素を含む
+P = 5
+A = [1, 8, 8, 8, 1]
+dict = {}
+for i in A:
+    dict[i] = 0
+# 要素の種類数
+V = len(dict.items())
+
+# 事象の数をカウント
+cnt = 0
+right = 0
+# １つ目から全ての事象をカバーするまでrightを進める
+while right < P:
+    if dict[A[right]] == 0:
+        cnt += 1
+    dict[A[right]] += 1
+
+    if cnt == len(dict.items()):
+        break
+
+    right += 1
+print(l, r)
+
+l = 0
+# 右を一つ進めて左をできる限り進める
+for r in range(right + 1, P):
+    # 新しく一つ加える
+    dict[A[r]] += 1
+    while True:
+        # もし要素が一つしか無かったら削れない
+        if dict[A[l]] == 1:
+            break
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
+
+# 各要素にダブりがない範囲
+N = 6
+A = [1, 2, 2, 3, 4, 4]
+
+dict = defaultdict(int)
+l = 0
+for r in range(N):
+    while dict[A[r]] == 1:
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
+    dict[A[r]] += 1
+
+# ARC022 B - 細長いお菓子
 N = getN()
-A = getList()
+A = [i - 1 for i in getList()]
+
+r = 0
+kind = [0] * (10 ** 5 + 7) # 常に1種類につき一つに限られるよう
+ans = 0
+for l in range(N):
+    # 半開区間で持つ方がいい
+    while r < N and kind[A[r]] == 0:
+        kind[A[r]] += 1
+        r += 1
+    ans = max(ans, r - l)
+    kind[A[l]] -= 1
+
+print(ans)
+
+N = 4
+A = 2, 5, 4, 6
 
 r, tmp = 0, 0
 # l:左端
 cnt = 0
+# 一つオーバーさせる
 for l in range(N):
     while r < N and tmp ^ A[r] == tmp + A[r]:
         # 右端を伸ばす
@@ -107,197 +191,83 @@ for l in range(N):
 
     if l == r:
         r += 1
-        tmp -= A[l]
-    else:
-        tmp -= A[l]
+    tmp -= A[l]
 print(cnt)
 
-# ABC117 D - XXOR
-N, K = getNM()
-A = getList()
+N, K = 10, 4
+A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
 
-# 各X xor Aiについて
-# 各桁について
-# Xにフラグ立つ + Aiにフラグ立たない
-# Xにフラグ立たない + Aiにフラグ立つ　の時 2 ** iだけxorの値が増える
-# Aの各要素の2 ** iのフラグの合計がn本の時
-# Xの2 ** iのフラグを立てるとN - n * 2 ** i、立てないとn * 2 ** i　f(x)の値が増える
+right, ans = 0, 0
+for left in range(N):
+    # 単調増加するとこまでもしくは長さKになるまで
+    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
+        right += 1
+    # もし長さKまで伸ばせたらans += 1
+    if right - left == K - 1:
+        ans += 1
+    # 前に進めないならright += 1
+    if left == right and right < N:
+        right += 1
+print(ans)
 
-# 各桁のフラグが合計何本あるか
-flag = [0] * 61
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            flag[i] += 1
+# 第5回 ドワンゴからの挑戦状 予選 C - k-DMC
+
+"""
+Q <= 75?
+文字列 dpか
+k-DMCを求めよ
+整数の組の個数 dp or combo
+D, M, Cの順で並んでおり、文字の長さがk以下である
+文字の長さを伸ばしていく
+k = 1, 2... Qについて k - DMC数の数は？
+累積の数を求める
+
+長さがiのものをレコードしていく
+文字の長さはaとcのみに依存する
+
+A = []
+B = []
+C = []
 for i in range(N):
-    splitbit(A[i])
+    if S[i] == 'D':
+        A.append(i)
+    if S[i] == 'M':
+        B.append(i)
+    if S[i] == 'C':
+        C.append(i)
+これだとO(N ** 2)
 
-x = 0
-ans = 0
-for i in range(60, -1, -1):
-    # flag[i] < N - flag[i]ならフラグを立てるほうがお得
-    # だがKの制限があり立てたくても立てられないことがある
-    # Xの2 ** iのフラグを立ててもXがKを超えないか
-    if flag[i] < N - flag[i] and x + 2 ** i <= K:
-        # Xにフラグを立てる
-        x += 2 ** i
-        # f(x)の値が増える
-        ans += 2 ** i * (N - flag[i])
-    # flag[i] < N - flag[i]だがフラグを立てられない場合 +
-    # flag[i] >= N - flag[i]の時
-    else:
-        ans += 2 ** i * flag[i]
+a ~ c間にあるbの個数を累積和で求める
+あるaについて対応するcが何個あるかは二分探索で求められる
+間のbについては0 ~ cまで - 0 ~ aまで
 
-print(ans)
-
-# ABC121 D - XOR World
-A, B = getNM()
-# bit1桁目のフラグの個数
-# 周期は2 ** 1
-# 0と1が交互に
-# bit2桁目のフラグの個数
-# 周期は2 ** 2
-flags1 = [0] * 61
-flags2 = [0] * 61
-# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
-def bitflag(n, flaglist):
-    if n > 0:
-        for i in range(1, 61):
-            split = 2 ** i
-            flag1 = (n // split) * (split // 2)
-            flag2 = max(n % split + 1 - (split // 2), 0)
-            flaglist[i] += flag1 + flag2
-# 1 ~ A - 1について（Aは範囲に入っているため）
-bitflag(A - 1, flags1)
-bitflag(B, flags2)
-for i in range(61):
-    flags2[i] -= flags1[i]
-ans = 0
-# 奇数ならフラグが立つ
-for i in range(61):
-    if flags2[i] % 2 != 0:
-        ans += 2 ** (i - 1)
-print(ans)
-
-# ABC147 D - Xor Sum 4
+二重累積和 + 計算量logNの改善
+累積二分探索は尺取り法使える
+"""
 
 N = getN()
-A = getList()
-# Aの各数字の（２進数における）各桁ごとに分解して排他的論理和を求める
-# 例
-# 3
-# 1 2 3 →
-# 1, 10, 11
-# 2 ** 0の桁について(1 ^ 2) 1 ^ 0 = 1,(1 ^ 3) 1 ^ 1 = 0,(2 ^ 3) 0 ^ 1 = 1
-# 2 ** 1の桁について 0(1の2 ** 1の桁は0) ^ 1 = 1, 0 ^ 1 = 1, 1 ^ 1 = 0
-# 各桁について2 ** iの桁が1の数字の選び方 * 2 ** iの桁が0の数字の選び方 * 2 ** iを
-# 足し合わせる
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][1] += 1
-        else:
-            lista[i][0] += 1
-for i in A:
-    splitbit(i)
-ans = 0
-for i in range(61):
-    ans += ((lista[i][0] * lista[i][1]) * (2 ** i)) % mod
-print(ans % mod)
+S = list(input())
+Q = getN()
+K = getList()
 
-# ARC021 B - Your Numbers are XORed...
-L = getN()
-B = getArray(L)
-B_xor = B[0]
-for i in range(1, L - 1):
-    B_xor ^= B[i]
+for k in K:
+    ans = 0
+    d_cnt = 0 # dの数
+    m_cnt = 0 # mの数
+    dm_cnt = 0 # dとmの組み合わせの数
+    for i in range(N):
+        # 上限超えたので捨てる
+        if i - k >= 0:
+            if S[i - k] == "D":
+                d_cnt -= 1 # dを一つ捨て
+                dm_cnt -= m_cnt # 捨てたdはmを現在ホールドしてる個数持っているので（dが左端にあるから）
+            elif S[i - k] == "M":
+                m_cnt -= 1 # mを捨てる
 
-# B_xor ^ a1(aの最後) ^ a1 == Bの最後なら成立
-# この時aがどんな値であろうと条件が成立する
-if B_xor == B[-1]:
-    now = 0
-    print(now)
-    # a2 = B1 ^ a1
-    # a3 = B2 ^ a2
-    for j in range(L - 1):
-        now = B[j] ^ now
-        print(now)
-else:
-    print(-1)
-
-# Tenka1 Programmer Contest D - IntegerotS
-
-"""
-Aのbitの総和がK以下になるように整数を集める
-ナップサック問題っぽいがAもBもおおきい
-貪欲に行く
-Kを超えた場合でも、他のでフラグを消せればいい
-
-まず全部足し、フラグを抜いていく？
-dpっぽいが2 ** 30の30を使う？
-フラグの数が奇数か偶数か
-
-bitwise or どちらかのビットが1なら1、そうでなければ0
-一度立てたフラグは消えない
-
-Kの各bitについて
-フラグを立てるか立てないか
-0 のbitlengthは0
-1 のbitlengthは1 (右から1番目に最初のフラグが立っている)
-2 のbitlengthは2
-3 のbitlengthは2
-
-[0, 0, 8, 4, 0, 0, 0,
-むやみにフラグを立てないように
-
-K = 101にどう従っていくか
-1本目を1にするなら それ以降の条件にも従ってもらう
-
-Kと比べた時に何本目まで従っているか
-K = 101
-a = 10の場合左から2番目が従えてない
-[[3, 3, 1], [4, 4, -1], [2, 5, 1]]
-
-別に30回回していい
-一本目のKについて
-立てるなら
-Kにフラグが立ってなかったら
-立ててはいけない
-
-K以下の値の2進数換算は
-Kのi番目の1のフラグを1 → 0にし、それ以下を自由にしたもの　である
-フラグの数が多い方がいいので
-整数を集めてできる数をXとすると
-K = 11010の場合は
-X = 01111, 10111, 11001 を見ていけばいい
-足してXになる数を求めればいい
-
-K以下の〜について
-最も有利な条件を並べてそれぞれで計算
-"""
-
-N, K = getNM()
-que = [getList() for i in range(N)]
-
-ans = 0
-# 足すとKのフラグになる
-opt = 0
-for a, b in que:
-    if K | a == K:
-        opt += b
-ans = max(ans, opt)
-
-# 足すとXのフラグになる
-for i in range(31, 0, -1):
-    opt = 0
-    if K & (1 << i): # フラグが立っていれば
-        X = (K ^ (1 << i)) | ((2 ** i) - 1) # 1 << iのフラグを消す + それ以下を全て1に
-        for a, b in que:
-            if X | a == X: # フラグの本数が変わらなければ
-                opt += b
-
-        ans = max(ans, opt)
-
-print(ans)
+        if S[i] == "D":
+            d_cnt += 1
+        elif S[i] == "M":
+            m_cnt += 1
+            dm_cnt += d_cnt # 現在のd * 新しく入ったm(1つ)
+        elif S[i] == "C":
+            ans += dm_cnt # dm_cntの数 * 新しく入ったc(1つ)
