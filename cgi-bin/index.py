@@ -51,466 +51,274 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ルートの決定方法はいじれる
-class UnionFind():
-    def __init__(self, n):
-        self.n = n
-        self.parents = [-1] * n
-
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
+"""
+Z algorithm
+def Z(s):
+    n = len(s)
+    z = [0] * n
+    z[0] = n
+    L, R = 0, 0
+    for i in range(1, n):
+        if i >= R:
+            L = R = i
+            # 一致が続く限り伸ばす
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            # LCAを書き込む
+            # 頭から一致しない場合はR - L = i - i = 0
+            z[i] = R - L
+        # 全て利用できる場合
+        elif z[i - L] < R - i:
+            z[i] = z[i - L]
+        # 一部利用できる場合
         else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
-
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
-
-        if x == y:
-            return
-
-        if x > y: # よりrootのインデックスが小さい方が親
-            x, y = y, x
-        # if self.parents[x] > self.parents[y]:
-            # x, y = y, x
-
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-    def size(self, x):
-        return -self.parents[self.find(x)]
-
-    def members(self, x):
-        root = self.find(x)
-        return [i for i in range(self.n) if self.find(i) == root]
-
-    def roots(self):
-        return [i for i, x in enumerate(self.parents) if x < 0]
-
-    def all_group_members(self):
-        return {r: self.members(r) for r in self.roots()}
-
-# ARC027 B - 大事な数なのでZ回書きまLた。
-
-"""
-N桁の数字を覚えて置きたい
-大文字アルファベットがそれぞれ0 ~ 9のうちのどれかの数字に対応している
-
-Unionfindとか最大流とか
-N <= 18 bit　dpまで狙える
-
-覚えておく数字について何通り考えられるか
-10 ** 18通りの数字があるがその中で？
-ただし制約がある
-候補を絞って全探索
-
-アルファベットと各数字を対応させる通りは10 ** 26通り
-4
-1XYX
-1Z48 の場合
-X - Zは同じ
-Y - 4は同じ
-X - 8は同じ
-なのでZ - 8
-S1とS2に出てくる文字がどの数字と対応しているかを求めればいい
-
-6
-PRBLMB
-ARC027 の時
-
-P - A
-B - C
-L - 0
-M - 2
-B - 7
-B - 7よりC - B - 7
-P - AグループとRに対応する数字を求めればいい
-
-UnionFindする
-出現した文字のリスト
-出現した文字が何の数字か
-"""
-
-def ord_chr(array, fanc):
-    if fanc == 0:
-        res = [ord(s) for s in array]
-        # res = [ord(s) - ord('a') for s in array]
-        return res
-
-    if fanc == 1:
-        res = [chr(i + ord('a')) for i in array]
-        res = ''.join(res)
-        return res
-
+            L = i
+            while(R < n and s[R - L] == s[R]):
+                R += 1
+            z[i] = R - L
+    return z
+# [5, 0, 3, 0, 1]
+#print(Z('ababa'))
 N = getN()
-S1 = ord_chr(input(), 0)
-S2 = ord_chr(input(), 0)
-
-U = UnionFind(100) # 数字 + アルファベットのUnion
-
-# まず結合
-for s1, s2 in zip(S1, S2):
-    if 48 <= s1 <= 57: # 数字の場合
-        s1 -= 48
-    else: # アルファベット
-        s1 -= 65
-        s1 += 10 # 数字と区別するため段差をつける
-    if 48 <= s2 <= 57:
-        s2 -= 48
-    else:
-        s2 -= 65
-        s2 += 10
-
-    U.union(s1, s2) # UnionFindは数字が小さい方がrootになるよう操作
-
-tmp = -1 # S1の先頭の文字を記録
-ans = 1
-opt = set()
-for i, s1 in enumerate(S1):
-    if 48 <= s1 <= 57:
-        s1 -= 48
-    else:
-        s1 -= 65
-        s1 += 10
-
-    if i == 0: # 先頭の文字について
-        tmp = U.find(s1)
-        # アルファベットと繋がってたら
-        # 数字と結びついてたらans = 1のまま
-        if tmp >= 10:
-            ans = 9
-
-    opt.add(U.find(s1))
-
-opt.remove(tmp) # 先頭に使ったアルファベットを消す
-
-for o in opt:
-    if o >= 10: # 数字と結びついてなければ0 ~ 10を自由に選べる
-        ans *= 10
-
+S = input()
+ans = 0
+for i in range(N):
+    z = Z(S[i:])
+    k = len(z)
+    for j in range(k):
+        # '' と 'ababa'
+        # 'a' と 'baba'
+        # 'ab' と 'aba'
+        # ans は j('', 'a', 'ab')の長さ以上にならない（ダブらないため）
+        ans = max(ans, min(j, z[j]))
 print(ans)
-
-"""
-Lisか？
-各queryについてO(1)で
-lisとかbitとか使ってた
-lisならyの昇順にソートやってxをlisとかやってた
-
-単調増加ではない
-groupにするためunionfindする
-4
-1 4
-2 3
-3 1
-4 2 の場合
-
-[4, 3, 1, 2] BITでいいのでは 右側の自分より大きいの + 左側の自分より小さいの
-BITは誤読 3 3 ~ 5 5 ~ 1 4 は行ける
-lis貪欲とは少し違う
-unionfindでもできる
-
-[6, 7, 5, 3, 2, 4, 1]
-3 ~ 5, 2 ~ 5と繋いだら、次4が来れば 4 ~ 2 ~ 5とも行ける
-一番小さいやつにアクセスできればいい
-U.sizeでできるようになりたい
-[4, 7, 5, 2, 3, 6, 1] とかの場合
 """
 
+# Rolling hash
 N = getN()
-Q = [getList() for i in range(N)]
-que = deepcopy(Q) # Qはans用に残す
-que.sort(key = lambda i:i[1], reverse = True) # xは全て違う値なのでやらなくていい
-que.sort()
+S = list(map(ord, list(input())))
+# 適当
+base = 1007
+# base = 1009
+power = [1] * (N + 1)
+# 部分文字列を数字に
+# ハッシュ生成
+for i in range(1, N + 1):
+    power[i] = power[i - 1] * base % mod
+print(power)
 
-U = UnionFind(N + 1)
-group = []
+# 長さmの文字列がダブらずに存在するか
+def check(m):
+    if N - m < m:
+        return False
+    res = 0
+    # 頭m文字のハッシュ生成
+    for i in range(m):
+        res += S[i] * power[m - i - 1]
+        res %= mod
+    dic = {res: 0}
+    for i in range(N - m):
+        # ハッシュをローリングしていって次々m文字のハッシュを生成していく
+        res = ((res - S[i] * power[m - 1]) * base + S[i + m]) % mod
+        # もし既出なら
+        if res in dic.keys():
+            index = dic[res]
+            if index + m <= i + 1: # 重ならないか
+                return True
+        else:
+            dic[res] = i + 1 # i + 1:頭の位置を記録する
+        print(dic)
+    return False
 
-for x, y in que:
-    mi = y
-    # yより小さいやつを消していく
-    while group and y > group[-1]:
-        l = group.pop()
-        U.union(l, y) # 自動的にインデックスが小さい方がrootになる
-    mi = U.find(y)
-    group.append(mi) # 一番小さいのをappend
+ok = 0
+ng = N + 1
+while ng - ok > 1:
+    mid = (ok + ng) // 2
 
-for i in range(N):
-    print(U.size(Q[i][1])) # yがiのもののサイズの大きさ
-
-# AtCoder Petrozavodsk Contest 001 D - Forest
+    if check(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
 
 """
-森です Unionfind?
-森を連結にする最小コスト
-制約的に最大流無理
-
-Impossibleの条件
-一つ繋ぐごとに頂点が２つ減り、森が一つ減る
-森が2個以上でもう繋げなくなったらimpossible
-
-小さい例から考える
-7 5
-1 2 3 4 5 6 7
-3 0
-4 0
-1 2
-1 3
-5 6　の時
-
-1 - 2 - 3 - 4 - 5
-6 - 7
-
-1と6を繋げばいい
-1 - 2
-3 - 4 - 5
-6 - 7
-の場合
-motherを一つ決める(例えば1 - 2)
-childは3 - 4 - 5, 6 - 7
-motherの一番小さい奴とchildの一番小さい奴を消費して連結する
-グループ分けする
-[1, 2]
-[3, 4, 5]
-[6, 7] 全部ヒープキュー
-小さい2つを消費(ansに加える)
-併合
-
-motherは一番でかい奴から！！！
-ゆとりのある順に並べる
-
-motherは慎重に決めないといけない
-各グループの先頭列をみる
-小さい順に使いたい
-各グループの先頭は必ず使う
-合計で2 * (g_n - 1)頂点いる
-g_n - 1については各グループの先頭にしないといけない　他のは？
-あとは自分以外のところから自由に　全てmotherの所有物
-足すのはg_n - 1回だけでいい
-
-groupの隣同士を併合するだけでいい
-要素にグループ番号をつけて前から並べる
-unionしてなかったら
-motherは決めない
-
-先頭の奴は絶対に使う
-あとは小さい順から　自分以外のとこの適当なグループの先頭に繋げてやればよい
-
-UnionFindの問題は先頭とそれ以外　という考え方をする
+N, K = getNM()
+S = input()
+if(K * 2 > N):
+    print('NO')
+    exit()
+def check(n, s, k, mod, alp):
+    # 各アルファベットをエンコード
+    encode = {}
+    for i, ch in enumerate(alp, 10001):
+        encode[ch] = pow(172603, i, mod)
+    # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
+    left = 0
+    right = 0
+    for i in range(k):
+        left += encode[s[i]]
+        left %= mod
+        right += encode[s[i + k]]
+        right %= mod
+    words = set()
+    # ローリングする
+    for i in range(n):
+        words.add(left)
+        if (right in words):
+            return True
+        if (i + 2 * k >= n):
+            break
+        left += encode[s[i + k]] - encode[s[i]]
+        left %= mod
+        right += encode[s[i + k * 2]] - encode[s[i + k]]
+        right %= mod
+    return False
+ans = True
+ps = '9999217 9999221 9999233 9999271 9999277 9999289 9999299 9999317 9999337 9999347 9999397 9999401 9999419 9999433 9999463 9999469 9999481 9999511 9999533 9999593 9999601 9999637 9999653 9999659 9999667 9999677 9999713 9999739 9999749 9999761 9999823 9999863 9999877 9999883 9999889 9999901 9999907 9999929 9999931 9999937 9999943 9999971 9999973'
+ps = list(map(int, ps.split(' ')))
+ps.append(10 ** 9 + 7)
+ps.append(3040409)
+ps.append(10 ** 20 + 9)
+# 各modについて
+for p in ps:
+    # アルファベットをランダムに並べた表でエンコード表を作る
+    for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
+        ans = (ans & check(N, S, K, p, alp))
+if(ans):
+    print('YES')
+else:
+    print('NO')
 """
+# ARC024 だれじゃ
+N, K = getNM()
+S = input()
 
-N, M = getNM()
-A = getList()
-que = [getList() for i in range(M)]
-
-# グループ分け
-U = UnionFind(N)
-for a, b in que:
-    U.union(a, b)
-
-group = [[] for i in range(N)]
-for i in range(N):
-    group[U.find(i)].append(A[i])
-group = [sorted(i) for i in group if len(i) > 0]
-
-if len(group) == 1:
-    print(0)
+if(K * 2 > N):
+    print('NO')
     exit()
 
-g_n = len(group)
+# ダブらない場所に長さKの同じ文字の種類と数で構成された部分があるか
+def check(n, s, k, mod, alp):
+    # 各アルファベットをエンコード
+    encode = {}
+    for i, ch in enumerate(alp, 10001):
+        encode[ch] = pow(172603, i, mod)
 
-ans = 0
-l = []
+    # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
+    res = 0
+    for i in range(k):
+        res += encode[s[i]]
+        res %= mod
 
-# 先頭の絶対使う奴と二番手以降の遊撃隊に分ける
-for i in range(g_n):
-    ans += group[i][0]
-    while len(group[i]) > 1:
-        u = group[i].pop()
-        l.append(u)
-
-l.sort(reverse = True)
-
-# 残りの頂点は小さい順
-for i in range(g_n - 2):
-    if l:
-        u = l.pop()
-        ans += u
-    else:
-        print('Impossible')
-        exit()
-print(ans)
-
-# ABC183 F - Confluence
-
-class UnionFind():
-    def __init__(self,n):
-        self.n = n
-        self.parents = [i for i in range(n)]
-        self.C = [defaultdict(int) for _ in range(n)]
-        self.size = [1] * n # サイズの大きさ
-
-    def find(self,x):
-        if self.parents[x] == x:
-            return x
+    dic = {res: 0}
+    # ローリングする
+    for i in range(n - k):
+        res += encode[s[i + k]] - encode[s[i]]
+        res %= mod
+        if res in dic.keys():
+            index = dic[res]
+            if index + k <= i + 1:# ダブって無いか
+                return True
         else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+            dic[res] = i + 1
 
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
+    return False
 
-    def unite(self, x, y):
-        xRoot = self.find(x)
-        yRoot = self.find(y)
-        if xRoot == yRoot:
-            return
+ans = True
+ps = '9999217 9999221 9999233 9999271 9999277 9999289 9999299 9999317 9999337 9999347 9999397 9999401 9999419 9999433 9999463 9999469 9999481 9999511 9999533 9999593 9999601 9999637 9999653 9999659 9999667 9999677 9999713 9999739 9999749 9999761 9999823 9999863 9999877 9999883 9999889 9999901 9999907 9999929 9999931 9999937 9999943 9999971 9999973'
+ps = list(map(int, ps.split(' ')))
+ps.append(10 ** 9 + 7)
+ps.append(3040409)
+ps.append(10 ** 20 + 9)
+# 各modについて
+for p in ps:
+    # アルファベットをランダムに並べた表でエンコード表を作る
+    for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
+        ans = (ans & check(N, S, K, p, alp))
 
-        # サイズに基づいてrootを決める
-        if self.size[xRoot] < self.size[yRoot]:
-            xRoot, yRoot = yRoot, xRoot
+if(ans):
+    print('YES')
+else:
+    print('NO')
 
-        self.parents[yRoot] = xRoot
-        self.size[xRoot] += self.size[yRoot]
-        self.size[yRoot] = 0
+# 天下一プログラマーコンテスト2014予選B B - エターナルスタティックファイナル
 
-        # 小さいサイズのものを大きいサイズの方に入れる
-        for k,v in self.C[yRoot].items():
-            self.C[xRoot][k] += v
+# ローリングハッシュ
+# sの連続部分列とkがマッチした部分s[i:j]についてのi, jを求める
+# 文字列を数字に変換してから使おう
+def check(stri, targ, base):
+    s = list(map(ord, list(stri)))
+    k = list(map(ord, list(targ)))
+    n = len(s)
+    m = len(k)
+    if n - m < 0:
+        return set()
 
-    def members(self, x):
-        root = self.find(x)
-        return [i for i in range(self.n) if self.find(i) == root]
+    pm = 2 ** 61 - 1
+    power = [1] * (n + 1)
 
-    def roots(self):
-        return [i for i, x in enumerate(self.parents) if x < 0]
+    # 第i文字目のハッシュ生成
+    for i in range(1, n + 1):
+        power[i] = power[i - 1] * base % pm
 
-    def all_group_members(self):
-        return {r: self.members(r) for r in self.roots()}
+    res = 0 # ハッシュを保存
+    # sの頭m文字のハッシュ生成
+    for i in range(m):
+        res += s[i] * power[m - i - 1]
+        res %= pm
 
-N, Q = getNM()
-tree = UnionFind(N)
-C = getList()
+    # kのハッシュを生成
+    target = 0
+    for i in range(m):
+        target += k[i] * power[m - i - 1]
+        target %= pm
 
-# 使いたいときは使ったらいい
-for i in range(N):
-    tree.C[i][C[i] - 1] += 1
+    # sをローリングさせて調べる
+    opt = set()
+    for i in range(n - m):
+        # マッチしたら
+        # 半開区間で返す（変更可能）
+        if res == target:
+            opt.add((i, i + m))
+        # 0 ~ m文字目, 1 ~ m+1文字目...を生成しkと比べる
+        res = ((res - s[i] * power[m - 1]) * base + s[i + m]) % pm
+    # 最後の1回
+    if res == target:
+        opt.add((n - m, n))
 
-for _ in range(Q):
-    q, a, b = getNM()
-    if q == 1:
-        tree.unite(a - 1, b - 1)
-    else:
-        r = tree.find(a - 1)
-        print(tree.C[r][b - 1])
+    return opt
 
-# ABC049 D - 連結
-
-N, K, L = getNM()
-road = [getList() for i in range(K)]
-line = [getList() for i in range(L)]
-
-# 道路をやる
-R = UnionFind(N)
-for p, q in road:
-    R.union(p - 1, q - 1)
-
-L = UnionFind(N)
-for i in range(N): # 自分がどの道路グループにいるか
-    L.C[i][R.find(i)] += 1
-
-for r, s in line:
-    L.union(r - 1, s - 1)
-
-# 自分の線路グループL.find(i)にある自分の道路グループR.find(i)の数
-ans = [L.C[L.find(i)][R.find(i)] for i in range(N)]
-print(*ans)
-
-# ABC173 F - Intervals on Tree
-# ある意味Unionfindか
-# 新しい頂点を加えると、連結成分が1 - (既にある頂点へのエッジ)の分増える
-
-"""
-木の問題
-N <= 10 ** 5
-辺があると連結するので連結成分の個数が減る
-L,RをnC2通り求める
-bitは普通に間に合わない
-
-やっぱり分解して考える
-小さいのから
-L = 1の時
-R = 1 ~ N これにO(1)で答える
-R = 1
-1
-R = 2 2は1と繋がってない
-1
-2 2
-R = 3 3は1, 2と繋がっている
-1 2 3 1
-
-頂点1は何回数えられるか
-頂点1が含まれるのは3回
-頂点2が含まれるのは4回
-頂点3が含まれるのは3回
-
-木dpとか
-前から順にやる？
-
-Rで新しい数を入れると急に結合したりする
-数え上げでしょう
-
-ダブった部分を引く
-全ての部分木の大きさを求めるのは無理そう
-新しい要素は高々２つの要素を繋げるだけ
-
-for i in range(N - 1):
-    u, v = getNM()
-    if u > v:
-        u, v = v, u
-    # 前に戻るエッジのみ
-    dist[v - 1].append(u - 1)
-for i in range(N):
-    dist[i].sort()
-
-ans = 0
-for i in range(N): # L
-    cnt = 0
-    for j in range(i, N): # R
-        # 範囲外に伸びるエッジは無視
-        cnt += 1 - (len(dist[j]) - bisect_left(dist[j], i))
-        ans += cnt
-
-これはO(N ** 2)かかる
-[[], [], [], [], [2], [], [1, 3, 4], [3], [0, 7], [5, 8]]
-累積されていく
-何もなければ1 ~ 10の累積で55のはず
-しかし控除が累積して1 + 1 + 4(len([2] + len([1, 3, 4]))) + 5 + 7 + 9 = 27あるのでこれを引く
-dist[4]の位置にある2はL = 1の時も引っかかる
-dist[8]にある0は一回のみ引っかかって被害はN - 8 = 2
-
-エッジが伸びることでいくら減るか
-"""
+def rolling_hash(s, t):
+    # ほんとは原子根乱択がいい
+    # 基数baseと法pmをたくさん用意しないとfalseのものがtrueになるため、
+    # 全部trueのものだけを返す
+    res = check(s, t, 161971)
+    for base in [167329, 191911]: # 適当に手動で乱択してね
+        # これ一回の計算量はO(N)
+        res &= check(s, t, base)
+    return res
 
 N = getN()
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    u, v = getNM()
-    # 前に行くように
-    if u > v:
-        u, v = v, u
-    dist[v - 1].append(u - 1)
+S = input()
+T = [input() for i in range(N)]
 
-ans = 0
-cnt = 0
+opt = []
 for i in range(N):
-    ans += (i + 1) * (i + 2) // 2
-    # distの探索
-    for j in dist[i]:
-        cnt += (j + 1) * (N - i)
+    # ロリハするとO(S + T)になる（もともとはO(S * (T ** 2)))
+    for j in list(rolling_hash(S, T[i])):
+        opt.append(j)
 
-print(ans - cnt)
+dict = defaultdict(list)
+for l, r in opt:
+    dict[r].append(l)
+
+# opt(ST)の大きさがネックになり、前進型貰うdpで計算量はO(ST)
+# 合計で計算量はO(ST + T ** 2)(ロリハの部分)　なお定数倍
+dp = [0] * (len(S) + 1)
+dp[0] = 1
+for i in range(len(S) + 1): # iが右端
+    for l in dict[i]:
+        dp[i] += dp[l]
+    dp[i] %= mod
+
+print(dp[-1] % mod)
