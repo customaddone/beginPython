@@ -52,6 +52,7 @@ dy = [0, 1, 0, -1]
 #############
 
 # indeedなう　D - 高橋くんと数列
+
 """
 その数を一つでも含む連続部分列を返す
 各iにつきO(1)で
@@ -73,4 +74,39 @@ for i in range(N):
     p[A[i]] = i
 
 for i in ans[1:]:
+    print(i)
+
+# ARC045 B - ドキドキデート大作戦高橋君
+
+"""
+NlogNを目指す
+i番目の区間をサボってもいい
+= l ~ rの全区間で二重以上に清掃がされていること
+"""
+
+N, M = getNM()
+clean = [getList() for i in range(M)]
+
+# 累積
+room = [0] * (3 * 10 ** 5 + 7)
+for s, t in clean:
+    room[s] += 1
+    room[t + 1] -= 1
+
+forbit = []
+for i in range(3 * 10 ** 5 + 7):
+    room[i] += room[i - 1]
+    if room[i] <= 1:
+        forbit.append(i)
+
+# 判定
+ans = []
+for i in range(M):
+    s, t = clean[i]
+    # sがforbit内の数と同じ数字を踏むと反対方向に飛ぶように
+    if bisect_left(forbit, s) == bisect_right(forbit, t):
+        ans.append(i + 1)
+
+print(len(ans))
+for i in ans:
     print(i)
