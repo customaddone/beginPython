@@ -51,259 +51,338 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ARC060 D - 桁和
+# ABC161 D - Lunlun Number
+K = 13
+que = []
+heapify(que)
+for i in range(1, 10):
+    que.append(i)
+for i in range(K):
+    u = heappop(que)
+    if u % 10 != 0:
+        heappush(que, 10 * u + (u % 10) - 1)
+    heappush(que, 10 * u + (u % 10))
+    if u % 10 != 9:
+        heappush(que, 10 * u + (u % 10) + 1)
+print(u)
+
+N, M = getNM()
+weight = []
+key = []
+for _ in range(M):
+    a, b = getNM()
+    weight.append(a)
+    c = getList()
+    key.append(c)
+dp = [float('inf')] * (1 << N)
+dp[0] = 0
+for i in range(M):
+    bit = 0
+    for item in key[i]:
+        bit |= (1 << (item - 1))
+    for j in range(1 << N):
+        dp[j | bit] = min(dp[j | bit], dp[j] + weight[i])
+print(dp)
+
+
+# ARC028 B-特別賞
 
 """
-n < bの時 f(b, n) = n
-n >= bの時 f(b, (n // b)) + (n % b)
-b, b ** 2, b *** 3で割っていく
-b進数は存在するか
-bはそんなに大きくなさそう
-def f(b):
-    n = N
-    res = 0
-    while n:
-        res += n % b
-        n //= b
-
-    return res
-でできるけど
-単調増加にはならないので二分探索もできない
-存在しない条件はなに
-法則性なさそうなので全探索？
-√nぐらいにしたい
-b進数の一番上の桁は安定している
-
-bを増やすと等間隔で数が減っていく
-a(i + 1)**2 + b(i + 1) + c
-ai ** 2 + 2ai + a + bi + b + c
-ai ** 2 + (2a + b)i + (a + b + c)
-
-二項
-10 ** 6まで全探索
+N: 人数 K:　K番目に若い人
+X1, X2... :　i位の人の年齢はXi
+K番目の人を求めるのは大体ヒープキュー
+K個ぶち込んでから　
+①最大のものがK番目に大きい数字　これをprint
+②一個入れる(K+1個になる)→最大のものを取り出す（K+1番目以降のものなのでいらない）　を繰り返す
 """
 
+N, K = getNM()
+X = getList()
+
+# K個ぶち込んでから　
+pos = [[-X[i], i] for i in range(K)]
+heapify(pos)
+
+# 出し入れ
+for i in range(K, N):
+    print(pos[0][1] + 1)
+    heappush(pos, [-X[i], i])
+    _ = heappop(pos)
+
+print(pos[0][1] + 1)
+
+# ABC062 D - 3N Numbers
 N = getN()
-S = getN()
-
-def f(b):
-    n = N
-    res = 0
-    while n:
-        res += n % b
-        n //= b
-
-    return res
-
-# 10 ** 6なので一応可能
-for i in range(2, 10 ** 6 + 1):
-    ans = f(i)
-    if ans == S:
-        print(i)
-        exit()
-
-# 10 ** 6 + 1以降について
-# 割ってiになるbの最大値、最小値、そしてf(b)のとる値
-for i in range(N // 10 ** 6, 0, -1):
-    # 割ってiになるbの最小はN // (i + 1) + 1
-    b1 = N // (i + 1) + 1
-    opt1 = f(b1)
-    # 割ってiになる値の最大は N // i
-    b2 = N // i
-    opt2 = f(b2)
-    if opt2 <= S <= opt1 and (S - opt2) % i == 0:
-        # 87654の場合
-        # b1 = 9740 f(b1) = 10962
-        # b2 = 10956 f(b2) = 14
-        # opt1 - S を iで割った分をb1からひく
-        print(b2 - ((S - opt2) // i))
-        exit()
-
-# 割って0になる
-# これのf(b)はN
-if N == S:
-    print(N + 1)
-    exit()
-
-# どうもできない
-print(-1)
-
-# AGC004 B - Colorful Slimes
-
-"""
-N色のスライムがいる
-全色のスライムが飼いたい
-・iのスライムをaiで変色させる
-・手持ちのiのスライムの全てをxで変色させる
-
-iのスライムを入手する方法
-・iのスライムをaiで購入する
-・i-1のスライムをai-1で購入 + x使う
-・i-2のスライムをai-2で購入 + x * 2使う...
-前からやっていこう
-
-これループする
-色iのスライム買う
-魔法
-色iのスライム買う
-魔法
-で色 i+1, i+2のスライムを作れる
-
-色iのスライム買う
-魔法
-魔法
-色iのスライム買う
-魔法
-で色 i + 1, i + 3のスライムが作れる
-Ai * 個数 + (iからの最長距離 * x)でいくらでもできる
-各スライムについて変更した方がいいスライムについての最長距離を保持する
-
-各スライムごとループさせる]
-小さい順に？
-
-一括に巻き込んだ方がいい場合も
-4 1
-4 2 3 1の場合
-1を4つ買う + 魔法3回
-ここまでまとめ買い変色させた方がいい境界は
-
-魔法の回数をK回に固定すると
-Ai ~ Ai-kの範囲でスライムが買える
-"""
-
-N, X = getNM()
 A = getList()
+# foreとbackの境界線を移動させる
+# [3 1 4 1 5 9]の場合
+# foreは[3 1], [3 1 4], [3, 1, 4, 1]の場合
+# backは[5 9], [1 5 9], [4, 1, 5, 9]の場合を前計算
+# 前から計算
+fore = A[:N]
+# 後ろから計算
+back = A[2 * N:]
+back = [-i for i in back]
+for_sum = sum(fore)
+back_sum = sum(back)
+heapify(fore)
+heapify(back)
 
-mi = [float('inf')] * N
-ans = float('inf')
+fore_list = []
+back_list = []
+for i in range(N):
+    fore_list.append(for_sum)
+    back_list.append(back_sum)
+    in_fore = A[N + i]
+    heappush(fore, in_fore)
+    out_fore = heappop(fore)
+    for_sum += in_fore - out_fore
 
-for k in range(N): # 魔法の回数をk回に固定
-    for i in range(N):
-        mi[i] = min(mi[i], A[i - k])
-    ans = min(ans, sum(mi) + k * X)
+    in_back = (-1) * A[-N - i - 1]
+    heappush(back, in_back)
+    out_back = heappop(back)
+    back_sum += in_back - out_back
 
+fore_list.append(for_sum)
+back_list.append(back_sum)
+
+ans = -float('inf')
+for i in range(N + 1):
+    opt = fore_list[i] + back_list[N - i]
+    ans = max(ans, opt)
 print(ans)
 
-# diverta 2019 Programming Contest 2 D - Squirrel Merchant
+# ABC123 D - Cake 123
+X, Y, Z, K = getNM()
+A = sorted([-i for i in getList()])
+B = sorted([-i for i in getList()])
+C = sorted([-i for i in getList()])
+pos = []
+heapify(pos)
+dict = defaultdict(int)
+u = (A[0] + B[0] + C[0], 0, 0, 0)
+heappush(pos, u)
+dict[u] = 1
+for i in range(K):
+    p, i, j, l = heappop(pos)
+    print(-p)
+    # 取り出すごとにA, B, Cについての次の値をpush
+    if i + 1 < X:
+        opt_a = (A[i + 1] + B[j] + C[l], i + 1, j, l)
+        if dict[opt_a] == 0:
+            heappush(pos, opt_a)
+            dict[opt_a] = 1
+    if j + 1 < Y:
+        opt_b = (A[i] + B[j + 1] + C[l], i, j + 1, l)
+        if dict[opt_b] == 0:
+            heappush(pos, opt_b)
+            dict[opt_b] = 1
+    if l + 1 < Z:
+        opt_c = (A[i] + B[j] + C[l + 1], i, j, l + 1)
+        if dict[opt_c] == 0:
+            heappush(pos, opt_c)
+            dict[opt_c] = 1
+
+# ABC137 D - Summer Vacation
+
+N, M = getNM()
+query = [getList() for i in range(N)]
+
+A_list = [[] for i in range(10 ** 5 + 1)]
+for a, b in query:
+    A_list[a].append(b)
+
+job = []
+heapq.heapify(job)
+
+ans = 0
+for i in range(1, M + 1):
+    for j in A_list[i]:
+        heapq.heappush(job, -j)
+    if len(job) > 0:
+        u = heapq.heappop(job)
+        ans += -u
+print(ans)
+
+# ABC149 E - Handshake
+# Mがクソデカイので使用不可
+# 二分探索使ってね
+N, M = getNM()
+A = sorted([-i for i in getList()])
+
+pos = []
+heapify(pos)
+dict = defaultdict(int)
+u = (A[0] + A[0], 0, 0)
+heappush(pos, u)
+dict[u] = 1
+
+ans = 0
+# 大きい値M番目まで全て求まる
+for i in range(M):
+    p, i, j = heappop(pos)
+    ans += -p
+    if i + 1 < N:
+        opt_a = (A[i + 1] + A[j], i + 1, j)
+        if dict[opt_a] == 0:
+            heappush(pos, opt_a)
+            dict[opt_a] = 1
+    if j + 1 < N:
+        opt_b = (A[i] + A[j + 1], i, j + 1)
+        if dict[opt_b] == 0:
+            heappush(pos, opt_b)
+            dict[opt_b] = 1
+print(ans)
+
+# Code Formula 2014 予選A C - 決勝進出者
 
 """
-N個のどんぐり
-2回する　ピッタリ整数dp
+N: 予選の回数
+K: 招待人数
+最高順位が高い順に　どこかの予選でハイスコアを出せばOK
+最高順位が同じ場合は、最高順位を取った予選が開かれた時期が早い方から先に選ばれる。
+現在の試合を含めた残り試合数 = dとすると
+(K + d - 1) // dの人数分上から順番にとる
+2 11
+1 2 3 4 5 6 7 8 9 10 11
+1 2 15 14 13 16 17 18 19 20 21
 
-Aでは 金をga, 銀をsa, 銅をbaで交換できる
-最初のAは買うだけ
-Bでは 金をgb, 銀をsb, 銅をbbで交換できる
-もちろん全て換金してからやる
-1: 金をgb / ga倍、銀を...をする
-2: 金をga / gb倍、銀を...をする
+の場合
+[[1, 2, 3, 4, 5, 6], [15, 14, 13]] ここまでいける
+[1 2 3 4 5 6] 7 8 9 10 11
+[1 2 15 14 13] 16 17 18 19 20 21
+1番目の6位までと2番目以降の5位までは問答無用で確定する
+後をどうするか
+枠が空く　このまま順調に取っていっても枠が余る場合は
+枠が空いた場合は再計算
+N <= 50しかない
+優先度何番目かをレコードする
+枠が空くたびにボーダーが下がる
 
-1でドングリの数が5000倍になっていることもある
+4 5
+1 2 3 4 5
+2 1 3 4 5
+1 2 3 4 5
+2 1 3 4 5 の場合
 
-O(N ** 2)で1の操作の結果のドングリの最大値はわかる 25,000,000になる
-1で増やした金属は2では使わないんだから、残り最大2種類の金属を使えばいい
-ga > gb, sa > sb, ba > bbの場合はドングリは5000個のまんまだから
+一番最初に2人通過できる？
+制約が小さいので50回全探索できる
+
+iを一つ進めるごとに候補がA[i]の分だけ増える
+これをヒープキューで優先度が高い（数字が小さい）順に取る
 """
 
-def multi(n, ga, gb, sa, sb, ba, bb):
-    res = n
-    for g in range(n + 1):
-        for s in range(n + 1):
-            # 購入金額についてオーバーしてないか
-            if g * ga + s * sa > n:
-                break
-            b = (n - (g * ga + s * sa)) // ba
-            opt = g * gb + s * sb + b * bb + (n - (g * ga + s * sa + b * ba))
-            res = max(res, opt)
+N, K = getNM()
+A = [[] for i in range(N)]
+for i in range(N):
+    a = getList()
+    for j in range(K):
+        A[i].append([j * N + i + 1, a[j]])
 
-    return res
+ans = [[] for i in range(N)]
+L = []
+heapify(L)
+passed = set()
 
-def multi_two(n, ga, gb, sa, sb):
-    res = n
-    for g in range(n + 1):
-        if g * ga > n:
-            break
-        s = (n - (g * ga)) // sa
-        opt = g * gb + s * sb + (n - (g * ga + s * sa))
-        res = max(res, opt)
-    return res
+for i in range(N):
+    for j in A[i]:
+        heappush(L, j)
+    while L and L[0][0] <= K: # whileで抜き取る時は要素が残っているか気をつけよう
+        pref, id = heappop(L)
+        if id in passed:
+            K += 1
+        else:
+            ans[i].append(id)
+            passed.add(id)
 
-N = getN()
-Ga, Sa, Ba = getNM()
-Gb, Sb, Bb = getNM()
+for i in ans:
+    print(*sorted(i))
 
-opt1 = multi(N, Ga, Gb, Sa, Sb, Ba, Bb)
-opt2 = 0
-opt3 = 0
-opt4 = 0
-opt5 = 0
+# ARC098 E - Range Minimum Queries
 
-if opt1 == N:
-    # 1回目で何もしなかった場合のみ逆向きでmulti
-    opt2 = multi(N, Gb, Ga, Sb, Sa, Bb, Ba)
+"""
+数列A
+長さKの連続する部分列を1つ選ぶ　
+その中の最小のものを取り除く　infにすれば？
+取り除いた要素の最大値 - 最小値をマイナスにしたい　二分探索とかできる?
+最終形をイメージする
 
-opt3 = multi_two(opt1, Gb, Ga, Sb, Sa)
-opt4 = multi_two(opt1, Gb, Ga, Bb, Ba)
-opt5 = multi_two(opt1, Sb, Sa, Bb, Ba)
+一番望ましいのは
+Q個について最小区間のQ個を取ること
+それより小さい要素を取らずに都合のいいとこだけ取りたい
+小さい順に仕切りを立てていく
+まず小さい順に1 2 3 4...これは必ず取れる　（1 2 3 5...とかは1234より大きくなる）
+次に2 3 4 5を取れるか
+N個目の数って難しくない？
 
-print(max(opt1, opt2, opt3, opt4, opt5))
+5 3 2
+4 3 1 5 2 の場合
+4 3 [1 5 2]
+4 [3 5 2]
 
-#　Code Fomula 2014 予選 C - 仲良し文字列
-# 間違ってるところのみ抜けば全通り試せる
+N <= 2000なので 1, 2, 3, 4で区切っていくのはできそう
+Qの中に1を入れる場合、求める値はAq - A1
 
-def ord_chr(array, fanc):
-    if fanc == 0:
-        res = [ord(s) - ord('a') for s in array]
-        return res
+1 1 3 5 6 7 の場合
+1番目の1以降を使うと 1 1 3 5
+2番目の1以降を使うと 1 3 5 6
+3以降を使うと       3 5 6 7
+なので3以降を使う方がいい
+Q = 4の時、候補となるのは
+[小さい方から1番目、2番目、3番目...] or
+[小さい方から2番目、3番目、4番目...] or...
 
-    if fanc == 1:
-        res = [chr(i + ord('a')) for i in array]
-        res = ''.join(res)
-        return res
+ただし、[小さい方から2番目、3番目、4番目...]を作るには選択範囲に小さい方から1番目を含めないことが必要
+4 3 1 5 2 の場合
+　　 ×     1は障害物になる
+ブロック1:[4, 3]
+ブロック2:[5, 2] の中でしかKを回せない
+[小さい方から3番目、4番目、5番目...]の場合
+ブロック1:[4, 3]
+ブロック2:[5]
+"""
 
-A = ord_chr(input(), 0)
-B = ord_chr(input(), 0)
+N, K, Q = getNM()
+A = getList()
+A = [[A[i], i] for i in range(N)]
 
-judge = [-1] * 26
-psuedo = [-1, -1]
-for i in range(len(A)):
-    if A[i] == B[i]:
-        if judge[A[i]] >= 0:
-            psuedo = [judge[A[i]], i]
-            break
-        judge[A[i]] = i
-else:
-    for i in range(len(A)):
-        if judge[A[i]] >= 0:
-            # 1番目が埋まっていたら２番目に置く
-            psuedo[(psuedo[0] != -1)] = i
-
+flag = [0] * N
+# 区切り0
+l = deepcopy(sorted(A))
 opt = []
-target = []
+l.sort()
+for i in range(Q):
+    opt.append(l[i][0])
+ans = opt[-1] - opt[0]
 
-for i in range(len(A)):
-    if i in psuedo or A[i] != B[i]:
-        opt.append(A[i])
-        target.append(B[i])
+# 区切り1個以上
+for i in range(N):
+    # indexの位置はlを再利用
+    flag[l[i][1]] = 1 # A[i][1]はindex
+    parent = []
+    child = []
+    # フラグの立っているところで区切る
+    # 要素の探索はAを使う
+    for j in range(N):
+        if flag[j] == 0:
+            child.append(A[j][0])
+        else:
+            child.sort()
+            parent.append(child)
+            child = []
+    if len(child):
+        child.sort()
+        parent.append(child)
 
-    if len(opt) > 8:
-        print('NO')
-        exit()
+    # 値を求める
+    # 各childから取れるだけ取る(配列操作を行う)
+    opt = []
+    for array in parent:
+        for j in range(len(array) - K + 1): # childの長さ - K + 1だけ値を取れる
+            opt.append(array[j])
+    # Q個取れたなら
+    if len(opt) >= Q:
+        opt.sort()
+        ans = min(ans, opt[Q - 1] - opt[0])
 
-N = len(opt)
-
-def dfs(array, time):
-    if time == 3:
-        if array == target:
-            print('YES')
-            exit()
-        return
-
-    for i in range(N):
-        for j in range(i + 1, N):
-            res = deepcopy(array)
-            res[l], res[r] = res[r], res[l]
-            dfs(res, time + 1)
-
-dfs(opt, 0)
-
-print('NO')
+print(ans)
