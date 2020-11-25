@@ -51,84 +51,205 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# 文字列を整数に変換
-N = 26
+# ARC060 D - 桁和
 
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
-    else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
+"""
+n < bの時 f(b, n) = n
+n >= bの時 f(b, (n // b)) + (n % b)
+b, b ** 2, b *** 3で割っていく
+b進数は存在するか
+bはそんなに大きくなさそう
+def f(b):
+    n = N
+    res = 0
+    while n:
+        res += n % b
+        n //= b
 
-# z
-print(num2alpha(N))
+    return res
+でできるけど
+単調増加にはならないので二分探索もできない
+存在しない条件はなに
+法則性なさそうなので全探索？
+√nぐらいにしたい
+b進数の一番上の桁は安定している
 
-n = N
-lista = []
-digit = 26
-i = 0
+bを増やすと等間隔で数が減っていく
+a(i + 1)**2 + b(i + 1) + c
+ai ** 2 + 2ai + a + bi + b + c
+ai ** 2 + (2a + b)i + (a + b + c)
 
-while n != 0:
-    opt = n % digit
-    lista.insert(0, opt)
-    if n % digit == 0:
-        n = n // digit - 1
-    else:
-        n = n // digit
-    i += 1
+二項
+10 ** 6まで全探索
+"""
 
-str_list = 'abcdefghijklmnopqrstuvwxyz'
-ans = ''
-for i in range(len(lista)):
-    ans += str_list[lista[i] - 1]
+N = getN()
+S = getN()
 
-# z
+def f(b):
+    n = N
+    res = 0
+    while n:
+        res += n % b
+        n //= b
+
+    return res
+
+# 10 ** 6なので一応可能
+for i in range(2, 10 ** 6 + 1):
+    ans = f(i)
+    if ans == S:
+        print(i)
+        exit()
+
+# 10 ** 6 + 1以降について
+# 割ってiになるbの最大値、最小値、そしてf(b)のとる値
+for i in range(N // 10 ** 6, 0, -1):
+    # 割ってiになるbの最小はN // (i + 1) + 1
+    b1 = N // (i + 1) + 1
+    opt1 = f(b1)
+    # 割ってiになる値の最大は N // i
+    b2 = N // i
+    opt2 = f(b2)
+    if opt2 <= S <= opt1 and (S - opt2) % i == 0:
+        # 87654の場合
+        # b1 = 9740 f(b1) = 10962
+        # b2 = 10956 f(b2) = 14
+        # opt1 - S を iで割った分をb1からひく
+        print(b2 - ((S - opt2) // i))
+        exit()
+
+# 割って0になる
+# これのf(b)はN
+if N == S:
+    print(N + 1)
+    exit()
+
+# どうもできない
+print(-1)
+
+# AGC004 B - Colorful Slimes
+
+"""
+N色のスライムがいる
+全色のスライムが飼いたい
+・iのスライムをaiで変色させる
+・手持ちのiのスライムの全てをxで変色させる
+
+iのスライムを入手する方法
+・iのスライムをaiで購入する
+・i-1のスライムをai-1で購入 + x使う
+・i-2のスライムをai-2で購入 + x * 2使う...
+前からやっていこう
+
+これループする
+色iのスライム買う
+魔法
+色iのスライム買う
+魔法
+で色 i+1, i+2のスライムを作れる
+
+色iのスライム買う
+魔法
+魔法
+色iのスライム買う
+魔法
+で色 i + 1, i + 3のスライムが作れる
+Ai * 個数 + (iからの最長距離 * x)でいくらでもできる
+各スライムについて変更した方がいいスライムについての最長距離を保持する
+
+各スライムごとループさせる]
+小さい順に？
+
+一括に巻き込んだ方がいい場合も
+4 1
+4 2 3 1の場合
+1を4つ買う + 魔法3回
+ここまでまとめ買い変色させた方がいい境界は
+
+魔法の回数をK回に固定すると
+Ai ~ Ai-kの範囲でスライムが買える
+"""
+
+N, X = getNM()
+A = getList()
+
+mi = [float('inf')] * N
+ans = float('inf')
+
+for k in range(N): # 魔法の回数をk回に固定
+    for i in range(N):
+        mi[i] = min(mi[i], A[i - k])
+    ans = min(ans, sum(mi) + k * X)
+
 print(ans)
 
-#  最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
+# diverta 2019 Programming Contest 2 D - Squirrel Merchant
 
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
+"""
+N個のどんぐり
+2回する　ピッタリ整数dp
 
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
+Aでは 金をga, 銀をsa, 銅をbaで交換できる
+最初のAは買うだけ
+Bでは 金をgb, 銀をsb, 銅をbbで交換できる
+もちろん全て換金してからやる
+1: 金をgb / ga倍、銀を...をする
+2: 金をga / gb倍、銀を...をする
 
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
+1でドングリの数が5000倍になっていることもある
 
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
+O(N ** 2)で1の操作の結果のドングリの最大値はわかる 25,000,000になる
+1で増やした金属は2では使わないんだから、残り最大2種類の金属を使えばいい
+ga > gb, sa > sb, ba > bbの場合はドングリは5000個のまんまだから
+"""
 
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
+def multi(n, ga, gb, sa, sb, ba, bb):
+    res = n
+    for g in range(n + 1):
+        for s in range(n + 1):
+            # 購入金額についてオーバーしてないか
+            if g * ga + s * sa > n:
+                break
+            b = (n - (g * ga + s * sa)) // ba
+            opt = g * gb + s * sb + b * bb + (n - (g * ga + s * sa + b * ba))
+            res = max(res, opt)
 
-# digital arts B - Password
+    return res
 
-# 文字配列を数字配列に
-# pypyだといる
+def multi_two(n, ga, gb, sa, sb):
+    res = n
+    for g in range(n + 1):
+        if g * ga > n:
+            break
+        s = (n - (g * ga)) // sa
+        opt = g * gb + s * sb + (n - (g * ga + s * sa))
+        res = max(res, opt)
+    return res
+
+N = getN()
+Ga, Sa, Ba = getNM()
+Gb, Sb, Bb = getNM()
+
+opt1 = multi(N, Ga, Gb, Sa, Sb, Ba, Bb)
+opt2 = 0
+opt3 = 0
+opt4 = 0
+opt5 = 0
+
+if opt1 == N:
+    # 1回目で何もしなかった場合のみ逆向きでmulti
+    opt2 = multi(N, Gb, Ga, Sb, Sa, Bb, Ba)
+
+opt3 = multi_two(opt1, Gb, Ga, Sb, Sa)
+opt4 = multi_two(opt1, Gb, Ga, Bb, Ba)
+opt5 = multi_two(opt1, Sb, Sa, Bb, Ba)
+
+print(max(opt1, opt2, opt3, opt4, opt5))
+
+#　Code Fomula 2014 予選 C - 仲良し文字列
+# 間違ってるところのみ抜けば全通り試せる
+
 def ord_chr(array, fanc):
     if fanc == 0:
         res = [ord(s) - ord('a') for s in array]
@@ -139,399 +260,50 @@ def ord_chr(array, fanc):
         res = ''.join(res)
         return res
 
-S = ord_chr(input(), 0)
-S = [i + 1 for i in S]
+A = ord_chr(input(), 0)
+B = ord_chr(input(), 0)
 
-if S == [1] or S == [26] * 20:
-	print("NO")
-	exit()
-
-h = sum(S)
-opt1 = [h % 26] * (h % 26 > 0) + [26] * (h // 26)
-
-if opt1 == S: # 逆向きにしてみる
-    opt1 = opt1[::-1]
-
-if opt1 == S: # 逆むきにしてむ同じなら'zzz'
-    opt1[-1] -= 1
-    opt1.append(1)
-
-opt1 = [i - 1 for i in opt1]
-print(ord_chr(opt1, 1))
-
-# ABC009 C - 辞書式順序ふたたび
-
-N,K = getNM()
-S = list(input())
-T = sorted(S)
-diff = 0
-ans = ""
-
-for i in range(N):
-    s = S[i]
-    # 残りの文字を全ループさせる
-    for t in T:
-        # tを追加して良いか確かめる
-        diff1 = diff + (s != t)
-        count = Counter(T)
-        count[t] -= 1
-        diff2 = sum((Counter(S[i + 1:]) - count).values())
-        # 追加していいなら
-        if diff1 + diff2 <= K:
-            diff = diff1
-            ans += t
-            T.remove(t)
+judge = [-1] * 26
+psuedo = [-1, -1]
+for i in range(len(A)):
+    if A[i] == B[i]:
+        if judge[A[i]] >= 0:
+            psuedo = [judge[A[i]], i]
             break
-print(ans)
+        judge[A[i]] = i
+else:
+    for i in range(len(A)):
+        if judge[A[i]] >= 0:
+            # 1番目が埋まっていたら２番目に置く
+            psuedo[(psuedo[0] != -1)] = i
 
-# ABC031 語呂合わせ
+opt = []
+target = []
 
-# 1 ~ Kまでの数字がどの単語に当てはまるか
-# 1 ~ Kに対し文字の候補は26 ** 3通り?
+for i in range(len(A)):
+    if i in psuedo or A[i] != B[i]:
+        opt.append(A[i])
+        target.append(B[i])
 
-# 文字列は総文字数、アルファベットの種類（２６種類、定数倍）で捉えられる
+    if len(opt) > 8:
+        print('NO')
+        exit()
 
-N, M = getNM()
-que = []
-for i in range(M):
-    v, w = input().split()
-    que.append([v, w])
-root = 3
+N = len(opt)
 
-def judge(array):
-    # 1 ~ Kに割り当てた文字数が正しいか
-    for v, w in que:
-        cnt = 0
-        for i in range(len(v)):
-            cnt += array[int(v[i]) - 1]
-        if cnt != len(w):
-            return
-    # 文字数が適合するなら
-    str_list = [''] * N
-    for v, w in que:
-        cnt = 0
-        # 文字を区切っていく
-        for i in range(len(v)):
-            str_len = array[int(v[i]) - 1]
-            opt = w[cnt: cnt + str_len]
-            if str_list[int(v[i]) - 1] == '':
-                str_list[int(v[i]) - 1] = opt
-            else:
-                if str_list[int(v[i]) - 1] != opt:
-                    return
-            cnt += str_len
-
-    # 全て適合するなら
-    for i in str_list:
-        print(i)
-    exit()
-
-# 1 ~ Kの文字数が何文字かについて3 ** Kを全探索
-def four_pow(i, array):
-    global cnt
-    if i == N:
-        judge(array)
-        return
-    for j in range(1, root + 1):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-four_pow(0, [])
-
-K, N = getNM()
-G = []
-for i in range(N):
-    v, w = map(str, input().split())
-    # 桁ごとに数字を分ける
-    v = list(v)
-    v = [int(d) - 1 for d in v]
-    G.append((v, w))
-
-# それぞれの語呂数に対して長さ1 ~ 3を割り当てる
-for p in product(range(1, 4), repeat = K):
-    S = [[] for _ in range(K)]
-    for v, w in G:
-        c = 0
-        # 長さが正しいか判定するパート
-        for d in v:
-            # 使われた語呂数の長さを足し合わせる
-            c += p[d]
-        if c != len(w):
-            break
-        # 文字列を割り当てるパート
-        else:
-            cur = 0
-            for d in v:
-                # 長さごとに文字列を切っていく
-                S[d].append(w[cur: cur + p[d]])
-                cur += p[d]
-    # 長さが整合したものが見つかれば
-    else:
-        for i in range(K):
-            # 任意の語呂数に対する文字列が一意に定まらなければ
-            # 112: abcで 1 = a, 1 = B, 2 = cになるみたいなケース
-            if len(set(S[i])) != 1:
-                break
-        else:
-            for i in range(K):
-                print(S[i][0])
+def dfs(array, time):
+    if time == 3:
+        if array == target:
+            print('YES')
             exit()
+        return
 
-# ABC043 D - アンバランス
-# i文字目を見る場合
-# i - 1文字目が同じ文字ならアウト
-# i - 2文字目が同じでもアウト
-S = input()
-N = len(S)
-
-ans = [-1, -1]
-for i in range(1, N):
-    if S[i] == S[i - 1]:
-        ans = [i, i + 1]
-        break
-    if i > 1 and S[i] == S[i - 2]:
-        ans = [i - 1, i + 1]
-        break
-print(*ans)
-
-# ABC049 C - 白昼夢
-
-S = input()
-
-while len(S) >= 5:
-    # Sを４つの単語で順に調べて刈っていく
-    if len(S) >= 7 and S[-7:] == "dreamer":
-        S = S[:-7]
-        continue
-
-    if len(S) >= 6 and S[-6:] == "eraser":
-        S = S[:-6]
-        continue
-
-    elif S[-5:] == "dream" or S[-5:] == "erase":
-        S = S[:-5]
-        continue
-
-    else:
-        break
-
-if len(S) == 0:
-    print("YES")
-else:
-    print("NO")
-
-# ARC019 B - こだわりの名前
-S = input()
-N = len(S)
-bi = N // 2
-str_f = []
-for i in range(bi):
-    str_f.append(S[i])
-str_b = []
-for i in range(bi):
-    str_b.append(S[-i - 1])
-
-cnt = 0
-for i in range(bi):
-    if str_f[i] != str_b[i]:
-        cnt += 1
-
-# 全て一致
-if cnt == 0:
-    # 真ん中以外は何に変えても回文にならない
-    # 真ん中は何に変えても回文になる
-    print(2 * bi * 25)
-elif cnt == 1:
-    if N % 2 == 0:
-        print(25 * bi * 2 - 2)
-    else:
-        # 真ん中は何に変えても回文にならない
-        print(25 * bi * 2 - 2 + 25)
-else:
-    print(25 * N)
-
-# AGC048 A - atcoder < S
-
-"""
-スワップの最小回数は
-１文字目 a
-どこかにaより上がいたらそれをスワップして終了
-aならそのまま
-a以下なら？
-counterする？
-
-前から探索する
-スワップしなくていいならスワップしない
-target[i] > alta[i]の時スワップする
-前のとスワップするかも
-そもそもatcoderは6文字
-スワップの最大回数は6回
-次の文字にいくのはtarget[i] = alta[i]だった時のみ
-target[i] < alta[i]: 終了
-target[i] = alta[i]: 次に
-target[i] > alta[i]: スワップ要
-
-target'atcoder'が任意の文字(例:topcoder)、任意の二箇所（隣接しなくていい）をスワップできるなら
-一文字目を見る
-target[i] < alta[i]: 終了
-target[i] = alta[i]: 次に
-target[i] > alta[i]: スワップ要
-その文字以降を探索 target[i]を上回るものがあればスワップ += 1終了
-無い場合　target[i]と同じものが見つかればそのうち一番右のものとスワップ
-　　　　　target[i]を下回るものしかなければ終了
-
-たぶん
-"""
-
-T = getN()
-S = [input() for i in range(T)]
-
-for s in S:
-    if s.count('a') == len(s):
-        print(-1)
-        continue
-
-    if s > 'atcoder':
-        print(0)
-        continue
-
-    n = len(s)
-    for i in range(n):
-        # aより上の要素をスワップを繰り返し運送する
-
-        # i - 1回運送すると2番目の位置にくる
-        # もしord('t') < ord(i)なら条件を満たし終了
-        # そうでなければもう一つ前に運送する
-
-        # i回運送すると１番目の位置に来る
-        # ord('a') < ord(i)より条件を満たす
-        if s[i] > 'a':
-            if s[i] > 't':
-                print(i - 1)
-            else:
-                print(i)
-            break
-
-# C - String Coloring
-
-"""
-長さ2N
-何通りありますか　comboかdp
-Sの各文字を赤か青で塗る
-2 ** 2Nあるがこれを2 ** Nに落としたい
-2NからN個選ぶ
-36C18 9,075,135,300通り
-意外とでかいな　これを減らす
-
-まず構成する数字の個数が一致してないと
-4
-cabaacba の場合
-[[1, 3, 4, 7], [2, 6], [0, 5], [], [], [],
-a * 2, b * 1, c * 1
-indexの選び方は左右対象でなければならない
-1選ぶと7も選ばれる
-3を選ばない（相手側になる）と4も選ばれない（相手側になる）
-aの場所の配分は
-1, 3 + 4, 7でも1, 7 + 3, 4でもいい
-他の文字との位置関係が大事
-
-もちろん全通り出すのは無理
-左から右に読んだ文字列と右から左に読んだ文字列が一致するとは
-最終的には2 ** Nでいい
-明らかダメそうなやつを削る
-もちろん全ての文字を使わないといけない
-掛け算する形になると思う
-
-cabaacba で最初のcを選んだら最後のbaが青になるのは許されない
-グループ１になる組み合わせとグループ２になる組み合わせの裏表
-順番があるのでindexをとってうにうにはできない
-
-各要素を赤か青か　これを2 ** 18
-2 ** Nまでしかできない　2 ** Nを
-fore = S[:N]
-back = list(reversed(S[N:])) の両方でやってdict
-
-やってることはただのbit全探索半分全列挙
-"""
-
-string = 'abcdefghijklmnopqrstuvwxyz'
-N = getN()
-S = list([ord(i) - ord('a') for i in input()])
-
-fore = S[:N]
-back = list(reversed(S[N:]))
-
-# 26進数シリーズ
-# アルファベット → 数値
-def alpha2num(alpha):
-    num=0
-    for index, item in enumerate(list(alpha)):
-        num += pow(26, len(alpha) - index - 1) * (ord(item) - ord('a') + 1)
-    return num
-
-# 数値 → アルファベット
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
-    else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
-
-def array2num(array):
-    num = 0
-    for index, item in enumerate(array):
-        num += pow(26, len(array) - index - 1) * (item + 1)
-    return num
-
-l = defaultdict(lambda: defaultdict(int))
-for bit in range(1 << N):
-    g1 = [] # 赤色
-    g2 = [] # 青色
     for i in range(N):
-        if bit & (1 << i):
-            g1.append(fore[i])
-        else:
-            g2.append(fore[i])
-    g1 = array2num(g1)
-    g2 = array2num(g2)
-    l[g1][g2] += 1
+        for j in range(i + 1, N):
+            res = deepcopy(array)
+            res[l], res[r] = res[r], res[l]
+            dfs(res, time + 1)
 
-ans = 0
-for bit in range(1 << N):
-    g1 = [] # 赤色
-    g2 = [] # 青色
-    for i in range(N):
-        if bit & (1 << i):
-            g1.append(back[i])
-        else:
-            g2.append(back[i])
+dfs(opt, 0)
 
-    g1 = array2num(g1)
-    g2 = array2num(g2)
-    ans += l[g1][g2]
-
-print(ans)
-
-# 天下一プログラマーコンテスト2014予選B B - エターナルスタティックファイナル
-# 文字列は二分探索できる
-
-N = getN()
-S = input()
-T = [input() for _ in range(N)]
-
-T.sort() # 文字列を二分探索する
-
-dp = [0] * (len(S) + 1)
-dp[0] = 1
-for l in range(len(S)):
-    s = ''
-    for r in range(l, len(S)):
-        # l, rを決め, S[l:r+1]を出す
-        # これがTの中にいくつあるか
-        # O(N ** 2 * S) → O(S ** 2logN)
-        s += S[r]
-        cnt = bisect_right(T, s) - bisect_left(T, s)
-        dp[r + 1] += dp[l] * cnt
-        dp[r + 1] %= mod
-
-print(dp[-1])
+print('NO')
