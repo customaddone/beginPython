@@ -51,62 +51,101 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# indeedなう　D - 高橋くんと数列
+# 高速版半分全列挙
 
 """
-その数を一つでも含む連続部分列を返す
-各iにつきO(1)で
-含まないものを引こう
+Nちいさ　半分全列挙すらできる
+ナップサックでいいじゃ
+枝借りする
+relistの部分
+
+ソートがなければ
+266356045
+273062972
+262630505
+265065557
+269337432
+271772484
+273555143
+262605352
 """
 
-N, C = getNM()
+N, T = getNM()
 A = getList()
 
-# 数字A[i]の最後の場所
-p = [-1] * (C + 1)
-ans = [0] * (C + 1)
+# O(2 ** N // 2)でできるんじゃ
+def relist(array):
+    o1 = []
+    o2 = []
+    for i in range(len(array)):
+        if i == 0:
+            o1.append(0)
+            o1.append(array[0])
+            continue
+
+        for j in range(len(o1)):
+            o2.append(o1[j] + array[i])
+        alta = deque([])
+
+        while o1 or o2:
+            if not o1:
+                while o2:
+                    alta.appendleft(o2.pop())
+                break
+            elif not o2:
+                while o1:
+                    alta.appendleft(o1.pop())
+                break
+            u1 = o1.pop()
+            u2 = o2.pop()
+            if u1 >= u2:
+                alta.appendleft(u1)
+                o2.append(u2)
+            else:
+                alta.appendleft(u2)
+                o1.append(u1)
+        o1 = list(alta)
+
+    return o1
+
+B = relist(A[:N // 2])
+F = relist(A[N // 2:]) # こっちの方が大きい
+
+if not B:
+    ans = 0
+    for f in F:
+        if f <= T:
+            ans = max(ans, f)
+    print(ans)
+    exit()
+
+# 尺取り法でO(2 ** N // 2)でできるんじゃ
+ans = 0
+r = len(B) - 1
+for f in F:
+    while r > 0 and f + B[r] > T:
+        r -= 1
+    opt = f + B[r]
+    if opt <= T:
+        ans = max(ans, opt)
+
+print(ans)
+
+# ARC073 D - Simple Knapsack
+
+# あらかじめw1で引いておいたらいい気がする
+N, W = getNM()
+WV = [getList() for i in range(N)]
+d = defaultdict(int)
+d[0] = 0 # dictで持つ
 
 for i in range(N):
-    # 片方で前回以降の分だけ、片方で最後まで
-    # lを固定してrをl+1 ~ Nにすればダブらない
-    # さらに前回の場所 + 1 ~ をlにもできる
-    ans[A[i]] += (i - p[A[i]]) * (N - i)
-    p[A[i]] = i
+    w, v = WV[i]
+    all = list(d.items()) # アイテム解放
+    for w_s, v_s in all:
+        if w_s + w <= W:
+            # w1近辺, w1 * 2近辺, w1 * 3近辺...に集まるので
+            # サイズはそんなに大きくならない
+            d[w_s + w] = max(d[w_s + w], v_s + v)
 
-for i in ans[1:]:
-    print(i)
-
-# ARC045 B - ドキドキデート大作戦高橋君
-
-"""
-NlogNを目指す
-i番目の区間をサボってもいい
-= l ~ rの全区間で二重以上に清掃がされていること
-"""
-
-N, M = getNM()
-clean = [getList() for i in range(M)]
-
-# 累積
-room = [0] * (3 * 10 ** 5 + 7)
-for s, t in clean:
-    room[s] += 1
-    room[t + 1] -= 1
-
-forbit = []
-for i in range(3 * 10 ** 5 + 7):
-    room[i] += room[i - 1]
-    if room[i] <= 1:
-        forbit.append(i)
-
-# 判定
-ans = []
-for i in range(M):
-    s, t = clean[i]
-    # sがforbit内の数と同じ数字を踏むと反対方向に飛ぶように
-    if bisect_left(forbit, s) == bisect_right(forbit, t):
-        ans.append(i + 1)
-
-print(len(ans))
-for i in ans:
-    print(i)
+print(max(d.values()))
