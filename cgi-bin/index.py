@@ -51,40 +51,193 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# AGC019 B - Reverse and Compare
+num = [2, 4, 6, 8]
+limit = 10
+
+def part_bitset1(num, limit):
+    N = len(num)
+    dp = 1 # 最初の0
+
+    for i in range(N):
+        dp |= (dp << num[i])
+
+    return bin(dp)
+
+max_diff = 30
+
+def part_bitset2(num, limit):
+    N = len(num)
+    dp = 1 << max_diff # 最初の0
+    print(bin(dp))
+
+    for i in range(N):
+        # +, -を加える
+        dp |= (dp << num[i]) | (dp >> num[i])
+
+    return dp
+
+l = part_bitset2(num, limit)
+ans = []
+for i in range(l.bit_length()):
+    if l & (1 << i):
+        ans.append(i - max_diff)
+# [-20, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+# print(ans)
+
+# ABC147 E - Balanced Path
+
+MAX_DIFF = 80
+h, w = getNM()
+
+A = [getList() for i in range(h)]
+B = [getList() for i in range(h)]
+c = [[abs(A[i][j] - B[i][j]) for j in range(w)] for i in range(h)]
+
+# bitset高速化
+# 集合を010110...の形で持つ
+sets = [[0 for j in range(w)] for i in range(h)]
+# 中央0: 1 << MAX_DIFFに + c[0][0], - c[0][0]
+sets[0][0] = (1 << MAX_DIFF + c[0][0]) | (1 << MAX_DIFF - c[0][0])
+
+# 縦方向に進む
+for i in range(1, h):
+    # c[i][0]の+-を足したもの
+    sets[i][0] |= (sets[i - 1][0] << MAX_DIFF + c[i][0]) | (sets[i - 1][0] << MAX_DIFF - c[i][0])
+# 下方向に進む
+for i in range(1, w):
+    sets[0][i] |= (sets[0][i - 1] << MAX_DIFF + c[0][i]) | (sets[0][i - 1] << MAX_DIFF - c[0][i])
+for i in range(1, h):
+    for j in range(1, w):
+        sets[i][j] |= (sets[i - 1][j] << MAX_DIFF + c[i][j]) | (sets[i - 1][j] << MAX_DIFF - c[i][j])
+        sets[i][j] |= (sets[i][j - 1] << MAX_DIFF + c[i][j]) | (sets[i][j - 1] << MAX_DIFF - c[i][j])
+
+# 終点の集合を見る
+s = bin(sets[h - 1][w - 1] + (1 << (h + w) * MAX_DIFF))
+min_diff = 1 << MAX_DIFF
+for i in range(len(s)):
+    if s[- 1 - i] == '1': # フラグが立っているなら判定
+        min_diff = min(min_diff, abs(i - (h + w - 1) * MAX_DIFF))
+print(min_diff)
+
+# CODE FESTIVAL 2014 予選B C - 錬金術士
+
+def ord_chr(array, fanc):
+    if fanc == 0:
+        res = [ord(s) - ord('A') for s in array]
+        return res
+
+    if fanc == 1:
+        res = [chr(i + ord('a')) for i in array]
+        res = ''.join(res)
+        return res
 
 """
-何通りあるか　comboかdp
-nC2を選んで i == jは意味ない
-1 2 aatt
-1 3 taat
-1 4 ttaa
-2 3 atat
-2 4 atta
-3 4 aatt
-無駄な動きはない？
-全通り選んでダブったのを引くか、前からdpか、comboか
+S1, S2からN文字なので、S1にパーツが全部揃っててもNG
+S1からどのパーツを取ったら、残りをS2で取れるか
+AABCCD
+ABEDDA
+EDDAAA の場合
 
-ataaの場合
-2 3 aata
-1 4 aata 同じ
-a, s1, s2...sn, aの場合
-a ~ aとs1 ~ s2は同じ
-ペアが１つあれば１つダブりが生まれる
-文字が同じ場所を探す
-abracadabraの場合
-2 10 と 1 11は同じだし、
-2 3 と 1 4も同じ
+S1: A * 2, B * 1, C * 2, D * 1
+S2: A * 2, B * 1, D * 2, E * 1
+S3: A * 3, D * 2, E * 1　がほしい
+AについてはS1から1 ~ 2個（aとする)
+BについてはS1から0 ~ 0個（bとする）...
+DについてはS1から0 ~ 1個（dとする）個取ればいい
+EについてはS1から0 ~ 0個(s2で全てカバー)
+a + b +...+dがNになればいいのでdp部分和
+
+下限: max(S3[i] - S2[i], 0) S2でカバーできない分
+S1から出さないといけない　これを超えないとout
+上限: min(S1[i], S3[i])
+
+S1から文字A[i]をいくつとるかをdp
 """
 
-A = input()
-N = len(A)
-l = [0] * 26
+S1 = ord_chr(input(), 0)
+S2 = ord_chr(input(), 0)
+S3 = ord_chr(input(), 0)
+N = len(S1)
+
+s1_table, s2_table, s3_table = [0] * 26, [0] * 26, [0] * 26
 
 for i in range(N):
-    l[ord(A[i]) - ord('a')] += 1
+    s1_table[S1[i]] += 1
+    s2_table[S2[i]] += 1
+    s3_table[S3[i]] += 1
 
-ans = (N * (N - 1) // 2) + 1
-for i in range(26):
-    ans -= l[i] * (l[i] - 1) // 2
-print(ans)
+prev = 1 # 最初の0
+# 部分和はbitset dpでやれる
+for s1, s2, s3 in zip(s1_table, s2_table, s3_table):
+    if s1 + s2 < s3:
+        print('NO')
+        exit()
+
+    # あとはs1の個数を決めてdp
+    # print(max(s3 - s2, 0), min(s1, s3))
+    mi, ma = max(s3 - s2, 0), min(s1, s3)
+    next = 0 # 選ばない選択もできるなら next = prevに変更
+    for i in range(mi, ma + 1):
+        next |= (prev << i)
+
+    prev = next
+
+# 集計　
+res = []
+for i in range(prev.bit_length()):
+    if prev & (1 << i):
+        res.append(i)
+
+if N // 2 in set(res):
+    print('YES')
+else:
+    print('NO')
+
+# ABC082 D - FT Robot
+
+max_diff = 20000
+
+S = input()
+X, Y = getNM()
+N = len(S)
+
+opt = [[] for i in range(2)]
+flag = 0
+now = 0
+for i in range(N):
+    if S[i] == 'F':
+        now += 1
+    else:
+        opt[flag].append(now)
+        now = 0
+        flag ^= 1 # 反転
+
+opt[flag].append(now)
+
+# その数を足すか引くかしてくれる
+def part_bitset2(num):
+    N = len(num)
+    prev = 1 << max_diff # 最初の0
+
+    for i in range(N):
+        # +, -を加える
+        # 足さない場合が欲しいなら
+        # dp |= (dp << num[i]) | (dp >> num[i])
+        next = (prev << num[i]) | (prev >> num[i])
+        prev = next
+
+    return prev
+
+# x方向に初手マイナス移動はできないので注意
+x = part_bitset2(opt[0][1:])
+y = part_bitset2(opt[1])
+
+# 'F' * 8000
+# -8000 -8000
+# ValueError: negative shift count
+
+# max_diffを十分大きくする
+if x & (1 << ((X  - opt[0][0]) + max_diff)) and y & (1 << (Y + max_diff)):
+    print('Yes')
+else:
+    print('No')
