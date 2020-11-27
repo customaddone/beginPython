@@ -51,428 +51,470 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ARC126 F - XOR Matching
-# d = 2 ** N - 1について
-# 1 xor 2 xor... xor dは
-# 各桁にフラグが2 * (N - 1)本ずつ立っている（つまり0になる）
-# なのでXを抜くとXを構成する部分についてフラグが抜けてXができる
-
-M, K = getNM()
-
-if M == 0 and K == 0:
-    print(0, 0)
-
-elif M == 1 and K == 0:
-    print(0, 0, 1, 1)
-
-elif M >= 2 and K < 2 ** M:
-    ans = []
-    for n in range(2 ** M):
-        if n != K:
-            ans.append(n)
-    print(*ans, K, *ans[::-1], K)
-
-else:
-    print(-1)
-
-# B - Median Pyramid Easy
-
-"""
-頂点にXを書き込む
-N段目の順列としてありうるものを示す
-・一番都合のいいものを出す
-・条件を緩和してみる
-・条件が小さい場合を考える
-Xがなければ
-2 ** (N - 2)を頂点に書けばいい これ以外不可能ってことはない？
-N = 4の場合
-   4
-  345
- 23456
-1234567
-・実験
-def cnt(array):
-    alta = deepcopy(array)
-    while len(alta) > 1:
-        l = []
-        for i in range(1, len(alta) - 1):
-            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
-        alta = l
-    return alta[0]
-A = [1, 2, 3, 4, 5]
-for i in permutations(A):
-    print(i, cnt(i))
-X = 2, 3, 4なら可能
-同様に N = 4なら 2 ~ 6であれば可能
-X = 2の場合 最終的に上がってくるのは2, 2, 3
-1, 2がペアで存在する場合はX = 2になる？
-上にあげるには？
-上げたい数を真ん中で二つ並べることができたら（例:6 4 2 2 3)勝ち確
-真ん中に X + 2, X - 1, X, X + 1, X - 2を配置
-これを中央の値と入れ替える
-"""
-
-def cnt(array):
-    alta = deepcopy(array)
-    while len(alta) > 1:
-        l = []
-        for i in range(1, len(alta) - 1):
-            l.append(sorted([alta[i - 1], alta[i], alta[i + 1]])[1])
-        alta = l
-    return alta[0]
-
-N, X = getNM()
-ma = 2 * N
-mid = ma // 2
-if X == 1 or X == ma - 1:
-    print('No')
-    exit()
-print('Yes')
-
-list = [i for i in range(ma - 1, 0, -1)]
-ans = [-1] * ma
-
-if (ma - 1) - X > 1 and mid - 2 > 0: # X + 2を入れ替える
-    ans[mid - 2] = list.pop(list.index(X + 2))
-if X - 2 > 0 and (ma - 1) - mid > 1: # X - 2を入れ替える
-    ans[mid + 2] = list.pop(list.index(X - 2))
-
-ans[mid - 1] = list.pop(list.index(X - 1))
-ans[mid + 1] = list.pop(list.index(X + 1))
-ans[mid] = list.pop(list.index(X))
-
-for i in range(1, ma):
-    if ans[i] == -1:
-        ans[i] = list.pop()
-
-for i in ans[1:]:
-    print(i)
-
-# ARC013 E - Tr/ee
-
-"""
-頂点がN個、辺がN - 1本あります
-1110
-任意の辺を一つ取り除くとサイズ1の連結成分が作れる
-任意の辺を一つ取り除くとサイズ2の連結成分が作れる
-任意の辺を一つ取り除くとサイズ3の連結成分が作れる
-どの辺を一つ取り除いてもサイズ4の連結成分は作れない
-サイズ1の連結成分が作れること、サイズnの連結成分は作れないことは自明
-サイズiの連結成分が作れるなら、サイズn - iの連結成分が作れる
-単純な木構造から考えよう
-・パスグラフ
-・スターグラフ
-・パスグラフ
-1(1がN - 1個) + 0になる
-・スターグラフ
-10...010になる
-他のものは作れないか
-連結成分iのものが作れる条件、作れない条件
-作れない条件が知りたい　単体であれば必ず作れる
-（連結成分iが作れ、jが作れない）が成り立たない場合がある？
-部分木から考えていく
-大きさ2のパスグラフは11
-これをrootにつけると 110になる
-大きさ3のスターグラフは101
-これをrootにつけると1010になる
-大きさnのグラフにパス状に/スター状に繋げていくと
-1 - 2のグラフに
-パス状に3を繋げると 110
-スター状に繋げると 110 ここまでは同じ
-1 - 2 - 3のグラフに
-パス状に繋げると 1110
-スター状に繋げると 1010
-パスグラフに辺を加えて連結成分jが作れないようにしよう
-11010110は作れるか
-一方をパスグラフに、一方をスターグラフにする?
-1 - 2の状態でスタート
-もしS[i] = 1なら親要素にi + 2をつけ、それを親要素にする
-もしS[i] = 0なら現在の親要素につける
-"""
-
-S = input()
-N = len(S)
-# この条件を満たしていると木を作ることができる
-if S[N - 1] == "1" or S[N - 2] == "0" or S[0] == "0":
-    print(-1)
-else:
-    for i in range(N - 1):
-        if S[i] != S[N - i - 2]:
-            print(-1)
-            exit()
-    ans = []
-    parent = 1 # 現在のparent
-    for i in range(N - 1):
-        if S[i] == "1":
-            # パスグラフ状
-            ans.append([parent, i + 2])
-            parent = i + 2 # parent変更
-        else:
-            # スターグラフ状
-            ans.append([parent, i + 2])
-    for i in ans:
-        print(i[0], i[1])
-
-# ARC091 E - LISDL
-
-"""
-最長増加部分列の長さはA　
-最長減少部分列の長さはB
-使える数字は1 ~ N
-一番都合のいいものを探す
-構築問題は場合分けしてそれぞれの場合の最も都合がいいものをとる
-A + B > N + 1ならダメっぽい
-A + B = Nの場合
-2 3 5 + 5 4
-2 3 1 5 4
-1を適当な所に置けば良い
-A + B = N + 1の場合は簡単
 N = 5
-A, B = 3, 3
-3 4 5 + 5 2 1
-3 4 5 2 1
-A + B < N の場合
-いらないものを適当に置けば
-いいのでは？
-N = 5
-A, B = 2, 2 は無理 A + B <= 4は無理
-2 3 + 3 1 (4, 5はいらない)
-2 3 1 + 4 5
-(5, 6, 3, 1, 4, 2)
-4 5 6 1 2 3
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-for i in permutations([1, 2, 3, 4, 5, 6, 7]):
-    if lis(i) + lis(list(reversed(i))) <= 5:
-        print(lis(i), lis(list(reversed(i))), i)
-相方を2にした場合の下限は(N + 1) // 2 ?
-5なら3 2
-6なら3 2
-7なら4 2
-8なら4 2
-3 4 5 + 5 2
-3 4 5 1 2
-4 5 6 + 6 3
-4 5 6 1 2 3
-4 5 6 7 + 6 3
-4 5 6 7 1 2 3
-細かく区切ればもっといける
-N = 16なら
-[13 14 15 16] [9 10 11 12] [5 6 7 8] [1 2 3 4]
-A = 4, B = 4
-A * B >= Nであれば作れる
-LISはグループで分割しよう！！！
-"""
+# 木グラフ
+que = [
+[1, 2],
+[1, 4],
+[2, 3],
+[2, 5]
+]
+# 重みつき
+que_dis = [
+[1, 2, 2],
+[1, 4, 1],
+[2, 3, 2],
+[2, 5, 1]
+]
 
-N, A, B = getNM()
+def build_tree(n, edge_list):
 
-# mainの長さが半分より下ならout
-if A * B < N or N + 1 < A + B:
-    print(-1)
-    exit()
+    G = [[] for i in range(n)]
 
-if A == 1:
-    if B == N:
-        print(*[i for i in range(N, 0, -1)])
-    else:
-        print(-1)
-    exit()
+    for a, b in edge_list:
+        G[a - 1].append(b - 1)
+        G[b - 1].append(a - 1)
 
-if B == 1:
-    if A == N:
-        print(*[i for i in range(1, N + 1)])
-    else:
-        print(-1)
-    exit()
+    return G
 
-# グループ内の要素の数がA,グループの数がB
-res1 = [i + 1 for i in range(N - A, N)]
-res2 = []
-L = [i + 1 for i in range(N - A - 1, -1, -1)] # 残りN - A個
+def build_tree_dis(n, edge_list):
 
-# 残りN - A個をB - 1個で分割する
-ind = (N - A) // (B - 1)
-for i in range(B - 1):
-    opt = []
-    for j in range(ind + (i < (N - A) % (B - 1))):
-        u = L.pop()
-        opt.append(u)
-    res2.append(opt)
+    G = [[] for i in range(n)]
 
-res2 = list(reversed(res2))
+    for a, b, c in edge_list:
+        G[a - 1].append([b - 1, c])
+        G[b - 1].append([a - 1, c])
 
-ans = res1
-for i in range(B - 1):
-    ans += res2[i]
+    return G
 
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
+# 木の建設
+G1 = build_tree(N, que)
+G2 = build_tree_dis(N, que_dis)
 
-# print(lis(ans), lis(list(reversed(ans))))
-print(*ans)
+# 木を探索
+def search(n, edges, sta):
+    ignore = [0] * N
+    ignore[sta] = 1
+    pos = deque([sta])
+    # 探索
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i] == 0:
+                ignore[i] = 1
+                pos.append(i)
+# [0, 1, 3, 2, 4]
+search(N, G1, 0)
 
-# Tenka1 Programmer Beginner Contest D - Crossing
+# staからの距離
+def distance(n, edges, sta):
+    # 木をKから順にたどる（戻るの禁止）
+    ignore = [-1] * N
+    ignore[sta] = 0
+    pos = deque([sta])
 
-"""
-1 ~ Nまでの部分集合のうち任意のものを選んで
-・1 ~ Nのうちどの整数もどれか2つの組の中に含まれる
-・どの２つの部分集合についても共通する数字が１つのみ
-N = 3
-2個 1 2
-2個 3 1    1 3でもいい
-2個 2 3
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+    return ignore
+# [0, 2, 4, 1, 3]
+print(distance(N, G2, 0))
 
-第１条件
-2N個の数字を使う
-K = N, |Si| = 2にしたらOKではないか？
-1 2
-2 3
-3 4
-4 1 みたいに
-N = 4だとNoになる？
-2 3と4 1が共通項を持たない
-他のK - 1個について共通項がちょうど一つ 自身の要素を他のk - 1個に配分する
-|S1| = k - 1でなければならない
-K * (K - 1) = 2Nならいける
-その場合
-1 ~ Nについて
-N = 6 (k = 4 |Si| = 3)
-1 ~ 6を均等に配分
-1 2 3
-1 4 5
-2 4 6
-3 6 5
+# ABC067 D - Fennec VS. Snuke
+N = 12
+query = [
+[1, 3],
+[2, 3],
+[3, 4],
+[3, 5],
+[5, 11],
+[6, 12],
+[7, 9],
+[8, 9],
+[9, 10],
+[9, 11],
+[11, 12]
+]
 
-1 2 3 4
-1 5 6 7
-2 5 8 9
-3 6 8 10
-4 7 9 10
-L字型に敷き詰める要領で
-第１のL字 k - 1が2つ　1番目横　他縦
-第２のL字 k - 2が2つ　2番目横　他縦
-1 2 3 4
-5 6 7
-8 9
-10 +
-      1
-    5 2
-  8 6 3
-109 7 4 ピラミッド状に
-"""
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+# nowからNまでのルート
+def router(n, sta, end):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    path[sta] = -1
+
+    while pos[0] != end:
+        u = pos.popleft()
+        ignore[u] = 1
+
+        for i in dist[u]:
+            if ignore[i] != 1:
+                path[i] = u
+                pos.append(i)
+
+    route = deque([end])
+    while True:
+        next = path[route[0]]
+        route.appendleft(next)
+        if route[0] == sta:
+            break
+
+    return list(route)
+
+route = router(N, 0, N - 1)
+print(route)
+
+# NG以外のところで辿れるところの数
+def dfs_ter(sta, ng):
+    pos = deque([sta])
+
+    ignore = [0] * N
+    for i in ng:
+        ignore[i] = 1
+
+    cnt = 0
+    while len(pos) > 0:
+        u = pos.popleft()
+        ignore[u] = 1
+        cnt += 1
+        for i in dist[u]:
+            if ignore[i] != 1:
+                pos.append(i)
+
+    return cnt
+
+L = len(route)
+fen_ter = route[:(L + 2 - 1) // 2]
+snu_ter = route[(L + 2 - 1) // 2:]
+
+fen_ans = dfs_ter(0, snu_ter)
+
+if fen_ans > N - fen_ans:
+    print('Fennec')
+else:
+    print('Snuke')
 
 N = getN()
-k = math.floor(math.sqrt(2 * N)) + 1
-if k * (k - 1) != 2 * N:
-    print('No')
+E = [[] for _ in range(N)]
+for _ in range(N):
+    a, b = getNM()
+    E[a - 1].append(b - 1)
+    E[b - 1].append(a - 1)
+
+V = [0] * N
+V[0] = 1 # 1番目は黒く
+V[-1] = -1 # N番目は白く
+
+q = [0, N - 1]
+
+# 0/N-1についてターン制で幅優先探索
+while q:
+    qq = []
+    for i in q:
+        Vi = V[i] # 現在の色
+        for j in E[i]:
+            if not V[j]: # 未探索なら
+                V[j] = Vi
+                qq.append(j)
+    q = qq
+
+print("Fennec" if sum(V)>0 else "Snuke")
+
+
+# ABC070 D - Transit Tree Path
+N = getN()
+dist = [[] for i in range(N + 1)]
+for i in range(N - 1):
+    a, b, c = getNM()
+    dist[a].append([b, c])
+    dist[b].append([a, c])
+ignore = [-1] * (N + 1)
+
+# Kからの最短距離をbfsで測る
+def distance(sta):
+    # 木をKから順にたどる（戻るの禁止）
+    pos = deque([sta])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in dist[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+
+Q, K = getNM()
+ignore[K] = 0
+distance(K)
+# 答えはK~xまでの距離+K~yまでの距離
+ans = []
+for i in range(Q):
+    x, y = getNM()
+    ans.append(ignore[x] + ignore[y])
+for i in ans:
+    print(i)
+
+# ABC087 D - People on a Line
+
+N, M = getNM()
+dist = [[] for i in range(N)]
+for i in range(M):
+    l, r, d = getNM()
+    dist[l - 1].append([r - 1, d])
+    dist[r - 1].append([l - 1, -d])
+
+dis = [float('inf')] * N
+
+pos = deque([i for i in range(N)])
+while len(pos) > 0:
+    u = pos.popleft()
+    # 始めの第一歩
+    if dis[u] == float('inf'):
+        dis[u] = 0
+    # 行き先の位置が未確定なら確定させる
+    # 既に確定しているなら判定
+    for to, d in dist[u]:
+        if dis[to] == float('inf'):
+            dis[to] = dis[u] + d
+            # 位置をレコードした頂点を優先的に処理する必要があるためappendleft
+            # 例 que = [0, 2, 1], [1, 2, 3]
+            # pos = [0, 1, 2] の時
+            # dis = [0, -2, 1]でYesになるはず
+            # 0を探索, 1の距離をレコードしてappend disは[0, inf, 1]
+            # pos = [1, 2, 2]のため次は1を探索
+            # dis[1] == infなのでdis[1] = 0にする
+            # dis[1] = 0, dis[2] = 1なのでNo
+            pos.appendleft(to)
+        else:
+            if dis[u] + d != dis[to]:
+                print('No')
+                exit()
+print('Yes')
+
+# ABC126 D - Even Relation
+# 頂点0からの距離を調べるだけ
+N = getN()
+edges = [[] for i in range(N)]
+for i in range(N - 1):
+    u, v, d = getNM()
+    edges[u - 1].append([v - 1, d])
+    edges[v - 1].append([u - 1, d])
+
+def dij(start):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    while len(pq) > 0:
+        d, now = heapq.heappop(pq)
+        if (d > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i[0]] > dist[now] + i[1]:
+                dist[i[0]] = dist[now] + i[1]
+                heapq.heappush(pq, (dist[i[0]], i[0]))
+    return dist
+
+ans = [0] * N
+dij_list = dij(0)
+for i in range(N):
+    if dij_list[i] % 2 == 0:
+        ans[i] = 0
+    else:
+        ans[i] = 1
+for i in ans:
+    print(i)
+
+# ABC131 E - Friendships
+# スターグラフに線を１本ずつ足していくと
+N, K = getNM()
+
+def cmb_1(n, r):
+    if n < r:
+        return 0
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
+
+cnt = cmb_1(N - 1, 2) - K
+
+if cnt < 0:
+    print(-1)
     exit()
 
-ans = [[] for i in range(k)]
-# 縦のピラミッド
-L = [i + 1 for i in range(N - 1, -1, -1)]
-for i in range(k - 1):
-    for j in range(k - i - 1):
-        u = L.pop()
-        ans[i].append(u)
+dist = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    dist[i][i] = 0
+query = [[1, i] for i in range(2, N + 1)]
 
-# 横のピラミッド
-L = [i + 1 for i in range(N - 1, -1, -1)]
-for i in range(k - 1):
-    for j in range(k - i - 1):
-        u = L.pop()
-        ans[j + i + 1].append(u)
+for a, b in combinations([i for i in range(2, N + 1)], 2):
+    if cnt == 0:
+        break
+    query.append([a, b])
+    cnt -= 1
 
-print('Yes')
-print(len(ans))
-for i in range(len(ans)):
-    print(len(ans[i]), *ans[i])
+print(len(query))
+for i in query:
+    print(*i)
 
-# ABC108 D - All Your Paths are Different Lengths 
+# ABC132 E - Hopscotch Addict
+# 三回移動したい
 
-"""
-有向グラフの構成　都合のいいのを考える
-N <= 20 M <= 60 maxまで使いそう
-全ての辺は小さい方から大きい方に向く
-辺の長さは0でもいい
-頂点1から頂点NへのパスはちょうどL個ある
+N, M = getNM()
+query = [getList() for i in range(M)]
+S, T = getNM()
 
-L <= 60なら話は早い　小さい条件から考える
-1 ~ 2 0
-1 ~ 3 1
-1 = 4 2...
+edges = build_tree_dis(N, query)
 
-M <= 60で10 ** 6のパスを作れるか
-頂点1から頂点NへのパスはちょうどL個ある　これを満たす
-ちょうどL本作るのからして難しそう
-多重辺が含まれれててもOKなので
+ignore = [[-1] * 3 for i in range(N)]
+ignore[S - 1][0] = 0
 
-1 ~ 2 0
-1 ~ 2 1
-1 ~ 3 2
-1 ~ 3 3みたいにすれば L = 2 ** nの場合も簡単
-ここから
+pos = deque([[S - 1, 0]])
 
-1 ~ 2 0
-1 ~ 2 1
-2 ~ 3 0
-2 ~ 3 2
-3 ~ 4 0
-3 ~ 5 4
+while len(pos) > 0:
+    u, t = pos.popleft()
+    t += 1
+    j = t % 3
+    for i in edges[u]:
+        if ignore[i][j] == -1:
+            ignore[i][j] = t
+            pos.append([i, t])
 
-2 ** nのルートを複数作ればいい　頂点20以下がキツイ
-でかい2 ** nのルートを一本立ててそこに足す
-途中のiからNに線を引けばいい
-524288 で頂点20個消費　あとは線を引くだけ
-最後のは複数線を引けばいい
-15
-4 9
-1 2 0
-1 2 1
-2 3 0
-2 3 2
-3 4 0
-3 4 4
-1 4 8
-2 4 8
-3 4 8 11まで作れる
-1 ~ Nのパスは立てない
-n - 1 ~ n間に線を引く
-別のとこに違う線
-"""
+if ignore[T - 1][0] % 3 == 0:
+    print(ignore[T - 1][0] // 3)
+    exit()
+else:
+    print(-1)
 
-L = getN()
+# ABC138 D-Ki
+n, q = map(int, input().split())
+dist = [[] for i in range(n)]
+for i in range(n - 1):
+    a, b = map(int, input().split())
+    dist[a - 1].append(b - 1)
+    # aftercontest対策
+    dist[b - 1].append(a - 1)
+value = [0 for i in range(n)]
 
-N = L.bit_length()
-# Mは2 ** nのタワー + 1のフラグが建っているとこ
-M = (N - 1) * 2 + (bin(L).count("1") - 1)
+# 1つ目の[1, 10]と2つ目の[1, 10]混ぜても問題なし
+for i in range(q):
+    p, x = map(int, input().split())
+    value[p - 1] += x
+#  重複を防ぐ
+ignore = [0] * n
+ignore[0] = 1
 
-print(N, M)
-c = 1
-for i in range(1, N):
-    print(i, i + 1, c)
-    print(i, i + 1, 0)
-    c *= 2
+pos = deque([0])
+# 上から順に自身のvalueの値を子のvalueに加算していく
+# value [100, 10, 1, 0]
+# pos.popleft() = 1 → [100, 10 + 100, 1 + 100, 0 + 100]
+# pos.popleft() = 2 → [100, 110, 101 + 10, 100 + 10]
+while len(pos) > 0:
+    u = pos.popleft()
+    for i in dist[u]:
+        if ignore[i] == 0:
+            ignore[i] = 1
+            value[i] += value[u]
+            pos.append(i)
+# 覚える
+print(*value)
 
-c = 2 ** (N - 1) # 2 ** r
-for i in range(N - 2, -1, -1):
-    # 2 ** i本線ができる
-    # 3 ~ 4で8 ~ 11まで作る
-    # 2 ~ 4で12 ~ 13を作る
-    # 1 ~ 4で15を作る
-    if L & (1 << i):
-        print(i + 1, N, c)
-        c += 2 ** i # 足し合わせる
+# ARC037 B - バウムテスト
+N, M = 11, 11
+query = [
+[1, 2],
+[1, 3],
+[2, 4],
+[3, 5],
+[4, 6],
+[5, 7],
+[6, 8],
+[7, 9],
+[8, 10],
+[9, 11],
+[10, 11]
+]
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = query[i]
+    a -= 1
+    b -= 1
+    dist[a].append(b)
+    dist[b].append(a)
+
+ignore = [0] * N
+ans = 0
+# 閉路検出
+def search(x, dist):
+    global ans
+    # 現在の位置とparent
+    pos = deque([[x, -1]])
+    ignore[x] = 1
+    flag = True
+
+    while pos:
+        u, parent = pos.popleft()
+        for i in dist[u]:
+            if i != parent:
+                if ignore[i] == 1:
+                    flag = False
+                    continue
+                ignore[i] = 1
+                pos.append([i, u])
+    if flag:
+        ans += 1
+
+# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+for i in range(N):
+    if ignore[i] == 0:
+        search(i, dist)
+print(ans)
+
+# ABC148 F - Playing Tag on Tree
+N, U, V = getNM()
+U -= 1
+V -= 1
+# 高橋君はできるだけ遅くゲームが終了するように移動し、青木君はできるだけ早くゲームが終了するように移動します。
+# 高橋君は逃げ、青木君は追いかける
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+taka_d = [-1] * N
+aoki_d = [-1] * N
+
+taka_d[U] = 0
+pos = deque([[U, taka_d[U]]])
+while len(pos) > 0:
+    u, dis = pos.popleft()
+    for i in dist[u]:
+        if taka_d[i] == -1:
+            taka_d[i] = dis + 1
+            pos.append([i, taka_d[i]])
+
+aoki_d[V] = 0
+pos = deque([[V, aoki_d[V]]])
+while len(pos) > 0:
+    u, dis = pos.popleft()
+    for i in dist[u]:
+        if aoki_d[i] == -1:
+            aoki_d[i] = dis + 1
+            pos.append([i, aoki_d[i]])
+
+ans = 0
+for a, b in zip(taka_d, aoki_d):
+    if a < b:
+        ans = max(ans, b - 1)
+print(ans)
