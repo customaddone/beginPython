@@ -51,193 +51,464 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-num = [2, 4, 6, 8]
-limit = 10
+N = 5
+# 木グラフ
+que = [
+[1, 2],
+[1, 4],
+[2, 3],
+[2, 5]
+]
+# 重みつき
+que_dis = [
+[1, 2, 2],
+[1, 4, 1],
+[2, 3, 2],
+[2, 5, 1]
+]
 
-def part_bitset1(num, limit):
-    N = len(num)
-    dp = 1 # 最初の0
+def build_tree(n, edge_list):
 
-    for i in range(N):
-        dp |= (dp << num[i])
+    G = [[] for i in range(n)]
 
-    return bin(dp)
+    for a, b in edge_list:
+        G[a - 1].append(b - 1)
+        G[b - 1].append(a - 1)
 
-max_diff = 30
+    return G
 
-def part_bitset2(num, limit):
-    N = len(num)
-    dp = 1 << max_diff # 最初の0
-    print(bin(dp))
+def build_tree_dis(n, edge_list):
 
-    for i in range(N):
-        # +, -を加える
-        dp |= (dp << num[i]) | (dp >> num[i])
+    G = [[] for i in range(n)]
 
-    return dp
+    for a, b, c in edge_list:
+        G[a - 1].append([b - 1, c])
+        G[b - 1].append([a - 1, c])
 
-l = part_bitset2(num, limit)
+    return G
+
+# 木の建設
+G1 = build_tree(N, que)
+G2 = build_tree_dis(N, que_dis)
+
+# 木を探索
+def search(n, edges, sta):
+    ignore = [0] * N
+    ignore[sta] = 1
+    pos = deque([sta])
+    # 探索
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i] == 0:
+                ignore[i] = 1
+                pos.append(i)
+# [0, 1, 3, 2, 4]
+search(N, G1, 0)
+
+# staからの距離
+def distance(n, edges, sta):
+    # 木をKから順にたどる（戻るの禁止）
+    ignore = [-1] * N
+    ignore[sta] = 0
+    pos = deque([sta])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+    return ignore
+# [0, 2, 4, 1, 3]
+print(distance(N, G2, 0))
+
+# ABC067 D - Fennec VS. Snuke
+N = 12
+query = [
+[1, 3],
+[2, 3],
+[3, 4],
+[3, 5],
+[5, 11],
+[6, 12],
+[7, 9],
+[8, 9],
+[9, 10],
+[9, 11],
+[11, 12]
+]
+
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+# nowからNまでのルート
+def router(n, sta, end):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    path[sta] = -1
+
+    while pos[0] != end:
+        u = pos.popleft()
+        ignore[u] = 1
+
+        for i in dist[u]:
+            if ignore[i] != 1:
+                path[i] = u
+                pos.append(i)
+
+    route = deque([end])
+    while True:
+        next = path[route[0]]
+        route.appendleft(next)
+        if route[0] == sta:
+            break
+
+    return list(route)
+
+route = router(N, 0, N - 1)
+print(route)
+
+# NG以外のところで辿れるところの数
+def dfs_ter(sta, ng):
+    pos = deque([sta])
+
+    ignore = [0] * N
+    for i in ng:
+        ignore[i] = 1
+
+    cnt = 0
+    while len(pos) > 0:
+        u = pos.popleft()
+        ignore[u] = 1
+        cnt += 1
+        for i in dist[u]:
+            if ignore[i] != 1:
+                pos.append(i)
+
+    return cnt
+
+L = len(route)
+fen_ter = route[:(L + 2 - 1) // 2]
+snu_ter = route[(L + 2 - 1) // 2:]
+
+fen_ans = dfs_ter(0, snu_ter)
+
+if fen_ans > N - fen_ans:
+    print('Fennec')
+else:
+    print('Snuke')
+
+N = getN()
+E = [[] for _ in range(N)]
+for _ in range(N):
+    a, b = getNM()
+    E[a - 1].append(b - 1)
+    E[b - 1].append(a - 1)
+
+V = [0] * N
+V[0] = 1 # 1番目は黒く
+V[-1] = -1 # N番目は白く
+
+q = [0, N - 1]
+
+# 0/N-1についてターン制で幅優先探索
+while q:
+    qq = []
+    for i in q:
+        Vi = V[i] # 現在の色
+        for j in E[i]:
+            if not V[j]: # 未探索なら
+                V[j] = Vi
+                qq.append(j)
+    q = qq
+
+print("Fennec" if sum(V)>0 else "Snuke")
+
+
+# ABC070 D - Transit Tree Path
+N = getN()
+dist = [[] for i in range(N + 1)]
+for i in range(N - 1):
+    a, b, c = getNM()
+    dist[a].append([b, c])
+    dist[b].append([a, c])
+ignore = [-1] * (N + 1)
+
+# Kからの最短距離をbfsで測る
+def distance(sta):
+    # 木をKから順にたどる（戻るの禁止）
+    pos = deque([sta])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in dist[u]:
+            if ignore[i[0]] == -1:
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+
+Q, K = getNM()
+ignore[K] = 0
+distance(K)
+# 答えはK~xまでの距離+K~yまでの距離
 ans = []
-for i in range(l.bit_length()):
-    if l & (1 << i):
-        ans.append(i - max_diff)
-# [-20, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
-# print(ans)
+for i in range(Q):
+    x, y = getNM()
+    ans.append(ignore[x] + ignore[y])
+for i in ans:
+    print(i)
 
-# ABC147 E - Balanced Path
+# ABC087 D - People on a Line
 
-MAX_DIFF = 80
-h, w = getNM()
+N, M = getNM()
+Q = [getList() for i in range(M)]
+E = [[] for i in range(N)]
+for l, r, d in Q:
+    E[l - 1].append([r - 1, d])
+    E[r - 1].append([l - 1, -d])
 
-A = [getList() for i in range(h)]
-B = [getList() for i in range(h)]
-c = [[abs(A[i][j] - B[i][j]) for j in range(w)] for i in range(h)]
+# 実際に書いていく
+# 連結してないので注意
+p = [-float('inf')] * N
 
-# bitset高速化
-# 集合を010110...の形で持つ
-sets = [[0 for j in range(w)] for i in range(h)]
-# 中央0: 1 << MAX_DIFFに + c[0][0], - c[0][0]
-sets[0][0] = (1 << MAX_DIFF + c[0][0]) | (1 << MAX_DIFF - c[0][0])
+for sta in range(N): # 全ての木を探索
+    p[sta] = 0 # とりあえず0スタート
+    q = deque([sta])
 
-# 縦方向に進む
-for i in range(1, h):
-    # c[i][0]の+-を足したもの
-    sets[i][0] |= (sets[i - 1][0] << MAX_DIFF + c[i][0]) | (sets[i - 1][0] << MAX_DIFF - c[i][0])
-# 下方向に進む
-for i in range(1, w):
-    sets[0][i] |= (sets[0][i - 1] << MAX_DIFF + c[0][i]) | (sets[0][i - 1] << MAX_DIFF - c[0][i])
-for i in range(1, h):
-    for j in range(1, w):
-        sets[i][j] |= (sets[i - 1][j] << MAX_DIFF + c[i][j]) | (sets[i - 1][j] << MAX_DIFF - c[i][j])
-        sets[i][j] |= (sets[i][j - 1] << MAX_DIFF + c[i][j]) | (sets[i][j - 1] << MAX_DIFF - c[i][j])
+    while q:
+        u = q.popleft() # これの位置はすでに登録済み
+        while E[u]:
+            v, d = E[u].pop() # 探索が済むとエッジを消すのはよくやる
+            if p[v] == -float('inf'):
+                p[v] = p[u] + d
+                q.append(v)
+            else: # 登録済みなら判定
+                if p[v] != p[u] + d:
+                    print('No')
+                    exit()
 
-# 終点の集合を見る
-s = bin(sets[h - 1][w - 1] + (1 << (h + w) * MAX_DIFF))
-min_diff = 1 << MAX_DIFF
-for i in range(len(s)):
-    if s[- 1 - i] == '1': # フラグが立っているなら判定
-        min_diff = min(min_diff, abs(i - (h + w - 1) * MAX_DIFF))
-print(min_diff)
+print('Yes')
 
-# CODE FESTIVAL 2014 予選B C - 錬金術士
+# ABC126 D - Even Relation
+# 頂点0からの距離を調べるだけ
+N = getN()
+edges = [[] for i in range(N)]
+for i in range(N - 1):
+    u, v, d = getNM()
+    edges[u - 1].append([v - 1, d])
+    edges[v - 1].append([u - 1, d])
 
-def ord_chr(array, fanc):
-    if fanc == 0:
-        res = [ord(s) - ord('A') for s in array]
-        return res
+def dij(start):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
 
-    if fanc == 1:
-        res = [chr(i + ord('a')) for i in array]
-        res = ''.join(res)
-        return res
+    while len(pq) > 0:
+        d, now = heapq.heappop(pq)
+        if (d > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i[0]] > dist[now] + i[1]:
+                dist[i[0]] = dist[now] + i[1]
+                heapq.heappush(pq, (dist[i[0]], i[0]))
+    return dist
 
-"""
-S1, S2からN文字なので、S1にパーツが全部揃っててもNG
-S1からどのパーツを取ったら、残りをS2で取れるか
-AABCCD
-ABEDDA
-EDDAAA の場合
-
-S1: A * 2, B * 1, C * 2, D * 1
-S2: A * 2, B * 1, D * 2, E * 1
-S3: A * 3, D * 2, E * 1　がほしい
-AについてはS1から1 ~ 2個（aとする)
-BについてはS1から0 ~ 0個（bとする）...
-DについてはS1から0 ~ 1個（dとする）個取ればいい
-EについてはS1から0 ~ 0個(s2で全てカバー)
-a + b +...+dがNになればいいのでdp部分和
-
-下限: max(S3[i] - S2[i], 0) S2でカバーできない分
-S1から出さないといけない　これを超えないとout
-上限: min(S1[i], S3[i])
-
-S1から文字A[i]をいくつとるかをdp
-"""
-
-S1 = ord_chr(input(), 0)
-S2 = ord_chr(input(), 0)
-S3 = ord_chr(input(), 0)
-N = len(S1)
-
-s1_table, s2_table, s3_table = [0] * 26, [0] * 26, [0] * 26
-
+ans = [0] * N
+dij_list = dij(0)
 for i in range(N):
-    s1_table[S1[i]] += 1
-    s2_table[S2[i]] += 1
-    s3_table[S3[i]] += 1
-
-prev = 1 # 最初の0
-# 部分和はbitset dpでやれる
-for s1, s2, s3 in zip(s1_table, s2_table, s3_table):
-    if s1 + s2 < s3:
-        print('NO')
-        exit()
-
-    # あとはs1の個数を決めてdp
-    # print(max(s3 - s2, 0), min(s1, s3))
-    mi, ma = max(s3 - s2, 0), min(s1, s3)
-    next = 0 # 選ばない選択もできるなら next = prevに変更
-    for i in range(mi, ma + 1):
-        next |= (prev << i)
-
-    prev = next
-
-# 集計　
-res = []
-for i in range(prev.bit_length()):
-    if prev & (1 << i):
-        res.append(i)
-
-if N // 2 in set(res):
-    print('YES')
-else:
-    print('NO')
-
-# ABC082 D - FT Robot
-
-max_diff = 20000
-
-S = input()
-X, Y = getNM()
-N = len(S)
-
-opt = [[] for i in range(2)]
-flag = 0
-now = 0
-for i in range(N):
-    if S[i] == 'F':
-        now += 1
+    if dij_list[i] % 2 == 0:
+        ans[i] = 0
     else:
-        opt[flag].append(now)
-        now = 0
-        flag ^= 1 # 反転
+        ans[i] = 1
+for i in ans:
+    print(i)
 
-opt[flag].append(now)
+# ABC131 E - Friendships
+# スターグラフに線を１本ずつ足していくと
+N, K = getNM()
 
-# その数を足すか引くかしてくれる
-def part_bitset2(num):
-    N = len(num)
-    prev = 1 << max_diff # 最初の0
+def cmb_1(n, r):
+    if n < r:
+        return 0
+    r = min(n - r, r)
+    if r == 0: return 1
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
 
-    for i in range(N):
-        # +, -を加える
-        # 足さない場合が欲しいなら
-        # dp |= (dp << num[i]) | (dp >> num[i])
-        next = (prev << num[i]) | (prev >> num[i])
-        prev = next
+cnt = cmb_1(N - 1, 2) - K
 
-    return prev
+if cnt < 0:
+    print(-1)
+    exit()
 
-# x方向に初手マイナス移動はできないので注意
-x = part_bitset2(opt[0][1:])
-y = part_bitset2(opt[1])
+dist = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    dist[i][i] = 0
+query = [[1, i] for i in range(2, N + 1)]
 
-# 'F' * 8000
-# -8000 -8000
-# ValueError: negative shift count
+for a, b in combinations([i for i in range(2, N + 1)], 2):
+    if cnt == 0:
+        break
+    query.append([a, b])
+    cnt -= 1
 
-# max_diffを十分大きくする
-if x & (1 << ((X  - opt[0][0]) + max_diff)) and y & (1 << (Y + max_diff)):
-    print('Yes')
+print(len(query))
+for i in query:
+    print(*i)
+
+# ABC132 E - Hopscotch Addict
+# 三回移動したい
+
+N, M = getNM()
+query = [getList() for i in range(M)]
+S, T = getNM()
+
+edges = build_tree_dis(N, query)
+
+ignore = [[-1] * 3 for i in range(N)]
+ignore[S - 1][0] = 0
+
+pos = deque([[S - 1, 0]])
+
+while len(pos) > 0:
+    u, t = pos.popleft()
+    t += 1
+    j = t % 3
+    for i in edges[u]:
+        if ignore[i][j] == -1:
+            ignore[i][j] = t
+            pos.append([i, t])
+
+if ignore[T - 1][0] % 3 == 0:
+    print(ignore[T - 1][0] // 3)
+    exit()
 else:
-    print('No')
+    print(-1)
+
+# ABC138 D-Ki
+n, q = map(int, input().split())
+dist = [[] for i in range(n)]
+for i in range(n - 1):
+    a, b = map(int, input().split())
+    dist[a - 1].append(b - 1)
+    # aftercontest対策
+    dist[b - 1].append(a - 1)
+value = [0 for i in range(n)]
+
+# 1つ目の[1, 10]と2つ目の[1, 10]混ぜても問題なし
+for i in range(q):
+    p, x = map(int, input().split())
+    value[p - 1] += x
+#  重複を防ぐ
+ignore = [0] * n
+ignore[0] = 1
+
+pos = deque([0])
+# 上から順に自身のvalueの値を子のvalueに加算していく
+# value [100, 10, 1, 0]
+# pos.popleft() = 1 → [100, 10 + 100, 1 + 100, 0 + 100]
+# pos.popleft() = 2 → [100, 110, 101 + 10, 100 + 10]
+while len(pos) > 0:
+    u = pos.popleft()
+    for i in dist[u]:
+        if ignore[i] == 0:
+            ignore[i] = 1
+            value[i] += value[u]
+            pos.append(i)
+# 覚える
+print(*value)
+
+# ARC037 B - バウムテスト
+N, M = 11, 11
+query = [
+[1, 2],
+[1, 3],
+[2, 4],
+[3, 5],
+[4, 6],
+[5, 7],
+[6, 8],
+[7, 9],
+[8, 10],
+[9, 11],
+[10, 11]
+]
+dist = [[] for i in range(N)]
+for i in range(M):
+    a, b = query[i]
+    a -= 1
+    b -= 1
+    dist[a].append(b)
+    dist[b].append(a)
+
+ignore = [0] * N
+ans = 0
+# 閉路検出
+def search(x, dist):
+    global ans
+    # 現在の位置とparent
+    pos = deque([[x, -1]])
+    ignore[x] = 1
+    flag = True
+
+    while pos:
+        u, parent = pos.popleft()
+        for i in dist[u]:
+            if i != parent:
+                if ignore[i] == 1:
+                    flag = False
+                    continue
+                ignore[i] = 1
+                pos.append([i, u])
+    if flag:
+        ans += 1
+
+# 一つの木の頂点は全て一回のsearchで塗りつぶされる
+for i in range(N):
+    if ignore[i] == 0:
+        search(i, dist)
+print(ans)
+
+# ABC148 F - Playing Tag on Tree
+N, U, V = getNM()
+U -= 1
+V -= 1
+# 高橋君はできるだけ遅くゲームが終了するように移動し、青木君はできるだけ早くゲームが終了するように移動します。
+# 高橋君は逃げ、青木君は追いかける
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+
+taka_d = [-1] * N
+aoki_d = [-1] * N
+
+taka_d[U] = 0
+pos = deque([[U, taka_d[U]]])
+while len(pos) > 0:
+    u, dis = pos.popleft()
+    for i in dist[u]:
+        if taka_d[i] == -1:
+            taka_d[i] = dis + 1
+            pos.append([i, taka_d[i]])
+
+aoki_d[V] = 0
+pos = deque([[V, aoki_d[V]]])
+while len(pos) > 0:
+    u, dis = pos.popleft()
+    for i in dist[u]:
+        if aoki_d[i] == -1:
+            aoki_d[i] = dis + 1
+            pos.append([i, aoki_d[i]])
+
+ans = 0
+for a, b in zip(taka_d, aoki_d):
+    if a < b:
+        ans = max(ans, b - 1)
+print(ans)
