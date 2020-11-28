@@ -51,364 +51,206 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC006 D - トランプ挿入ソート
-n = getN()
-lista = [getList() for i in range(n)]
+N, K = 7, 6
+S = [4, 3, 1, 1, 2, 10, 2]
 
-# 最長増加部分列問題 (LIS)の問題
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-print(n - lis(lista))
+# 左を伸ばしていく
+# その部分列に含まれる全ての要素の値の積は「K以下」である。
+# lはrをオーバーすることもある
 
-# AGC024 B - Backfront
+if 0 in S:
+    print(N)
+    exit()
+else:
+    l, ans, total = 0, 0, 1
+    for r in range(N):
+        total *= S[r]
+        while total > K and l <= r:
+            total //= S[l]
+            l += 1
+        ans = max(ans, r - l + 1)
+print(ans)
 
-"""
-バブルソートのやつみたいになるんやろ
-適当な順番に数を選べば最小回数で
-3 2 5 1 4 6 の場合
-1 2より右にあるので左に
-2 3より右にあるので左に
-4 5より右にあるので左に
+# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
+N, K = 4, 10
+A = [6, 1, 2, 7]
 
-4が6より左にある場合は？
-
-場所がおかしいやつは取り除く　あとで並べる
-i < i + 1 < i + 2...で単調増加してる分だけ
-普通のlis
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-print(n - lis(lista))
-"""
-
-N = getN()
-P = getArray(N)
-
-P = [[P[i], i] for i in range(N)]
-P.sort()
-
-now = 1 # 最初の1個は自明にok
+left = 0
+total = 0
 ans = 0
 
-for i in range(1, N):
-    # 前のより左にあれば更新
-    if P[i][1] < P[i - 1][1]:
-        ans = max(ans, now)
-        now = 1
-    else:
-        now += 1
-
-ans = max(ans, now)
-
-print(N - ans)
-
-# Donutsプロコンチャレンジ2015 C - 行列のできるドーナツ屋
-# LISの応用
-
-N = getN()
-H = getList()
-
-# まあBITだろう
-# 逆から置くBITではない？
-# 累積和？
-# 個数だけ求めればいい
-
-# 地点iからは
-# i - 1起点の単純増加列
-# LIS？
-ans = [0] * N
-L = []
-# 人0 ~ iまでがどのように見えるか これを人i + 1が見る
-for i in range(N - 1):
-    # もしLの一番小さいやつよりH[i]が大きければ
-    while L and L[-1] < H[i]:
-        L.pop()
-    L.append(H[i])
-    ans[i + 1] = len(L)
-
-for i in ans:
-    print(i)
-
-# ABC134 E - Sequence Decomposing
-N = getN()
-A = getArray(N)
-
-def lis(A):
-    L = deque([A[0]])
-    for a in A[1:]:
-        # Lのどの数より小さくければ
-        # 繋げられるものがない
-        if a <= L[0]:
-            L.appendleft(a)
-        else:
-            # L[bisect_left(L, a) - 1]
-            # Lの中のa未満の数字のうちの最大値
-            L[bisect_left(L, a) - 1] = a
-    return len(L)
-
-print(lis(A))
+for right in range(0, N):
+    total += A[right]
+    while total >= K:
+        ans += N - right
+        total -= A[left]
+        left += 1
+print(ans)
 
 N = 10
-A = [0, 6, 9, 9, 2, 3, 4, 5, 10, 3]
+S = 15
+A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
+right = 0
+total = 0
+ans = 0
+# S以上を求める場合にはこの形で
+for left in range(N):
+    while right < N and total < S:
+        total += A[right]
+        right += 1
+    if total < S:
+        break
+    if left == right:
+        right += 1
+    total -= A[left]
 
-ans = deque([A[0]])
-for i in range(1, N):
-    # ans[index] A[i]が挟みこめる場所
-    # A[0] <= A[i]なら0になる
-    # ans[index - 1]: A[i]未満で一番大きい数字
-    index = bisect_left(ans, A[i])
-    if index == 0:
-        ans.appendleft(A[i])
-    else:
-        # 同じ数が複数ある場合は一番最後の数字が更新される
-        ans[index - 1] = A[i]
-print(len(ans))
+# 要素の種類についての問題
+# 全ての要素を含む
+P = 5
+A = [1, 8, 8, 8, 1]
+dict = {}
+for i in A:
+    dict[i] = 0
+# 要素の種類数
+V = len(dict.items())
 
-# ABC165 F - LIS on Tree
-# 頂点1から頂点kまでの最短パス上
-# ルートはO(n)で求められる
-N = getN()
-A = getList()
-query = [getList() for i in range(N - 1)]
+# 事象の数をカウント
+cnt = 0
+right = 0
+# １つ目から全ての事象をカバーするまでrightを進める
+while right < P:
+    if dict[A[right]] == 0:
+        cnt += 1
+    dict[A[right]] += 1
 
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+    if cnt == len(dict.items()):
+        break
 
-ignore = [0] * N
-ignore[0] = 1
-lis = [A[0]]
-rec = [0] * N
-rec[0] = 1
+    right += 1
+print(l, r)
 
-# 行きがけ帰りがけの要領
-def dfs(u):
-    global lis
-    for i in dist[u]:
-        if ignore[i] != 1:
-            ignore[i] = 1
-            # 巻き戻し用
-            plus = 0 # true or false
-            change = (0, 0, 0) # true or false, 変更した場所、変更した数値
-
-            if A[i] > lis[-1]:
-                lis.append(A[i])
-                plus = 1
-            else:
-                index = bisect_left(lis, A[i])
-                change = (1, index, lis[index])
-                lis[index] = A[i]
-            rec[i] = len(lis)
-            dfs(i)
-            # 巻き戻す
-            if plus:
-                lis.pop()
-            else:
-                lis[change[1]] = change[2]
-
-dfs(0)
-for i in rec:
-    print(i)
-
-# ACLC1 A - Reachable Towns
-
-N = getN()
-Q = [getList() for i in range(N)]
-que = deepcopy(Q)
-que.sort(key = lambda i:i[1], reverse = True)
-que.sort()
-
-# xy座標が共に大きいもの
-# 順列になっている？
-
-"""
-O(n**2)
-U = UnionFind(N)
-for i in range(N):
-    for j in range(i + 1, N):
-        if que[i][1] < que[j][1]:
-            U.union(i, j)
-for i in range(N):
-    print(U.count(i))
-"""
-#　ソート方法はこれでOK
-# やらなくていい探索がある　それを減らす
-# 4 3
-# 4 1
-# 4 2
-# 3 1
-# 3 2
-# 1 2 これだけいる
-
-# 4 3 1 2でi < jになるものをペアに
-# 1とペアにできるのは2, 3, 4
-# 2とペアにできるのは3, 4
-# 3は4
-# それぞれ右側にあれば
-
-# 6 7 5 3 2 4 1
-# グループ１ 6 7
-# グループ2 5
-# グループ3 3 2 4
-# グループ4 1
-# どれか１つのグループに属する
-
-U = UnionFind(N + 1)
-group = []
-
-for x, y in que:
-    # １番目のものは必ずグループのリーダーになれる
-    if not group:
-        group.append(y)
-        continue
-    # リーダーが降順に並ぶように
-    if y < group[-1]:
-        group.append(y)
-        continue
-    opt = float('inf')
-    # グループ再編成
-    while group:
-        # yより小さいものは全てyが所属するグループに入る
-        if y > group[-1]:
-            l = group.pop()
-            U.union(l, y)
-            opt = min(opt, l) # yが所属するグループの中のリーダー　一番最初のものが記録される
-        else:
+l = 0
+# 右を一つ進めて左をできる限り進める
+for r in range(right + 1, P):
+    # 新しく一つ加える
+    dict[A[r]] += 1
+    while True:
+        # もし要素が一つしか無かったら削れない
+        if dict[A[l]] == 1:
             break
-    # リーダー変更
-    group.append(opt)
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
 
+# 各要素にダブりがない範囲
+N = 6
+A = [1, 2, 2, 3, 4, 4]
+
+dict = defaultdict(int)
+l = 0
+for r in range(N):
+    while dict[A[r]] == 1:
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
+    dict[A[r]] += 1
+
+N = 4
+A = [2, 5, 4, 6]
+
+l, ans, xo, total = 0, 0, 0, 0
+
+for r in range(N):
+    xo ^= A[r]
+    total += A[r]
+
+    # xo == totalになるまでA[l]で引き続ける
+    while xo < total:
+        xo ^= A[l]
+        total -= A[l]
+        l += 1
+
+    ans += r - l + 1
+
+print(ans)
+
+
+N, K = 10, 4
+A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
+
+right, ans = 0, 0
+for left in range(N):
+    # 単調増加するとこまでもしくは長さKになるまで
+    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
+        right += 1
+    # もし長さKまで伸ばせたらans += 1
+    if right - left == K - 1:
+        ans += 1
+    # 前に進めないならright += 1
+    if left == right and right < N:
+        right += 1
+print(ans)
+
+# 第5回 ドワンゴからの挑戦状 予選 C - k-DMC
+
+"""
+Q <= 75?
+文字列 dpか
+k-DMCを求めよ
+整数の組の個数 dp or combo
+D, M, Cの順で並んでおり、文字の長さがk以下である
+文字の長さを伸ばしていく
+k = 1, 2... Qについて k - DMC数の数は？
+累積の数を求める
+
+長さがiのものをレコードしていく
+文字の長さはaとcのみに依存する
+
+A = []
+B = []
+C = []
 for i in range(N):
-    print(U.count(Q[i][1])) # yがiのもののサイズの大きさ　uf.funcはインデックスで呼ばなくてもいい
+    if S[i] == 'D':
+        A.append(i)
+    if S[i] == 'M':
+        B.append(i)
+    if S[i] == 'C':
+        C.append(i)
+これだとO(N ** 2)
 
-# ARC091 E - LISDL
+a ~ c間にあるbの個数を累積和で求める
+あるaについて対応するcが何個あるかは二分探索で求められる
+間のbについては0 ~ cまで - 0 ~ aまで
 
-"""
-最長増加部分列の長さはA　
-最長減少部分列の長さはB
-使える数字は1 ~ N
-一番都合のいいものを探す
-A + B > N + 1ならダメっぽい
-A + B = Nの場合
-2 3 5 + 5 4
-2 3 1 5 4
-1を適当な所に置けば良い
-A + B = N + 1の場合は簡単
-N = 5
-A, B = 3, 3
-3 4 5 + 5 2 1
-3 4 5 2 1
-
-A + B < N の場合
-いらないものを適当に置けば
-いいのでは？
-N = 5
-A, B = 2, 2 は無理 A + B <= 4は無理
-2 3 + 3 1 (4, 5はいらない)
-2 3 1 + 4 5
-
-(5, 6, 3, 1, 4, 2)
-4 5 6 1 2 3
-
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-
-for i in permutations([1, 2, 3, 4, 5, 6, 7]):
-    if lis(i) + lis(list(reversed(i))) <= 5:
-        print(lis(i), lis(list(reversed(i))), i)
-
-相方を2にした場合の下限は(N + 1) // 2 ?
-5なら3 2
-6なら3 2
-7なら4 2
-8なら4 2
-3 4 5 + 5 2
-3 4 5 1 2
-4 5 6 + 6 3
-4 5 6 1 2 3
-4 5 6 7 + 6 3
-4 5 6 7 1 2 3
-細かく区切ればもっといける
-N = 16なら
-[13 14 15 16] [9 10 11 12] [5 6 7 8] [1 2 3 4]
-A = 4, B = 4
-A * B >= Nであれば作れる
-
-LISはグループで分割しよう！！！
+二重累積和 + 計算量logNの改善
+累積二分探索は尺取り法使える
 """
 
-N, A, B = getNM()
+N = getN()
+S = list(input())
+Q = getN()
+K = getList()
 
-# mainの長さが半分より下ならout
-if A * B < N or N + 1 < A + B:
-    print(-1)
-    exit()
+for k in K:
+    ans = 0
+    d_cnt = 0 # dの数
+    m_cnt = 0 # mの数
+    dm_cnt = 0 # dとmの組み合わせの数
+    for i in range(N):
+        # 上限超えたので捨てる
+        if i - k >= 0:
+            if S[i - k] == "D":
+                d_cnt -= 1 # dを一つ捨て
+                dm_cnt -= m_cnt # 捨てたdはmを現在ホールドしてる個数持っているので（dが左端にあるから）
+            elif S[i - k] == "M":
+                m_cnt -= 1 # mを捨てる
 
-if A == 1:
-    if B == N:
-        print(*[i for i in range(N, 0, -1)])
-    else:
-        print(-1)
-    exit()
+        if S[i] == "D":
+            d_cnt += 1
+        elif S[i] == "M":
+            m_cnt += 1
+            dm_cnt += d_cnt # 現在のd * 新しく入ったm(1つ)
+        elif S[i] == "C":
+            ans += dm_cnt # dm_cntの数 * 新しく入ったc(1つ)
 
-if B == 1:
-    if A == N:
-        print(*[i for i in range(1, N + 1)])
-    else:
-        print(-1)
-    exit()
-
-# グループ内の要素の数がA,グループの数がB
-res1 = [i + 1 for i in range(N - A, N)]
-res2 = []
-L = [i + 1 for i in range(N - A - 1, -1, -1)] # 残りN - A個
-
-# 残りN - A個をB - 1個で分割する
-ind = (N - A) // (B - 1)
-for i in range(B - 1):
-    opt = []
-    for j in range(ind + (i < (N - A) % (B - 1))):
-        u = L.pop()
-        opt.append(u)
-    res2.append(opt)
-
-res2 = list(reversed(res2))
-
-ans = res1
-for i in range(B - 1):
-    ans += res2[i]
-
-def lis(A):
-    L = [A[0]]
-    for a in A[1:]:
-        if a > L[-1]:
-            L.append(a)
-        # このelseに引っかかった時にトランプのソートが必要
-        else:
-            L[bisect_left(L, a)] = a
-    return len(L)
-
-# print(lis(ans), lis(list(reversed(ans))))
-print(*ans)
+    print(ans)
