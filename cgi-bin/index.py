@@ -51,286 +51,317 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ARC021 B - Your Numbers are XORed...
+# mod不使用ver
+def cmb_1(n, r):
+    r = min(n - r, r)
+    if (r < 0) or (n < r):
+        return 0
+
+    if r == 0:
+        return 1
+
+    over = reduce(mul, range(n, n - r, -1))
+    under = reduce(mul, range(1, r + 1))
+    return over // under
+
+# 10
+print(cmb_1(5, 3))
+
+# mod使用ver
+# nが大きい場合に
+def cmb_2(x,y):
+    r = 1
+    for i in range(1, y + 1):
+        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
+    return r
+
+# 10
+print(cmb_2(5, 3))
+
+# 逆元事前処理ver
+# nが小さい場合に
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+# 120
+print(cmb(10, 3))
+
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+# 階乗
+def factorial(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    return fact[n] * factinv[n - r] % mod
+
+# print(factorial(5, 3))
+
+# 重複組み合わせ
+# 10個のものから重複を許して3つとる
+print(cmb_1(10 + 3 - 1, 3))
+
+# modが素数じゃない時
+def cmb_compose(n, k, mod):
+    dp = [[0] * (k + 1) for i in range(n + 1)]
+    dp[0][0] = 1
+    for i in range(1, n + 1):
+        dp[i][0] = 1
+        for j in range(1, k + 1):
+            # nCk = n - 1Ck - 1 + n - 1Ck
+            dp[i][j] = (dp[i - 1][j - 1] + dp[i - 1][j]) % mod
+
+    return dp[n][k]
+
+print(cmb_compose(10, 3, 50))
+
+A, B, C = 144949225, 545897619, 393065978
+
+# kCc / k+1Cc = k - c + 1 / k + 1
+# k+1Cc+1 / kCc = k + 1 / c + 1
+# Xを10 ** 9 + 7 - 2乗すると逆元が求まる
+x = (C * pow(A, mod - 2, mod)) % mod
+y = (B * pow(A, mod - 2, mod)) % mod
+
+n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
+k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
+print((n - k) % mod, k % mod)
+
+
+# 再帰で組み合わせ
+N = 4
+L = [1, 1]
+root = 5
+
+# root ** Nでループ
+def four_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    for j in range(root):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+# four_pow(0, [])
+
+# ABC119 C - Synthetic Kadomatsu
+
+N, A, B, C = getNM()
+L = getArray(N)
+ans = float('inf')
+
+for i in range(4 ** N):
+    abc = [[] for i in range(4)]
+    for j in range(N):
+        # 4進数
+        abc[i % 4].append(L[j])
+        i //= 4
+
+    a, b, c, x = abc
+
+    if len(a) == 0 or len(b) == 0 or len(c) == 0:
+        continue
+
+    ans = min(ans,abs(sum(a) - A) + abs(sum(b) - B)+abs(sum(c) - C) + (len(a) + len(b) + len(c) - 3) * 10)
+
+print(ans)
+
+# 組み合わせ
+def comb_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = -1
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root):
+        new_array = array + [j]
+        comb_pow(i + 1, new_array)
+#comb_pow(0, [])
+
+# 1スタート
+def comb_pow_2(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root + 1):
+        new_array = array + [j]
+        comb_pow_2(i + 1, new_array)
+# comb_pow_2(0, [])
+
+# 重複組み合わせ
+def rep_comb_pow(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+    # ここの4を変えてrootを変更
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last, root):
+        new_array = array + [j]
+        rep_comb_pow(i + 1, new_array)
+# rep_comb_pow(0, [])
+
+N = 2
+root = 5
+
+# 1スタート
+def rep_comb_pow_2(i, array):
+    global cnt
+    if i == N:
+        print(array)
+        return
+
+    last = 0
+    if len(array) > 0:
+        last = array[-1]
+
+    for j in range(last + 1, root + 1):
+        new_array = array + [j]
+        rep_comb_pow_2(i + 1, new_array)
+# rep_comb_pow_2(0, [])
+
+N, K = 10, 5
+
+c1 = cmb(N, K)
+
+# 完全順列（モンモール数）
+dp = [0] * (K + 1)
+dp[2] = 1
+for i in range(3, K + 1):
+    dp[i] = (i - 1) * (dp[i - 1] + dp[i - 2]) % mod
+c2 = dp[K]
+
+ans = c1 * c2 % mod
+print(ans)
+
+# ABC008 C - コイン
+
+n = getN()
+c = getArray(n)
+sumans = 0
+
+for i in c:
+    lista = [j for j in c if i % j == 0]
+    count = len(lista)
+    sumans += math.ceil(count / 2) / count
+print(sumans)
+
+# 第6回 ドワンゴからの挑戦状 予選 B - Fusing Slimes
 
 """
-2 010 + 4 100 = 6 110
-3 0011 + 12 1100 = 15 1111
+操作をN - 1回行う
+1 ~ N - 1のどれかを右隣のスライムの位置まで移動させる　そして消す
+その通りは(N - 1)!通りあるがそれの総和を求めよ
+考え方を変えてみるか
 
-元のA:{A1, A2...}を知りたい
-Bi = Ai xor Ai+1
-Bi+1 = Ai+1 xor Ai+2
-Bi xor Bi+1 = Ai xor Ai+1 xor Ai+1 xor Ai+2
-B1 xor B2 xor...Bn-1 = Ai xor An ?
-Bn = An xor A1
+3
+1 2 3　の場合
 
-B1 xor B2 xor...Bn = A1 xor A1 = 0 ?
-該当する数列が存在するならこれは成立つ
-B1 ^ A1 = A2
-B2 ^ A2 = B2 ^ (B1 ^ A1) = A3
+  2 3 →    3 1 + 1移動
+1   3 →    3 1 + 2移動 答えは5
+
+1の移動する距離 + 2の移動する距離 +...
+1が移動する距離の通りは？
+1 2 3 4 の場合 3! = 6通り
+距離1: 1番目に1が選択される 2! = 2, 3 → 1 3通り
+2が選択されない状態で1が選ばれる
+距離2: 2 → 1 1通り
+距離3: 3 → 2 → 1, 2 → 3 → 1
+
+距離1:
+1 2この順番は確定
+残りの3については○ 1 ○ 2 ○　の3箇所のどこかに置く
+
+距離2:
+同様に○ 1 ○ 3 ○ だが
+○ 1 2 3 ○ と ○ 1 ○ 3 2　はダブりがあるので引く
+
+(既に置いたものの順列) 1 (target) その他についてはこれの間に自由に置いて良い
+startが2の場合は1がどの時点で選ばれても強制でその他にしても問題ない
+N <= 10 ** 5
+うまくまとめる
+
+case1
+start1: 1
+next1: 2
+と
+case2
+start2: 2
+next2: 3
+はそれぞれ
+
+○ start ○ next ○　になるので通りの数は同じ
+つまり同じ距離のindexを移動する場合は通りの数が同じ　その通りの数は距離をiとすると
+n = (i - 1)! + 2 既に置いたものの順列 + start + next + 1
+r = (N - 1) - (i + 1) の nPr i <= N - 2
+距離N - 1は(N - 2)!
+
+同じ距離のindexを移動する場合は通りの数が同じ
+o = (既に置いたもの(i - 1) + 自身)とすると
+o + 1に残りのもの - 1を置いていく
+(i - 1)! * (N - 2) // oが N-1Po+1が通りの数
+
+N個目がゴールであるものは別にする
+
+まとめて計算するのには変わりはない
+1 2 3 4の時
+3 が 4に飛ぶ確率 1
+2 が 4に飛ぶ確率　先に3が選ばれないといけない 1 / 2
+1 が 4に飛ぶ確率　先に2, 3が選ばれないといけない 1 / 3 * 1 / 2 * 2!
+...
+1 が xに飛ぶ確率　先に2, 3...x - 1が選ばれないと 1 / (x - 1) * (1 / (x - 2)... * (x - 2)!)消える
+これに(n - 1)!をかける
+
+各区間についてどのスライムが通過するかをまとめる
 """
-
-L = getN()
-B = getArray(L)
-
-now = B[0]
-for i in range(1, L):
-    now ^= B[i]
-
-if not now:
-    # A1は辞書順最小なので0に
-    a = 0
-    for i in range(L):
-        print(a)
-        a ^= B[i]
-else:
-    print(-1)
-
-# ABC098 D - Xor Sum 2
-# 連続する区間の長さを答える　尺取り
 
 N = getN()
-A = getList()
+X = getList()
+MOD = 10 ** 9 + 7
 
-l, ans, xo, total = 0, 0, 0, 0
-
-for r in range(N):
-    xo ^= A[r]
-    total += A[r]
-
-    # xo == totalになるまでA[l]で引き続ける
-    while xo < total:
-        xo ^= A[l]
-        total -= A[l]
-        l += 1
-
-    ans += r - l + 1
-
-print(ans)
-
-# 第五回ドワンゴからの挑戦状 B - Sum AND Subarrays
-
-"""
-N <= 1000
-連続部分列は全て取り出せる
-どうやってK個を選ぶか
-
-optを達成できるか
-bit数が大きい方が絶対正義
-とにかく大きいbitを立てる
-"""
-
-N, K = getNM()
-A = getList()
-
-l = []
-for i in range(N):
-    now = 0
-    for j in range(i, N):
-        now += A[j]
-        l.append(now)
-
-flag = 0 # フラグを強化していく
-
-# フラグiが建っているものを集める
-for i in range(60, -1, -1):
-    opt = flag | (1 << i)
-    cnt = 0
-    for j in range(len(l)):
-        if l[j] & opt == opt:
-            cnt += 1
-    if cnt >= K:
-        flag |= (1 << i)
-
-print(flag)
-
-
-# ABC117 D - XXOR
-"""
-K以下
-Kを使えば最強でない？
-7 ^ 1 = 6 7 ^ 6 = 1 7 ^ 3 = 4となり弱い
-i桁目についていくつフラグが立つか
-Kが1ならA内の0の数だけ
-Kが0ならA内の1の数だけ
-
-とにかく大きいフラグを建てたい
-
-1: 001
-6: 110
-3: 011
-
-2 ** 2桁目について 0のが多いので立てる
-2 ** 1桁目について 1のが多いので立てない
-・フラグは強化していく方針　なるべく大きいフラグを立てる
-・なるべくフラグは建てない　cnt > N // 2の時
-"""
-
-N, K = getNM()
-A = getList()
-
-flag = 0
-ans = 0
-for bi in range(62, -1, -1): # bitは最大60ぐらいやればいい
-    cnt = 0
-    for i in range(N):
-        cnt += (not A[i] & (1 << bi))
-    if cnt > N // 2 and flag + 2 ** bi <= K: # フラグを立てる
-        flag += 2 ** bi
-        ans += (cnt * 2 ** bi)
-    else:
-        ans += ((N - cnt) * 2 ** bi)
-
-print(ans)
-
-# ABC121 D - XOR World
-A, B = getNM()
-# bit1桁目のフラグの個数
-# 周期は2 ** 1
-# 0と1が交互に
-# bit2桁目のフラグの個数
-# 周期は2 ** 2
-flags1 = [0] * 61
-flags2 = [0] * 61
-# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
-def bitflag(n, flaglist):
-    if n > 0:
-        for i in range(1, 61):
-            split = 2 ** i
-            flag1 = (n // split) * (split // 2)
-            flag2 = max(n % split + 1 - (split // 2), 0)
-            flaglist[i] += flag1 + flag2
-# 1 ~ A - 1について（Aは範囲に入っているため）
-bitflag(A - 1, flags1)
-bitflag(B, flags2)
-for i in range(61):
-    flags2[i] -= flags1[i]
-ans = 0
-# 奇数ならフラグが立つ
-for i in range(61):
-    if flags2[i] % 2 != 0:
-        ans += 2 ** (i - 1)
-print(ans)
-
-# ABC147 D - Xor Sum 4
-
-N = getN()
-A = getList()
-# Aの各数字の（２進数における）各桁ごとに分解して排他的論理和を求める
-# 例
-# 3
-# 1 2 3 →
-# 1, 10, 11
-# 2 ** 0の桁について(1 ^ 2) 1 ^ 0 = 1,(1 ^ 3) 1 ^ 1 = 0,(2 ^ 3) 0 ^ 1 = 1
-# 2 ** 1の桁について 0(1の2 ** 1の桁は0) ^ 1 = 1, 0 ^ 1 = 1, 1 ^ 1 = 0
-# 各桁について2 ** iの桁が1の数字の選び方 * 2 ** iの桁が0の数字の選び方 * 2 ** iを
-# 足し合わせる
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][1] += 1
-        else:
-            lista[i][0] += 1
-for i in A:
-    splitbit(i)
-ans = 0
-for i in range(61):
-    ans += ((lista[i][0] * lista[i][1]) * (2 ** i)) % mod
-print(ans % mod)
-
-# ARC021 B - Your Numbers are XORed...
-L = getN()
-B = getArray(L)
-B_xor = B[0]
-for i in range(1, L - 1):
-    B_xor ^= B[i]
-
-# B_xor ^ a1(aの最後) ^ a1 == Bの最後なら成立
-# この時aがどんな値であろうと条件が成立する
-if B_xor == B[-1]:
-    now = 0
-    print(now)
-    # a2 = B1 ^ a1
-    # a3 = B2 ^ a2
-    for j in range(L - 1):
-        now = B[j] ^ now
-        print(now)
-else:
-    print(-1)
-
-# Tenka1 Programmer Contest D - IntegerotS
-
-"""
-Aのbitの総和がK以下になるように整数を集める
-ナップサック問題っぽいがAもBもおおきい
-貪欲に行く
-Kを超えた場合でも、他のでフラグを消せればいい
-
-まず全部足し、フラグを抜いていく？
-dpっぽいが2 ** 30の30を使う？
-フラグの数が奇数か偶数か
-
-bitwise or どちらかのビットが1なら1、そうでなければ0
-一度立てたフラグは消えない
-
-Kの各bitについて
-フラグを立てるか立てないか
-0 のbitlengthは0
-1 のbitlengthは1 (右から1番目に最初のフラグが立っている)
-2 のbitlengthは2
-3 のbitlengthは2
-
-[0, 0, 8, 4, 0, 0, 0,
-むやみにフラグを立てないように
-
-K = 101にどう従っていくか
-1本目を1にするなら それ以降の条件にも従ってもらう
-
-Kと比べた時に何本目まで従っているか
-K = 101
-a = 10の場合左から2番目が従えてない
-[[3, 3, 1], [4, 4, -1], [2, 5, 1]]
-
-別に30回回していい
-一本目のKについて
-立てるなら
-Kにフラグが立ってなかったら
-立ててはいけない
-
-K以下の値の2進数換算は
-Kのi番目の1のフラグを1 → 0にし、それ以下を自由にしたもの　である
-フラグの数が多い方がいいので
-整数を集めてできる数をXとすると
-K = 11010の場合は
-X = 01111, 10111, 11001 を見ていけばいい
-足してXになる数を求めればいい
-
-K以下の〜について
-最も有利な条件を並べてそれぞれで計算
-"""
-
-N, K = getNM()
-que = [getList() for i in range(N)]
-
-ans = 0
-# 足すとKのフラグになる
-opt = 0
-for a, b in que:
-    if K | a == K:
-        opt += b
-ans = max(ans, opt)
-
-# 足すとXのフラグになる
-for i in range(31, 0, -1):
-    opt = 0
-    if K & (1 << i): # フラグが立っていれば
-        X = (K ^ (1 << i)) | ((2 ** i) - 1) # 1 << iのフラグを消す + それ以下を全て1に
-        for a, b in que:
-            if X | a == X: # フラグの本数が変わらなければ
-                opt += b
-
-        ans = max(ans, opt)
-
-print(ans)
+S = 0
+res = 0
+F = 1
+# 小さいスケールのものから考える
+for i in range(1, N): # 区間0 ~ 1, 1 ~ 2...を通過するか
+    S += pow(i, MOD - 2, MOD) # 1, 1 / 2, 1 / 3...をその都度足していく
+    res += (X[i] - X[i - 1]) * S # S = 1 + 1 / 2 + 1 / 3...
+                                 # これは1: i - 1がi - 1 ~ iを通過する確率、 i - 2が...
+    res %= MOD
+    F *= i # 最終的に(N - 1)!になる
+    F %= MOD
+print(res * F % MOD)
