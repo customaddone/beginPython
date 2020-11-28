@@ -51,464 +51,451 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N = 5
-# 木グラフ
-que = [
-[1, 2],
-[1, 4],
-[2, 3],
-[2, 5]
-]
-# 重みつき
-que_dis = [
-[1, 2, 2],
-[1, 4, 1],
-[2, 3, 2],
-[2, 5, 1]
-]
+# ABC005 C - おいしいたこ焼きの売り方
+# マッチング問題だが貪欲
+T = getN()
+N = getN()
+sell = getList()
+M = getN()
+buy = getList()
 
-def build_tree(n, edge_list):
-
-    G = [[] for i in range(n)]
-
-    for a, b in edge_list:
-        G[a - 1].append(b - 1)
-        G[b - 1].append(a - 1)
-
-    return G
-
-def build_tree_dis(n, edge_list):
-
-    G = [[] for i in range(n)]
-
-    for a, b, c in edge_list:
-        G[a - 1].append([b - 1, c])
-        G[b - 1].append([a - 1, c])
-
-    return G
-
-# 木の建設
-G1 = build_tree(N, que)
-G2 = build_tree_dis(N, que_dis)
-
-# 木を探索
-def search(n, edges, sta):
-    ignore = [0] * N
-    ignore[sta] = 1
-    pos = deque([sta])
-    # 探索
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i] == 0:
-                ignore[i] = 1
-                pos.append(i)
-# [0, 1, 3, 2, 4]
-search(N, G1, 0)
-
-# staからの距離
-def distance(n, edges, sta):
-    # 木をKから順にたどる（戻るの禁止）
-    ignore = [-1] * N
-    ignore[sta] = 0
-    pos = deque([sta])
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in edges[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
-    return ignore
-# [0, 2, 4, 1, 3]
-print(distance(N, G2, 0))
-
-# ABC067 D - Fennec VS. Snuke
-N = 12
-query = [
-[1, 3],
-[2, 3],
-[3, 4],
-[3, 5],
-[5, 11],
-[6, 12],
-[7, 9],
-[8, 9],
-[9, 10],
-[9, 11],
-[11, 12]
-]
-
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-# nowからNまでのルート
-def router(n, sta, end):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    path[sta] = -1
-
-    while pos[0] != end:
-        u = pos.popleft()
-        ignore[u] = 1
-
-        for i in dist[u]:
-            if ignore[i] != 1:
-                path[i] = u
-                pos.append(i)
-
-    route = deque([end])
-    while True:
-        next = path[route[0]]
-        route.appendleft(next)
-        if route[0] == sta:
+# 来る客1, 2に売れるか
+for cus in buy:
+    flag = False
+    for i in range(N):
+        if sell[i] <= cus <= sell[i] + T:
+            flag = True
+            sell[i] = mod
             break
+    if not flag:
+        print('no')
+        exit()
+print('yes')
 
-    return list(route)
-
-route = router(N, 0, N - 1)
-print(route)
-
-# NG以外のところで辿れるところの数
-def dfs_ter(sta, ng):
-    pos = deque([sta])
-
-    ignore = [0] * N
-    for i in ng:
-        ignore[i] = 1
-
-    cnt = 0
-    while len(pos) > 0:
-        u = pos.popleft()
-        ignore[u] = 1
-        cnt += 1
-        for i in dist[u]:
-            if ignore[i] != 1:
-                pos.append(i)
-
-    return cnt
-
-L = len(route)
-fen_ter = route[:(L + 2 - 1) // 2]
-snu_ter = route[(L + 2 - 1) // 2:]
-
-fen_ans = dfs_ter(0, snu_ter)
-
-if fen_ans > N - fen_ans:
-    print('Fennec')
-else:
-    print('Snuke')
-
-N = getN()
-E = [[] for _ in range(N)]
-for _ in range(N):
-    a, b = getNM()
-    E[a - 1].append(b - 1)
-    E[b - 1].append(a - 1)
-
-V = [0] * N
-V[0] = 1 # 1番目は黒く
-V[-1] = -1 # N番目は白く
-
-q = [0, N - 1]
-
-# 0/N-1についてターン制で幅優先探索
-while q:
-    qq = []
-    for i in q:
-        Vi = V[i] # 現在の色
-        for j in E[i]:
-            if not V[j]: # 未探索なら
-                V[j] = Vi
-                qq.append(j)
-    q = qq
-
-print("Fennec" if sum(V)>0 else "Snuke")
-
-
-# ABC070 D - Transit Tree Path
-N = getN()
-dist = [[] for i in range(N + 1)]
-for i in range(N - 1):
-    a, b, c = getNM()
-    dist[a].append([b, c])
-    dist[b].append([a, c])
-ignore = [-1] * (N + 1)
-
-# Kからの最短距離をbfsで測る
-def distance(sta):
-    # 木をKから順にたどる（戻るの禁止）
-    pos = deque([sta])
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in dist[u]:
-            if ignore[i[0]] == -1:
-                ignore[i[0]] = ignore[u] + i[1]
-                pos.append(i[0])
-
-Q, K = getNM()
-ignore[K] = 0
-distance(K)
-# 答えはK~xまでの距離+K~yまでの距離
-ans = []
-for i in range(Q):
-    x, y = getNM()
-    ans.append(ignore[x] + ignore[y])
-for i in ans:
-    print(i)
-
-# ABC087 D - People on a Line
-
-N, M = getNM()
-Q = [getList() for i in range(M)]
-E = [[] for i in range(N)]
-for l, r, d in Q:
-    E[l - 1].append([r - 1, d])
-    E[r - 1].append([l - 1, -d])
-
-# 実際に書いていく
-# 連結してないので注意
-p = [-float('inf')] * N
-
-for sta in range(N): # 全ての木を探索
-    p[sta] = 0 # とりあえず0スタート
-    q = deque([sta])
-
-    while q:
-        u = q.popleft() # これの位置はすでに登録済み
-        while E[u]:
-            v, d = E[u].pop() # 探索が済むとエッジを消すのはよくやる
-            if p[v] == -float('inf'):
-                p[v] = p[u] + d
-                q.append(v)
-            else: # 登録済みなら判定
-                if p[v] != p[u] + d:
-                    print('No')
-                    exit()
-
-print('Yes')
-
-# ABC126 D - Even Relation
-# 頂点0からの距離を調べるだけ
-N = getN()
-edges = [[] for i in range(N)]
-for i in range(N - 1):
-    u, v, d = getNM()
-    edges[u - 1].append([v - 1, d])
-    edges[v - 1].append([u - 1, d])
-
-def dij(start):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-
-    while len(pq) > 0:
-        d, now = heapq.heappop(pq)
-        if (d > dist[now]):
-            continue
-        for i in edges[now]:
-            if dist[i[0]] > dist[now] + i[1]:
-                dist[i[0]] = dist[now] + i[1]
-                heapq.heappush(pq, (dist[i[0]], i[0]))
-    return dist
-
-ans = [0] * N
-dij_list = dij(0)
+# ABC080 D - Recording
+# 使ってない録画機は他のチャンネルにスイッチできる
+# 同時にいくつ放送が流れているか
+N, C = getNM()
+query = [getList() for i in range(N)]
+dp = [[0] * (C + 1) for i in range(10 ** 5 + 2)]
 for i in range(N):
-    if dij_list[i] % 2 == 0:
-        ans[i] = 0
-    else:
-        ans[i] = 1
-for i in ans:
-    print(i)
+    s, t, c = query[i]
+    dp[s][c] += 1
+    dp[t + 1][c] -= 1
 
-# ABC131 E - Friendships
-# スターグラフに線を１本ずつ足していくと
-N, K = getNM()
+for i in range(1, 10 ** 5 + 2):
+    for j in range(C + 1):
+        dp[i][j] += dp[i - 1][j]
 
-def cmb_1(n, r):
-    if n < r:
-        return 0
-    r = min(n - r, r)
-    if r == 0: return 1
-    over = reduce(mul, range(n, n - r, -1))
-    under = reduce(mul, range(1, r + 1))
-    return over // under
-
-cnt = cmb_1(N - 1, 2) - K
-
-if cnt < 0:
-    print(-1)
-    exit()
-
-dist = [[float('inf')] * N for i in range(N)]
-for i in range(N):
-    dist[i][i] = 0
-query = [[1, i] for i in range(2, N + 1)]
-
-for a, b in combinations([i for i in range(2, N + 1)], 2):
-    if cnt == 0:
-        break
-    query.append([a, b])
-    cnt -= 1
-
-print(len(query))
-for i in query:
-    print(*i)
-
-# ABC132 E - Hopscotch Addict
-# 三回移動したい
-
-N, M = getNM()
-query = [getList() for i in range(M)]
-S, T = getNM()
-
-edges = build_tree_dis(N, query)
-
-ignore = [[-1] * 3 for i in range(N)]
-ignore[S - 1][0] = 0
-
-pos = deque([[S - 1, 0]])
-
-while len(pos) > 0:
-    u, t = pos.popleft()
-    t += 1
-    j = t % 3
-    for i in edges[u]:
-        if ignore[i][j] == -1:
-            ignore[i][j] = t
-            pos.append([i, t])
-
-if ignore[T - 1][0] % 3 == 0:
-    print(ignore[T - 1][0] // 3)
-    exit()
-else:
-    print(-1)
-
-# ABC138 D-Ki
-n, q = map(int, input().split())
-dist = [[] for i in range(n)]
-for i in range(n - 1):
-    a, b = map(int, input().split())
-    dist[a - 1].append(b - 1)
-    # aftercontest対策
-    dist[b - 1].append(a - 1)
-value = [0 for i in range(n)]
-
-# 1つ目の[1, 10]と2つ目の[1, 10]混ぜても問題なし
-for i in range(q):
-    p, x = map(int, input().split())
-    value[p - 1] += x
-#  重複を防ぐ
-ignore = [0] * n
-ignore[0] = 1
-
-pos = deque([0])
-# 上から順に自身のvalueの値を子のvalueに加算していく
-# value [100, 10, 1, 0]
-# pos.popleft() = 1 → [100, 10 + 100, 1 + 100, 0 + 100]
-# pos.popleft() = 2 → [100, 110, 101 + 10, 100 + 10]
-while len(pos) > 0:
-    u = pos.popleft()
-    for i in dist[u]:
-        if ignore[i] == 0:
-            ignore[i] = 1
-            value[i] += value[u]
-            pos.append(i)
-# 覚える
-print(*value)
-
-# ARC037 B - バウムテスト
-N, M = 11, 11
-query = [
-[1, 2],
-[1, 3],
-[2, 4],
-[3, 5],
-[4, 6],
-[5, 7],
-[6, 8],
-[7, 9],
-[8, 10],
-[9, 11],
-[10, 11]
-]
-dist = [[] for i in range(N)]
-for i in range(M):
-    a, b = query[i]
-    a -= 1
-    b -= 1
-    dist[a].append(b)
-    dist[b].append(a)
-
-ignore = [0] * N
 ans = 0
-# 閉路検出
-def search(x, dist):
-    global ans
-    # 現在の位置とparent
-    pos = deque([[x, -1]])
-    ignore[x] = 1
-    flag = True
-
-    while pos:
-        u, parent = pos.popleft()
-        for i in dist[u]:
-            if i != parent:
-                if ignore[i] == 1:
-                    flag = False
-                    continue
-                ignore[i] = 1
-                pos.append([i, u])
-    if flag:
-        ans += 1
-
-# 一つの木の頂点は全て一回のsearchで塗りつぶされる
-for i in range(N):
-    if ignore[i] == 0:
-        search(i, dist)
+for i in range(10 ** 5 + 2):
+    cnt = 0
+    for j in dp[i]:
+        if j > 0:
+            cnt += 1
+    ans = max(ans, cnt)
 print(ans)
 
-# ABC148 F - Playing Tag on Tree
-N, U, V = getNM()
-U -= 1
-V -= 1
-# 高橋君はできるだけ遅くゲームが終了するように移動し、青木君はできるだけ早くゲームが終了するように移動します。
-# 高橋君は逃げ、青木君は追いかける
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+# ABC085 D - Katana Thrower
+N, H = getNM()
 
-taka_d = [-1] * N
-aoki_d = [-1] * N
+a = []
+b = []
 
-taka_d[U] = 0
-pos = deque([[U, taka_d[U]]])
-while len(pos) > 0:
-    u, dis = pos.popleft()
-    for i in dist[u]:
-        if taka_d[i] == -1:
-            taka_d[i] = dis + 1
-            pos.append([i, taka_d[i]])
+for i in range(N):
+  x, y = map(int, input().split())
+  a.append(x)
+  b.append(y)
 
-aoki_d[V] = 0
-pos = deque([[V, aoki_d[V]]])
-while len(pos) > 0:
-    u, dis = pos.popleft()
-    for i in dist[u]:
-        if aoki_d[i] == -1:
-            aoki_d[i] = dis + 1
-            pos.append([i, aoki_d[i]])
+# 振った場合の最大値
+max_a = max(a)
 
 ans = 0
-for a, b in zip(taka_d, aoki_d):
-    if a < b:
-        ans = max(ans, b - 1)
+# 振る刀の最大攻撃力より高い攻撃力を持つ投げ刀を高い順にソートする
+# 刀iで好きなだけ振って攻撃する→気が済んだら投げることで振りの攻撃力と投げの攻撃力を
+# 両方利用することができる
+# 実は投げてしまった刀も振ることができるというルールに変更しても
+# 問題の答えは変わらない
+# 実際のムーブとしては
+# ①最も攻撃力が高い振り刀で攻撃する
+# ②一定の体力以下になると攻撃力が高い順に投げ刀で攻撃していって撃破
+# という流れになる
+for x in reversed(sorted(filter(lambda x: x >= max_a, b))):
+    H -= x
+    ans += 1
+    if H <= 0: break
+
+ans += max(0, (H + max_a - 1) // max_a)
+print(ans)
+
+# ABC091 C - 2D Plane 2N Points
+
+# 貪欲法でペア作りする問題
+# ABC005 C - おいしいたこ焼きの売り方の時と同様に
+# それとしか繋げないもの　を優先的に繋いでいく
+
+# 条件Aの通過が厳しい順に対象bをソートし、
+# たこ焼き　条件A:客が来る前にたこ焼きができてないといけない
+#  　　　　      客を来るのが早い順に並べる（最初から並んでる）
+# 今回     条件A:赤星のx座標が青星のx座標より小さくないといけない
+#  　　　　　　　 青星をx座標が小さい順に並べる
+
+# 条件A, 条件Bをクリアしたものの中で、最も条件Bの通過が厳しい対象aと結ぶ
+# たこ焼き　条件B:たこ焼きが賞味期限より前のものでないといけない
+#  　　　　      できるだけ古いものを売る（最初から並んでる）
+# 今回     条件B:赤星のy座標が青星のy座標より小さくないといけない
+#  　　　　　　　 条件をクリアしたもののうちでできるだけy座標が大きいものを選ぶ
+
+N = getN()
+ab = []
+cd = []
+for i in range(N):
+    ab.append(getList())
+for j in range(N):
+    cd.append(getList())
+ab.sort(reverse = True)
+
+ans = 0
+
+for a,b in ab:
+    cd.sort(key = lambda x:x[1]) # ソートし直し
+    for i in range(len(cd)):
+        c, d= cd[i]
+        if a < c and b < d: # 店を探す
+            cd.pop(i)
+            ans += 1
+            break
+
+print(ans)
+
+N = getN()
+ab = set(tuple(getList()) for _ in range(N))
+cd = sorted(tuple(getList()) for _ in range(N))
+
+ab.add((-1, -1)) # 番兵
+for c, d in cd:
+    # 条件を満たすものの中でbが一番でかいもの
+    tmp = max((b, a) for a, b in ab if (a < c and b < d))[::-1]
+    if tmp != (-1, -1):
+        ab.remove(tmp) # match
+
+print(N - (len(ab) - 1))
+
+# ABC100 D - Patisserie ABC
+# 8パターン全部調べる
+
+N,M = getNM()
+data = [[] for i in range(8)]
+for _ in range(N):
+    x,y,z = getNM()
+    data[0].append(x + y + z)
+    data[1].append(x + y - z)
+    data[2].append(x - y + z)
+    data[3].append(x - y - z)
+    data[4].append(- x + y + z)
+    data[5].append(- x + y - z)
+    data[6].append(- x - y + z)
+    data[7].append(- x - y - z)
+
+ans = -mod
+for i in range(8):
+    data[i].sort(reverse = True)
+    ans = max(ans,sum(data[i][:M]))
+print(ans)
+
+# ABC103 D - Islands War
+N, M = getNM()
+que = []
+for i in range(M):
+    a, b = getNM()
+    que.append([a - 1, b - 1])
+
+# N個の島　各島間には橋がある
+# 要望が1 ~ 5, 1 ~ 3の時
+# 例えば1 - 2間を取り除けばいい
+# 要望が1 ~ 2, 1 ~ 3, 1 ~ 4の時
+# 1 - 2間の橋を取り除く
+# 逆に言えば1 ~ 2の時は1 ~ 2間の橋を取り除くしかない
+
+# 間隔が狭いものから調べていく
+# 間隔1の橋を取り除く、間隔2の橋を取り除く...
+# 間隔2のどちらの橋を取り除く
+
+# 1 ~ 2, 1 ~ 3, 1 ~ 4の時
+# 1 - 2間の橋を取り除く
+# 2 ~ 3, 1 ~ 3, 1 ~ 4の時
+# 1 - 2の橋は取り除かなくていい
+# するとこれは2スタートの2 ~ 3, 2 ~ 3, 2 ~ 4の要望に答える問題に変換できる
+# 終点をソートして左側から順に橋を落とすか落とさないか決めていく
+
+que.sort(key = lambda i:i[1])
+# a ~ bで繋がっているならb - 1 ~ b間の橋を取り除く
+# queryの区間は左にスライドしていき、次のqueryに最も関係あるのは右の方の橋なので
+
+ans = 0
+destroy = -1 # 最後に落とした橋
+for a, b in que:
+    if destroy <= a: # 範囲外なら橋を新しく落とす
+        ans += 1
+        destroy = b
+print(ans)
+
+
+# ABC116 D - Various Sushi
+N, K = getNM()
+various = defaultdict(list)
+que = [getList() for i in range(N)]
+
+ans = 0
+num = []
+var_s = set()
+
+# 美味しい順にK個とった時の幸福度
+que.sort(reverse = True, key = lambda i: i[1])
+for i in range(K):
+    ans += que[i][1]
+    # もし２番手以降ならあとで交換する用にとっておく
+    if que[i][0] in var_s:
+        num.append(que[i][1])
+    var_s.add(que[i][0])
+
+var = len(var_s)
+ans += var ** 2
+
+# 使ってない種類について各種類で一番大きさが大きいもの
+left_l = defaultdict(int)
+for i in range(N):
+    if not que[i][0] in var_s:
+        left_l[que[i][0]] = max(left_l[que[i][0]], que[i][1])
+
+num.sort(reverse = True)
+left_l = [i[1] for i in left_l.items()]
+left_l.sort()
+
+# M回交換する
+opt = ans
+M = min(len(num), len(left_l))
+for i in range(M):
+    u = num.pop()
+    s = left_l.pop()
+    # 寿司単体の幸福度
+    opt -= (u - s)
+    # 種類が増える分
+    opt += 2 * var + 1
+    var += 1
+    ans = max(opt, ans)
+
+print(ans)
+
+# ABC119 D - Lazy Faith
+A, B, Q = getNM()
+# 神社
+S = getArray(A)
+# 寺
+T = getArray(B)
+query = getArray(Q)
+
+S.insert(0, -float('inf'))
+T.insert(0, -float('inf'))
+S.append(float('inf'))
+T.append(float('inf'))
+
+def close(data, point):
+    west = data[bisect_left(data, point) - 1]
+    east = data[bisect_left(data, point)]
+
+    return west, east
+
+for i in range(Q):
+    now = query[i]
+    shrine_west, shrine_east = close(S, now)
+    temple_west, temple_east = close(T, now)
+
+    ww = now - min(shrine_west, temple_west)
+    we_1 = (now - shrine_west) * 2 + (temple_east - now)
+    we_2 = (now - temple_west) * 2 + (shrine_east - now)
+    ee = max(shrine_east, temple_east) - now
+    ew_1 = (shrine_east - now) * 2 + (now - temple_west)
+    ew_2 = (temple_east - now) * 2 + (now - shrine_west)
+
+    print(min(ww, we_1, we_2, ee, ew_1, ew_2))
+
+# ABC137 D - Summer Vacation
+# ヒープ使った貪欲
+N, M = getNM()
+query = [getList() for i in range(N)]
+
+A_list = [[] for i in range(10 ** 5 + 1)]
+for a, b in query:
+    A_list[a].append(b)
+
+job = []
+heapq.heapify(job)
+
+ans = 0
+for i in range(1, M + 1):
+    for j in A_list[i]:
+        heapq.heappush(job, -j)
+    if len(job) > 0:
+        u = heapq.heappop(job)
+        ans += -u
+print(ans)
+
+# ABC169 E - Count Median
+N = getN()
+A = []
+B = []
+for i in range(N):
+    a, b = getNM()
+    A.append(a)
+    B.append(b)
+A.sort()
+B.sort()
+
+# 範囲がN個ある
+# Xは整数
+# 中央値のmin, maxは？
+# Nが偶数、奇数の場合
+# 奇数の場合 中央値は絶対に整数
+# 中央値のmin: Aの中央値、max: Bの中央値
+# 偶数の場合
+# 中央値のmin: (Ai-1 + Ai) / 2 max: (Bi-1 + Bi) / 2
+# いくつある？
+
+# 中央値は最低でも0.5刻み
+# 偶数の場合は奇数の2N - 1になる？
+# Ai-1とAiを自由にいじることで0.5, 1, 1.5と言う風に中間値を作れそう
+
+if N % 2 == 0:
+    opt_a = (A[(N // 2) - 1] + A[N // 2]) / 2
+    opt_b = (B[(N // 2) - 1] + B[N // 2]) / 2
+    # opt_b - opt_aを0.5で割って +1
+    # intで出せ
+    print(int((opt_b - opt_a) * 2 + 1))
+else:
+    opt_a = A[N // 2]
+    opt_b = B[N // 2]
+    # 中央値は絶対に整数
+    print(opt_b - opt_a + 1)
+
+# AGC029 B - Powers of two
+# N = getN()
+# A = getList() # ボール
+N = getN()
+A = getList()
+A.sort()
+# ボールからペアを作ってその和が２冪(2 ** iになる)になるようにしたい
+
+# 最大でいくつペアを作れるか
+# 最大流？Nが大きいから無理
+
+# M <= 2 * 10 ** 5
+# 数字aのペアの候補は？
+# 1なら3 (4), 7 (8), 15(16)...
+# 2なら2 (4), 6 (8), 14(16)...
+# 探索して求められるか？
+# 2冪の数はだいたい30個 各要素のペアになるものは求められる
+powers = [1] * 32
+for i in range(1, 32):
+    powers[i] = powers[i - 1] * 2
+
+# Aの中に30個の候補のどれかが含まれているか
+# 二分探索でどのペアかもわかる
+
+# ペアとなるbがあったとして、どれにくっつけるのが有効か？
+# 数を絞れば最大流できる Aが同じ数の場合があるのでできない
+# dp?
+
+# 実は大きい数の方がペアになる条件は厳しくなる
+# 貪欲ペアは厳しい順からペアにしていく
+flag = [0] * N
+ans = 0
+while A:
+    u = A.pop() # 自身とペアにならないようにpop
+    if flag[len(A)]: # uのフラグが立っていたなら飛ばす
+        continue
+    # 自身より大きい２冪の数の中で最も小さいもの
+    # これがAの中に存在するか
+    opt = powers[bisect_right(powers, u)] - u
+    # 存在するか二分探索
+    left = bisect_left(A, opt)
+    right = bisect_left(A, opt + 1)
+    # 存在する'1, 1, 1...'のうちフラグが立っていないものとペアに
+    # 後ろから探索する
+    for i in range(right - 1, left - 1, -1):
+        if not flag[i]:
+            ans += 1
+            flag[i] = 1
+            break
+print(ans)
+
+# キーエンス プログラミング コンテスト 2020 B - Robot Arms
+# 区間スケジューリング問題
+# 終点をソート
+N = getN()
+query = [getList() for i in range(N)]
+
+r_l = []
+for x, l in query:
+    r_l.append([x - l, x + l])
+r_l.sort(key = lambda i:i[1])
+
+cnt = 0
+last = r_l[0][1]
+for i in range(1, N):
+    if r_l[i][0] < last:
+        cnt += 1
+    else:
+        last = r_l[i][1]
+print(N - cnt)
+
+# CODE FESTIVAL 2016 qual B D - Greedy customers
+
+"""
+greedy?
+Aは各人の所持金
+Pを指定する　減らせる人については減らす
+1で売ったらええんちゃう？
+
+Aの最小値 - 1を各要素から引く(できる限り1で売る)
+3
+2 3 5の時
+1 2 4 になる
+もう一度1は不可能
+2もだめ
+3売るか
+Aでかいしループは無理　リストにもできない
+セグ？セグ×　貪欲でなんとかなる
+
+前の奴 + 1でできる限り売る
+買うのは最初の人だけか
+
+A [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9]
+3に1を２回提示 3が1に
+4に2を1回提示 4が2に
+5に3を1回提示 5が2に
+
+後ろの奴を効率的に優先席にできない？
+間の邪魔な奴を1にできれば
+"""
+
+N = getN()
+A = getArray(N)
+
+ans = A[0] - 1 # 最初は先頭にA[0] - 1回売りつける
+now = 2 # 先頭に売らないよう2に
+
+for i in range(1, N):
+    if now == A[i]: # 減らせないし次からnow円で売れない
+        now += 1
+    if now < A[i]: # 売れる　その場合は適当に調整して1にする
+        # now = 2 A[i] = 8なら
+        # 2, 2, 3を売りつければA[i] = 1になる
+        if A[i] % now == 0:
+            cnt = (A[i] // now) - 1
+            ans += cnt
+        else:
+            cnt = A[i] // now
+            ans += cnt
+
 print(ans)
