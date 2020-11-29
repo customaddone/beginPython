@@ -51,468 +51,277 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC004 マーブル
-R, G, B = getNM()
+# ARC060 D - 桁和
 
-dp = [[float('inf')] * (R + G + B + 1) for i in range(2001)]
-dp[0][R + G + B] = 0
+"""
+n < bの時 f(b, n) = n
+n >= bの時 f(b, (n // b)) + (n % b)
+b, b ** 2, b *** 3で割っていく
+b進数は存在するか
+bはそんなに大きくなさそう
+def f(b):
+    n = N
+    res = 0
+    while n:
+        res += n % b
+        n //= b
 
-# 残り個数により置くボールの色が変化する
-# ボールを置くコストも変化する
-def judge(point, ball):
-    if ball > G + B:
-        return abs(point - (-100))
-    elif G + B >= ball > B:
-        return abs(point)
-    else:
-        return abs(100 - point)
+    return res
+でできるけど
+単調増加にはならないので二分探索もできない
+存在しない条件はなに
+法則性なさそうなので全探索？
+√nぐらいにしたい
+b進数の一番上の桁は安定している
 
-for i in range(1, 2001):
-    for j in range(R + G + B, -1, -1):
-        if j == R + G + B:
-            dp[i][j] = dp[i - 1][j]
-        else:
-            # i - 1000の地点にj + 1ボールを置き,残りはj個
-            dp[i][j] = min(dp[i - 1][j], dp[i - 1][j + 1] + judge(i - 1000, j + 1))
-print(dp[2000][0])
+bを増やすと等間隔で数が減っていく
+a(i + 1)**2 + b(i + 1) + c
+ai ** 2 + 2ai + a + bi + b + c
+ai ** 2 + (2a + b)i + (a + b + c)
 
-# ABC017 D - サプリメント
-N, M = getNM()
-F = getArray(N)
+二項
+10 ** 6まで全探索
+"""
 
-# 何通り　→ comb or dp
-# O(N)で
-# 同じ味のサプリメントを摂取しない
-# dp[i]:i日目までにサプリを摂取する通りが何通りあるか
-# dp[i]:サプリi個目までにサプリを摂取する通りが何通りあるか
-
-# N, M = 5, 2
-# L = [1, 2, 1, 2, 2]の場合
-# dp[0] = 1
-# dp[1] = 1 1個目を新たに食べた場合、それ以前の通りは1通り
-# dp[2] = 2 2個目を新たに食べた場合、それ以前の通りは2通り
-# (前回1個目を食べたかもしれないし、今回1個目と合わせて2個目を食べたかもしれない)
-# dp[i] += dp[（最後にF[i]が登場した場所）] ~ dp[i - 1]
-
-dp = [0] * (N + 1) # dpだけ1-index
-dp[0] = 1
-ignore = [0] * (M + 1)
-l = 0
-now = dp[0]
-for r in range(N):
-    # 最初ignoreのフラグが立っていないが,nowにはdp[0]の値が入っている状態
-    while ignore[F[r]]:
-        ignore[F[l]] = 0 # F[l]のフラグを消す
-        now -= dp[l] # lの直前のdpを引く
-        now %= mod
-        l += 1
-    # dpをレコード（範囲の合計を足す）
-    dp[r + 1] = now
-    # rを1個ずらして更新
-    now += dp[r + 1]
-    now %= mod
-    ignore[F[r]] = 1
-
-print(dp)
-
-# ABC044 C - 高橋君とカード
-# 平均はQ[i] -= Aしとく
-N, A = getNM()
-Q = getList()
-for i in range(N):
-    Q[i] -= A
-
-dp = [[0] * 5002 for i in range(N + 1)]
-dp[0][2501] = 1
-
-for i in range(1, N + 1):
-    for j in range(5002):
-        dp[i][j] += dp[i - 1][j]
-        if 0 <= j - Q[i - 1] <= 5001:
-            dp[i][j] += dp[i - 1][j - Q[i - 1]]
-
-print(dp[-1][2501] - 1)
-
-# ABC071 D - Coloring Dominoes
 N = getN()
-S1 = input()
-S2 = input()
-dp = [0 for i in range(N)]
-if S1[0] == S2[0]:
-    dp[0] = 3
-else:
-    dp[0] = 6
-# i - 1個目、i個目が
-# 横ドミノ１個目→横ドミノ２個目
-# 横ドミノ→横ドミノ
-# 横ドミノ→縦ドミノ
-# 縦ドミノ→縦ドミノ
-# 縦ドミノ→横ドミノそれぞれについて場合分け
-# 各回について
-for i in range(1, N):
-    # 横ドミノ２つ目だった場合
-    if S1[i] == S1[i - 1]:
-        dp[i] = dp[i - 1]
-    # 横ドミノ１つめor縦ドミノ１つ目の場合
-    else:
-        # 縦ドミノ１つ目
-        if S1[i] == S2[i]:
-            # 一つ前も縦ドミノ
-            if S1[i - 1] == S2[i - 1]:
-                dp[i] = (dp[i - 1] * 2) % mod
-            # 横ドミノ
-            else:
-                dp[i] = dp[i - 1]
-        # 横ドミノ1つ目
-        else:
-            # 一つ前が縦ドミノ
-            if S1[i - 1] == S2[i - 1]:
-                dp[i] = (dp[i - 1] * 2) % mod
-            # 一つ前が２つ目横ドミノ
-            else:
-                dp[i] = (dp[i - 1] * 3) % mod
-print(dp[-1])
+S = getN()
 
-# ABC074 C - Sugar Water
-# ABが水、CDが砂糖、Eがとけられる量、Fが上限
-A, B, C, D, E, F = getNM()
+def f(b):
+    n = N
+    res = 0
+    while n:
+        res += n % b
+        n //= b
 
-# A,Bを好きな回数使うことでi(0 <= i <= 30)の水を作り出せる
-dp1 = [0] * 31
-dp1[0] = 1
-for i in range(1, 31):
-    if i >= A:
-        dp1[i] = max(dp1[i], dp1[i - A])
-    if i >= B:
-        dp1[i] = max(dp1[i], dp1[i - B])
-waterlist = []
-for i in range(31):
-    if dp1[i] > 0:
-        waterlist.append(i)
+    return res
 
-# C,Dを好きな回数使うことでi(0 <= i <= 3000)の砂糖を作り出せる
-dp2 = [0] * 3001
-dp2[0] = 1
-for i in range(1, 3001):
-    if i >= C:
-        dp2[i] = max(dp2[i], dp2[i - C])
-    if i >= D:
-        dp2[i] = max(dp2[i], dp2[i - D])
-sugerlist = []
-for i in range(3001):
-    if dp2[i] > 0:
-        sugerlist.append(i)
+# 10 ** 6なので一応可能
+for i in range(2, 10 ** 6 + 1):
+    ans = f(i)
+    if ans == S:
+        print(i)
+        exit()
 
-ans = [0, 0]
-concent = 0
+# 10 ** 6 + 1以降について
+# 割ってiになるbの最大値、最小値、そしてf(b)のとる値
+for i in range(N // 10 ** 6, 0, -1):
+    # 割ってiになるbの最小はN // (i + 1) + 1
+    b1 = N // (i + 1) + 1
+    opt1 = f(b1)
+    # 割ってiになる値の最大は N // i
+    b2 = N // i
+    opt2 = f(b2)
+    if opt2 <= S <= opt1 and (S - opt2) % i == 0:
+        # 87654の場合
+        # b1 = 9740 f(b1) = 10962
+        # b2 = 10956 f(b2) = 14
+        # opt1 - S を iで割った分をb1からひく
+        print(b2 - ((S - opt2) // i))
+        exit()
 
-for water in waterlist[1:]:
-    if 100 * water <= F:
-        left = F - (water * 100)
-        # Fから水をひいた分、溶ける砂糖の限界を超えない量の砂糖を取得する
-        index = bisect_right(sugerlist, min(left, E * water))
-        suger = sugerlist[index - 1]
-        # 濃度計算
-        optconc = (100 * suger) / (100 * water + suger)
-        # ここ>にすると濃度0%に対応できずWAに
-        if optconc >= concent:
-            concent = optconc
-            ans = [100 * water + suger, suger]
-print(*ans)
-
-# ABC082 D - FT Robot
-# grid dpの亜種
-# dpx + x, dpx - xを収納していく
-
-s = input()
-x, y = map(int, input().split())
-
-dpx = {0}
-dpy = {0}
-
-f = s.split("T")
-
-fx = []
-fy = []
-
-for i, fi in enumerate(f):
-    if i % 2:
-        fy.append(len(fi))
-    else:
-        fx.append(len(fi))
-
-for i, fxi in enumerate(fx):
-    nex = set([])
-    for j in dpx:
-        nex.add(j+fxi)
-        if i > 0:
-            nex.add(j-fxi)
-    dpx = nex
-
-for fyi in fy:
-    nex = set([])
-    for j in dpy:
-        nex.add(j+fyi)
-        nex.add(j-fyi)
-    dpy = nex
-
-print(dpx)
-print(dpy)
-
-if x in dpx and y in dpy:
-    print('Yes')
-else:
-    print('No')
-
-# ABC113 D - Number of Amidakuji
-H, W, K = getNM()
-
-if W == 1:
-    print(1)
+# 割って0になる
+# これのf(b)はN
+if N == S:
+    print(N + 1)
     exit()
 
-# 左からi本目の右、左に橋がかかっている通り、両方に通ってない通り
-bridge_right = [0] * W
-bridge_left = [0] * W
-not_bridge = [0] * W
+# どうもできない
+print(-1)
 
-for bit in range(1 << (W - 1)):
-    flag = True
-    for i in range(1, (W - 1)):
-        if bit & (1 << i) and bit & (1 << (i - 1)):
-            flag = False
-    if flag:
-        for i in range(W):
-            if i == 0:
-                if bit & (1 << i):
-                    bridge_right[i] += 1
-                else:
-                    not_bridge[i] += 1
-            elif i == W - 1:
-                if bit & (1 << (i - 1)):
-                    bridge_left[i] += 1
-                else:
-                    not_bridge[i] += 1
-            else:
-                if bit & (1 << i):
-                    bridge_right[i] += 1
-                elif bit & (1 << (i - 1)):
-                    bridge_left[i] += 1
-                else:
-                    not_bridge[i] += 1
+# AGC004 B - Colorful Slimes
 
-dp = [[0] * W for i in range(H + 1)]
+"""
+N色のスライムがいる
+全色のスライムが飼いたい
+・iのスライムをaiで変色させる
+・手持ちのiのスライムの全てをxで変色させる
 
-dp[0][0] = 1
-for i in range(1, W):
-    dp[0][i] = 0
+iのスライムを入手する方法
+・iのスライムをaiで購入する
+・i-1のスライムをai-1で購入 + x使う
+・i-2のスライムをai-2で購入 + x * 2使う...
+前からやっていこう
 
-# まっすぐ降りて来た場合、右から降りてきた場合、左から降りてきた場合
-for i in range(1, H + 1):
-    for j in range(W):
-        dp[i][j] += dp[i - 1][j] * not_bridge[j]
-        if j == 0:
-            dp[i][j + 1] += dp[i - 1][j] * bridge_right[j]
-        elif j == W - 1:
-            dp[i][j - 1] += dp[i - 1][j] * bridge_left[j]
-        else:
-            dp[i][j + 1] += dp[i - 1][j] * bridge_right[j]
-            dp[i][j - 1] += dp[i - 1][j] * bridge_left[j]
+これループする
+色iのスライム買う
+魔法
+色iのスライム買う
+魔法
+で色 i+1, i+2のスライムを作れる
 
-print(dp[-1][K - 1] % mod)
+色iのスライム買う
+魔法
+魔法
+色iのスライム買う
+魔法
+で色 i + 1, i + 3のスライムが作れる
+Ai * 個数 + (iからの最長距離 * x)でいくらでもできる
+各スライムについて変更した方がいいスライムについての最長距離を保持する
 
-# ABC118 D - Match Matching
-# まず長さを知りたい
-# dp[i]: マッチN本までに最大何桁の数字ができるか
-# その後、数字を上から回していって各桁の数字を確定させる
-num = [2, 5, 5, 4, 5, 6, 3, 7, 6]
+各スライムごとループさせる]
+小さい順に？
 
-N, M = getNM()
+一括に巻き込んだ方がいい場合も
+4 1
+4 2 3 1の場合
+1を4つ買う + 魔法3回
+ここまでまとめ買い変色させた方がいい境界は
+
+魔法の回数をK回に固定すると
+Ai ~ Ai-kの範囲でスライムが買える
+"""
+
+N, X = getNM()
 A = getList()
 
-digit = []
-for i in A:
-    digit.append([i, num[i - 1]])
-digit.sort(key = lambda i: i[1])
+mi = [float('inf')] * N
+ans = float('inf')
 
-dp = [-float('inf')] * (N + 1)
-dp[0] = 0
+for k in range(N): # 魔法の回数をk回に固定
+    for i in range(N):
+        mi[i] = min(mi[i], A[i - k])
+    ans = min(ans, sum(mi) + k * X)
 
-# 桁数を調べる
-for i in range(1, N + 1):
-    for j in range(M):
-        if i >= digit[j][1]:
-            dp[i] = max(dp[i], dp[i - digit[j][1]] + 1)
-
-# 数字を組み上げる
-ans = ''
-now = N
-digit.sort(reverse = True)
-while now > 0:
-    for j in range(M):
-        if now - digit[j][1] >= 0 and dp[now] == dp[now - digit[j][1]] + 1:
-            now -= digit[j][1]
-            ans += str(digit[j][0])
-            break
 print(ans)
 
-# ABC130 E - Common Subsequence
-N, M = getNM()
-S = getList()
-N_s = len(S)
-T = getList()
-N_t = len(T)
-
-dp = [[0] * (N_s + 1) for i in range(N_t + 1)]
-dp[0][0] = 0
-
-for i in range(N_t):
-    for j in range(N_s):
-        # 基礎 dp[i][j] + Sを伸ばして増えた分 + Tを伸ばして増えた分
-        dp[i + 1][j + 1] = (dp[i + 1][j] + dp[i][j + 1] - dp[i][j]) % mod
-        if S[j] == T[i]:
-            # dp[i][j]の通りのそれぞれの末尾に(S[i], T[i])をつけることで
-            # dp[i][j]通り（と空に(S[i], T[i])をつけた）分新しいのが作れる
-            dp[i + 1][j + 1] = (dp[i + 1][j + 1] + dp[i][j] + 1) % mod
-print((dp[N_t][N_s] + 1) % mod)
-
-N = input()
-N = [int(i) for i in N]
-# 数え上げ問題なので多分dp
-dp = [[0, 0] for i in range(len(N))]
-
-# ぴったし払うための最小値
-dp[0][0] = min(N[0], 11 - N[0])
-# お釣りをもらう用の紙幣を１枚余分にとっておく場合の最小値
-dp[0][1] = min(N[0] + 1, 10 - N[0])
-
-for i in range(1, len(N)):
-    # dp[i - 1][1] + 10 - N[i]:とっておいた紙幣を使用し、お釣りを10 - N[i]枚もらう
-    dp[i][0] = min(dp[i - 1][0] + N[i], dp[i - 1][1] + 10 - N[i])
-    # dp[i - 1][1] + 9 - N[i]:お釣りを10 - N[i]枚もらい、そのうち１枚は次のお釣りを
-    # もらう試行のためにとっておく
-    dp[i][1] = min(dp[i - 1][0] + N[i] + 1, dp[i - 1][1] + 9 - N[i])
-print(dp[len(N) - 1][0])
-
-# payment
-
-N = input()
-N = [int(i) for i in N]
-# 数え上げ問題なので多分dp
-dp = [[0, 0] for i in range(len(N))]
-
-# ぴったし払うための最小値
-dp[0][0] = min(N[0], 11 - N[0])
-# お釣りをもらう用の紙幣を１枚余分にとっておく場合の最小値
-dp[0][1] = min(N[0] + 1, 10 - N[0])
-
-for i in range(1, len(N)):
-    # dp[i - 1][1] + 10 - N[i]:とっておいた紙幣を使用し、お釣りを10 - N[i]枚もらう
-    dp[i][0] = min(dp[i - 1][0] + N[i], dp[i - 1][1] + 10 - N[i])
-    # dp[i - 1][1] + 9 - N[i]:お釣りを10 - N[i]枚もらい、そのうち１枚は次のお釣りを
-    # もらう試行のためにとっておく
-    dp[i][1] = min(dp[i - 1][0] + N[i] + 1, dp[i - 1][1] + 9 - N[i])
-print(dp[len(N) - 1][0])
-
-# ABC155 E - Payment
-N = input()
-N = [int(i) for i in N]
-# 数え上げ問題なので多分dp
-dp = [[0, 0] for i in range(len(N))]
-
-# ぴったし払うための最小値
-dp[0][0] = min(N[0], 11 - N[0])
-# お釣りをもらう用の紙幣を１枚余分にとっておく場合の最小値
-dp[0][1] = min(N[0] + 1, 10 - N[0])
-
-for i in range(1, len(N)):
-    # dp[i - 1][1] + 10 - N[i]:とっておいた紙幣を使用し、お釣りを10 - N[i]枚もらう
-    dp[i][0] = min(dp[i - 1][0] + N[i], dp[i - 1][1] + 10 - N[i])
-    # dp[i - 1][1] + 9 - N[i]:お釣りを10 - N[i]枚もらい、そのうち１枚は次のお釣りを
-    # もらう試行のためにとっておく
-    dp[i][1] = min(dp[i - 1][0] + N[i] + 1, dp[i - 1][1] + 9 - N[i])
-print(dp[len(N) - 1][0])
-
-# AGC031 B - Reversi
+# diverta 2019 Programming Contest 2 D - Squirrel Merchant
 
 """
-通りの数はdpかcombo
-0回以上する
-最終的に全部同じになるのでは
-小さいものから試す
-1 2 1 2 2
+N個のどんぐり
+2回する　ピッタリ整数dp
 
-1 2 1 2 2
-1 1 1 2 2
-1 2 2 2 2 間に異なる数字が入ってないといけない
-nC2するっぽい
-一度l ~ rを選ぶと、その区間内についてはもう使用不可
-一つとして扱える
+Aでは 金をga, 銀をsa, 銅をbaで交換できる
+最初のAは買うだけ
+Bでは 金をgb, 銀をsb, 銅をbbで交換できる
+もちろん全て換金してからやる
+1: 金をgb / ga倍、銀を...をする
+2: 金をga / gb倍、銀を...をする
 
-1 2 1 2 2 は
-1 2 2 や
-1 2 2 になる　この潰し方の通り
-前から見ていくと
-1 1通り
-1 2 1通り
-1 2 1 2通り
-1 2 1 2 3通り
-1 2 1 2 2 3通り
-同じ数字が出ると？ 同じ数字が連続するのは圧縮する
+1でドングリの数が5000倍になっていることもある
 
-1 3 1 2 3 2
-
-1 3 1 2 3 2
-1 1 1 2 3 2
-1 3 3 3 3 2
-1 3 1 2 2 2
-1 1 1 2 2 2 前回のdpを足す
-前回の数字に戻ると同じ圧縮列で異なる場合を作れる
-
-1 3 1 と 1 3 1 1 1(変化させたやつ)は異なるが、
-圧縮列1 3 1で同じ　この先同じように変化していく
+O(N ** 2)で1の操作の結果のドングリの最大値はわかる 25,000,000になる
+1で増やした金属は2では使わないんだから、残り最大2種類の金属を使えばいい
+ga > gb, sa > sb, ba > bbの場合はドングリは5000個のまんまだから
 """
+
+def multi(n, ga, gb, sa, sb, ba, bb):
+    res = n
+    for g in range(n + 1):
+        for s in range(n + 1):
+            # 購入金額についてオーバーしてないか
+            if g * ga + s * sa > n:
+                break
+            b = (n - (g * ga + s * sa)) // ba
+            opt = g * gb + s * sb + b * bb + (n - (g * ga + s * sa + b * ba))
+            res = max(res, opt)
+
+    return res
+
+def multi_two(n, ga, gb, sa, sb):
+    res = n
+    for g in range(n + 1):
+        if g * ga > n:
+            break
+        s = (n - (g * ga)) // sa
+        opt = g * gb + s * sb + (n - (g * ga + s * sa))
+        res = max(res, opt)
+    return res
 
 N = getN()
-C = getArray(N)
-C = [C[i] for i in range(N) if i == 0 or C[i] != C[i - 1]]
-N = len(C)
+Ga, Sa, Ba = getNM()
+Gb, Sb, Bb = getNM()
 
-table = [-1] * (2 * 10 ** 5 + 7)
-dp = [0] * N
-dp[0] = 1
-table[C[0]] = 0
+opt1 = multi(N, Ga, Gb, Sa, Sb, Ba, Bb)
+opt2 = 0
+opt3 = 0
+opt4 = 0
+opt5 = 0
 
-for i in range(1, N):
-    dp[i] += dp[i - 1]
-    if table[C[i]] >= 0: # 前回の部分があれば
-        dp[i] += dp[table[C[i]]] # 前回の場所の分も足す
-    table[C[i]] = i # 更新
-    dp[i] %= mod
+if opt1 == N:
+    # 1回目で何もしなかった場合のみ逆向きでmulti
+    opt2 = multi(N, Gb, Ga, Sb, Sa, Bb, Ba)
 
-print(dp[-1] % mod)
+opt3 = multi_two(opt1, Gb, Ga, Sb, Sa)
+opt4 = multi_two(opt1, Gb, Ga, Bb, Ba)
+opt5 = multi_two(opt1, Sb, Sa, Bb, Ba)
 
+print(max(opt1, opt2, opt3, opt4, opt5))
 
-# ACLB D - Flat Subsequence
-# 実家DP
-# Aの要素そのものに着目する(BITで大きい要素から置いていく感覚)
+#　Code Fomula 2014 予選 C - 仲良し文字列
+# 間違ってるところのみ抜けば全通り試せる
+
+def ord_chr(array, fanc):
+    if fanc == 0:
+        res = [ord(s) - ord('a') for s in array]
+        return res
+
+    if fanc == 1:
+        res = [chr(i + ord('a')) for i in array]
+        res = ''.join(res)
+        return res
+
+A = ord_chr(input(), 0)
+B = ord_chr(input(), 0)
+
+judge = [-1] * 26
+psuedo = [-1, -1]
+for i in range(len(A)):
+    if A[i] == B[i]:
+        if judge[A[i]] >= 0:
+            psuedo = [judge[A[i]], i]
+            break
+        judge[A[i]] = i
+else:
+    for i in range(len(A)):
+        if judge[A[i]] >= 0:
+            # 1番目が埋まっていたら２番目に置く
+            psuedo[(psuedo[0] != -1)] = i
+
+opt = []
+target = []
+
+for i in range(len(A)):
+    if i in psuedo or A[i] != B[i]:
+        opt.append(A[i])
+        target.append(B[i])
+
+    if len(opt) > 8:
+        print('NO')
+        exit()
+
+N = len(opt)
+
+def dfs(array, time):
+    if time == 3:
+        if array == target:
+            print('YES')
+            exit()
+        return
+
+    for i in range(N):
+        for j in range(i + 1, N):
+            res = deepcopy(array)
+            res[l], res[r] = res[r], res[l]
+            dfs(res, time + 1)
+
+dfs(opt, 0)
+
+print('NO')
+
+# ABC128 D - equeue
+
 N, K = getNM()
-A = getArray(N)
-ma = max(A)
+V = getList()
+m = 0
 
-# Aの部分列
-# Bの隣り合う要素の絶対値がK以下
+for i in range(N + 1): # 右からi個取る
+    for j in range(min(K - i + 1, N - i + 1)): # 左からj個取る
+        t = sorted(V[:i] + V[-j:] * (j > 0))[::-1]
+        c = K - i - j # 残りc個
 
-# NlogNまでいける
-# セグ木？ dp?
-# 全てにエッジを貼る必要はない？
-# LIS?
-# まあdp
+        while t and c and t[-1] < 0:
+            t.pop()
+            c -= 1
+        m = max(m, sum(t))
 
-# 数字iの最長はなんぼか
-seg = SegTree([0] * (ma + 1), segfunc, ide_ele)
-dp = [1] * N
-for i in range(N):
-    dp[i] = seg.query(max(0, A[i] - K), min(ma, A[i] + K) + 1) + 1
-    seg.update(A[i], dp[i])
-print(max(dp))
+print(m)
