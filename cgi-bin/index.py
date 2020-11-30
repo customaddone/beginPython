@@ -51,277 +51,136 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ARC060 D - 桁和
-
-"""
-n < bの時 f(b, n) = n
-n >= bの時 f(b, (n // b)) + (n % b)
-b, b ** 2, b *** 3で割っていく
-b進数は存在するか
-bはそんなに大きくなさそう
-def f(b):
-    n = N
-    res = 0
-    while n:
-        res += n % b
-        n //= b
-
-    return res
-でできるけど
-単調増加にはならないので二分探索もできない
-存在しない条件はなに
-法則性なさそうなので全探索？
-√nぐらいにしたい
-b進数の一番上の桁は安定している
-
-bを増やすと等間隔で数が減っていく
-a(i + 1)**2 + b(i + 1) + c
-ai ** 2 + 2ai + a + bi + b + c
-ai ** 2 + (2a + b)i + (a + b + c)
-
-二項
-10 ** 6まで全探索
-"""
+# ABC036 D - 塗り絵
+# 木dp
+# 葉からボトムアップか頂点からdfs
 
 N = getN()
-S = getN()
+query = [getList() for i in range(N - 1)]
 
-def f(b):
-    n = N
-    res = 0
-    while n:
-        res += n % b
-        n //= b
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = query[i]
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-    return res
+dp = [[0, 0] for i in range(N)]
+sta = 0
+for i in range(N):
+    if len(dist[i]) == 1:
+        sta = i
+        break
 
-# 10 ** 6なので一応可能
-for i in range(2, 10 ** 6 + 1):
-    ans = f(i)
-    if ans == S:
-        print(i)
-        exit()
+for i in range(N):
+    if len(dist[i]) == 1 and i != sta:
+        dp[i] = [1, 1]
 
-# 10 ** 6 + 1以降について
-# 割ってiになるbの最大値、最小値、そしてf(b)のとる値
-for i in range(N // 10 ** 6, 0, -1):
-    # 割ってiになるbの最小はN // (i + 1) + 1
-    b1 = N // (i + 1) + 1
-    opt1 = f(b1)
-    # 割ってiになる値の最大は N // i
-    b2 = N // i
-    opt2 = f(b2)
-    if opt2 <= S <= opt1 and (S - opt2) % i == 0:
-        # 87654の場合
-        # b1 = 9740 f(b1) = 10962
-        # b2 = 10956 f(b2) = 14
-        # opt1 - S を iで割った分をb1からひく
-        print(b2 - ((S - opt2) // i))
-        exit()
+ignore = [0] * N
+ignore[sta] = 1
+def dfs(now):
+    white = 1
+    black = 1
+    for i in dist[now]:
+        if ignore[i] != 1:
+            ignore[i] = 1
+            w_cnt, b_cnt = dfs(i)
+            white = (white * (w_cnt + b_cnt)) % mod
+            black = (black * w_cnt) % mod
+    dp[now] = [white % mod, black % mod]
+    return dp[now]
 
-# 割って0になる
-# これのf(b)はN
-if N == S:
-    print(N + 1)
-    exit()
+print(sum(dfs(sta)) % mod)
 
-# どうもできない
-print(-1)
-
-# AGC004 B - Colorful Slimes
+# ABC133 E - Virus Tree 2
+# 木dp
 
 """
-N色のスライムがいる
-全色のスライムが飼いたい
-・iのスライムをaiで変色させる
-・手持ちのiのスライムの全てをxで変色させる
+木dp
+子同士は同じ色にしてはいけない
+自身の親と子は同じ色にしてはいけない
+部分木の塗り方を求めて上に
+辿る　子の塗り方はnPr
 
-iのスライムを入手する方法
-・iのスライムをaiで購入する
-・i-1のスライムをai-1で購入 + x使う
-・i-2のスライムをai-2で購入 + x * 2使う...
-前からやっていこう
-
-これループする
-色iのスライム買う
-魔法
-色iのスライム買う
-魔法
-で色 i+1, i+2のスライムを作れる
-
-色iのスライム買う
-魔法
-魔法
-色iのスライム買う
-魔法
-で色 i + 1, i + 3のスライムが作れる
-Ai * 個数 + (iからの最長距離 * x)でいくらでもできる
-各スライムについて変更した方がいいスライムについての最長距離を保持する
-
-各スライムごとループさせる]
-小さい順に？
-
-一括に巻き込んだ方がいい場合も
-4 1
-4 2 3 1の場合
-1を4つ買う + 魔法3回
-ここまでまとめ買い変色させた方がいい境界は
-
-魔法の回数をK回に固定すると
-Ai ~ Ai-kの範囲でスライムが買える
+子を塗っていく
+最後に自分
 """
 
-N, X = getNM()
-A = getList()
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
 
-mi = [float('inf')] * N
-ans = float('inf')
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
 
-for k in range(N): # 魔法の回数をk回に固定
-    for i in range(N):
-        mi[i] = min(mi[i], A[i - k])
-    ans = min(ans, sum(mi) + k * X)
-
-print(ans)
-
-# diverta 2019 Programming Contest 2 D - Squirrel Merchant
-
-"""
-N個のどんぐり
-2回する　ピッタリ整数dp
-
-Aでは 金をga, 銀をsa, 銅をbaで交換できる
-最初のAは買うだけ
-Bでは 金をgb, 銀をsb, 銅をbbで交換できる
-もちろん全て換金してからやる
-1: 金をgb / ga倍、銀を...をする
-2: 金をga / gb倍、銀を...をする
-
-1でドングリの数が5000倍になっていることもある
-
-O(N ** 2)で1の操作の結果のドングリの最大値はわかる 25,000,000になる
-1で増やした金属は2では使わないんだから、残り最大2種類の金属を使えばいい
-ga > gb, sa > sb, ba > bbの場合はドングリは5000個のまんまだから
-"""
-
-def multi(n, ga, gb, sa, sb, ba, bb):
-    res = n
-    for g in range(n + 1):
-        for s in range(n + 1):
-            # 購入金額についてオーバーしてないか
-            if g * ga + s * sa > n:
-                break
-            b = (n - (g * ga + s * sa)) // ba
-            opt = g * gb + s * sb + b * bb + (n - (g * ga + s * sa + b * ba))
-            res = max(res, opt)
-
-    return res
-
-def multi_two(n, ga, gb, sa, sb):
-    res = n
-    for g in range(n + 1):
-        if g * ga > n:
-            break
-        s = (n - (g * ga)) // sa
-        opt = g * gb + s * sb + (n - (g * ga + s * sa))
-        res = max(res, opt)
-    return res
-
-N = getN()
-Ga, Sa, Ba = getNM()
-Gb, Sb, Bb = getNM()
-
-opt1 = multi(N, Ga, Gb, Sa, Sb, Ba, Bb)
-opt2 = 0
-opt3 = 0
-opt4 = 0
-opt5 = 0
-
-if opt1 == N:
-    # 1回目で何もしなかった場合のみ逆向きでmulti
-    opt2 = multi(N, Gb, Ga, Sb, Sa, Bb, Ba)
-
-opt3 = multi_two(opt1, Gb, Ga, Sb, Sa)
-opt4 = multi_two(opt1, Gb, Ga, Bb, Ba)
-opt5 = multi_two(opt1, Sb, Sa, Bb, Ba)
-
-print(max(opt1, opt2, opt3, opt4, opt5))
-
-#　Code Fomula 2014 予選 C - 仲良し文字列
-# 間違ってるところのみ抜けば全通り試せる
-
-def ord_chr(array, fanc):
-    if fanc == 0:
-        res = [ord(s) - ord('a') for s in array]
-        return res
-
-    if fanc == 1:
-        res = [chr(i + ord('a')) for i in array]
-        res = ''.join(res)
-        return res
-
-A = ord_chr(input(), 0)
-B = ord_chr(input(), 0)
-
-judge = [-1] * 26
-psuedo = [-1, -1]
-for i in range(len(A)):
-    if A[i] == B[i]:
-        if judge[A[i]] >= 0:
-            psuedo = [judge[A[i]], i]
-            break
-        judge[A[i]] = i
-else:
-    for i in range(len(A)):
-        if judge[A[i]] >= 0:
-            # 1番目が埋まっていたら２番目に置く
-            psuedo[(psuedo[0] != -1)] = i
-
-opt = []
-target = []
-
-for i in range(len(A)):
-    if i in psuedo or A[i] != B[i]:
-        opt.append(A[i])
-        target.append(B[i])
-
-    if len(opt) > 8:
-        print('NO')
-        exit()
-
-N = len(opt)
-
-def dfs(array, time):
-    if time == 3:
-        if array == target:
-            print('YES')
-            exit()
-        return
-
-    for i in range(N):
-        for j in range(i + 1, N):
-            res = deepcopy(array)
-            res[l], res[r] = res[r], res[l]
-            dfs(res, time + 1)
-
-dfs(opt, 0)
-
-print('NO')
-
-# ABC128 D - equeue
+# 階乗
+def factorial(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    return fact[n] * factinv[n - r] % mod
 
 N, K = getNM()
-V = getList()
-m = 0
+E = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = getNM()
+    E[a - 1].append(b - 1)
+    E[b - 1].append(a - 1)
 
-for i in range(N + 1): # 右からi個取る
-    for j in range(min(K - i + 1, N - i + 1)): # 左からj個取る
-        t = sorted(V[:i] + V[-j:] * (j > 0))[::-1]
-        c = K - i - j # 残りc個
+ign = [0] * N
+ign[0] = 1
+ans = K # 根を塗る
+q = deque([0])
 
-        while t and c and t[-1] < 0:
-            t.pop()
-            c -= 1
-        m = max(m, sum(t))
+# bfsで上から塗る方が楽
+while q:
+    u = q.popleft()
+    if u == 0:
+        # 自身以外の色を使う　E[u]個塗る
+        ans *= factorial(K - 1, len(E[u]))
+    else:
+        # 自身と親以外の色を使う E[u] - 1個塗る
+        ans *= factorial(K - 2, len(E[u]) - 1)
+    ans %= mod
+    for v in E[u]:
+        if ign[v] == 0:
+            ign[v] = 1
+            q.append(v)
 
-print(m)
+print(ans % mod)
+
+# ABC146 D - Coloring Edges on Tree
+N = getN()
+
+dist = [[] for i in range(N)]
+edges = {}
+for i in range(N - 1):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+    edges[(a - 1, b - 1)] = i
+    edges[(b - 1, a - 1)] = i
+
+color = [-1] * N
+color[0] = 0
+ans = [0] * (N - 1)
+pos = deque([0])
+
+while pos:
+    u = pos.popleft()
+    j = 1
+    for i in dist[u]:
+        if color[i] != -1:
+            continue
+        if j == color[u]:
+            j += 1
+        color[i] = j
+        ans[edges[(i, u)]] = j
+        pos.append(i)
+        j += 1
+
+print(max(ans))
+for i in ans:
+    print(i)
