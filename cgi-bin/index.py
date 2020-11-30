@@ -51,136 +51,43 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC036 D - 塗り絵
-# 木dp
-# 葉からボトムアップか頂点からdfs
+# ABC153 F - Silver Fox vs Monster
 
-N = getN()
-query = [getList() for i in range(N - 1)]
+# 遅延セグは使わない
+# 二分探索したい
+# imosする
+# どこに爆弾を投下するか
+# 効率のいい方法
+# 現在地点に爆弾を投下してモンスターを倒すまで
+# -D ~ Dまで = 前に2 * Dの範囲に効くと
+# bisect_right
 
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = query[i]
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+N, D, A = getNM()
+# 座標Xにいる 体力はH
+mons = [getList() for i in range(N)]
+mons.sort()
+X = []
+H = []
+for x, h in mons:
+    X.append(x)
+    H.append(h)
 
-dp = [[0, 0] for i in range(N)]
-sta = 0
+# 累積ダメージ
+cnt = 0
+r = 0
+imos = [0] * (N + 1)
 for i in range(N):
-    if len(dist[i]) == 1:
-        sta = i
-        break
+    # 爆風範囲
+    while r < N and X[i] + 2 * D >= X[r]:
+        r += 1
+    if i > 0:
+        imos[i] += imos[i - 1]
+    # ここで爆弾を投下する回数
+    hp = max(H[i] - imos[i], 0)
+    t = (hp + A - 1) // A # 爆風のぶんを削る
+    cnt += t
+    # imos
+    imos[i] += t * A
+    imos[r] -= t * A
 
-for i in range(N):
-    if len(dist[i]) == 1 and i != sta:
-        dp[i] = [1, 1]
-
-ignore = [0] * N
-ignore[sta] = 1
-def dfs(now):
-    white = 1
-    black = 1
-    for i in dist[now]:
-        if ignore[i] != 1:
-            ignore[i] = 1
-            w_cnt, b_cnt = dfs(i)
-            white = (white * (w_cnt + b_cnt)) % mod
-            black = (black * w_cnt) % mod
-    dp[now] = [white % mod, black % mod]
-    return dp[now]
-
-print(sum(dfs(sta)) % mod)
-
-# ABC133 E - Virus Tree 2
-# 木dp
-
-"""
-木dp
-子同士は同じ色にしてはいけない
-自身の親と子は同じ色にしてはいけない
-部分木の塗り方を求めて上に
-辿る　子の塗り方はnPr
-
-子を塗っていく
-最後に自分
-"""
-
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
-
-# 階乗
-def factorial(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    return fact[n] * factinv[n - r] % mod
-
-N, K = getNM()
-E = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = getNM()
-    E[a - 1].append(b - 1)
-    E[b - 1].append(a - 1)
-
-ign = [0] * N
-ign[0] = 1
-ans = K # 根を塗る
-q = deque([0])
-
-# bfsで上から塗る方が楽
-while q:
-    u = q.popleft()
-    if u == 0:
-        # 自身以外の色を使う　E[u]個塗る
-        ans *= factorial(K - 1, len(E[u]))
-    else:
-        # 自身と親以外の色を使う E[u] - 1個塗る
-        ans *= factorial(K - 2, len(E[u]) - 1)
-    ans %= mod
-    for v in E[u]:
-        if ign[v] == 0:
-            ign[v] = 1
-            q.append(v)
-
-print(ans % mod)
-
-# ABC146 D - Coloring Edges on Tree
-N = getN()
-
-dist = [[] for i in range(N)]
-edges = {}
-for i in range(N - 1):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-    edges[(a - 1, b - 1)] = i
-    edges[(b - 1, a - 1)] = i
-
-color = [-1] * N
-color[0] = 0
-ans = [0] * (N - 1)
-pos = deque([0])
-
-while pos:
-    u = pos.popleft()
-    j = 1
-    for i in dist[u]:
-        if color[i] != -1:
-            continue
-        if j == color[u]:
-            j += 1
-        color[i] = j
-        ans[edges[(i, u)]] = j
-        pos.append(i)
-        j += 1
-
-print(max(ans))
-for i in ans:
-    print(i)
+print(cnt)
