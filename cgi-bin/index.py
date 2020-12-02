@@ -51,286 +51,196 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC004 マーブル
-# ベルマンフォード式最小
+# AGC005 C - Tree Restoring
 
-# 全てのボールを全て違う箱に入れる
-# 地点からi離れたところに置くためにはi回試行が必要
+"""
+頂点数N Nは小さいが...
+木です　
+頂点1, 2... について最も遠い頂点がAi
+距離iがいくつあるかcntする
 
-# 原点pのボールを(s, e)に一列に置くときの試行回数
-def counter(s, e, p):
-    sp = abs(s - p)
-    ep = abs(e - p)
-    if e < p:
-        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
-    elif s <= p <= e:
-        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
-    else:
-        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
+最遠N - 1の距離が作れるのはパスグラフ
+1 - 2 - 3 - 4 距離3が作れる
+この時距離3は2つ、距離2は2つ
+1 - 2 - 3
+      - 4 の場合
+距離2が3つ、距離1が1つ
+まずパスグラフから考える
+1 - 2 - 3 - 4 距離3が2つできる
+              距離2は2つ
+1 - 2 - 3 - 4
+    　　　 - 5 距離3が3つできる
 
-# 全範囲を探索すると微妙に間に合わない
-# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
-# 緑がこの位置にある時、赤の最適な置き方は...
-# 緑がこの位置にある時、青の最適な置き方は...
-# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
+距離n - 1に一つ頂点をつなぐと距離nの頂点ができる
+1 - 2 - 3
+最初のパスグラフを作った時、max - 1, max - 2...の頂点が2個ずつできる
+残った頂点を順番にパスグラフに刺していく
 
-class MinCostFlow:
-    # 最小費用流(ベルマンフォード版、負コストに対応可)
+距離n - 1に一つ頂点をつなぐと距離nの頂点ができる
+"""
 
-    INF = 10 ** 18
+N = getN()
+A = getList()
 
-    def __init__(self, N):
-        self.N = N
-        self.G = [[] for i in range(N)]
+distance = [0] * N
+for i in range(N):
+    distance[A[i]] += 1
 
-    def add_edge(self, fr, to, cap, cost):
-        G = self.G
-        G[fr].append([to, cap, cost, len(G[to])])
-        G[to].append([fr, 0, -cost, len(G[fr])-1])
-
-    def flow(self, s, t, f):
-
-        N = self.N; G = self.G
-        INF = MinCostFlow.INF
-
-        res = 0
-        prv_v = [0] * N
-        prv_e = [0] * N
-
-        while f:
-            dist = [INF] * N
-            dist[s] = 0
-            update = True
-
-            while update:
-                update = False
-                for v in range(N):
-                    if dist[v] == INF:
-                        continue
-                    for i, (to, cap, cost, _) in enumerate(G[v]):
-                        if cap > 0 and dist[to] > dist[v] + cost:
-                            dist[to] = dist[v] + cost
-                            prv_v[to] = v; prv_e[to] = i
-                            update = True
-            if dist[t] == INF:
-                return -1
-
-            d = f; v = t
-            while v != s:
-                d = min(d, G[prv_v[v]][prv_e[v]][1])
-                v = prv_v[v]
-            f -= d
-            res += d * dist[t]
-            v = t
-            while v != s:
-                e = G[prv_v[v]][prv_e[v]]
-                e[1] -= d
-                G[v][e[3]][1] += d
-                v = prv_v[v]
-        return res
-
-R, G, B = getNM()
-N = R + G + B
-
-# 最小費用流
-mcf = MinCostFlow(1006)
-# 始点からRGBの移動前
-# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
-mcf.add_edge(1001, 1002, R, 0)
-mcf.add_edge(1001, 1003, G, 0)
-mcf.add_edge(1001, 1004, B, 0)
-
-# 0~1000の頂点番号は座標位置と一致させてある
-# 各頂点1個まで通れる
-for v in range(1001):
-    # R => 各座標
-    mcf.add_edge(1002, v, 1, abs(400-v))
-    # G => 各座標
-    mcf.add_edge(1003, v, 1, abs(500-v))
-    # B => 各座標
-    mcf.add_edge(1004, v, 1, abs(600-v))
-    # 各座標 => 終点(1005)
-    mcf.add_edge(v, 1005, 1, 0)
-
-# N個のボールを送るための最小費用
-print(mcf.flow(1001, 1005, N))
-
-# ABC010
-# 最小カット問題
-# 始点、終点と各点を結びつける
-N, G, E = getNM()
-P = getList()
-query = []
-for i in range(E):
-    a, b = getNM()
-    query.append([a, b, 1])
-    query.append([b, a, 1])
-# goalへのquery増築
-N += 1
-for i in range(G):
-    query.append([N - 1, P[i], 1])
-    query.append([P[i], N - 1, 1])
-
-ans = 0
-lines = defaultdict(set)
-cost = defaultdict(lambda: defaultdict(int))
-for i in range(len(query)):
-    a, b, c = query[i]
-    if c != 0:
-        lines[a].add(b)
-        cost[a][b] += c
-
-# 蟻本  p205 asteroid
-N = 3
-K = 4
-que = [
-[1, 1],
-[1, 3],
-[2, 2],
-[3, 2]
-]
-
-# 始点を0、縦座標rowを1 ~ N, 横座標colをN + 1 ~ 2N, 終点を2N + 1にする
-# 1-indexならこれでいい
-# 二分グラフの最小点被覆は最大マッチング
-# 二分グラフの最大安定集合は上記を除く補集合
-dist = []
-for i in range(1, N + 1): # 始点、終点
-    dist.append([0, i, 1])
-    dist.append([i + N, 2 * N + 1, 1])
-for a, b in que: # 各惑星について
-    dist.append([a, b + N, 1])
-
-N = 2 * N + 2 # 2 * N + 2倍に拡張する
-lines = defaultdict(set)
-cost = [[0] * N for i in range(N)]
-for i in range(len(dist)):
-    a, b, c = dist[i]
-    lines[a].add(b)
-    cost[a][b] += c
-ans = 0
-
-# sからスタート
-def Ford_Fulkerson(sta, end):
-    global ans
-    queue = deque()
-    queue.append([sta, float('inf')])
-
-    ignore = [1] * N
-    ignore[sta] = 0
-
-    route = [0] * N
-    route[sta] = -1
-
-    while queue:
-        s, flow = queue.pop()
-        for t in lines[s]:  #s->t
-            if ignore[t]: #未到達
-                # flowは入ってくる量、出る量のうち小さい方
-                flow = min(cost[s][t], flow)
-                route[t] = s
-                queue.append([t, flow])
-                ignore[t] = 0
-                if t == end: #ゴール到達
-                    ans += flow
-                    break
+opt = [0] * N # 現在距離iの頂点はいくつあるか
+left = N # 残り頂点数
+for i in range(N - 1, -1, -1):
+    if distance[i] > 0:
+        if distance[i] == 1: # 最遠は必ず2つ以上ある
+            print('Impossible')
+            exit()
         else:
-            continue #breakされなければWhile節の先頭に戻る
-        # Falseはされない
-        break
+            # 最初のパスグラフを引く
+            for j in range(i + 1):
+                left -= 1
+                opt[max(i - j, j)] += 1
+            break
+
+# distance（クエリ）とopt(パスグラフ)を見比べる
+for i in range(N - 1, 0, -1):
+    # optは基礎的に存在する頂点
+    # それを下回るようであればout
+    if distance[i] < opt[i]:
+        print('Impossible')
+        exit()
     else:
-        return False
+        diff = distance[i] - opt[i]
+        if diff: # 足さないといけない場合、距離がd - 1の頂点がなければいけない
+            if opt[i - 1] == 0:
+                print('Impossible')
+                exit()
+            else:
+                left -= diff
+                opt[i] += diff
 
-    t = end
-    s = route[t]
-    # goalまで流れた量はflow
-    # 逆向きの辺を貼る
-    while s != -1:
-        #s->tのコスト減少，ゼロになるなら辺を削除
-        cost[s][t] -= flow
-        if cost[s][t] == 0:
-            lines[s].remove(t)
-            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
-        if cost[t][s] == 0:
-            lines[t].add(s)
+if left == 0: # 頂点をちょうど使い切ったら
+    print('Possible')
+else:
+    print('Impossible')
 
-        cost[t][s] += flow
+# ABC173 F - Intervals on Tree
+# ある意味Unionfindか
+# 新しい頂点を加えると、連結成分が1 - (既にある頂点へのエッジ)の分増える
 
-        # 一つ上の辺をたどる
-        t = s
-        s = route[t]
+"""
+木の問題
+N <= 10 ** 5
+辺があると連結するので連結成分の個数が減る
+L,RをnC2通り求める
+bitは普通に間に合わない
 
-    return True
+やっぱり分解して考える
+小さいのから
+L = 1の時
+R = 1 ~ N これにO(1)で答える
+R = 1
+1
+R = 2 2は1と繋がってない
+1
+2 2
+R = 3 3は1, 2と繋がっている
+1 2 3 1
 
-while True:
-    # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(0, N - 1):
-        continue
-    else:
-        break
+頂点1は何回数えられるか
+頂点1が含まれるのは3回
+頂点2が含まれるのは4回
+頂点3が含まれるのは3回
 
-print(ans)
+木dpとか
+前から順にやる？
 
-# ABC010 D - 浮気予防
+Rで新しい数を入れると急に結合したりする
+数え上げでしょう
 
-class FordFulkerson:
-    def __init__(self, N):
-        self.N = N
-        self.edge = [[] for i in range(N)] # 各頂点からのエッジ
+ダブった部分を引く
+全ての部分木の大きさを求めるのは無理そう
+新しい要素は高々２つの要素を繋げるだけ
 
-    # add_edge(出発、到着、量)
-    def add_edge(self, fr, to, cap):
-        forward = [to, cap, None]
-        forward[2] = backward = [fr, 0, forward] # 行きがけのエッジに帰りがけの情報を埋め込む
-        self.edge[fr].append(forward) # 行きがけ
-        self.edge[to].append(backward) # 帰りがけ
-
-    def add_multi_edge(self, v1, v2, cap1, cap2):
-        edge1 = [v2, cap1, None]
-        edge1[2] = edge2 = [v1, cap2, edge1]
-        self.edge[v1].append(edge1)
-        self.edge[v2].append(edge2)
-
-    # v ~ t にfだけ流してみる
-    def dfs(self, v, t, f):
-        if v == t:
-            return f
-        used = self.used # ignoreを設定
-        used[v] = 1 # ignoreを設定
-        for e in self.edge[v]:
-            w, cap, rev = e
-            if cap and not used[w]: # まだ流せる
-                d = self.dfs(w, t, min(f, cap)) # さらに下にいくら流れる
-                if d:
-                    e[1] -= d # forwardの数が減る
-                    rev[1] += d # backwardの数が増える
-                    return d
-        return 0
-
-    def flow(self, s, t):
-        flow = 0
-        f = INF = 10 ** 9 + 7
-        N = self.N
-        while f:
-            self.used = [0] * N # 更新
-            f = self.dfs(s, t, INF) # 少しずつ流す
-            flow += f
-        return flow
-
-N, G, E = getNM()
-F = FordFulkerson(N + 1)
-P = getList()
-
-for i in range(E):
+for i in range(N - 1):
     u, v = getNM()
-    # 両方エッジつけても問題ない
-    F.add_edge(u, v, 1)
-    F.add_edge(v, u, 1)
+    if u > v:
+        u, v = v, u
+    # 前に戻るエッジのみ
+    dist[v - 1].append(u - 1)
+for i in range(N):
+    dist[i].sort()
 
-# 高橋くんの所に流す
-for p in P:
-    F.add_edge(p, N, 1)
+ans = 0
+for i in range(N): # L
+    cnt = 0
+    for j in range(i, N): # R
+        # 範囲外に伸びるエッジは無視
+        cnt += 1 - (len(dist[j]) - bisect_left(dist[j], i))
+        ans += cnt
 
-ans = F.flow(0, N)
+これはO(N ** 2)かかる
+[[], [], [], [], [2], [], [1, 3, 4], [3], [0, 7], [5, 8]]
+累積されていく
+何もなければ1 ~ 10の累積で55のはず
+しかし控除が累積して1 + 1 + 4(len([2] + len([1, 3, 4]))) + 5 + 7 + 9 = 27あるのでこれを引く
+dist[4]の位置にある2はL = 1の時も引っかかる
+dist[8]にある0は一回のみ引っかかって被害はN - 8 = 2
 
-print(ans)
+エッジが伸びることでいくら減るか
+"""
+
+N = getN()
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    u, v = getNM()
+    # 前に行くように
+    if u > v:
+        u, v = v, u
+    dist[v - 1].append(u - 1)
+
+ans = 0
+cnt = 0
+for i in range(N):
+    ans += (i + 1) * (i + 2) // 2
+    # distの探索
+    for j in dist[i]:
+        cnt += (j + 1) * (N - i)
+
+print(ans - cnt)
+
+# ARC028 C - 高橋王国の分割統治
+
+"""
+全方位木dpを使わない方法で
+頂点iについて
+iの子要素の部分木のサイズを調べる
+全方位木dpの要領でやっていく
+①葉から木dpしていく
+②遡る
+"""
+
+N = getN()
+E = [[] for i in range(N)]
+for i in range(N - 1):
+    p = getN()
+    E[i + 1].append(p)
+    E[p].append(i + 1)
+
+# dfsする
+ans = [0] * N
+
+def dfs(u, par):
+    res = 1 # 自分 + 子要素の部分木の大きさの合計
+    opt_c = 0 # 子要素の部分木の大きさの最大値
+    for v in E[u]:
+        if v != par:
+            c = dfs(v, u)
+            res += c
+            opt_c = max(opt_c, c)
+
+    # 親方向の部分木の大きさはN - res
+    ans[u] = max(opt_c, N - res)
+    return res
+
+dfs(0, -1)
+for i in ans:
+    print(i)
