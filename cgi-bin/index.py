@@ -51,402 +51,286 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC038 D-プレゼント
-class BIT:
-    def __init__(self, n):
-        self.n = n
-        self.data = [0] * (n + 1)
+# ABC004 マーブル
+# ベルマンフォード式最小
 
-    def ope(self, x, y):
-        return max(x, y)
+# 全てのボールを全て違う箱に入れる
+# 地点からi離れたところに置くためにはi回試行が必要
 
-    def update(self, i, v):
-        j = i
-        while j <= self.n:
-            self.data[j] = self.ope(self.data[j], v)
-            j += j & -j
+# 原点pのボールを(s, e)に一列に置くときの試行回数
+def counter(s, e, p):
+    sp = abs(s - p)
+    ep = abs(e - p)
+    if e < p:
+        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
+    elif s <= p <= e:
+        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
+    else:
+        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
 
-    def query(self, i):
-        ret = 0
-        j = i
-        while 0 < j:
-            ret = self.ope(self.data[j], ret)
-            j &= (j - 1)
-        return ret
+# 全範囲を探索すると微妙に間に合わない
+# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
+# 緑がこの位置にある時、赤の最適な置き方は...
+# 緑がこの位置にある時、青の最適な置き方は...
+# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
 
-bit = BIT(10 ** 5)
+class MinCostFlow:
+    # 最小費用流(ベルマンフォード版、負コストに対応可)
 
-for w, h in que:
-    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
-    # 最初は0個
-    q = bit.query(h - 1)
-    # 高さhの時の箱の数を更新
-    bit.update(h, q + 1)
-print(bit.query(10 ** 5))
+    INF = 10 ** 18
 
-# ABC140 E - Second Sum
-# [Pl, Pr]間で２番目に大きいものの総和を
-# l, rについてのnC2通りの全てについて求めよ
-
-# 8 2 7 3 4 5 6 1
-# 8 2: 2
-# 8 2 7: 7
-# 2 7 3: 3
-# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
-# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
-
-# N <= 10 ** 5
-# Piが２番目になる通りが何通り　みたいな感じで求められる？
-# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
-
-# ヒープキューとか使える？
-# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
-# 尺取り使える？
-
-# 累積？　一番
-
-class BIT:
     def __init__(self, N):
         self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
+        self.G = [[] for i in range(N)]
 
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
+    def add_edge(self, fr, to, cap, cost):
+        G = self.G
+        G[fr].append([to, cap, cost, len(G[to])])
+        G[to].append([fr, 0, -cost, len(G[fr])-1])
 
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
+    def flow(self, s, t, f):
 
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
+        N = self.N; G = self.G
+        INF = MinCostFlow.INF
 
-    def lowerbound(self,w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
+        res = 0
+        prv_v = [0] * N
+        prv_e = [0] * N
 
-N = getN()
+        while f:
+            dist = [INF] * N
+            dist[s] = 0
+            update = True
+
+            while update:
+                update = False
+                for v in range(N):
+                    if dist[v] == INF:
+                        continue
+                    for i, (to, cap, cost, _) in enumerate(G[v]):
+                        if cap > 0 and dist[to] > dist[v] + cost:
+                            dist[to] = dist[v] + cost
+                            prv_v[to] = v; prv_e[to] = i
+                            update = True
+            if dist[t] == INF:
+                return -1
+
+            d = f; v = t
+            while v != s:
+                d = min(d, G[prv_v[v]][prv_e[v]][1])
+                v = prv_v[v]
+            f -= d
+            res += d * dist[t]
+            v = t
+            while v != s:
+                e = G[prv_v[v]][prv_e[v]]
+                e[1] -= d
+                G[v][e[3]][1] += d
+                v = prv_v[v]
+        return res
+
+R, G, B = getNM()
+N = R + G + B
+
+# 最小費用流
+mcf = MinCostFlow(1006)
+# 始点からRGBの移動前
+# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
+mcf.add_edge(1001, 1002, R, 0)
+mcf.add_edge(1001, 1003, G, 0)
+mcf.add_edge(1001, 1004, B, 0)
+
+# 0~1000の頂点番号は座標位置と一致させてある
+# 各頂点1個まで通れる
+for v in range(1001):
+    # R => 各座標
+    mcf.add_edge(1002, v, 1, abs(400-v))
+    # G => 各座標
+    mcf.add_edge(1003, v, 1, abs(500-v))
+    # B => 各座標
+    mcf.add_edge(1004, v, 1, abs(600-v))
+    # 各座標 => 終点(1005)
+    mcf.add_edge(v, 1005, 1, 0)
+
+# N個のボールを送るための最小費用
+print(mcf.flow(1001, 1005, N))
+
+# ABC010
+# 最小カット問題
+# 始点、終点と各点を結びつける
+N, G, E = getNM()
 P = getList()
-dic = {}
-bit = BIT(N)
-for i in range(N):
-    dic[P[i]] = i + 1
-
-# 両端に何もない時用
-# [0] + Pの各要素 + [N + 1]みたいになる
-dic[0] = 0
-dic[N + 1] = N + 1
-ans = 0
-
-for i in range(N, 0, -1):
-    # 8のインデックス、7のインデックス...に1を登録していく
-    bit.add(dic[i], 1)
-    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
-    c = bit.get(dic[i] + 1)
-    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
-    # l2: l1の一つ左側にあるもの
-    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
-    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
-    # r2: r1の一つ右側にあるもの
-    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
-    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
-    ans += S * i
-print(ans)
-
-# ABC174 F - Range Set Query
-
-# 色の種類
-# 同じ色のボールがある場合、どの情報があれば良いか
-# 最もrに近いボールの位置がわかればいい
-N, Q = getNM()
-C = [0] + getList() # 1-indexに
-que = [[] for i in range(N + 1)]
-for i in range(Q):
-    l, r = getNM()
-    que[r].append([l, i])
-
-ans = [0] * Q # これだけ0-index
-place = [-1] * (N + 1) # 一番右にあるボールの場所
-bit = BIT(N + 1) # できるならbitに
-
-# 前から更新していく
-for r in range(1, N + 1):
-    # 更新
-    c = C[r]
-    bit.add(r, 1) # 立てる
-    if place[c] > 0: # 登録済みなら
-        bit.add(place[c], -1)
-    place[c] = r
-
-    # 答える
-    while que[r]:
-        l, index = que[r].pop()
-        ans[index] = bit.cum(l, r + 1)
-
-for a in ans:
-    print(a)
-
-# ARC031 C - 積み木
-# 反転数を求める感じで
-N = getN()
-B = getList()
-
-# 各積み木は左か右かを選んで移動させられる
-# BITの小さい方でいい
-place = [0] * (N + 1)
-for i in range(N):
-    place[B[i]] = i
-
-bit = BIT(N + 1)
-# 左にある自分より小さいものではない（大きいもの）の数
-left = [0] * (N + 1)
-# 右にある自分より小さいものではない（大きいもの）の数
-right = [0] * (N + 1)
-for i in range(N, 0, -1):
-    bit.add(place[i] + 1, 1)
-    left[i] = bit.get(place[i] + 1)
-    right[i] = (N - i) - bit.get(place[i] + 1)
-
-ans = 0
-for l, r in zip(left, right):
-    # どちらか小さい方
-    ans += min(l, r)
-print(ans)
-
-# ARC033 C - データ構造
-# 座圧BIT
-Q = getN()
-que = [getList() for i in range(Q)]
-
-# データに入れる数字を抽出する
-A = []
-for t, x in que:
-    if t == 1:
-        A.append(x)
-# 座標圧縮
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-
-    return alter, rev
-
-alter, rev = compress(A)
-
-limit = Q + 1
-bit = BIT(limit)
-for t, x in que:
-    if t == 1:
-        bit.add(alter[x] + 1, 1)
-    else:
-        # xを超えないギリギリの場所が1-indexで与えられる
-        opt = bit.lowerbound(x) - 1
-        # 1-indexなのでそのままprintする
-        print(rev[opt])
-        # xを超えないギリギリの場所の一つ右を-1する
-        bit.add(opt + 1, -1)
-
-# AGC005 B - Minimum Sum
-
-"""
-全ての連続部分列について、その最小値の総和を求めよ
-N = 3
-A = [2, 1, 3]の時
-[2]:2 [1]:1 [3]:3
-[2, 1]:1 [1, 3]:1
-[2, 1, 3]:1
-合計9
-BITを使うと思う
-小さいものから順に置いていく
-iが最小値を取る領域[l, r]を求める
-1を置く
-[ , 1, ]
-この時、左端は1番目、右端は3番目までを領域に含めることができる
-左側は2 - 1 + 1 = 2通り、右側は3 - 2 + 1 = 2通りある
-ans += (2 - 1 + 1) * (3 - 2 + 1) * 1
-2を置く
-[2, 1, ]
-左端は1番目、右端も1番目
-"""
-
-N = getN()
-A = getList()
-index = [0] * (N + 1)
-for i in range(N):
-    index[A[i]] = i + 1
-
-bit = BIT(N)
-ans = 0
-for i in range(1, N + 1):
-    c = bit.get(index[i]) # 左側にあるフラグの数を求める
-    # フラグがc個になる場所 + 1、フラグがc + 1個にある場所 - 1を求める
-    # つまり、
-    # 左側にある自分より小さいもののうち最も右側にあるもの + 1
-    # 右側にある自分より小さいもののうち最も左側にあるもの - 1
-    # の場所を求める
-    l, r = bit.lowerbound(c) + 1, bit.lowerbound(c + 1) - 1
-    ans += (index[i] - l + 1) * (r - index[i] + 1) * i
-    bit.add(index[i], 1) # 自身を置く
-print(ans)
-
-# ARC069 E - Frequency
-
-"""
-N個の山がある
-石の数が最大の山のうち最も前の番号をsにappend
-石を一つとる
-これを繰り返す
-
-Sが辞書順で最小の数列になるようにした時、sに数はそれぞれいくつずつ含まれるか
-A = [1, 2, 1, 3, 2, 4, 2, 5, 8, 1]の時
-Sの最終的な長さはsum(A)
-
-S = []
-S = [9]: 一つ目はどういう操作をしても共通
-出来るだけ前の方のをindexに指定したい
-最大値の位置を出来るだけ前に寄せるためには？
-現在より前の数字について最大の数字に移動する セグ木?
-
-現在より前の数字について最大の数字まで数を減らす
-それより後ろの数字についてnextの数字まで減らす
-A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
-1 + 1つの5を4まで下げる
-A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
-
-前からとって行った時の最小値の場所しか加算されない
-この場合[1, 2,  , 3,  , 4,  , 5, 8,  ]
-index = 9についてindex以降の数字を全て5まで下げる
-ans[index] += index以降の5以上の部分
-index = 8についてindex以降の数字を全て4まで下げる
-ans[index] += index以降の4以上5以下の部分
-5以上を加算、４以上４以下を加算、３以上３以下を
-この場所にどのように加算するか
-全てのindexについてO(1)で答えるか？
-５以上のものを足す、４以上のものを足す...
-
-各場所ind_l[i]についてそれより右側の部分のunder以上upper未満の部分について
-総和を求める
-
-BITを使って
-ある範囲内のunder以上の場所の数を答える　これは簡単
-          upper以下の場所の数を答える　これも簡単 bitの結果を足し引きすればOK
-
-"""
-
-N = getN()
-A = getList()
-
-cnt = [] # 数字iがどこにあるか
-ma = [] # 1 ~ i個目までの最大値
-for i in range(N):
-    cnt.append([A[i], i + 1])
-    if i == 0:
-        ma.append(A[i])
-    else:
-        ma.append(max(ma[-1], A[i]))
-
-ind_l = [] # 加算する場所
-for i in range(N - 1, 0, -1):
-    if ma[i - 1] < ma[i]:
-        ind_l.append(i + 1)
-ind_l.append(1)
-ma.insert(0, 0) # 1-indexに修正した方がいい
-ma.insert(0, 0)
-
-cnt.sort()
-
-upper = max(A)
-bit = BIT(N)
-ans = [0] * (N + 1)
-
-# 自分より右側のunder ~ upperを足し合わせる
-for i in range(len(ind_l)):
-    index = ind_l[i]
-    under = ma[ind_l[i]]
-    left = 0
-    while cnt and cnt[-1][0] > under:
-        p, ind = cnt.pop()
-        left += max(0, upper - p) # upperに到達しない部分について控除分
-        bit.add(ind, 1)
-    ans[index] = bit.cum(index, N + 1) * (upper - under) - left
-    upper = under
-
-for i in ans[1:]:
-    print(i)
-
-# ARC075 E - Meaningful Mean
-
-N, K = getNM()
-A = getArray(N)
-
-# 連続部分列: imos, 尺取り法, セグ木, 数え上げdpなどが使えそう
-# 算術平均がK以上であるものは何個あるでしょうか？ 尺取りっぽい
-# → 平均なので尺取りではない　{100, 1 100...100}みたいな場合
-
-# 平均なので各項をKで引いて見ようか
-# N, K = 3, 6
-# A = [7, 5, 7] の場合
-# A = [1, -1, 1]になる 累計が0以上のもの → これだとO(n2)かかる
-# 右端rを決めた時にペアになる左端lはいくつあるか
-
-# N, K = 7, 26
-# A = [10, 20, 30, 40, 30, 20, 10]の時
-# imos = [0, -16, -22, -18, -4, 0, -6, -22]
-# l ~ r区間の平均 = imos[r] - imos[l - 1] これが0以上なら
-# = imos[r] >= imos[l - 1]なら
-# imos[b] - imos[a] >= 0になるペアがいくつあるかをO(n)で
-
-# つまり
-# imos上のimos[i] = bについてより左側にb以下の数はいくつあるか
-
-A = [i - K for i in A]
-imos = [0]
-for i in range(N):
-    imos.append(imos[i] + A[i])
-mi = min(imos)
-imos = [i - mi for i in imos] # imosの全ての要素が0以上になるように調整
+query = []
+for i in range(E):
+    a, b = getNM()
+    query.append([a, b, 1])
+    query.append([b, a, 1])
+# goalへのquery増築
 N += 1
+for i in range(G):
+    query.append([N - 1, P[i], 1])
+    query.append([P[i], N - 1, 1])
 
-# 座標圧縮BIT
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-    return alter, rev
-
-alter, rev = compress(imos)
-limit = N + 1
-bit = BIT(limit)
 ans = 0
-for i in range(N):
-    # 自身以下の数字が左にいくつあるか
-    ans += bit.get(alter[imos[i]] + 2) # 変換してから調べる
-    bit.add(alter[imos[i]] + 1, 1) # 変換してからレコード
+lines = defaultdict(set)
+cost = defaultdict(lambda: defaultdict(int))
+for i in range(len(query)):
+    a, b, c = query[i]
+    if c != 0:
+        lines[a].add(b)
+        cost[a][b] += c
+
+# 蟻本  p205 asteroid
+N = 3
+K = 4
+que = [
+[1, 1],
+[1, 3],
+[2, 2],
+[3, 2]
+]
+
+# 始点を0、縦座標rowを1 ~ N, 横座標colをN + 1 ~ 2N, 終点を2N + 1にする
+# 1-indexならこれでいい
+# 二分グラフの最小点被覆は最大マッチング
+# 二分グラフの最大安定集合は上記を除く補集合
+dist = []
+for i in range(1, N + 1): # 始点、終点
+    dist.append([0, i, 1])
+    dist.append([i + N, 2 * N + 1, 1])
+for a, b in que: # 各惑星について
+    dist.append([a, b + N, 1])
+
+N = 2 * N + 2 # 2 * N + 2倍に拡張する
+lines = defaultdict(set)
+cost = [[0] * N for i in range(N)]
+for i in range(len(dist)):
+    a, b, c = dist[i]
+    lines[a].add(b)
+    cost[a][b] += c
+ans = 0
+
+# sからスタート
+def Ford_Fulkerson(sta, end):
+    global ans
+    queue = deque()
+    queue.append([sta, float('inf')])
+
+    ignore = [1] * N
+    ignore[sta] = 0
+
+    route = [0] * N
+    route[sta] = -1
+
+    while queue:
+        s, flow = queue.pop()
+        for t in lines[s]:  #s->t
+            if ignore[t]: #未到達
+                # flowは入ってくる量、出る量のうち小さい方
+                flow = min(cost[s][t], flow)
+                route[t] = s
+                queue.append([t, flow])
+                ignore[t] = 0
+                if t == end: #ゴール到達
+                    ans += flow
+                    break
+        else:
+            continue #breakされなければWhile節の先頭に戻る
+        # Falseはされない
+        break
+    else:
+        return False
+
+    t = end
+    s = route[t]
+    # goalまで流れた量はflow
+    # 逆向きの辺を貼る
+    while s != -1:
+        #s->tのコスト減少，ゼロになるなら辺を削除
+        cost[s][t] -= flow
+        if cost[s][t] == 0:
+            lines[s].remove(t)
+            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
+        if cost[t][s] == 0:
+            lines[t].add(s)
+
+        cost[t][s] += flow
+
+        # 一つ上の辺をたどる
+        t = s
+        s = route[t]
+
+    return True
+
+while True:
+    # ちょびちょび流して行ってゴールまで流れなくなったら終了
+    if Ford_Fulkerson(0, N - 1):
+        continue
+    else:
+        break
+
+print(ans)
+
+# ABC010 D - 浮気予防
+
+class FordFulkerson:
+    def __init__(self, N):
+        self.N = N
+        self.edge = [[] for i in range(N)] # 各頂点からのエッジ
+
+    # add_edge(出発、到着、量)
+    def add_edge(self, fr, to, cap):
+        forward = [to, cap, None]
+        forward[2] = backward = [fr, 0, forward] # 行きがけのエッジに帰りがけの情報を埋め込む
+        self.edge[fr].append(forward) # 行きがけ
+        self.edge[to].append(backward) # 帰りがけ
+
+    def add_multi_edge(self, v1, v2, cap1, cap2):
+        edge1 = [v2, cap1, None]
+        edge1[2] = edge2 = [v1, cap2, edge1]
+        self.edge[v1].append(edge1)
+        self.edge[v2].append(edge2)
+
+    # v ~ t にfだけ流してみる
+    def dfs(self, v, t, f):
+        if v == t:
+            return f
+        used = self.used # ignoreを設定
+        used[v] = 1 # ignoreを設定
+        for e in self.edge[v]:
+            w, cap, rev = e
+            if cap and not used[w]: # まだ流せる
+                d = self.dfs(w, t, min(f, cap)) # さらに下にいくら流れる
+                if d:
+                    e[1] -= d # forwardの数が減る
+                    rev[1] += d # backwardの数が増える
+                    return d
+        return 0
+
+    def flow(self, s, t):
+        flow = 0
+        f = INF = 10 ** 9 + 7
+        N = self.N
+        while f:
+            self.used = [0] * N # 更新
+            f = self.dfs(s, t, INF) # 少しずつ流す
+            flow += f
+        return flow
+
+N, G, E = getNM()
+F = FordFulkerson(N + 1)
+P = getList()
+
+for i in range(E):
+    u, v = getNM()
+    # 両方エッジつけても問題ない
+    F.add_edge(u, v, 1)
+    F.add_edge(v, u, 1)
+
+# 高橋くんの所に流す
+for p in P:
+    F.add_edge(p, N, 1)
+
+ans = F.flow(0, N)
 
 print(ans)
