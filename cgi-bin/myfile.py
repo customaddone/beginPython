@@ -18,43 +18,36 @@ mod = 10 ** 9 + 7
 #############
 
 """
-Nちいさ　半分全列挙すらできる
-ナップサックでいいじゃ
-枝借りする
-relistの部分
-
-ソートがなければ
+任意の順番で　効率のいい方法
+隣同士を入れ替える　全探索無理
+1, 2, 3...Nの順番にする ヒストグラムか
 """
 
-N, T = getNM()
-A = getList()
+N = getN()
+T = input()
 
-# ソートでNlogN
-def relist(array):
-    fore_list = []
-    for bit in range(1 << len(array)):
-        time = 0
-        for i in range(1 << len(array)):
-            if bit & (1 << i):
-                time += array[i]
-        if time <= T:
-            fore_list.append(time)
-    fore_list.sort()
+if N == 1:
+    if T == '1':
+        print(20000000000)
+        exit()
+    elif T == '0':
+        print(10000000000)
+        exit()
+    else:
+        print(0)
 
-    return fore_list
+if T[0] == '1' and T[1] == '1':
+    c =
 
-F = relist(A[:N // 2])
-B = relist(A[N // 2:])
-
-ans = 0
-# NlogN
-r = 0
-for f in F:
-    if f > T:
-        break
-    index = bisect_right(B, T - f)
-    if index > 0:
-        opt = f + B[index - 1]
-        ans = max(ans, opt)
-
-print(ans)
+c = (N // 3) + 1
+ene = '110' * c
+cnt = 0
+for i in range(3):
+    if ene[i:i+N] == T:
+        cnt += 1
+if cnt >= 1:
+    cnt = cnt * 10 ** 10 - c + 1
+if N % 3 == 0:
+    if '110' * (N // 3) == T:
+        cnt += 1
+print(cnt)
