@@ -51,446 +51,168 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# 文字列を整数に変換
-N = 26
+# CODE FESTIVAL 2017 qual B C - 3 Steps
 
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
-    else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
+"""
+N頂点の連結な無向グラフがある　M辺既にある(M >= N - 1)
+N <= 10 ** 5
+一応M <= 10 ** 5なのでダイクストラ使える
+辺を追加していく
+頂点uから距離3ある（最短距離でなくてもいい）vを取り、直通の辺をプラス
+最大でいくつ
 
-# z
-print(num2alpha(N))
+辺を追加する度に他の頂点の選択肢は増えるはずだから
+parentから3 = childから2]
+uのchildでない頂点vに線を引く　そこから
+u - vに線を引くと
+uのchild - vのchildにも線を引ける
+つまりuのchildとvのchildは同じグループであり、互いに線を引ける
 
-n = N
-lista = []
-digit = 26
-i = 0
+M本の辺について順に探索していくか
+結局グループは２つにしかならないのでは
+頂点1から見た距離
+頂点uのchildのどれかと頂点vのchildのどれかに線があれば繋げる
 
-while n != 0:
-    opt = n % digit
-    lista.insert(0, opt)
-    if n % digit == 0:
-        n = n // digit - 1
-    else:
-        n = n // digit
-    i += 1
+一本ずつ引いていくと最悪N ** 2になる
+UnionFindか
+1とiはufか
+u - vに線を引くと
+uのchild - vのchildにも線を引ける
 
-str_list = 'abcdefghijklmnopqrstuvwxyz'
-ans = ''
-for i in range(len(lista)):
-    ans += str_list[lista[i] - 1]
+周４の輪ができる
+距離３、５、７...の辺はあるか
+距離１の場合は既に線がある
+奇数長のパスはあるか
 
-# z
-print(ans)
+二部グラフでなければ偶奇関係なく好きな回数で好きな場所に行ける
+"""
 
-#  最長共通部分列
-s = 'pirikapirirara'
-t = 'poporinapeperuto'
+N, M = getNM()
+Q = [getList() for i in range(M)]
 
-def dfs(s, ts):
-    lens = len(s)
-    lent = len(t)
-    dp = [[0] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
+# 1 - indexで
+def bipartite(N, M, edges):
+    g = defaultdict(list)
+    for a, b in edges:
+        g[a - 1].append(b - 1)
+        g[b - 1].append(a - 1)
 
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = max(dp[i][j] + 1, dp[i + 1][j], dp[i][j + 1])
-            else:
-                dp[i + 1][j + 1] = max(dp[i + 1][j], dp[i][j + 1])
-    return dp[lens][lent]
-print(dfs(s, t))
+    color = [0] * (N + 1)
+    dq = deque([(0, 1)])
 
-# レーベンシュタイン距離
-s = "pirikapirirara"
-t = "poporinapeperuto"
+    while dq:
+        v, c = dq.popleft()
+        color[v] = c
+        c *= -1
+        for nv in g[v]: # 頂点vの各childを調べる
+            if color[nv] == 0: # もし未探索なら
+                dq.append((nv, c))
+            if color[nv] == -c: # もしcolor[nv]がvの色を反転させたものでなければ
+                dq = []
+                return False, color
 
-def dfs(s, t):
-    lens = len(s)
-    lent = len(t)
-    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
-    dp[0][0] = 0
+    return True, color
 
-    for i in range(lens):
-        for j in range(lent):
-            if s[i] == t[j]:
-                dp[i + 1][j + 1] = min(dp[i][j], dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-            else:
-                dp[i + 1][j + 1] = min(dp[i][j] + 1, dp[i + 1][j] + 1, dp[i][j + 1] + 1)
-    return dp[lens][lent]
-print(dfs(s, t))
+res =  bipartite(N, M, Q)
+if res[0]:
+    nb = res[1].count(1)
+    nw = res[1].count(-1)
+    print(nb * nw - M)
+else:
+    print(N * (N - 1) // 2 - M)
 
-# digital arts B - Password
+# ARC099 E - Independence
+# 補グラフ　エッジの反転を考える
+# iとjは同じグループにならない　を繰り返す
 
-# 文字配列を数字配列に
-# pypyだといる
-def ord_chr(array, fanc):
-    if fanc == 0:
-        res = [ord(s) - ord('a') for s in array]
-        return res
+"""
+N <= 700 探索できるか
+貪欲しかないが
+N個の都市、M個の道
+２つのグループにする
 
-    if fanc == 1:
-        res = [chr(i + ord('a')) for i in array]
-        res = ''.join(res)
-        return res
+まず分けることは可能かどうか　
+最低でも道はi(i + 1) / 2ないといけない
+鳩の巣原理使う？
+グループ1の大きさ:a
+グループ2の大きさ:b とすると
+求める答えはM - a(a+1)/2 - b(b+1)/2
+なるべくaとbがイーブンになるようにしたいね
 
-S = ord_chr(input(), 0)
-S = [i + 1 for i in S]
+分けることは可能かどうか
+グループaに都市iを加えることはできるか
+N <= 700しかないのか
+前にエッジが飛ぶようにする
+各頂点は頂点0と同じか違うかしかない
+aとbがイーブンになるように
+[[], [0], [0], [2], [2, 3]]
+頂点1は0とグループ可能
+頂点3は2とグループ可能
+頂点4は2, 3とグループ可能
+N ** 2までは十分可能なので
+0と同じにするか違うにするか
 
-if S == [1] or S == [26] * 20:
-	print("NO")
-	exit()
+単純な方法だと2 ** Nこれを減らす
+自明に違うグループに属するものは
+二部グラフについて考える
 
-h = sum(S)
-opt1 = [h % 26] * (h % 26 > 0) + [26] * (h // 26)
+ないもの（グループにできない）をエッジにする
+二部グラフ　残ったやつで二部グラフ
+"""
 
-if opt1 == S: # 逆向きにしてみる
-    opt1 = opt1[::-1]
-
-if opt1 == S: # 逆むきにしてむ同じなら'zzz'
-    opt1[-1] -= 1
-    opt1.append(1)
-
-opt1 = [i - 1 for i in opt1]
-print(ord_chr(opt1, 1))
-
-# ABC009 C - 辞書式順序ふたたび
-
-N,K = getNM()
-S = list(input())
-T = sorted(S)
-diff = 0
-ans = ""
-
+N, M = getNM()
+E = [[i for i in range(N)] for j in range(N)]
+for i in range(M):
+    a, b = getNM()
+    E[b - 1].remove(a - 1)
+    E[a - 1].remove(b - 1)
 for i in range(N):
-    s = S[i]
-    # 残りの文字を全ループさせる
-    for t in T:
-        # tを追加して良いか確かめる
-        diff1 = diff + (s != t)
-        count = Counter(T)
-        count[t] -= 1
-        diff2 = sum((Counter(S[i + 1:]) - count).values())
-        # 追加していいなら
-        if diff1 + diff2 <= K:
-            diff = diff1
-            ans += t
-            T.remove(t)
-            break
+    E[i].remove(i)
+
+ign = [1] * N
+flag = True
+l = []
+
+# 二部グラフ判定
+for i in range(N):
+    if ign[i] == 0:
+        continue
+    ign[i] = 0
+    color = [0] * N
+    color[i] = 1
+    q = deque([i])
+    while q:
+        u = q.popleft()
+        for v in E[u]:
+            if color[v] == 0:
+                color[v] = color[u] * (-1)
+                ign[v] = 0
+                q.append(v)
+            elif color[v] != color[u] * (-1):
+                flag = False
+                break
+
+    l.append([color.count(1), color.count(-1)])
+
+if not flag:
+    print(-1)
+    exit()
+
+# 部分和
+prev = [0] * 701
+prev[0] = 1
+for i in range(len(l)):
+    next = [0] * 701
+    for j in range(701):
+        if j - l[i][0] >= 0:
+            next[j] += prev[j - l[i][0]]
+        if j - l[i][1] >= 0:
+            next[j] += prev[j - l[i][1]]
+    prev = next
+
+ans = float('inf')
+for i in range(701):
+    if prev[i]:
+        o = N - i
+        ans = min(ans, i * (i - 1) // 2 + o * (o - 1) // 2)
 print(ans)
-
-# ABC031 語呂合わせ
-
-"""
-数字1 ~ 9に1 ~ 3文字のアルファベットが対応する
-数字1 ~ 9に1 ~ 3文字のアルファベットを当てはめてみる
-okな奴がでる
-[-1, 1, 2, 3, 3, 2, 1]
-[-1, 1, 2, 2, 3, 3, 1]
-[-1, 1, 2, 3, 2, 1, 2]
-[-1, 1, 2, 2, 2, 2, 2]
-[-1, 1, 2, 1, 2, 3, 2]
-[-1, 1, 2, 2, 1, 1, 3]
-[-1, 1, 2, 1, 1, 2, 3]
-"""
-
-K, N = getNM()
-L = [input().split() for i in range(N)]
-
-# 数字に文字数を割り当てる
-for bit in range(3 ** K):
-    # 数字に文字数を割り当てる
-    opt = [-1]
-    for j in range(K):
-        opt.append((bit % 3) + 1)
-        bit //= 3
-
-    # 文字数の判定
-    for i in range(N):
-        c = 0
-        for j in L[i][0]:
-            c += opt[int(j)]
-        if c != len(L[i][1]):
-            break
-    else:
-        # 文字数がわかったので文字を割り当てる
-        ans = [''] * (K + 1)
-        for i in range(N):
-            now = 0
-            for j in L[i][0]:
-                j = int(j)
-                if ans[j] == '':
-                    ans[j] = L[i][1][now:now + opt[j]]
-                else:
-                    if ans[j] != L[i][1][now:now + opt[j]]:
-                        break
-                now += opt[j]
-        else:
-            for s in ans[1:]:
-                print(s)
-            exit()
-
-# ABC043 D - アンバランス
-# i文字目を見る場合
-# i - 1文字目が同じ文字ならアウト
-# i - 2文字目が同じでもアウト
-S = input()
-N = len(S)
-
-ans = [-1, -1]
-for i in range(1, N):
-    if S[i] == S[i - 1]:
-        ans = [i, i + 1]
-        break
-    if i > 1 and S[i] == S[i - 2]:
-        ans = [i - 1, i + 1]
-        break
-print(*ans)
-
-# ABC049 C - 白昼夢
-
-S = input()
-
-while len(S) >= 5:
-    # Sを４つの単語で順に調べて刈っていく
-    if len(S) >= 7 and S[-7:] == "dreamer":
-        S = S[:-7]
-        continue
-
-    if len(S) >= 6 and S[-6:] == "eraser":
-        S = S[:-6]
-        continue
-
-    elif S[-5:] == "dream" or S[-5:] == "erase":
-        S = S[:-5]
-        continue
-
-    else:
-        break
-
-if len(S) == 0:
-    print("YES")
-else:
-    print("NO")
-
-# ARC019 B - こだわりの名前
-S = input()
-N = len(S)
-bi = N // 2
-str_f = []
-for i in range(bi):
-    str_f.append(S[i])
-str_b = []
-for i in range(bi):
-    str_b.append(S[-i - 1])
-
-cnt = 0
-for i in range(bi):
-    if str_f[i] != str_b[i]:
-        cnt += 1
-
-# 全て一致
-if cnt == 0:
-    # 真ん中以外は何に変えても回文にならない
-    # 真ん中は何に変えても回文になる
-    print(2 * bi * 25)
-elif cnt == 1:
-    if N % 2 == 0:
-        print(25 * bi * 2 - 2)
-    else:
-        # 真ん中は何に変えても回文にならない
-        print(25 * bi * 2 - 2 + 25)
-else:
-    print(25 * N)
-
-# AGC048 A - atcoder < S
-
-"""
-スワップの最小回数は
-１文字目 a
-どこかにaより上がいたらそれをスワップして終了
-aならそのまま
-a以下なら？
-counterする？
-
-前から探索する
-スワップしなくていいならスワップしない
-target[i] > alta[i]の時スワップする
-前のとスワップするかも
-そもそもatcoderは6文字
-スワップの最大回数は6回
-次の文字にいくのはtarget[i] = alta[i]だった時のみ
-target[i] < alta[i]: 終了
-target[i] = alta[i]: 次に
-target[i] > alta[i]: スワップ要
-
-target'atcoder'が任意の文字(例:topcoder)、任意の二箇所（隣接しなくていい）をスワップできるなら
-一文字目を見る
-target[i] < alta[i]: 終了
-target[i] = alta[i]: 次に
-target[i] > alta[i]: スワップ要
-その文字以降を探索 target[i]を上回るものがあればスワップ += 1終了
-無い場合　target[i]と同じものが見つかればそのうち一番右のものとスワップ
-　　　　　target[i]を下回るものしかなければ終了
-
-たぶん
-"""
-
-T = getN()
-S = [input() for i in range(T)]
-
-for s in S:
-    if s.count('a') == len(s):
-        print(-1)
-        continue
-
-    if s > 'atcoder':
-        print(0)
-        continue
-
-    n = len(s)
-    for i in range(n):
-        # aより上の要素をスワップを繰り返し運送する
-
-        # i - 1回運送すると2番目の位置にくる
-        # もしord('t') < ord(i)なら条件を満たし終了
-        # そうでなければもう一つ前に運送する
-
-        # i回運送すると１番目の位置に来る
-        # ord('a') < ord(i)より条件を満たす
-        if s[i] > 'a':
-            if s[i] > 't':
-                print(i - 1)
-            else:
-                print(i)
-            break
-
-# C - String Coloring
-
-"""
-長さ2N
-何通りありますか　comboかdp
-Sの各文字を赤か青で塗る
-2 ** 2Nあるがこれを2 ** Nに落としたい
-2NからN個選ぶ
-36C18 9,075,135,300通り
-意外とでかいな　これを減らす
-
-まず構成する数字の個数が一致してないと
-4
-cabaacba の場合
-[[1, 3, 4, 7], [2, 6], [0, 5], [], [], [],
-a * 2, b * 1, c * 1
-indexの選び方は左右対象でなければならない
-1選ぶと7も選ばれる
-3を選ばない（相手側になる）と4も選ばれない（相手側になる）
-aの場所の配分は
-1, 3 + 4, 7でも1, 7 + 3, 4でもいい
-他の文字との位置関係が大事
-
-もちろん全通り出すのは無理
-左から右に読んだ文字列と右から左に読んだ文字列が一致するとは
-最終的には2 ** Nでいい
-明らかダメそうなやつを削る
-もちろん全ての文字を使わないといけない
-掛け算する形になると思う
-
-cabaacba で最初のcを選んだら最後のbaが青になるのは許されない
-グループ１になる組み合わせとグループ２になる組み合わせの裏表
-順番があるのでindexをとってうにうにはできない
-
-各要素を赤か青か　これを2 ** 18
-2 ** Nまでしかできない　2 ** Nを
-fore = S[:N]
-back = list(reversed(S[N:])) の両方でやってdict
-
-やってることはただのbit全探索半分全列挙
-"""
-
-string = 'abcdefghijklmnopqrstuvwxyz'
-N = getN()
-S = list([ord(i) - ord('a') for i in input()])
-
-fore = S[:N]
-back = list(reversed(S[N:]))
-
-# 26進数シリーズ
-# アルファベット → 数値
-def alpha2num(alpha):
-    num=0
-    for index, item in enumerate(list(alpha)):
-        num += pow(26, len(alpha) - index - 1) * (ord(item) - ord('a') + 1)
-    return num
-
-# 数値 → アルファベット
-def num2alpha(num):
-    if num <= 26:
-        return chr(96 + num)
-    elif num % 26 == 0:
-        return num2alpha(num // 26 - 1) + chr(122)
-    else:
-        return num2alpha(num // 26) + chr(96 + num % 26)
-
-def array2num(array):
-    num = 0
-    for index, item in enumerate(array):
-        num += pow(26, len(array) - index - 1) * (item + 1)
-    return num
-
-l = defaultdict(lambda: defaultdict(int))
-for bit in range(1 << N):
-    g1 = [] # 赤色
-    g2 = [] # 青色
-    for i in range(N):
-        if bit & (1 << i):
-            g1.append(fore[i])
-        else:
-            g2.append(fore[i])
-    g1 = array2num(g1)
-    g2 = array2num(g2)
-    l[g1][g2] += 1
-
-ans = 0
-for bit in range(1 << N):
-    g1 = [] # 赤色
-    g2 = [] # 青色
-    for i in range(N):
-        if bit & (1 << i):
-            g1.append(back[i])
-        else:
-            g2.append(back[i])
-
-    g1 = array2num(g1)
-    g2 = array2num(g2)
-    ans += l[g1][g2]
-
-print(ans)
-
-# 天下一プログラマーコンテスト2014予選B B - エターナルスタティックファイナル
-# 文字列は二分探索できる
-
-N = getN()
-S = input()
-T = [input() for _ in range(N)]
-
-T.sort() # 文字列を二分探索する
-
-dp = [0] * (len(S) + 1)
-dp[0] = 1
-for l in range(len(S)):
-    s = ''
-    for r in range(l, len(S)):
-        # l, rを決め, S[l:r+1]を出す
-        # これがTの中にいくつあるか
-        # O(N ** 2 * S) → O(S ** 2logN)
-        s += S[r]
-        cnt = bisect_right(T, s) - bisect_left(T, s)
-        dp[r + 1] += dp[l] * cnt
-        dp[r + 1] %= mod
-
-print(dp[-1])
