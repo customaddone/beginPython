@@ -51,168 +51,210 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# CODE FESTIVAL 2017 qual B C - 3 Steps
+N = 4
+inf = float('inf')
 
-"""
-N頂点の連結な無向グラフがある　M辺既にある(M >= N - 1)
-N <= 10 ** 5
-一応M <= 10 ** 5なのでダイクストラ使える
-辺を追加していく
-頂点uから距離3ある（最短距離でなくてもいい）vを取り、直通の辺をプラス
-最大でいくつ
+d = [
+[0, 2, inf, inf],
+[inf, 0, 3, 9],
+[1, inf, 0, 6],
+[inf, inf, 4, 0]
+]
 
-辺を追加する度に他の頂点の選択肢は増えるはずだから
-parentから3 = childから2]
-uのchildでない頂点vに線を引く　そこから
-u - vに線を引くと
-uのchild - vのchildにも線を引ける
-つまりuのchildとvのchildは同じグループであり、互いに線を引ける
+dp = [[-1] * N for i in range(1 << N)]
 
-M本の辺について順に探索していくか
-結局グループは２つにしかならないのでは
-頂点1から見た距離
-頂点uのchildのどれかと頂点vのchildのどれかに線があれば繋げる
+def rec(s, v, dp):
+    if dp[s][v] >= 0:
+        return dp[s][v]
+    if s == (1 << N) - 1 and v == 0:
+        dp[s][v] = 0
+        return 0
+    res = float('inf')
+    for u in range(N):
+        if s & (1 << u) == 0:
+            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
+    dp[s][v] = res
+    return res
+# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
+print(rec(0,0,dp))
 
-一本ずつ引いていくと最悪N ** 2になる
-UnionFindか
-1とiはufか
-u - vに線を引くと
-uのchild - vのchildにも線を引ける
-
-周４の輪ができる
-距離３、５、７...の辺はあるか
-距離１の場合は既に線がある
-奇数長のパスはあるか
-
-二部グラフでなければ偶奇関係なく好きな回数で好きな場所に行ける
-"""
+# ABC054 C - One-stroke Path
 
 N, M = getNM()
-Q = [getList() for i in range(M)]
-
-# 1 - indexで
-def bipartite(N, M, edges):
-    g = defaultdict(list)
-    for a, b in edges:
-        g[a - 1].append(b - 1)
-        g[b - 1].append(a - 1)
-
-    color = [0] * (N + 1)
-    dq = deque([(0, 1)])
-
-    while dq:
-        v, c = dq.popleft()
-        color[v] = c
-        c *= -1
-        for nv in g[v]: # 頂点vの各childを調べる
-            if color[nv] == 0: # もし未探索なら
-                dq.append((nv, c))
-            if color[nv] == -c: # もしcolor[nv]がvの色を反転させたものでなければ
-                dq = []
-                return False, color
-
-    return True, color
-
-res =  bipartite(N, M, Q)
-if res[0]:
-    nb = res[1].count(1)
-    nw = res[1].count(-1)
-    print(nb * nw - M)
-else:
-    print(N * (N - 1) // 2 - M)
-
-# ARC099 E - Independence
-# 補グラフ　エッジの反転を考える
-# iとjは同じグループにならない　を繰り返す
-
-"""
-N <= 700 探索できるか
-貪欲しかないが
-N個の都市、M個の道
-２つのグループにする
-
-まず分けることは可能かどうか　
-最低でも道はi(i + 1) / 2ないといけない
-鳩の巣原理使う？
-グループ1の大きさ:a
-グループ2の大きさ:b とすると
-求める答えはM - a(a+1)/2 - b(b+1)/2
-なるべくaとbがイーブンになるようにしたいね
-
-分けることは可能かどうか
-グループaに都市iを加えることはできるか
-N <= 700しかないのか
-前にエッジが飛ぶようにする
-各頂点は頂点0と同じか違うかしかない
-aとbがイーブンになるように
-[[], [0], [0], [2], [2, 3]]
-頂点1は0とグループ可能
-頂点3は2とグループ可能
-頂点4は2, 3とグループ可能
-N ** 2までは十分可能なので
-0と同じにするか違うにするか
-
-単純な方法だと2 ** Nこれを減らす
-自明に違うグループに属するものは
-二部グラフについて考える
-
-ないもの（グループにできない）をエッジにする
-二部グラフ　残ったやつで二部グラフ
-"""
-
-N, M = getNM()
-E = [[i for i in range(N)] for j in range(N)]
+dist = [[] for i in range(N + 1)]
 for i in range(M):
     a, b = getNM()
-    E[b - 1].remove(a - 1)
-    E[a - 1].remove(b - 1)
-for i in range(N):
-    E[i].remove(i)
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-ign = [1] * N
-flag = True
-l = []
+cnt = 0
 
-# 二部グラフ判定
-for i in range(N):
-    if ign[i] == 0:
-        continue
-    ign[i] = 0
-    color = [0] * N
-    color[i] = 1
-    q = deque([i])
-    while q:
-        u = q.popleft()
-        for v in E[u]:
-            if color[v] == 0:
-                color[v] = color[u] * (-1)
-                ign[v] = 0
-                q.append(v)
-            elif color[v] != color[u] * (-1):
-                flag = False
+pos = deque([[1 << 0, 0]])
+
+while len(pos) > 0:
+    s, v = pos.popleft()
+    if s == (1 << N) - 1:
+        cnt += 1
+    for u in dist[v]:
+        if s & (1 << u):
+            continue
+        pos.append([s | (1 << u), u])
+print(cnt)
+
+"""
+全ての場所を一度だけ通り巡回する通りの数
+bit(1 << N)を小さい順から探索する
+①bit & (1 << 0)
+最初に0を踏んでないということだから飛ばす
+②現在の場所sを探すためN個探索する
+③次の場所tを探すためN個探索する
+④渡すdpする
+"""
+
+N, M = getNM()
+G = [[0] * N for i in range(N)]
+for i in range(M):
+    a, b = getNM()
+    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
+    G[b - 1][a - 1] = 1
+
+# 状態bitから次の状態へ渡すdpするというのはよくやる
+# [0](001) → [0, 1](011) → [0, 1, 2](111)
+#          → [0, 2](101) → [0, 1, 2](111)
+def counter(sta):
+    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
+    dp = [[0] * N for i in range(1 << N)]
+    dp[1 << sta][sta] = 1
+
+    for bit in range(1, 1 << N):
+        if not bit & (1 << sta):
+            continue
+        # s:現在の場所
+        for s in range(N):
+            # sを踏んだことになっていなければ飛ばす
+            if not bit & (1 << s):
+                continue
+            # t:次の場所
+            for t in range(N):
+                # tを過去踏んでいない and s → tへのエッジがある
+                if (bit & (1 << t)) == 0 and G[s][t]:
+                    dp[bit|(1 << t)][t] += dp[bit][s]
+
+    return sum(dp[(1 << N) - 1])
+
+print(counter(0))
+
+# ABC104 C - All Green
+# 特別ボーナスがある問題は大抵bit dp
+# 目標700点
+D, G = getNM()
+query = []
+for i in range(D):
+    p, c = getNM()
+    query.append([i + 1, p, c])
+
+ans_cnt = float('inf')
+
+for bit in range(1 << D):
+    sum = 0
+    cnt = 0
+    for i in range(D):
+        if bit & (1 << i):
+            sum += query[i][0] * query[i][1] * 100 + query[i][2]
+            cnt += query[i][1]
+
+    if sum < G:
+        for j in range(D - 1, -1, -1):
+            if not bit & (1 << j):
+                left = G - sum
+                fire = query[j][0] * 100
+                opt = min(query[j][1], (left + fire - 1) // fire)
+                sum += opt * query[j][0] * 100
+                cnt += opt
                 break
 
-    l.append([color.count(1), color.count(-1)])
+    if sum >= G:
+        ans_cnt = min(ans_cnt, cnt)
 
-if not flag:
-    print(-1)
-    exit()
+print(ans_cnt)
 
-# 部分和
-prev = [0] * 701
-prev[0] = 1
-for i in range(len(l)):
-    next = [0] * 701
-    for j in range(701):
-        if j - l[i][0] >= 0:
-            next[j] += prev[j - l[i][0]]
-        if j - l[i][1] >= 0:
-            next[j] += prev[j - l[i][1]]
-    prev = next
+# ABC119 C - Synthetic Kadomatsu
+N, A, B, C = getNM()
+L = getArray(N)
+
+def counter(array):
+    if (1 in array) and (2 in array) and (3 in array):
+        opt = [0, 0, 0, 0]
+        # 合成に10pかかる
+        cnt = 0
+        for i in range(len(array)):
+            if opt[array[i]] > 0:
+                cnt += 1
+            if array[i] >= 1:
+                opt[array[i]] += L[i]
+
+        res = cnt * 10
+        res += abs(opt[1] - A)
+        res += abs(opt[2] - B)
+        res += abs(opt[3] - C)
+
+        return res
+
+    else:
+        return float('inf')
 
 ans = float('inf')
-for i in range(701):
-    if prev[i]:
-        o = N - i
-        ans = min(ans, i * (i - 1) // 2 + o * (o - 1) // 2)
+def four_pow(i, array):
+    global ans
+    if i == N:
+        ans = min(ans, counter(array))
+        return
+    # 4 ** Nループ
+    for j in range(4):
+        new_array = array + [j]
+        four_pow(i + 1, new_array)
+
+four_pow(0, [])
 print(ans)
+
+# EDPC O - Matching
+
+"""
+N組のペアを作る通りは何通りか
+dpかcomboか
+3
+0 1 1
+1 0 1
+1 1 1 1, 2, 3は誰とでもペアになれる
+
+bitでやる
+1111....全ての人がペアになっている通り
+2 ** 21 = 2000000ぐらい　遷移の方法がわからない
+0 1 1 の 1からどれか1つ選ぶ
+1 0 1 の 1からどれか1つ選ぶ
+
+トポロジカルに
+"""
+
+N = getN()
+maze = [[int(j) for j in list(input().split())] for i in range(N)]
+
+# ビットフラグの少ない順にソート
+bi = [[] for i in range(N)]
+for bit in range((1 << N) - 1):
+    bi[bin(bit).count('1')].append(bit)
+
+prev = [0] * (1 << N)
+prev[0] = 1
+
+for i in range(N):
+    next = [0] * (1 << N)
+    for bit in bi[i]:
+        for j in range(N):
+            if maze[i][j]:
+                next[bit | (1 << j)] += prev[bit]
+                next[bit | (1 << j)] %= mod
+
+    prev = next
+
+print(prev[-1])
