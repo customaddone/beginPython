@@ -51,157 +51,85 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N = 10
-logk = N.bit_length()
+n = 14
+w = [8, 7, 1, 4, 3, 5, 4, 1, 6, 8, 10, 4, 6, 5]
+# 未開発の部分は-1
+dp = [[-1] * (n + 1) for i in range(n + 1)]
 
-# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]
-# 一般項が出ない漸化式は行列の形に落とし込める
-dp = [[[0, 0] for i in range(2)] for i in range(logk)]
-dp[0] = [[1, 1], [1, 0]]
+# ここに条件を入力
+def judge(a, b):
+    return abs(w[a] - w[b]) <= 1
 
-# 行列掛け算 O(n3)かかる
-def array_cnt(ar1, ar2):
-    h = len(ar1)
-    w = len(ar2[0])
-    row = ar1
-    col = []
-    for j in range(w):
-        opt = []
-        for i in range(len(ar2)):
-            opt.append(ar2[i][j])
-        col.append(opt)
+def rec(l, r):
+    if dp[l][r] != -1:
+        return dp[l][r]
 
-    res = [[[0, 0] for i in range(w)] for i in range(h)]
-    for i in range(h):
-        for j in range(w):
-            cnt = 0
-            for x, y in zip(row[i], col[j]):
-                cnt += x * y
-            res[i][j] = cnt
+    if abs(l - r) <= 1:
+        return 0
+
+    res = 0
+
+    # 端っこの２つについて条件が成立する & 間の全てについて条件が成立する
+    if judge(l, r - 1) and rec(l + 1,r - 1) == r - l - 2:
+        res = r - l
+
+    for i in range(l + 1, r):
+        res = max(res, rec(l, i) + rec(i, r))
+    dp[l][r] = res
     return res
 
-for i in range(1, logk):
-    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
+print(rec(0, n))
 
-# 行列の単位元
-ans = [[1, 0], [0, 1]]
-for i in range(logk):
-    if N & (1 << i):
-        ans = array_cnt(ans, dp[i])
+S = '11011001'
+N = len(S)
 
-# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]より
-# [Fn+1, Fn] = A ** n[F1, F0] = A ** n[1, 0]
-# Fn = ans[1][0] * 1 + ans[1][1] * 0
-print(array_cnt(ans, [[1], [0]])[1][0])
+dp = [[-1] * (N + 1) for i in range(N + 1)]
 
-# ABC113 D - Number of Amidakuji
+def judge_2(a, b):
+    return S[a] != S[b]
 
-H, W, K = getNM()
-logk = H.bit_length()
+def rec_2(l, r):
+    if dp[l][r] != -1:
+        return dp[l][r]
+    if abs(l - r) <= 1:
+        return 0
 
-if W == 1:
-    print(1)
-    exit()
-
-mat = [[0] * W for i in range(W)]
-# 列の数はH個
-# うまく行列に
-for bit in range(1 << (W - 1)):
-    for i in range(1, (W - 1)):
-        # 両方にフラグがあればとばす
-        if bit & (1 << i) and bit & (1 << (i - 1)):
-            break
-    else:
-        for i in range(W):
-            if bit & (1 << i):
-                # 目的地、出発地
-                mat[i + 1][i] += 1
-            # negative shiftしないよう
-            elif i > 0 and bit & (1 << (i - 1)):
-                mat[i - 1][i] += 1
-            else:
-                mat[i][i] += 1
-
-dp = [[[0] * W for i in range(W)] for i in range(logk)]
-dp[0] = mat
-
-# 行列掛け算 O(n3)かかる
-def array_cnt(ar1, ar2):
-    h = len(ar1)
-    w = len(ar2[0])
-    row = ar1
-    col = []
-    for j in range(w):
-        opt = []
-        for i in range(len(ar2)):
-            opt.append(ar2[i][j])
-        col.append(opt)
-
-    res = [[[0, 0] for i in range(w)] for i in range(h)]
-    for i in range(h):
-        for j in range(w):
-            cnt = 0
-            for x, y in zip(row[i], col[j]):
-                cnt += x * y
-            res[i][j] = cnt
+    res = 0
+    if judge_2(l, r - 1) and rec_2(l + 1, r - 1) == r - l - 2:
+        res = r - l
+    for i in range(l + 1, r):
+        res = max(res, rec_2(l, i) + rec_2(i, r))
+    dp[l][r] = res
     return res
 
-for i in range(1, logk):
-    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
+print(rec_2(0, N))
 
-# スタート地点
-ans = [[0] * W]
-ans[0][0] = 1
-# 計算
-for i in range(logk):
-    if H & (1 << i):
-        ans = array_cnt(ans, dp[i])
-
-print(ans[0][K - 1] % mod)
-
-# EDPC R - Walk
+# EDPC N - Slimes
 
 """
-通りの数を答える
-同じ辺を複数回通ってもいい
-長さKの有効パス　二分グラフとか？
-Kがクソでか
-ループで解けという
-N <= 50 巡回セールスか
-Kが小さいものを求める
-
-dp iターン目にjにいる時、その通りは？
-行列累乗する
-
-4 2
-0 1 0 0
-0 0 1 1
-0 0 0 1
-1 0 0 0
-
-0 1 2 3 縦に使う
-0 - 1, 1 - 2, 1 - 3...
-
-prev = [1, 1, 1, 1]
-next[0] = 1 * 0 + 1 * 0 + 1 * 0 + 1 * 1
-next[1] = 1 * 1 + 1 * 0 + 1 * 0 + 1 * 0
-next[2] = 1 * 0 + 1 * 1 + 1 * 0 + 1 * 0
-next[3] = 1 * 0 + 1 * 1 + 1 * 1 + 1 * 0
+N <= 400 最終形を考える
+sum(A)が残る
+できるだけ小さい奴から
 """
 
-N, K = getNM()
-logk = K.bit_length()
+N = getN()
+A = getList()
+dp = [[-1] * (N + 1) for i in range(N + 1)]
+imos = [0]
+for i in range(N):
+    imos.append(imos[-1] + A[i])
 
-mat = [getList() for i in range(N)]
-dp = [[[0] * N for i in range(N)] for i in range(logk)]
-dp[0] = mat
+def rec(l, r):
+    if dp[l][r] != -1:
+        return dp[l][r]
 
-for i in range(1, logk):
-    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
+    if abs(l - r) <= 1:
+        return 0
 
-ans = [[1] * N]
-for i in range(logk):
-    if K & (1 << i):
-        ans = array_cnt(ans, dp[i])
+    res = float('inf')
+    for i in range(l + 1, r):
+        res = min(res, rec(l, i) + rec(i, r) + imos[r] - imos[l])
+    dp[l][r] = res
+    return res
 
-print(sum(ans[0]) % mod)
+print(rec(0, N))
