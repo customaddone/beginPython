@@ -51,210 +51,157 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N = 4
-inf = float('inf')
+N = 10
+logk = N.bit_length()
 
-d = [
-[0, 2, inf, inf],
-[inf, 0, 3, 9],
-[1, inf, 0, 6],
-[inf, inf, 4, 0]
-]
+# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]
+# 一般項が出ない漸化式は行列の形に落とし込める
+dp = [[[0, 0] for i in range(2)] for i in range(logk)]
+dp[0] = [[1, 1], [1, 0]]
 
-dp = [[-1] * N for i in range(1 << N)]
+# 行列掛け算 O(n3)かかる
+def array_cnt(ar1, ar2):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
 
-def rec(s, v, dp):
-    if dp[s][v] >= 0:
-        return dp[s][v]
-    if s == (1 << N) - 1 and v == 0:
-        dp[s][v] = 0
-        return 0
-    res = float('inf')
-    for u in range(N):
-        if s & (1 << u) == 0:
-            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
-    dp[s][v] = res
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j]):
+                cnt += x * y
+            res[i][j] = cnt
     return res
-# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
-print(rec(0,0,dp))
 
-# ABC054 C - One-stroke Path
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
 
-N, M = getNM()
-dist = [[] for i in range(N + 1)]
-for i in range(M):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+# 行列の単位元
+ans = [[1, 0], [0, 1]]
+for i in range(logk):
+    if N & (1 << i):
+        ans = array_cnt(ans, dp[i])
 
-cnt = 0
+# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]より
+# [Fn+1, Fn] = A ** n[F1, F0] = A ** n[1, 0]
+# Fn = ans[1][0] * 1 + ans[1][1] * 0
+print(array_cnt(ans, [[1], [0]])[1][0])
 
-pos = deque([[1 << 0, 0]])
+# ABC113 D - Number of Amidakuji
 
-while len(pos) > 0:
-    s, v = pos.popleft()
-    if s == (1 << N) - 1:
-        cnt += 1
-    for u in dist[v]:
-        if s & (1 << u):
-            continue
-        pos.append([s | (1 << u), u])
-print(cnt)
+H, W, K = getNM()
+logk = H.bit_length()
 
-"""
-全ての場所を一度だけ通り巡回する通りの数
-bit(1 << N)を小さい順から探索する
-①bit & (1 << 0)
-最初に0を踏んでないということだから飛ばす
-②現在の場所sを探すためN個探索する
-③次の場所tを探すためN個探索する
-④渡すdpする
-"""
+if W == 1:
+    print(1)
+    exit()
 
-N, M = getNM()
-G = [[0] * N for i in range(N)]
-for i in range(M):
-    a, b = getNM()
-    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
-    G[b - 1][a - 1] = 1
-
-# 状態bitから次の状態へ渡すdpするというのはよくやる
-# [0](001) → [0, 1](011) → [0, 1, 2](111)
-#          → [0, 2](101) → [0, 1, 2](111)
-def counter(sta):
-    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
-    dp = [[0] * N for i in range(1 << N)]
-    dp[1 << sta][sta] = 1
-
-    for bit in range(1, 1 << N):
-        if not bit & (1 << sta):
-            continue
-        # s:現在の場所
-        for s in range(N):
-            # sを踏んだことになっていなければ飛ばす
-            if not bit & (1 << s):
-                continue
-            # t:次の場所
-            for t in range(N):
-                # tを過去踏んでいない and s → tへのエッジがある
-                if (bit & (1 << t)) == 0 and G[s][t]:
-                    dp[bit|(1 << t)][t] += dp[bit][s]
-
-    return sum(dp[(1 << N) - 1])
-
-print(counter(0))
-
-# ABC104 C - All Green
-# 特別ボーナスがある問題は大抵bit dp
-# 目標700点
-D, G = getNM()
-query = []
-for i in range(D):
-    p, c = getNM()
-    query.append([i + 1, p, c])
-
-ans_cnt = float('inf')
-
-for bit in range(1 << D):
-    sum = 0
-    cnt = 0
-    for i in range(D):
-        if bit & (1 << i):
-            sum += query[i][0] * query[i][1] * 100 + query[i][2]
-            cnt += query[i][1]
-
-    if sum < G:
-        for j in range(D - 1, -1, -1):
-            if not bit & (1 << j):
-                left = G - sum
-                fire = query[j][0] * 100
-                opt = min(query[j][1], (left + fire - 1) // fire)
-                sum += opt * query[j][0] * 100
-                cnt += opt
-                break
-
-    if sum >= G:
-        ans_cnt = min(ans_cnt, cnt)
-
-print(ans_cnt)
-
-# ABC119 C - Synthetic Kadomatsu
-N, A, B, C = getNM()
-L = getArray(N)
-
-def counter(array):
-    if (1 in array) and (2 in array) and (3 in array):
-        opt = [0, 0, 0, 0]
-        # 合成に10pかかる
-        cnt = 0
-        for i in range(len(array)):
-            if opt[array[i]] > 0:
-                cnt += 1
-            if array[i] >= 1:
-                opt[array[i]] += L[i]
-
-        res = cnt * 10
-        res += abs(opt[1] - A)
-        res += abs(opt[2] - B)
-        res += abs(opt[3] - C)
-
-        return res
-
+mat = [[0] * W for i in range(W)]
+# 列の数はH個
+# うまく行列に
+for bit in range(1 << (W - 1)):
+    for i in range(1, (W - 1)):
+        # 両方にフラグがあればとばす
+        if bit & (1 << i) and bit & (1 << (i - 1)):
+            break
     else:
-        return float('inf')
+        for i in range(W):
+            if bit & (1 << i):
+                # 目的地、出発地
+                mat[i + 1][i] += 1
+            # negative shiftしないよう
+            elif i > 0 and bit & (1 << (i - 1)):
+                mat[i - 1][i] += 1
+            else:
+                mat[i][i] += 1
 
-ans = float('inf')
-def four_pow(i, array):
-    global ans
-    if i == N:
-        ans = min(ans, counter(array))
-        return
-    # 4 ** Nループ
-    for j in range(4):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
+dp = [[[0] * W for i in range(W)] for i in range(logk)]
+dp[0] = mat
 
-four_pow(0, [])
-print(ans)
+# 行列掛け算 O(n3)かかる
+def array_cnt(ar1, ar2):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
 
-# EDPC O - Matching
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j]):
+                cnt += x * y
+            res[i][j] = cnt
+    return res
+
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
+
+# スタート地点
+ans = [[0] * W]
+ans[0][0] = 1
+# 計算
+for i in range(logk):
+    if H & (1 << i):
+        ans = array_cnt(ans, dp[i])
+
+print(ans[0][K - 1] % mod)
+
+# EDPC R - Walk
 
 """
-N組のペアを作る通りは何通りか
-dpかcomboか
-3
-0 1 1
-1 0 1
-1 1 1 1, 2, 3は誰とでもペアになれる
+通りの数を答える
+同じ辺を複数回通ってもいい
+長さKの有効パス　二分グラフとか？
+Kがクソでか
+ループで解けという
+N <= 50 巡回セールスか
+Kが小さいものを求める
 
-bitでやる
-1111....全ての人がペアになっている通り
-2 ** 21 = 2000000ぐらい　遷移の方法がわからない
-0 1 1 の 1からどれか1つ選ぶ
-1 0 1 の 1からどれか1つ選ぶ
+dp iターン目にjにいる時、その通りは？
+行列累乗する
 
-トポロジカルに
+4 2
+0 1 0 0
+0 0 1 1
+0 0 0 1
+1 0 0 0
+
+0 1 2 3 縦に使う
+0 - 1, 1 - 2, 1 - 3...
+
+prev = [1, 1, 1, 1]
+next[0] = 1 * 0 + 1 * 0 + 1 * 0 + 1 * 1
+next[1] = 1 * 1 + 1 * 0 + 1 * 0 + 1 * 0
+next[2] = 1 * 0 + 1 * 1 + 1 * 0 + 1 * 0
+next[3] = 1 * 0 + 1 * 1 + 1 * 1 + 1 * 0
 """
 
-N = getN()
-maze = [[int(j) for j in list(input().split())] for i in range(N)]
+N, K = getNM()
+logk = K.bit_length()
 
-# ビットフラグの少ない順にソート
-bi = [[] for i in range(N)]
-for bit in range((1 << N) - 1):
-    bi[bin(bit).count('1')].append(bit)
+mat = [getList() for i in range(N)]
+dp = [[[0] * N for i in range(N)] for i in range(logk)]
+dp[0] = mat
 
-prev = [0] * (1 << N)
-prev[0] = 1
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
 
-for i in range(N):
-    next = [0] * (1 << N)
-    for bit in bi[i]:
-        for j in range(N):
-            if maze[i][j]:
-                next[bit | (1 << j)] += prev[bit]
-                next[bit | (1 << j)] %= mod
+ans = [[1] * N]
+for i in range(logk):
+    if K & (1 << i):
+        ans = array_cnt(ans, dp[i])
 
-    prev = next
-
-print(prev[-1])
+print(sum(ans[0]) % mod)
