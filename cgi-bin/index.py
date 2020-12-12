@@ -51,260 +51,300 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N = 4
-inf = float('inf')
+# ABC027 C - 倍々ゲーム
+# ２人が最善を尽くす時、どちらが勝つか
+# パターン1:ある状態になるように収束させれば必ず勝つ
+# パターン2:ある場所を目指せば必ず勝つようになる
+# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
 
-d = [
-[0, 2, inf, inf],
-[inf, 0, 3, 9],
-[1, inf, 0, 6],
-[inf, inf, 4, 0]
-]
-
-dp = [[-1] * N for i in range(1 << N)]
-
-def rec(s, v, dp):
-    if dp[s][v] >= 0:
-        return dp[s][v]
-    if s == (1 << N) - 1 and v == 0:
-        dp[s][v] = 0
-        return 0
-    res = float('inf')
-    for u in range(N):
-        if s & (1 << u) == 0:
-            res = min(res,rec(s|(1 << u), u, dp) + d[v][u])
-    dp[s][v] = res
-    return res
-# 結局のところ0からスタートしようが1からスタートしようが同じ道を通る
-print(rec(0,0,dp))
-
-# ABC054 C - One-stroke Path
-
-N, M = getNM()
-dist = [[] for i in range(N + 1)]
-for i in range(M):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-
-cnt = 0
-
-pos = deque([[1 << 0, 0]])
-
-while len(pos) > 0:
-    s, v = pos.popleft()
-    if s == (1 << N) - 1:
-        cnt += 1
-    for u in dist[v]:
-        if s & (1 << u):
-            continue
-        pos.append([s | (1 << u), u])
-print(cnt)
-
-"""
-全ての場所を一度だけ通り巡回する通りの数
-bit(1 << N)を小さい順から探索する
-①bit & (1 << 0)
-最初に0を踏んでないということだから飛ばす
-②現在の場所sを探すためN個探索する
-③次の場所tを探すためN個探索する
-④渡すdpする
-"""
-
-N, M = getNM()
-G = [[0] * N for i in range(N)]
-for i in range(M):
-    a, b = getNM()
-    G[a - 1][b - 1] = 1 # a ~ bのエッジが存在する
-    G[b - 1][a - 1] = 1
-
-# 状態bitから次の状態へ渡すdpするというのはよくやる
-# [0](001) → [0, 1](011) → [0, 1, 2](111)
-#          → [0, 2](101) → [0, 1, 2](111)
-def counter(sta):
-    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
-    dp = [[0] * N for i in range(1 << N)]
-    dp[1 << sta][sta] = 1
-
-    for bit in range(1, 1 << N):
-        if not bit & (1 << sta):
-            continue
-        # s:現在の場所
-        for s in range(N):
-            # sを踏んだことになっていなければ飛ばす
-            if not bit & (1 << s):
-                continue
-            # t:次の場所
-            for t in range(N):
-                # tを過去踏んでいない and s → tへのエッジがある
-                if (bit & (1 << t)) == 0 and G[s][t]:
-                    dp[bit|(1 << t)][t] += dp[bit][s]
-
-    return sum(dp[(1 << N) - 1])
-
-print(counter(0))
-
-# ABC104 C - All Green
-# 特別ボーナスがある問題は大抵bit dp
-# 目標700点
-D, G = getNM()
-query = []
-for i in range(D):
-    p, c = getNM()
-    query.append([i + 1, p, c])
-
-ans_cnt = float('inf')
-
-for bit in range(1 << D):
-    sum = 0
-    cnt = 0
-    for i in range(D):
-        if bit & (1 << i):
-            sum += query[i][0] * query[i][1] * 100 + query[i][2]
-            cnt += query[i][1]
-
-    if sum < G:
-        for j in range(D - 1, -1, -1):
-            if not bit & (1 << j):
-                left = G - sum
-                fire = query[j][0] * 100
-                opt = min(query[j][1], (left + fire - 1) // fire)
-                sum += opt * query[j][0] * 100
-                cnt += opt
-                break
-
-    if sum >= G:
-        ans_cnt = min(ans_cnt, cnt)
-
-print(ans_cnt)
-
-# ABC119 C - Synthetic Kadomatsu
-N, A, B, C = getNM()
-L = getArray(N)
-
-def counter(array):
-    if (1 in array) and (2 in array) and (3 in array):
-        opt = [0, 0, 0, 0]
-        # 合成に10pかかる
-        cnt = 0
-        for i in range(len(array)):
-            if opt[array[i]] > 0:
-                cnt += 1
-            if array[i] >= 1:
-                opt[array[i]] += L[i]
-
-        res = cnt * 10
-        res += abs(opt[1] - A)
-        res += abs(opt[2] - B)
-        res += abs(opt[3] - C)
-
-        return res
-
-    else:
-        return float('inf')
-
-ans = float('inf')
-def four_pow(i, array):
-    global ans
-    if i == N:
-        ans = min(ans, counter(array))
-        return
-    # 4 ** Nループ
-    for j in range(4):
-        new_array = array + [j]
-        four_pow(i + 1, new_array)
-
-four_pow(0, [])
-print(ans)
-
-# EDPC O - Matching
-
-"""
-N組のペアを作る通りは何通りか
-dpかcomboか
-3
-0 1 1
-1 0 1
-1 1 1 1, 2, 3は誰とでもペアになれる
-
-bitでやる
-1111....全ての人がペアになっている通り
-2 ** 21 = 2000000ぐらい　遷移の方法がわからない
-0 1 1 の 1からどれか1つ選ぶ
-1 0 1 の 1からどれか1つ選ぶ
-
-トポロジカルに
-"""
-
+# まずは全通り試してみる　その中で勝ちが偏っている部分がある
 N = getN()
-maze = [[int(j) for j in list(input().split())] for i in range(N)]
+k = N
+depth = 0
+while k > 1:
+    k //= 2
+    depth += 1
+x = 1
+cnt = 1
+if depth % 2:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
+        else:
+            x *= 2
+            x += 1
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
+    else:
+        print("Aoki")
+else:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
+            x += 1
+        else:
+            x *= 2
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
+    else:
+        print("Aoki")
 
-# ビットフラグの少ない順にソート
-bi = [[] for i in range(N)]
-for bit in range((1 << N) - 1):
-    bi[bin(bit).count('1')].append(bit)
+# ABC048 D - An Ordinary Game
+# 最終的にどのような形で終わるか
+S = input()
+if (S[0] != S[-1]) ^ (len(S) % 2):
+    print('Second')
+else:
+    print('First')
 
-prev = [0] * (1 << N)
-prev[0] = 1
+# ABC059 D - Alice&Brown
+# まずは全通り試してみる
+
+# 最終形をイメージする →
+# 1 0 操作出来ない　終わり
+# 1 1 操作出来ない　終わり
+# 逆に2 0 や 3 0 なら操作できる
+# 2以上開く、０か１開くを繰り返す
+X, Y = getNM()
+X = int(X)
+Y = int(Y)
+
+if (X - Y) ** 2 > 1:
+    print("Alice")
+else:
+    print("Brown")
+
+# AGC033 LRUD Game
+
+"""
+制約よりゲーム木とも違う
+つまりnim
+スタート地点にコマが置いてある　これを２人で動かす
+S[i]の方向に動かす、もしくは動かさない
+盤上から落ちるか残るか
+逆から見てみると
+
+最適行動　とは？
+中央に寄るように、もしくは遠ざかるように？
+
+全ての行動をシミュレートして偏りを探す
+RとLの数の差、UとDの数の差によって勝敗がわかる
+
+高橋くんが如何なる行為をしても青木くんは盤上に残すことができる
+青木くんが如何なる行為をしても高橋くんは盤上から落とすことができる
+
+高橋くんは駒の振れ幅を大きくする
+青木くんは駒の振れ幅を小さくする
+基本高橋くん有利？
+
+2人は相手の行動を先読みできるか
+あとで相手がRを大量に持っている　→　できるだけ左にずらす
+最後のL or Rの処理のあと、コマが残っている
+相手の最悪の行動に対応できるか
+高橋と青木のLRUDの差で考える
+LL
+  RRRの場合
+
+２人が最適な行動をするとは
+相手が最悪の行動をしてくるということ
+コマが一番左にいても絶対に落とせる
+L, R, U, Dのそれぞれが独立に
+R, L, D, Uと対戦できる
+"""
+
+H, W, N = getNM() # H:縦 W:横
+start = getList()
+S = input()
+T = input()
+
+LRUD_range = [start[1], start[1], start[0], start[0]]
 
 for i in range(N):
-    next = [0] * (1 << N)
-    for bit in bi[i]:
-        for j in range(N):
-            if maze[i][j]:
-                next[bit | (1 << j)] += prev[bit]
-                next[bit | (1 << j)] %= mod
+    # 高橋のターン
+    if S[i] == 'L': # 高橋のL対青木のR
+        LRUD_range[0] -= 1
+    elif S[i] == 'R':
+        LRUD_range[1] += 1
+    elif S[i] == 'U':
+        LRUD_range[2] -= 1
+    else:
+        LRUD_range[3] += 1
 
-    prev = next
+    if LRUD_range[0] < 1 or W < LRUD_range[1] or LRUD_range[2] < 1 or H < LRUD_range[3]:
+        print('NO')
+        exit()
 
-print(prev[-1])
+    # 青木のターン
+    if T[i] == 'L': # 高橋のR対青木のL ただしleftできるのは1まで
+        LRUD_range[1] = max(1, LRUD_range[1] - 1)
+    elif T[i] == 'R':
+        LRUD_range[0] = min(W, LRUD_range[0] + 1)
+    elif T[i] == 'U':
+        LRUD_range[3] = max(1, LRUD_range[3] - 1)
+    else:
+        LRUD_range[2] = min(H, LRUD_range[2] + 1)
 
-# EDPC U - Grouping
+print('YES')
+
+# AGC033 C - Removing Coins
+# 木の直径 + nim
 
 """
-N羽のウサギをいくつかのグループに分ける
-いくつか bit dpできない
-グループの分け方を考える dpの遷移方法は
-N!で出来るなら話は早い　2 ** Nに落とすのか
-範囲を絞って全探索したいが
-うさぎ1 を入れる
-うさぎ2 を1と同じにするか　別のに入れるか
-うさぎ3 を1と同じにするか, 2と同じにするか,
-bit dp で１グループあたりのパーツは揃う
-どのようにパーツを合わせるか
-2 ** 16 = 65536
+最適行動する
+ある形に収束する
 
-0000010000について
-0の部分が可変 0か1か
-0000010111 は 0000010000と0000000111を組み合わせられる
-dpを更新していく
-一番きつそうなフラグ8本でも16C8 * 2 ** 8 = 330万ぐらい
-C - 天下一文字列集合みたいな感じ
+相手の手がどうであれ
+全ての通りを試してみる
+
+木の問題であり、nimの問題である
+
+一つ頂点を選び、コインを取る
+その後他のコインを吸い寄せる
+ある点iを選択する
+iから各コインへの距離が1小さくなる
+
+各コインへの最短距離の最大値が1になると負け
+木なのでコインが２つ隣り合うだけになったら負け
+コインの木の直径が2で回ってきたら負け
+コインの木はちぎれることはない
+
+コインの木の直径を2にする
+
+1 - 2 - 3 - 4 - 5のパスグラフを考える
+1を選ぶと木の直径は1 - 2 - 3 - 4で4になる
+そのあと2を選ぶと2 - 3になり直径2で勝ち
+端っこを取ると木の直径が1減る
+端以外を取ると木の直径が2減る
+
+1 - 2 - 3 - 4 - 5
+firが1取る 1 - 2 - 3 - 4 → secが2取る 2 - 3
+firが2取る 2 - 3 - 4 → secが4取る 3 - 4
+
+1 - 2 - 3 - 4 - 5 - 6
+fir 1取る 1 - 2 - 3 - 4 - 5 firの勝ち
+
+相手に直径5になるように回す　
+firは6か7で回ってきたら勝ち　8で回ってきたら
+
+2 + 3 * iで回ってきたら負け 2, 5, 8...
+2 * (3 * i) + 1 端を選ぶ
+2 * (3 * i) + 2 真ん中を選ぶ
+
+直径を取るパスの端じゃない点か関係ない点を取ると-2される
+N = 1なら自動的に勝ち
 """
 
 N = getN()
-A = [getList() for i in range(N)]
+Q = [getList() for i in range(N - 1)]
 
-dp = [0] * (1 << N)
+G = [[] for i in range(N)]
+for i in range(N - 1):
+    s, t = Q[i]
+    G[s - 1].append(t - 1)
+    G[t - 1].append(s - 1)
 
-# まず元となるパーツを全て作る
-for bit in range(1, 1 << N):
-    res = 0
-    for i in range(N):
-        for j in range(i + 1, N):
-            if bit & (1 << i) and bit & (1 << j):
-                res += A[i][j]
-    dp[bit] = res
+# 木の直径を求める
+def bfs(s):
+    dist = [-1] * N
+    que = deque([s])
+    dist[s] = 1
 
-# dpを更新していく
-for bit in range(1, 1 << N):
-    ene = [0] # 相手を作る
-    for i in range(N):
-        if not bit & (1 << i):
-            for j in range(len(ene)):
-                ene.append(ene[j] + (1 << i))
-    # dp更新
-    for e in ene:
-        dp[bit + e] = max(dp[bit + e], dp[bit] + dp[e])
+    while que:
+        u = que.popleft()
+        for i in G[u]:
+            if dist[i] >= 0:
+                continue
+            dist[i] = dist[u] + 1
+            que.append(i)
+    d = max(dist)
+    # 全部並べて一番値がでかいやつ
+    return dist.index(d), d
 
-print(dp[-1])
+# 0から最も遠い点uを求める
+u, _ = bfs(0)
+# uから最も遠い点vとその距離を求める（つまり直径）
+v, d = bfs(u)
+
+# 2 + 3 * iで回ってきたら負け
+if (d - 2) % 3 == 0:
+    print('Second')
+else:
+    print('First')
+
+# 全国統一プログラミング王 予選　C - Different Strokes
+
+"""
+一つの数字を最大化できないか
+結局青木さんの点数は高橋くんが選ばなかったもののBの総和になる
+つまり高橋くんがi個目を選ぶとAi獲得するだけでなくBi特することになる
+逆に青木さんがj個目を選ぶとBi獲得するだけでなくAi高橋くんを損させられる
+高橋くん、青木さんはAi + Biが大きい順に取っていく
+"""
+
+N = getN()
+dish = []
+for i in range(N):
+    a, b = getNM()
+    dish.append([a, b, a + b])
+
+dish.sort(key = lambda i:i[2])
+
+ans = 0
+while True:
+    if dish: # 高橋くん
+        a, b, total = dish.pop()
+        ans += a
+    else:
+        break
+
+    if dish: # 青木さん
+        a, b, total = dish.pop()
+        ans -= b
+    else:
+        break
+
+print(ans)
+
+# EDPC K - Stones
+
+"""
+nimする
+K個から石を取る
+Ai個（何回も選んでもいい）取る
+N <= 100 小さい
+(石の数) < min(A)となるようにすればいい
+相手に上記の条件になるようにさせない　
+2 4
+2 3 なら 1になるようにする　もしくは相手が1になるようにさせない
+K = 0なら
+0: 先手が勝つ
+1: 後手が勝つ
+
+0 1 2 3 4 5
+1 1 0 0 0
+基本先行有利
+自分が勝利するルートがあるか　なければ
+自分が勝利するルートが一つでもあれば　の発想
+"""
+
+N, K = getNM()
+A = getList()
+
+# 0: 先手が勝つ
+# 1: 後手が勝つ
+dp = [1] * (K + 1)
+
+for i in range(1, K + 1):
+    for j in range(N):
+        if i - A[j] >= 0 and dp[i - A[j]] == 1:
+            dp[i] = 0
+            break
+    else:
+        dp[i] = 1
+
+if not dp[-1]:
+    print('First')
+else:
+    print('Second')
