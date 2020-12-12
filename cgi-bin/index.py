@@ -271,18 +271,27 @@ for i in range(L):
 
 print(dp[4][L])
 
-# EDPC L - Deque
+# EDPC j - shshi
+
+"""
+dp[i][j][k]: i個、j個、k個ある時全部なくすための期待値
+N <= 300 O(N ** 3)まで
+dp[i][j][k] = i / N * dp[i - 1][j][k] + j / N * dp[i][j - 1][k]
++ k / N * dp[i][j][k - 1] + (N - i - j - k) / N * dp[i][j][k]
+dp[i][j][k]をまとめると
+dp[i][j][k] = (i * dp[i - 1][j][k] + j * dp[i][j - 1][k] + k * dp[i][j][k - 1] + N) / (i + j + k)
+"""
 
 N = getN()
 A = getList()
+c = Counter(A)
+a, b, c = c[1], c[2], c[3]
+dp = [[[0] * (N + 2) for i in range(N + 2)] for j in range(N + 2)]
 
-dp = [[0] * (N + 1) for _ in range(N + 1)]
+for i in range(c + 1): # 上限はc
+    for j in range(N - a - i + 1): # 上限はb + c
+        for k in range(N - i - j + 1):
+            if i + j + k:
+                dp[i][j][k] = (i * dp[i - 1][j + 1][k] + j * dp[i][j - 1][k + 1] + k * dp[i][j][k - 1] + N) / (i + j + k)
 
-for i in range(N - 1, -1, -1):
-    for j in range(i, N):
-        # マイナスする
-        # 直前, 3つ前...に選んだものはマイナスになるし、
-        # ２つ前、４つ前...に選んだものはプラスになる
-        dp[i][j] = max(A[i] - dp[i + 1][j], A[j] - dp[i][j - 1])
-
-print(dp[0][N - 1])
+print(dp[c][b][a])
