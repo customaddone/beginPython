@@ -51,300 +51,238 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC027 C - 倍々ゲーム
-# ２人が最善を尽くす時、どちらが勝つか
-# パターン1:ある状態になるように収束させれば必ず勝つ
-# パターン2:ある場所を目指せば必ず勝つようになる
-# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
+# JOI本戦 B - IOI饅頭（IOI Manju）
+M, N = getNM() # M:饅頭 N:箱
+sweets = getArray(M)
+box = [getList() for i in range(N)] # 最大C個, E円　1個ずつ
+# 菓子の価格 - 箱の価格 の最大値
+# M <= 10000, N <= 500
+# dp?
 
-# まずは全通り試してみる　その中で勝ちが偏っている部分がある
-N = getN()
-k = N
-depth = 0
-while k > 1:
-    k //= 2
-    depth += 1
-x = 1
-cnt = 1
-if depth % 2:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
+sweets.sort(reverse = True)
+imos = [0]
+for i in range(M):
+    imos.append(imos[i] + sweets[i])
+
+# 箱に詰める饅頭の価格を大きく、箱の価格を小さくする
+# 合計でi個詰められる箱を用意した時の箱の価格の最小値
+# 貪欲に前から?
+# grid dp無理め? M <= 10000なのでそこまで求めるだけでいい
+# 500 * 10000
+prev = [float('inf')] * 10001
+prev[0] = 0
+
+for c, e in box:
+    for j in range(10000, -1, -1): # 逆順に
+        if j - c >= 0:
+            prev[j] = min(prev[j], prev[j - c] + e)
         else:
-            x *= 2
-            x += 1
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
-else:
-    while x <= N:
-        if cnt % 2:
-            x *= 2
-            x += 1
-        else:
-            x *= 2
-        cnt += 1
-    if cnt % 2:
-        print("Takahashi")
-    else:
-        print("Aoki")
-
-# ABC048 D - An Ordinary Game
-# 最終的にどのような形で終わるか
-S = input()
-if (S[0] != S[-1]) ^ (len(S) % 2):
-    print('Second')
-else:
-    print('First')
-
-# ABC059 D - Alice&Brown
-# まずは全通り試してみる
-
-# 最終形をイメージする →
-# 1 0 操作出来ない　終わり
-# 1 1 操作出来ない　終わり
-# 逆に2 0 や 3 0 なら操作できる
-# 2以上開く、０か１開くを繰り返す
-X, Y = getNM()
-X = int(X)
-Y = int(Y)
-
-if (X - Y) ** 2 > 1:
-    print("Alice")
-else:
-    print("Brown")
-
-# AGC033 LRUD Game
-
-"""
-制約よりゲーム木とも違う
-つまりnim
-スタート地点にコマが置いてある　これを２人で動かす
-S[i]の方向に動かす、もしくは動かさない
-盤上から落ちるか残るか
-逆から見てみると
-
-最適行動　とは？
-中央に寄るように、もしくは遠ざかるように？
-
-全ての行動をシミュレートして偏りを探す
-RとLの数の差、UとDの数の差によって勝敗がわかる
-
-高橋くんが如何なる行為をしても青木くんは盤上に残すことができる
-青木くんが如何なる行為をしても高橋くんは盤上から落とすことができる
-
-高橋くんは駒の振れ幅を大きくする
-青木くんは駒の振れ幅を小さくする
-基本高橋くん有利？
-
-2人は相手の行動を先読みできるか
-あとで相手がRを大量に持っている　→　できるだけ左にずらす
-最後のL or Rの処理のあと、コマが残っている
-相手の最悪の行動に対応できるか
-高橋と青木のLRUDの差で考える
-LL
-  RRRの場合
-
-２人が最適な行動をするとは
-相手が最悪の行動をしてくるということ
-コマが一番左にいても絶対に落とせる
-L, R, U, Dのそれぞれが独立に
-R, L, D, Uと対戦できる
-"""
-
-H, W, N = getNM() # H:縦 W:横
-start = getList()
-S = input()
-T = input()
-
-LRUD_range = [start[1], start[1], start[0], start[0]]
-
-for i in range(N):
-    # 高橋のターン
-    if S[i] == 'L': # 高橋のL対青木のR
-        LRUD_range[0] -= 1
-    elif S[i] == 'R':
-        LRUD_range[1] += 1
-    elif S[i] == 'U':
-        LRUD_range[2] -= 1
-    else:
-        LRUD_range[3] += 1
-
-    if LRUD_range[0] < 1 or W < LRUD_range[1] or LRUD_range[2] < 1 or H < LRUD_range[3]:
-        print('NO')
-        exit()
-
-    # 青木のターン
-    if T[i] == 'L': # 高橋のR対青木のL ただしleftできるのは1まで
-        LRUD_range[1] = max(1, LRUD_range[1] - 1)
-    elif T[i] == 'R':
-        LRUD_range[0] = min(W, LRUD_range[0] + 1)
-    elif T[i] == 'U':
-        LRUD_range[3] = max(1, LRUD_range[3] - 1)
-    else:
-        LRUD_range[2] = min(H, LRUD_range[2] + 1)
-
-print('YES')
-
-# AGC033 C - Removing Coins
-# 木の直径 + nim
-
-"""
-最適行動する
-ある形に収束する
-
-相手の手がどうであれ
-全ての通りを試してみる
-
-木の問題であり、nimの問題である
-
-一つ頂点を選び、コインを取る
-その後他のコインを吸い寄せる
-ある点iを選択する
-iから各コインへの距離が1小さくなる
-
-各コインへの最短距離の最大値が1になると負け
-木なのでコインが２つ隣り合うだけになったら負け
-コインの木の直径が2で回ってきたら負け
-コインの木はちぎれることはない
-
-コインの木の直径を2にする
-
-1 - 2 - 3 - 4 - 5のパスグラフを考える
-1を選ぶと木の直径は1 - 2 - 3 - 4で4になる
-そのあと2を選ぶと2 - 3になり直径2で勝ち
-端っこを取ると木の直径が1減る
-端以外を取ると木の直径が2減る
-
-1 - 2 - 3 - 4 - 5
-firが1取る 1 - 2 - 3 - 4 → secが2取る 2 - 3
-firが2取る 2 - 3 - 4 → secが4取る 3 - 4
-
-1 - 2 - 3 - 4 - 5 - 6
-fir 1取る 1 - 2 - 3 - 4 - 5 firの勝ち
-
-相手に直径5になるように回す　
-firは6か7で回ってきたら勝ち　8で回ってきたら
-
-2 + 3 * iで回ってきたら負け 2, 5, 8...
-2 * (3 * i) + 1 端を選ぶ
-2 * (3 * i) + 2 真ん中を選ぶ
-
-直径を取るパスの端じゃない点か関係ない点を取ると-2される
-N = 1なら自動的に勝ち
-"""
-
-N = getN()
-Q = [getList() for i in range(N - 1)]
-
-G = [[] for i in range(N)]
-for i in range(N - 1):
-    s, t = Q[i]
-    G[s - 1].append(t - 1)
-    G[t - 1].append(s - 1)
-
-# 木の直径を求める
-def bfs(s):
-    dist = [-1] * N
-    que = deque([s])
-    dist[s] = 1
-
-    while que:
-        u = que.popleft()
-        for i in G[u]:
-            if dist[i] >= 0:
-                continue
-            dist[i] = dist[u] + 1
-            que.append(i)
-    d = max(dist)
-    # 全部並べて一番値がでかいやつ
-    return dist.index(d), d
-
-# 0から最も遠い点uを求める
-u, _ = bfs(0)
-# uから最も遠い点vとその距離を求める（つまり直径）
-v, d = bfs(u)
-
-# 2 + 3 * iで回ってきたら負け
-if (d - 2) % 3 == 0:
-    print('Second')
-else:
-    print('First')
-
-# 全国統一プログラミング王 予選　C - Different Strokes
-
-"""
-一つの数字を最大化できないか
-結局青木さんの点数は高橋くんが選ばなかったもののBの総和になる
-つまり高橋くんがi個目を選ぶとAi獲得するだけでなくBi特することになる
-逆に青木さんがj個目を選ぶとBi獲得するだけでなくAi高橋くんを損させられる
-高橋くん、青木さんはAi + Biが大きい順に取っていく
-"""
-
-N = getN()
-dish = []
-for i in range(N):
-    a, b = getNM()
-    dish.append([a, b, a + b])
-
-dish.sort(key = lambda i:i[2])
+            prev[j] = min(prev[j], prev[0] + e)
 
 ans = 0
-while True:
-    if dish: # 高橋くん
-        a, b, total = dish.pop()
-        ans += a
-    else:
-        break
-
-    if dish: # 青木さん
-        a, b, total = dish.pop()
-        ans -= b
-    else:
-        break
-
+for i in range(1, M + 1):
+    ans = max(ans, imos[i] - prev[i])
 print(ans)
 
-# EDPC K - Stones
-
-"""
-nimする
-K個から石を取る
-Ai個（何回も選んでもいい）取る
-N <= 100 小さい
-(石の数) < min(A)となるようにすればいい
-相手に上記の条件になるようにさせない　
-2 4
-2 3 なら 1になるようにする　もしくは相手が1になるようにさせない
-K = 0なら
-0: 先手が勝つ
-1: 後手が勝つ
-
-0 1 2 3 4 5
-1 1 0 0 0
-基本先行有利
-自分が勝利するルートがあるか　なければ
-自分が勝利するルートが一つでもあれば　の発想
-"""
-
+# JOI11予選 D - パスタ (Pasta)
 N, K = getNM()
+pasta = [[] for i in range(N)]
+for i in range(K):
+    a, b = getNM()
+    pasta[a - 1].append(b - 1)
+
+# 通りの数を求める: dp, 数え上げ組み合わせ
+# n日前のことが関係する: n次元のdpを作れる
+
+# modが10000
+# パスタは3種類
+# dp[j][k]: 本日jのパスタで、前日kのパスタの通り
+
+prev = [[0] * 3 for i in range(3)]
+# 1日目
+if pasta[0]:
+    prev[pasta[0][0]][(pasta[0][0] + 1) % 3] = 1
+else:
+    for i in range(3):
+        prev[i][(i + 1) % 3] = 1
+
+# 2日目以降
+for p in pasta[1:]:
+    next = [[0] * 3 for i in range(3)]
+    # すでに決められているなら
+    if p:
+        j = p[0]
+        # 本日のパスタjは確定
+        # その前の日のパスタnext[]j[k]のk, prev[j][k]のjは3通り
+        # そのまた前日のパスタprev[j][k]のkは3通り
+        for k in range(3):
+            for p_k in range(3):
+                if j == k and k == p_k:
+                    continue
+                next[j][k] += prev[k][p_k]
+                next[j][k] %= 10000
+    else:
+        for j in range(3):
+            for k in range(3):
+                for p_k in range(3):
+                    if j == k and k == p_k:
+                        continue
+                    next[j][k] += prev[k][p_k]
+                    next[j][k] %= 10000
+    prev = next
+
+ans = 0
+for i in range(3):
+    for j in range(3):
+        ans += prev[i][j]
+        ans %= 10000
+print(ans)
+
+# Code Formula 2014 本選 D - 映画の連続視聴
+
+"""
+N <= 3000 O(N ** 2)まで
+Mの映画が[S ~ E]までの間上映されている
+同じ映画を見ることでより多くの幸福感
+違う映画を見るとリセットされる
+上映時刻がダブってなければ連続して視聴可能
+
+まず貪欲を考える
+区間スケジューリング
+終わりの時刻でソート
+[[2, 10, 40], [1, 0, 120], [1, 15, 135], [1, 240, 330]]
+どの映画を１回見ても幸福度は同じ　出来るだけ連続させた方がいい？
+連続してみると幸福度は絶対上がる
+全探索？
+同じ映画を見た場合、違う映画を見た場合
+S, Eが小さいのでDPできそうO(N ** 2)できるので
+同じ種類のものは連結して考えられる
+1: [1, 0, 120], [1, 15, 135], [1, 240, 330]
+2:    [2, 10, 40]
+[2, 10, 40]をとる　次取れるのは[1, 240, 330]
+[2, 10, 40]をとらない
+2 → 3と繋いで100しか上がらなくでも、3 → 4とつなぐと100000上がるかもしれない
+streak1: 何個
+streak2: 何個..という風に数える
+合成して区間スケジューリングかも
+3 + 2がバッティングしても2 + 2なら通るかもしれない
+2 + 2より3 + 1の方が強い
+MAX連続を想定する
+
+### 今いくつ連続してるかを考えなくていいようにする ###
+1つ連続させたもの、2つ連続させたもの...をmovieに混ぜ込む
+セグ木を使う
+合成したものを混ぜ込む
+"""
+
+N = getN()
+H = getList()
+for i in  range(N - 1):
+    H[i + 1] += H[i]
+movie = [getList() for i in range(N)]
+movie.sort(key = lambda i: i[2])
+
+# セグ木を使わないver
+dp = [0] * (10 ** 5 + 7)
+prev = 0
+for i in range(N):
+    m, s, e = movie[i]
+    # 初期化
+    for j in range(prev + 1, e + 1):
+        dp[j] = max(dp[j], dp[j - 1])
+    prev = e
+
+    dp[e] = max(dp[e], dp[s] + H[0])
+    cnt = 0
+
+    # 現在のtargetから区間スケジューリング
+    for j in range(i + 1, N):
+        nm, ns, ne = movie[j]
+        if nm != m:
+            continue
+        if e <= ns:
+            cnt += 1
+            e = ne
+            dp[e] = max(dp[e], dp[s] + H[cnt])
+
+print(max(dp))
+
+# みんなのプロコン2019 D - Ears
+
+"""
+必要な回数の最小値　効率的な方法を考える
+散歩開始と終了地点は任意
+
+0 ○ 1 ○ 2 ○ 3 ○ 4
+地点iを
+前方向に i += 1
+後方向に i-1 += 1
+
+出発の回数はsum(A)
+diffの最小値を目指す　二分探索したい
+
+1 - 2の周回で無限に地点2の石を増やせる
+ただし偶奇によって状況は変わる
+0が多い場合は避けるといいぞ
+範囲内は確実に1は増える
+L <= 10 ** 5
+偶奇または0の累積
+セグ木も使える
+
+(ゼロゾーン)(偶数ゾーン)(奇数ゾーン)(偶数ゾーン)(ゼロゾーン)
+両端の偶数ゾーンはなくてもいい
+0の処理は
+LC2でもダメ
+区切りは1つだけ 累積してみる
+任意のゼロゾーンを
+
+独立してゾーンを考えられるはず
+まず奇数ゾーンを置く
+
+偶数ゾーン2つがそれぞれ存在する場合、しない場合を考える
+ゼロも偶数として考えるか
+
+奇数の方がいい区間
+中央で分ける
+それぞれ
+(ゼロゾーン)(偶数ゾーン)
+左側の最小コスト + 右側の最小コスト
+セグ木使えば
+
+マーブルと同じようにDP
+"""
+
+L = getN()
+A = getArray(L)
+
+dp = [[0] * (L + 1) for _ in range(5)]
+
+for i in range(L):
+    if A[i] == 0: # 0のとこに突入するなら
+        t = 2
+    else:
+        t = A[i] % 2
+    # それぞれ前の状態から遷移できる
+    dp[0][i + 1] = dp[0][i] + A[i]
+    dp[1][i + 1] = min(dp[0][i + 1], dp[1][i] + t)
+    dp[2][i + 1] = min(dp[1][i + 1], dp[2][i] + (A[i] + 1) % 2)
+    dp[3][i + 1] = min(dp[2][i + 1], dp[3][i] + t)
+    dp[4][i + 1] = min(dp[3][i + 1], dp[4][i] + A[i])
+
+print(dp[4][L])
+
+# EDPC L - Deque
+
+N = getN()
 A = getList()
 
-# 0: 先手が勝つ
-# 1: 後手が勝つ
-dp = [1] * (K + 1)
+dp = [[0] * (N + 1) for _ in range(N + 1)]
 
-for i in range(1, K + 1):
-    for j in range(N):
-        if i - A[j] >= 0 and dp[i - A[j]] == 1:
-            dp[i] = 0
-            break
-    else:
-        dp[i] = 1
+for i in range(N - 1, -1, -1):
+    for j in range(i, N):
+        # マイナスする
+        # 直前, 3つ前...に選んだものはマイナスになるし、
+        # ２つ前、４つ前...に選んだものはプラスになる
+        dp[i][j] = max(A[i] - dp[i + 1][j], A[j] - dp[i][j - 1])
 
-if not dp[-1]:
-    print('First')
-else:
-    print('Second')
+print(dp[0][N - 1])
