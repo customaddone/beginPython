@@ -51,213 +51,316 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# Mujin Programming Challenge 2017 A - Robot Racing
+# ABC004 マーブル
+# ベルマンフォード式最小
 
-"""
-N体のロボット
-座標は全て異なり1 <= xi <= 10 ** 9 二分探索できる
-dpしたいけどxが大きいのでdpできない
-現在の座標から-1, -2のどちらかに進める　ダブルと他のを待たないといけない
-N体のロボットがゴールする順番は何通りありますか
-トポソか？
-トポソの通りは求められる
-どれがどれより先でないといけないかわかれば
+# 全てのボールを全て違う箱に入れる
+# 地点からi離れたところに置くためにはi回試行が必要
 
-前からdpしていくのかな
-理想的な状態であればN!
-
-ロボットiがjより先にゴールする条件
-1 2 3 の場合
-全部で3!
-1 2 3
-1 3 2
-2 1 3
-2 3 1
-3 1 2
-3 2 1 ある
-ただし3は1, 2より先にゴールできない
-  , i, , jの場合
-  , i, j,
- j, i,  ,でjはiより先に行ける
-
-  , i, j,  の状態にできればjはiを飛び越せる
-  , i, j, lの場合でも
- i,  , j, lとすればiの直後に隙間ができるので飛び越せる
-できない条件は
-a, b, c, i, j, lだとしても適当にa, bを動かしたら
- ,  ,  , i, j, l前に隙間ができるので動かせる
-iが2番目以降にあれば後ろの駒は飛び越せそうだけど
-jがiを飛び越せる→同じルートを通ってその後ろのkも飛び越せる
-
-連なってる部分があると難しくなるみたい
-トポソではなさそう
-
-8
-1 2 3 5 7 11 13 17 だと10080(8! // 4)
-
-iが一番最初にゴールできるか
-１番目にあるとできない では2番目は
-1, 2, 3, , 5, 6, 7　なら
- , 2, 3, , 5, 6, 7
-lim = 現在の場所 // 2個以下の駒があれば通過できる　偶数番目だとお得
-前に駒がplace[i] // 2個しかなければ1位通過できる
-つまり (i - (place[i] // 2)) + 1位通過できる
-1, 2, 3の場合
-2 1位通過はできる
-3 2位通過はできる
-前にある駒 - lim位通過はできる
-1, 2, 3, 4位の場合
- , 2, 3, 4 4は2位通過はできる
-1, 2, 3, 4, 5の場合
- , 2, 3, 4, 5 5は3位通過はできる
-1: (0 - (1 // 2)) + 1 = 1
-2: (1 - (2 // 2)) + 1 = 1
-3: (2 - (3 // 2)) + 1 = 2
-4: (3 - (4 // 2)) + 1 = 2
-5: (4 - (5 // 2)) + 1 = 3
-
-更にi番目がn番目以降でしかゴールできないなら、それより後ろのjがn - 1番目でゴールできるわけない
-l[i] = max(l[i - 1], opt)
-1, 2, 3, 4, 5
-3が一つ遅延するので4, 5も遅延する
-4に影響するのは2 2は遅延しないが4自身が遅延するのでdp[2] + 1
-5は3が遅延するし5自身も遅延する
-前の駒は全て1, 3, 5...と配置する
-配置できない場合は+= 1
-"""
-
-N = getN()
-X = getList()
-l = [1] * N
-now = 0
-cnt = 1
-
-for i in range(N):
-    l[i] = cnt
-    if X[i] < 2 * now + 1:
-        cnt += 1
+# 原点pのボールを(s, e)に一列に置くときの試行回数
+def counter(s, e, p):
+    sp = abs(s - p)
+    ep = abs(e - p)
+    if e < p:
+        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
+    elif s <= p <= e:
+        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
     else:
-        now += 1
+        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
 
-power = [0] * (N + 1)
-for i in range(N):
-    power[l[i]] += 1
+# 全範囲を探索すると微妙に間に合わない
+# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
+# 緑がこの位置にある時、赤の最適な置き方は...
+# 緑がこの位置にある時、青の最適な置き方は...
+# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
 
-# 最高位が決まっているときの順列の通りの求め方
-ans = 1
-acc = 0
-for i in range(N):
-    acc += power[i + 1]
-    ans *= acc
-    ans %= MOD
-    acc -= 1
+class MinCostFlow:
+    # 最小費用流(ベルマンフォード版、負コストに対応可)
 
-print(ans % MOD)
+    INF = 10 ** 18
 
-# AGC43 B - 123 Triangle
+    def __init__(self, N):
+        self.N = N
+        self.G = [[] for i in range(N)]
 
-"""
-1 2 3 1
- 1 1 2
-  0 1
-   1
+    def add_edge(self, fr, to, cap, cost):
+        G = self.G
+        G[fr].append([to, cap, cost, len(G[to])])
+        G[to].append([fr, 0, -cost, len(G[fr])-1])
 
-2 3 1 1 3 1 2 3 1 2
- 1 2 1 2 2 1 1 2 1
-  1 1 1 0 1 0 1 1
-   0 0 1 1 1 1 0
-    0 1 0 0 0 1
-     1 1 0 0 1
+    def flow(self, s, t, f):
 
-途中から0と1にしかならない
-0と2のみであればその後も0と2のみになる
-1 2 0 2 0 2 2 0
- 1 2 2 2 2 0 2
-  1 0 0 0 2 2
-   1 0 0 2 0
+        N = self.N; G = self.G
+        INF = MinCostFlow.INF
 
-少しでも1が混ざれば答えは0か1か
-x_left xor x_right が xの答えになる
-一行の並びだけで一つ上を予想できるか
-0と2は同じものとして扱う
+        res = 0
+        prv_v = [0] * N
+        prv_e = [0] * N
 
-0 0 1 0 1 0 0 0 1 0 1 0 0
- 0 1 1   1 0 0   1 1 1 0
-  1 0     1 0     0 0 1
-   1       1       0 1
-                    1
+        while f:
+            dist = [INF] * N
+            dist[s] = 0
+            update = True
 
-1 0 1 0 1 1 0 0
- 1 1 1   0 1 0
-  0 0     1 1
-   0       0
+            while update:
+                update = False
+                for v in range(N):
+                    if dist[v] == INF:
+                        continue
+                    for i, (to, cap, cost, _) in enumerate(G[v]):
+                        if cap > 0 and dist[to] > dist[v] + cost:
+                            dist[to] = dist[v] + cost
+                            prv_v[to] = v; prv_e[to] = i
+                            update = True
+            if dist[t] == INF:
+                return -1
 
-1 0
- 1  右に1を置くと 1 0 0を置くと 1
+            d = f; v = t
+            while v != s:
+                d = min(d, G[prv_v[v]][prv_e[v]][1])
+                v = prv_v[v]
+            f -= d
+            res += d * dist[t]
+            v = t
+            while v != s:
+                e = G[prv_v[v]][prv_e[v]]
+                e[1] -= d
+                G[v][e[3]][1] += d
+                v = prv_v[v]
+        return res
 
-1 1 1 1 1 0 1 1
- 0 0 0   1 1 0
-  0 0     0 1
-   0       1
+R, G, B = getNM()
+N = R + G + B
 
-頂点からアクセスするルート（寄与する回数）を考えると
-パスカルの三角形みたいになる
-1 4 6 4 1 頂点から左から2つめにアクセスする回数は4回
- 1 3 3 1
-  1 2 1
-   1 1
-    1
+# 最小費用流
+mcf = MinCostFlow(1006)
+# 始点からRGBの移動前
+# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
+mcf.add_edge(1001, 1002, R, 0)
+mcf.add_edge(1001, 1003, G, 0)
+mcf.add_edge(1001, 1004, B, 0)
 
-# nCrの偶奇判定　Lucasの定理
-"""
+# 0~1000の頂点番号は座標位置と一致させてある
+# 各頂点1個まで通れる
+for v in range(1001):
+    # R => 各座標
+    mcf.add_edge(1002, v, 1, abs(400-v))
+    # G => 各座標
+    mcf.add_edge(1003, v, 1, abs(500-v))
+    # B => 各座標
+    mcf.add_edge(1004, v, 1, abs(600-v))
+    # 各座標 => 終点(1005)
+    mcf.add_edge(v, 1005, 1, 0)
 
-N = getN()
-A = list(input())
-A = [int(i) - 1 for i in A]
-B = [0 if i % 2 == 0 else i for i in A]
+# N個のボールを送るための最小費用
+print(mcf.flow(1001, 1005, N))
 
-cnt = 0
-for i in range(N):
-    if B[i] % 2: # 1である
-        # nCrの偶奇判定　Lucasの定理
-        if (N - 1) & i == i:
-            cnt += 1
+# ABC010
+# 最小カット問題
+# 始点、終点と各点を結びつける
+N, G, E = getNM()
+P = getList()
+query = []
+for i in range(E):
+    a, b = getNM()
+    query.append([a, b, 1])
+    query.append([b, a, 1])
+# goalへのquery増築
+N += 1
+for i in range(G):
+    query.append([N - 1, P[i], 1])
+    query.append([P[i], N - 1, 1])
 
-if cnt % 2:
-    print(1)
-else:
-    if 1 in B:
-        print(0)
-    else:
-        c = [i // 2 if i % 2 == 0 else i for i in A]
-        cnt = 0
-        for i in range(N):
-            if c[i] % 2:
-                if (N - 1) & i == i:
-                    cnt += 1
-        if cnt % 2:
-            print(2)
+ans = 0
+lines = defaultdict(set)
+cost = defaultdict(lambda: defaultdict(int))
+for i in range(len(query)):
+    a, b, c = query[i]
+    if c != 0:
+        lines[a].add(b)
+        cost[a][b] += c
+
+# 蟻本  p205 asteroid
+N = 3
+K = 4
+que = [
+[1, 1],
+[1, 3],
+[2, 2],
+[3, 2]
+]
+
+# 始点を0、縦座標rowを1 ~ N, 横座標colをN + 1 ~ 2N, 終点を2N + 1にする
+# 1-indexならこれでいい
+# 二分グラフの最小点被覆は最大マッチング
+# 二分グラフの最大安定集合は上記を除く補集合
+dist = []
+for i in range(1, N + 1): # 始点、終点
+    dist.append([0, i, 1])
+    dist.append([i + N, 2 * N + 1, 1])
+for a, b in que: # 各惑星について
+    dist.append([a, b + N, 1])
+
+N = 2 * N + 2 # 2 * N + 2倍に拡張する
+lines = defaultdict(set)
+cost = [[0] * N for i in range(N)]
+for i in range(len(dist)):
+    a, b, c = dist[i]
+    lines[a].add(b)
+    cost[a][b] += c
+ans = 0
+
+# sからスタート
+def Ford_Fulkerson(sta, end):
+    global ans
+    queue = deque()
+    queue.append([sta, float('inf')])
+
+    ignore = [1] * N
+    ignore[sta] = 0
+
+    route = [0] * N
+    route[sta] = -1
+
+    while queue:
+        s, flow = queue.pop()
+        for t in lines[s]:  #s->t
+            if ignore[t]: #未到達
+                # flowは入ってくる量、出る量のうち小さい方
+                flow = min(cost[s][t], flow)
+                route[t] = s
+                queue.append([t, flow])
+                ignore[t] = 0
+                if t == end: #ゴール到達
+                    ans += flow
+                    break
         else:
-            print(0)
+            continue #breakされなければWhile節の先頭に戻る
+        # Falseはされない
+        break
+    else:
+        return False
 
-# ABC078 C-HSI
+    t = end
+    s = route[t]
+    # goalまで流れた量はflow
+    # 逆向きの辺を貼る
+    while s != -1:
+        #s->tのコスト減少，ゼロになるなら辺を削除
+        cost[s][t] -= flow
+        if cost[s][t] == 0:
+            lines[s].remove(t)
+            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
+        if cost[t][s] == 0:
+            lines[t].add(s)
+
+        cost[t][s] += flow
+
+        # 一つ上の辺をたどる
+        t = s
+        s = route[t]
+
+    return True
+
+while True:
+    # ちょびちょび流して行ってゴールまで流れなくなったら終了
+    if Ford_Fulkerson(0, N - 1):
+        continue
+    else:
+        break
+
+print(ans)
+
+# ABC010 D - 浮気予防
+
+class FordFulkerson:
+    def __init__(self, N):
+        self.N = N
+        self.edge = [[] for i in range(N)] # 各頂点からのエッジ
+
+    # add_edge(出発、到着、量)
+    def add_edge(self, fr, to, cap):
+        forward = [to, cap, None]
+        forward[2] = backward = [fr, 0, forward] # 行きがけのエッジに帰りがけの情報を埋め込む
+        self.edge[fr].append(forward) # 行きがけ
+        self.edge[to].append(backward) # 帰りがけ
+
+    def add_multi_edge(self, v1, v2, cap1, cap2):
+        edge1 = [v2, cap1, None]
+        edge1[2] = edge2 = [v1, cap2, edge1]
+        self.edge[v1].append(edge1)
+        self.edge[v2].append(edge2)
+
+    # v ~ t にfだけ流してみる
+    def dfs(self, v, t, f):
+        if v == t:
+            return f
+        used = self.used # ignoreを設定
+        used[v] = 1 # ignoreを設定
+        for e in self.edge[v]:
+            w, cap, rev = e
+            if cap and not used[w]: # まだ流せる
+                d = self.dfs(w, t, min(f, cap)) # さらに下にいくら流れる
+                if d:
+                    e[1] -= d # forwardの数が減る
+                    rev[1] += d # backwardの数が増える
+                    return d
+        return 0
+
+    def flow(self, s, t):
+        flow = 0
+        f = INF = 10 ** 9 + 7
+        N = self.N
+        while f:
+            self.used = [0] * N # 更新
+            f = self.dfs(s, t, INF) # 少しずつ流す
+            flow += f
+        return flow
+
+N, G, E = getNM()
+F = FordFulkerson(N + 1)
+P = getList()
+
+for i in range(E):
+    u, v = getNM()
+    # 両方エッジつけても問題ない
+    F.add_edge(u, v, 1)
+    F.add_edge(v, u, 1)
+
+# 高橋くんの所に流す
+for p in P:
+    F.add_edge(p, N, 1)
+
+ans = F.flow(0, N)
+
+print(ans)
 
 """
-NケースのうちMケースでTLEする
-Mケースだけ1/2の確率で正解する
-一回で通る確率1/2 ** M
-一回で通らない確率1 - (1/2 ** M)
-これが続く
-1/2 ** M = tと置くと
-一回で通る確率　t
-二回で通る確率　(1 - t) * t
-三回で通る確率　(1 - t) ** 2 * t... これの総和
-n回で通る分の期待値 n * (1 - t) ** (n - 1) * t
-n+1回で通る分の期待値 (n + 1) * (1 - t) ** n * t
-回答に失敗した場合、またイーブンからスタートする
-求める期待値をyとすると、y = x + (1 - p)y
+# N人の人がいます　2人1組になります
+# i番目の人とj番目の人がペアになった時、Aij点獲得します
+# 得点を最大化してください
+# 2 - 4, 4 - 2とならないようにi + 1からjをスタートさせる
+
+4
+0 50 -20 10
+50 0 30 -40
+-20 30 0 60
+10 -40 60 0
+
+-110
 """
 
-N, M = getNM()
-total = 1900 * M + 100 * (N - M)
-print(total * (2 ** M))
+N = getN()
+P = [getList() for i in range(N)]
+mcf = MinCostFlow(2 * N + 2)
+
+for i in range(N):
+    mcf.add_edge(2 * N, i, 1, 0)
+    mcf.add_edge(N + i, 2 * N + 1, 1, 0)
+
+for i in range(N):
+    for j in range(i + 1, N):
+        if i != j:
+            mcf.add_edge(i, N + j, 1, -P[i][j])
+
+print(mcf.flow(2 * N, 2 * N + 1, N // 2))
