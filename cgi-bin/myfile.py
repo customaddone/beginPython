@@ -54,10 +54,28 @@ N個のブロックのうちいくつか選んで任意の順序で
 融合させていくか
 """
 
-N = getN()
-B = [getList() for i in range(N)]
-q = [[] for i in range(2 * 10 ** 4 + 7)]
-for i in range(N):
-    q[B[i][1]].append([B[i][0], B[i][2]])
+for i in range(N + 1):
+    for j in range(32):
+        if A[i] & (1 << j):
+            bit[j].add(i, 1)
+            print(i, j)
+            print(bit[j].cum(i, i + 1))
 
-print(q[:10])
+for i in range(N + 1):
+    cnt = 0
+    for j in range(32):
+        # print(i, bit[j].get(i), j)
+        cnt += (bit[j].cum(i, i + 1) % 2) * (2 ** j)
+    print(cnt)
+
+
+
+for t, x, y in T:
+    if t == 1:
+        for i in range(32):
+            if y & (1 << i):
+                bit[i].add(x, 1)
+    else:
+        cnt = 0
+        for i in range(32):
+            cnt += (bit[i].cum(x, y + 1) % 2) * (2 ** i)

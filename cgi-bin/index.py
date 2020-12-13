@@ -28,19 +28,6 @@ def rand_query(ran1, ran2, rantime):
       r_query.append(n_q)
   return sorted(r_query)
 
-from collections import defaultdict, deque, Counter
-from sys import exit
-from decimal import *
-from heapq import heapify, heappop, heappush
-import math
-import random
-import string
-from copy import deepcopy
-from itertools import combinations, permutations, product
-from operator import mul, itemgetter
-from functools import reduce
-from bisect import bisect_left, bisect_right
-
 import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
@@ -51,362 +38,307 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC004 マーブル
-# ベルマンフォード式最小
+# JOI本戦 B - IOI饅頭（IOI Manju）
+M, N = getNM() # M:饅頭 N:箱
+sweets = getArray(M)
+box = [getList() for i in range(N)] # 最大C個, E円　1個ずつ
+# 菓子の価格 - 箱の価格 の最大値
+# M <= 10000, N <= 500
+# dp?
 
-# 全てのボールを全て違う箱に入れる
-# 地点からi離れたところに置くためにはi回試行が必要
+sweets.sort(reverse = True)
+imos = [0]
+for i in range(M):
+    imos.append(imos[i] + sweets[i])
 
-# 原点pのボールを(s, e)に一列に置くときの試行回数
-def counter(s, e, p):
-    sp = abs(s - p)
-    ep = abs(e - p)
-    if e < p:
-        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
-    elif s <= p <= e:
-        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
-    else:
-        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
+# 箱に詰める饅頭の価格を大きく、箱の価格を小さくする
+# 合計でi個詰められる箱を用意した時の箱の価格の最小値
+# 貪欲に前から?
+# grid dp無理め? M <= 10000なのでそこまで求めるだけでいい
+# 500 * 10000
+prev = [float('inf')] * 10001
+prev[0] = 0
 
-# 全範囲を探索すると微妙に間に合わない
-# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
-# 緑がこの位置にある時、赤の最適な置き方は...
-# 緑がこの位置にある時、青の最適な置き方は...
-# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
-
-class MinCostFlow:
-    # 最小費用流(ベルマンフォード版、負コストに対応可)
-
-    INF = 10 ** 18
-
-    def __init__(self, N):
-        self.N = N
-        self.G = [[] for i in range(N)]
-
-    def add_edge(self, fr, to, cap, cost):
-        G = self.G
-        G[fr].append([to, cap, cost, len(G[to])])
-        G[to].append([fr, 0, -cost, len(G[fr])-1])
-
-    def flow(self, s, t, f):
-
-        N = self.N; G = self.G
-        INF = MinCostFlow.INF
-
-        res = 0
-        prv_v = [0] * N
-        prv_e = [0] * N
-
-        while f:
-            dist = [INF] * N
-            dist[s] = 0
-            update = True
-
-            while update:
-                update = False
-                for v in range(N):
-                    if dist[v] == INF:
-                        continue
-                    for i, (to, cap, cost, _) in enumerate(G[v]):
-                        if cap > 0 and dist[to] > dist[v] + cost:
-                            dist[to] = dist[v] + cost
-                            prv_v[to] = v; prv_e[to] = i
-                            update = True
-            if dist[t] == INF:
-                return -1
-
-            d = f; v = t
-            while v != s:
-                d = min(d, G[prv_v[v]][prv_e[v]][1])
-                v = prv_v[v]
-            f -= d
-            res += d * dist[t]
-            v = t
-            while v != s:
-                e = G[prv_v[v]][prv_e[v]]
-                e[1] -= d
-                G[v][e[3]][1] += d
-                v = prv_v[v]
-        return res
-
-R, G, B = getNM()
-N = R + G + B
-
-# 最小費用流
-mcf = MinCostFlow(1006)
-# 始点からRGBの移動前
-# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
-mcf.add_edge(1001, 1002, R, 0)
-mcf.add_edge(1001, 1003, G, 0)
-mcf.add_edge(1001, 1004, B, 0)
-
-# 0~1000の頂点番号は座標位置と一致させてある
-# 各頂点1個まで通れる
-for v in range(1001):
-    # R => 各座標
-    mcf.add_edge(1002, v, 1, abs(400-v))
-    # G => 各座標
-    mcf.add_edge(1003, v, 1, abs(500-v))
-    # B => 各座標
-    mcf.add_edge(1004, v, 1, abs(600-v))
-    # 各座標 => 終点(1005)
-    mcf.add_edge(v, 1005, 1, 0)
-
-# N個のボールを送るための最小費用
-print(mcf.flow(1001, 1005, N))
-
-# ABC010
-# 最小カット問題
-# 始点、終点と各点を結びつける
-N, G, E = getNM()
-P = getList()
-query = []
-for i in range(E):
-    a, b = getNM()
-    query.append([a, b, 1])
-    query.append([b, a, 1])
-# goalへのquery増築
-N += 1
-for i in range(G):
-    query.append([N - 1, P[i], 1])
-    query.append([P[i], N - 1, 1])
-
-ans = 0
-lines = defaultdict(set)
-cost = defaultdict(lambda: defaultdict(int))
-for i in range(len(query)):
-    a, b, c = query[i]
-    if c != 0:
-        lines[a].add(b)
-        cost[a][b] += c
-
-# 蟻本  p205 asteroid
-N = 3
-K = 4
-que = [
-[1, 1],
-[1, 3],
-[2, 2],
-[3, 2]
-]
-
-# 始点を0、縦座標rowを1 ~ N, 横座標colをN + 1 ~ 2N, 終点を2N + 1にする
-# 1-indexならこれでいい
-# 二分グラフの最小点被覆は最大マッチング
-# 二分グラフの最大安定集合は上記を除く補集合
-dist = []
-for i in range(1, N + 1): # 始点、終点
-    dist.append([0, i, 1])
-    dist.append([i + N, 2 * N + 1, 1])
-for a, b in que: # 各惑星について
-    dist.append([a, b + N, 1])
-
-N = 2 * N + 2 # 2 * N + 2倍に拡張する
-lines = defaultdict(set)
-cost = [[0] * N for i in range(N)]
-for i in range(len(dist)):
-    a, b, c = dist[i]
-    lines[a].add(b)
-    cost[a][b] += c
-ans = 0
-
-# sからスタート
-def Ford_Fulkerson(sta, end):
-    global ans
-    queue = deque()
-    queue.append([sta, float('inf')])
-
-    ignore = [1] * N
-    ignore[sta] = 0
-
-    route = [0] * N
-    route[sta] = -1
-
-    while queue:
-        s, flow = queue.pop()
-        for t in lines[s]:  #s->t
-            if ignore[t]: #未到達
-                # flowは入ってくる量、出る量のうち小さい方
-                flow = min(cost[s][t], flow)
-                route[t] = s
-                queue.append([t, flow])
-                ignore[t] = 0
-                if t == end: #ゴール到達
-                    ans += flow
-                    break
+for c, e in box:
+    for j in range(10000, -1, -1): # 逆順に
+        if j - c >= 0:
+            prev[j] = min(prev[j], prev[j - c] + e)
         else:
-            continue #breakされなければWhile節の先頭に戻る
-        # Falseはされない
-        break
-    else:
-        return False
+            prev[j] = min(prev[j], prev[0] + e)
 
-    t = end
-    s = route[t]
-    # goalまで流れた量はflow
-    # 逆向きの辺を貼る
-    while s != -1:
-        #s->tのコスト減少，ゼロになるなら辺を削除
-        cost[s][t] -= flow
-        if cost[s][t] == 0:
-            lines[s].remove(t)
-            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
-        if cost[t][s] == 0:
-            lines[t].add(s)
-
-        cost[t][s] += flow
-
-        # 一つ上の辺をたどる
-        t = s
-        s = route[t]
-
-    return True
-
-while True:
-    # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(0, N - 1):
-        continue
-    else:
-        break
-
+ans = 0
+for i in range(1, M + 1):
+    ans = max(ans, imos[i] - prev[i])
 print(ans)
 
-# ABC010 D - 浮気予防
+# JOI11予選 D - パスタ (Pasta)
+N, K = getNM()
+pasta = [[] for i in range(N)]
+for i in range(K):
+    a, b = getNM()
+    pasta[a - 1].append(b - 1)
 
-class FordFulkerson:
-    def __init__(self, N):
-        self.N = N
-        self.edge = [[] for i in range(N)] # 各頂点からのエッジ
+# 通りの数を求める: dp, 数え上げ組み合わせ
+# n日前のことが関係する: n次元のdpを作れる
 
-    # add_edge(出発、到着、量)
-    def add_edge(self, fr, to, cap):
-        forward = [to, cap, None]
-        forward[2] = backward = [fr, 0, forward] # 行きがけのエッジに帰りがけの情報を埋め込む
-        self.edge[fr].append(forward) # 行きがけ
-        self.edge[to].append(backward) # 帰りがけ
+# modが10000
+# パスタは3種類
+# dp[j][k]: 本日jのパスタで、前日kのパスタの通り
 
-    def add_multi_edge(self, v1, v2, cap1, cap2):
-        edge1 = [v2, cap1, None]
-        edge1[2] = edge2 = [v1, cap2, edge1]
-        self.edge[v1].append(edge1)
-        self.edge[v2].append(edge2)
+prev = [[0] * 3 for i in range(3)]
+# 1日目
+if pasta[0]:
+    prev[pasta[0][0]][(pasta[0][0] + 1) % 3] = 1
+else:
+    for i in range(3):
+        prev[i][(i + 1) % 3] = 1
 
-    # v ~ t にfだけ流してみる
-    def dfs(self, v, t, f):
-        if v == t:
-            return f
-        used = self.used # ignoreを設定
-        used[v] = 1 # ignoreを設定
-        for e in self.edge[v]:
-            w, cap, rev = e
-            if cap and not used[w]: # まだ流せる
-                d = self.dfs(w, t, min(f, cap)) # さらに下にいくら流れる
-                if d:
-                    e[1] -= d # forwardの数が減る
-                    rev[1] += d # backwardの数が増える
-                    return d
-        return 0
+# 2日目以降
+for p in pasta[1:]:
+    next = [[0] * 3 for i in range(3)]
+    # すでに決められているなら
+    if p:
+        j = p[0]
+        # 本日のパスタjは確定
+        # その前の日のパスタnext[]j[k]のk, prev[j][k]のjは3通り
+        # そのまた前日のパスタprev[j][k]のkは3通り
+        for k in range(3):
+            for p_k in range(3):
+                if j == k and k == p_k:
+                    continue
+                next[j][k] += prev[k][p_k]
+                next[j][k] %= 10000
+    else:
+        for j in range(3):
+            for k in range(3):
+                for p_k in range(3):
+                    if j == k and k == p_k:
+                        continue
+                    next[j][k] += prev[k][p_k]
+                    next[j][k] %= 10000
+    prev = next
 
-    def flow(self, s, t):
-        flow = 0
-        f = INF = 10 ** 9 + 7
-        N = self.N
-        while f:
-            self.used = [0] * N # 更新
-            f = self.dfs(s, t, INF) # 少しずつ流す
-            flow += f
-        return flow
-
-N, G, E = getNM()
-F = FordFulkerson(N + 1)
-P = getList()
-
-for i in range(E):
-    u, v = getNM()
-    # 両方エッジつけても問題ない
-    F.add_edge(u, v, 1)
-    F.add_edge(v, u, 1)
-
-# 高橋くんの所に流す
-for p in P:
-    F.add_edge(p, N, 1)
-
-ans = F.flow(0, N)
-
+ans = 0
+for i in range(3):
+    for j in range(3):
+        ans += prev[i][j]
+        ans %= 10000
 print(ans)
+
+# Code Formula 2014 本選 D - 映画の連続視聴
 
 """
-# N人の人がいます　2人1組になります
-# i番目の人とj番目の人がペアになった時、Aij点獲得します
-# 得点を最大化してください
-# 2 - 4, 4 - 2とならないようにi + 1からjをスタートさせる
-4
-0 50 -20 10
-50 0 30 -40
--20 30 0 60
-10 -40 60 0
--110
+N <= 3000 O(N ** 2)まで
+Mの映画が[S ~ E]までの間上映されている
+同じ映画を見ることでより多くの幸福感
+違う映画を見るとリセットされる
+上映時刻がダブってなければ連続して視聴可能
+
+まず貪欲を考える
+区間スケジューリング
+終わりの時刻でソート
+[[2, 10, 40], [1, 0, 120], [1, 15, 135], [1, 240, 330]]
+どの映画を１回見ても幸福度は同じ　出来るだけ連続させた方がいい？
+連続してみると幸福度は絶対上がる
+全探索？
+同じ映画を見た場合、違う映画を見た場合
+S, Eが小さいのでDPできそうO(N ** 2)できるので
+同じ種類のものは連結して考えられる
+1: [1, 0, 120], [1, 15, 135], [1, 240, 330]
+2:    [2, 10, 40]
+[2, 10, 40]をとる　次取れるのは[1, 240, 330]
+[2, 10, 40]をとらない
+2 → 3と繋いで100しか上がらなくでも、3 → 4とつなぐと100000上がるかもしれない
+streak1: 何個
+streak2: 何個..という風に数える
+合成して区間スケジューリングかも
+3 + 2がバッティングしても2 + 2なら通るかもしれない
+2 + 2より3 + 1の方が強い
+MAX連続を想定する
+
+### 今いくつ連続してるかを考えなくていいようにする ###
+1つ連続させたもの、2つ連続させたもの...をmovieに混ぜ込む
+セグ木を使う
+合成したものを混ぜ込む
 """
 
 N = getN()
-P = [getList() for i in range(N)]
-mcf = MinCostFlow(2 * N + 2)
+H = getList()
+for i in  range(N - 1):
+    H[i + 1] += H[i]
+movie = [getList() for i in range(N)]
+movie.sort(key = lambda i: i[2])
 
+# セグ木を使わないver
+dp = [0] * (10 ** 5 + 7)
+prev = 0
 for i in range(N):
-    mcf.add_edge(2 * N, i, 1, 0)
-    mcf.add_edge(N + i, 2 * N + 1, 1, 0)
+    m, s, e = movie[i]
+    # 初期化
+    for j in range(prev + 1, e + 1):
+        dp[j] = max(dp[j], dp[j - 1])
+    prev = e
 
-for i in range(N):
+    dp[e] = max(dp[e], dp[s] + H[0])
+    cnt = 0
+
+    # 現在のtargetから区間スケジューリング
     for j in range(i + 1, N):
-        if i != j:
-            mcf.add_edge(i, N + j, 1, -P[i][j])
+        nm, ns, ne = movie[j]
+        if nm != m:
+            continue
+        if e <= ns:
+            cnt += 1
+            e = ne
+            dp[e] = max(dp[e], dp[s] + H[cnt])
 
-print(mcf.flow(2 * N, 2 * N + 1, N // 2))
+print(max(dp))
 
-# ACLP E - MinCostFlow
+# みんなのプロコン2019 D - Ears
 
 """
-[
-[[6, 0, 0, 0], [3, 1, -5, 1], [4, 1, -3, 1], [5, 1, -2, 1]],
-[[6, 0, 0, 1], [3, 1, -1, 2], [4, 1, -4, 2], [5, 1, -8, 2]],
-[[6, 0, 0, 2], [3, 1, -7, 3], [4, 1, -6, 3], [5, 1, -9, 3]],
-[[7, 1, 0, 0], [0, 0, 5, 1], [1, 0, 1, 1], [2, 0, 7, 1]],
-[[7, 1, 0, 1], [0, 0, 3, 2], [1, 0, 4, 2], [2, 0, 6, 2]],
-[[7, 1, 0, 2], [0, 0, 2, 3], [1, 0, 8, 3], [2, 0, 9, 3]],
-[[0, 1, 0, 0], [1, 1, 0, 0], [2, 1, 0, 0]],
-[[3, 0, 0, 0], [4, 0, 0, 0], [5, 0, 0, 0]]
-]
-[6, 0, 0, 0]: 6から来る(0)コスト0の辺
-[3, 1, -5, 1]: 3へ1個行くコスト-5の辺
+必要な回数の最小値　効率的な方法を考える
+散歩開始と終了地点は任意
+
+0 ○ 1 ○ 2 ○ 3 ○ 4
+地点iを
+前方向に i += 1
+後方向に i-1 += 1
+
+出発の回数はsum(A)
+diffの最小値を目指す　二分探索したい
+
+1 - 2の周回で無限に地点2の石を増やせる
+ただし偶奇によって状況は変わる
+0が多い場合は避けるといいぞ
+範囲内は確実に1は増える
+L <= 10 ** 5
+偶奇または0の累積
+セグ木も使える
+
+(ゼロゾーン)(偶数ゾーン)(奇数ゾーン)(偶数ゾーン)(ゼロゾーン)
+両端の偶数ゾーンはなくてもいい
+0の処理は
+LC2でもダメ
+区切りは1つだけ 累積してみる
+任意のゼロゾーンを
+
+独立してゾーンを考えられるはず
+まず奇数ゾーンを置く
+
+偶数ゾーン2つがそれぞれ存在する場合、しない場合を考える
+ゼロも偶数として考えるか
+
+奇数の方がいい区間
+中央で分ける
+それぞれ
+(ゼロゾーン)(偶数ゾーン)
+左側の最小コスト + 右側の最小コスト
+セグ木使えば
+
+マーブルと同じようにDP
 """
 
-N, K = getNM()
-A = [getList() for i in range(N)]
+L = getN()
+A = getArray(L)
 
-mcf = MinCostFlow(2 * N + 2)
-# Sから各列、各行からT
-for i in range(N):
-    mcf.add_edge(2 * N, i, K, 0)
-    mcf.add_edge(N + i, 2 * N + 1, K, 0)
+dp = [[0] * (L + 1) for _ in range(5)]
 
-# 各行から各列
-# 行の番号から列の番号に流すのはよくやる
-for i in range(N):
-    for j in range(N):
-        mcf.add_edge(i, N + j, 1, -A[i][j])
+for i in range(L):
+    if A[i] == 0: # 0のとこに突入するなら
+        t = 2
+    else:
+        t = A[i] % 2
+    # それぞれ前の状態から遷移できる
+    dp[0][i + 1] = dp[0][i] + A[i]
+    dp[1][i + 1] = min(dp[0][i + 1], dp[1][i] + t)
+    dp[2][i + 1] = min(dp[1][i + 1], dp[2][i] + (A[i] + 1) % 2)
+    dp[3][i + 1] = min(dp[2][i + 1], dp[3][i] + t)
+    dp[4][i + 1] = min(dp[3][i + 1], dp[4][i] + A[i])
 
-# 選ばない場合こちらに逃げる
-mcf.add_edge(2 * N, 2 * N + 1, float('inf'), 0)
+print(dp[4][L])
 
-prev = deepcopy(mcf.G)
-print(-mcf.flow(2 * N, 2 * N + 1, N * K))
+# EDPC j - shshi
 
-ans = [['.'] * N for i in range(N)]
-for i, (p, n) in enumerate(zip(prev, mcf.G)):
-    for p1, n1 in zip(p, n):
-        # 流す前にあったエッジがなくなったand頂点から頂点へのエッジ
-        if p1[1] and not n1[1] and max(i, p1[0]) < 2 * N:
-            ans[i][p1[0] % N] = "X"
+"""
+dp[i][j][k]: i個、j個、k個ある時全部なくすための期待値
+N <= 300 O(N ** 3)まで
+dp[i][j][k] = i / N * dp[i - 1][j][k] + j / N * dp[i][j - 1][k]
++ k / N * dp[i][j][k - 1] + (N - i - j - k) / N * dp[i][j][k]
+dp[i][j][k]をまとめると
+dp[i][j][k] = (i * dp[i - 1][j][k] + j * dp[i][j - 1][k] + k * dp[i][j][k - 1] + N) / (i + j + k)
+"""
 
-for i in ans:
-    print(''.join(i))
+N = getN()
+A = getList()
+c = Counter(A)
+a, b, c = c[1], c[2], c[3]
+dp = [[[0] * (N + 2) for i in range(N + 2)] for j in range(N + 2)]
+
+for i in range(c + 1): # 上限はc
+    for j in range(N - a - i + 1): # 上限はb + c
+        for k in range(N - i - j + 1):
+            if i + j + k:
+                dp[i][j][k] = (i * dp[i - 1][j + 1][k] + j * dp[i][j - 1][k + 1] + k * dp[i][j][k - 1] + N) / (i + j + k)
+
+print(dp[c][b][a])
+
+# ABC185 E - Sequence Matching
+
+"""
+Aからいくつかの要素を取り除く
+A, Bの部分列を作る
+長さが同じになるように取り除く
+A, Bから取り除いた合計要素: x
+数字が違うやつ y
+x + yを最小に
+N <= 1000
+LCSとは
+s = 'pirikapirirara'
+t = 'poporinapeperuto' のlcsは6
+1 2 1 3
+1 3 1 のlcsは2
+
+NとMの差分については必ず引く
+lcsが一致するよう取り除かな畔もいい場合が
+もともと同じ位置にある時
+1 3 2 4
+1 5 2 6 の場合
+取り除くと4つ抜くことになる
+抜かない選択も
+lcsで合ったものに揃えるには
+一旦全部抜く
+dpだろうね　遷移方法を考える
+i = 0, j = 0 同じならプラスされない
+
+dp[i][j] = A, Aが先頭i文字だけ、Bが先頭j文字だけの時
+A, Bの一方を消すか、最終列に残すか
+"""
+
+# 最長共通部分列
+N, M = getNM()
+A = getList()
+B = getList()
+
+def dfs(s, t):
+    lens = len(s)
+    lent = len(t)
+    dp = [[float('inf')] * (lent + 1) for i in range(lens + 1)]
+    dp[0][0] = 0
+
+    # dp[lens][lent]
+    for i in range(lens + 1):
+        for j in range(lent + 1):
+            # どちらも残す
+            if i > 0 and j > 0:
+                dp[i][j] = min(dp[i][j], dp[i - 1][j - 1] + (A[i - 1] != B[j - 1]))
+            # Aを消す
+            if i > 0:
+                dp[i][j] = min(dp[i][j], dp[i - 1][j] + 1)
+            # Bを消す
+            if j > 0:
+                dp[i][j] = min(dp[i][j], dp[i][j - 1] + 1)
+
+    return dp[lens][lent]
+
+print(dfs(A, B))
