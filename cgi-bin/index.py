@@ -51,221 +51,200 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# 包除原理
-N = 100
-M = 3
-A = [2, 3, 8]
-A.sort(reverse = True)
-minus = [0] * (N + 1)
+# 集合[a1, a2...an]内で以下２つの条件を満たす部分集合の組(T, U)はいくつあるか問題
+# 1: U ⊆ Tである
+# 2: Uがある条件を満たす
 
-ans = 0
-# (A & B & C)の個数について調べる
-# → A & Bの個数を計算したものから (A & B & C)の個数を引く
-for bit in range((1 << M) - 1, 0, -1):
-    prim = 1
-    for j in range(M):
-        if bit & (1 << j):
-            prim = prim // math.gcd(prim, A[j]) * A[j] # lcmの計算
-    mi = N // prim
-    for i in range(prim, N, prim):
-        mi -= minus[i]
-    if minus[prim] == 0:
-        minus[prim] = mi
-    ans += mi
-print(ans)
+# Tの中にUがいくつか含まれる
+# ①iが進むごとにTの候補がn倍ずつ増えていく
+# ②その後、Uを組むためのカウントを進める
 
-# ABC162 E - Sum of gcd of Tuples (Hard)
-N,K = getNM()
-ans = 0
-rec = [0] * (K + 1)
+# ABC104 D - We Love ABC
+S = '????C?????B??????A???????'
+N = len(S)
+# dp[i][j]: i番目にjまで丸をつけ終えている通り
+dp = [[0] * 4 for _ in range(N + 1)]
+dp[0][0] = 1
 
-"""
-集合A, B, Cについて
-A ⊆ B　かつ B ⊆ Cとすると
-集合が小さい順から数えて行って
-Bを数える時にB -= A
-Cを数える時にC -= Aすればダブらない
-"""
-
-for X in range(K, 0, -1):
-    rec[X] = pow(K // X, N, mod)
-    for i in range(2, K // X + 1):
-        rec[X] -= rec[i * X] % mod
-    ans += (X * rec[X]) % mod
-print(ans % mod)
-
-# ABC152 F - Tree and Constraints
-
-"""
-Nが非常に小さい
-木の問題
-Mの制約的にbitでもいける
-小さい例から考えてみよう
-M個の制約を全て満たすもの
-3
-1 2
-2 3
-1
-1 3
-
-bit dpか
-u ~ vのパスを真っ白にするにはどこが白ならいいか
-5
-1 2
-3 2
-3 4
-5 3
-3
-1 3
-2 4
-2 5 の時
-
-1 ~ 3: [0, 1, 2]
-2 ~ 4: [1, 2, 3]
-2 ~ 5: [1, 2, 4]
-1 ~ 3のパスが条件を満たす = 0, 1, 2のどれかが黒
-0, 1, 2が白なら1 ~ 3は条件を満たさない
-
-これをbitする bit dpだろ
-M個のうちどれか一つでも違反するものがあれば
-1 ~ 3に違反: 4, 5free 00011, [00010], [00001], [00000]
-2 ~ 4に違反: 1, 5free 10001, [10000], 00001, [00000]
-2 ~ 5に違反: 1, 4free 10010, 10000, 00010, 00000
-2 ~ 4かつ2 ~ 5 10000, 00000
-ダブったのは捨てる
-
-集合{A1, A2...}で作る部分集合は過去の要素による部分集合とダブってないか
-奇数段の集合でできてるところは引く
-偶数段の集合でできてるところは足す
-"""
-
-N = getN()
-dist = [[] for i in range(N)]
-dist_id = {}
-cnt = 0
-for i in range(N - 1):
-    a, b = getNM()
-    dist_id[(min(a - 1, b - 1), max(a - 1, b - 1))] = cnt
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-    cnt += 1
-
-M = getN()
-Q = [getList() for i in range(M)]
-
-def router(n, sta, end):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    path[sta] = -1
-
-    while pos[0] != end:
-        u = pos.popleft()
-        ignore[u] = 1
-
-        for i in dist[u]:
-            if ignore[i] != 1:
-                path[i] = u
-                pos.append(i)
-
-    route = deque([end])
-    while True:
-        next = path[route[0]]
-        route.appendleft(next)
-        if route[0] == sta:
-            break
-
-    path = []
-    for i in range(len(route) - 1):
-        a = route[i]
-        b = route[i + 1]
-        if b < a:
-            a, b = b, a
-        path.append(dist_id[(a, b)])
-    return path
-
-opt = []
-origin = set()
-for i in range(cnt):
-    origin.add(i)
-
-for u, v in Q:
-    opt.append(origin ^ set(sorted(router(N, u - 1, v - 1))))
-
-# ABC162 E - Sum of gcd of Tuples (Hard)と違うところ
-# 集合Aがどの集合内に含まれるかすぐにわからないこと((2 ** M) ** 2かかる)
-
-# パスの本数はN - 1本
-S = [[] for i in range(M)]
-ans = 0
-for o in opt:
-    res = 2 ** len(o) # 初期値
-    # ダブった分を消していく
-    for i in range(M - 1, -1, -1):
-        for j in S[i]:
-            # 奇数回重なるところについては引く
-            if i % 2 == 0: # 引く
-                res -= 2 ** len(j & o)
-            # 偶数回重なるところは足す
-            else: # 足す
-                res += 2 ** len(j & o)
-            S[i + 1].append(j & o)
-
-    S[0].append(o)
-    ans += res
-
-print(2 ** (N - 1) - ans)
-
-# ABC172E NEQ
-
-"""
-モンモール数？
-個数を求めなさい
-N = Mの場合
-A:(M = Nの順列), B:(M = Nの順列)
-N! * N!
-すべて満たすもの = 全ての通り - 1個以上満たさないもの
-どこか一箇所以上でAi = Biになる
-どこか二箇所以上でAi = Biになる...
-
-N箇所全てでAi = Biになる: N!通り　A固定で考えると1通り
-N-1箇所以上でAi = Biになる: nCn-1箇所選ぶ　そこは同じ
-あとは自由: 1!通り
-N-2箇所以上: nCn-2箇所選ぶ　そこは同じ
-あとは自由: 2!通り
-
-一箇所以上: nC1 * (n-1)!通り: 1回ダブる
-二箇所以上: nC2 * (n-2)!通り: 2回ダブる
-
-N-1箇所以上: 1!通り: N-1回ダブる
-N箇所以上: 0!通り: N回ダブる
-L = [0] * 5
-for i in permutations([i for i in range(4)]):
-    cnt = 0
+for i in range(N):
+    # 通りの数を増やす
     for j in range(4):
-        if i[j] == j:
-            cnt += 1
-    L[cnt] += 1
-print(L)
+        if S[i] != '?':
+            dp[i + 1][j] += dp[i][j]
+            dp[i + 1][j] %= mod
+        else:
+            dp[i + 1][j] += 3 * dp[i][j]
+            dp[i + 1][j] %= mod
+    # カウントが進むものを加える
+    if S[i] == 'A' or S[i] == '?':
+        dp[i + 1][1] += dp[i][0]
+        dp[i + 1][1] %= mod
+    if S[i] == 'B' or S[i] == '?':
+        dp[i + 1][2] += dp[i][1]
+        dp[i + 1][2] %= mod
+    if S[i] == 'C' or S[i] == '?':
+        dp[i + 1][3] += dp[i][2]
+        dp[i + 1][3] %= mod
+print(dp[N][3] % mod)
 
-[9, 8, 6, 0, 1]
-[44, 45, 20, 10, 0, 1]
+# ABC159 F - Knapsack for All Segments
 
-s個のAi,Biが一致しているA, Bの組みの個数は
-mPs(一致しているもの) * m-sPn-s ** 2(A, Bについてあとは自由)
-これがnCs個ある
-Ai = Biとなっているiの個数はs個以上
+"""
+尺取りしそうで
+要素分解する
+成立したらあとは単純にかけていくやつ
 
-ans = 0個以上一致しているもの　0個だけでいいんだけど
-ans -= 1個以上一致しているもの
-少なくともA1, A2が一致している集合は少なくともA1が一致している集合に含まれ、
-少なくともA2, A3が一致している集合は少なくともA2が一致している集合に含まれるが、
-少なくともA1, A2が一致している集合は少なくともA3が一致している集合には含まれない
-小グループがnCs個あり、さらにその中で分かれていると考えれば
+成立したとこ: 左に伸ばす通り * 右に伸ばす通り
+l = 0
+total = 0
+for r in range(N):
+    total += A[r]
+    while total > S:
+        total -= A[l]
+        l += 1
+    if total == S:
+        print(l, r)
+N <= 3000?
+連続部分和ではないのでナップサック
+3 4
+2 2 4
+0:[1, 0, 0, 0, 0]
+1: 足し合わせる[1, 0, 1, 0, 0]
+ : 足し合わせない[1, 0, 1, 0, 0]
+2: 足し合わせる[1, 0, 2, 0, 1]
+
+前からi個までの要素で作った連続部分列の数N(N + 1)//2
+f(none)[0]: 1
+f(1, 1)[0]: 1 2を足さない
+f(1, 1)[2]: 1 2を足す
+
+2つめの2を考える
+f(none)[0] + [2] = f(2, 2)
+f(2, 2)[0]: 1 2を足さない
+f(2, 2)[2]: 1 2を足す
+
+f(1, 1)[0] + [2] = f(1, 2)
+f(1, 2)[0]: 1 2を足さない
+f(1, 2)[2]: 1 2を足す
+
+f(1, 1)[2]: 1 2を足さない
+f(1, 2)[4]: 1 2を足す
+
+耳dpする
+0: まだ領域に入っていない
+1: 領域に入った
+2: 領域から出た
+"""
+
+N, S = getNM()
+A = getList()
+MOD = 998244353
+
+prev = [[0] * (S + 1) for j in range(3)]
+prev[0][0] = 1
+
+for a in A:
+    next = [[0] * (S + 1) for j in range(3)]
+
+    for j in range(S, -1, -1):
+        # 足し合わせない場合
+        next[0][j] += prev[0][j] # 1のみ
+        next[0][j] %= MOD
+
+        # 状態変化する
+        next[1][j] += prev[0][j] + prev[1][j] # 既に侵入している通り + まだ侵入してない
+        next[1][j] %= MOD
+
+        # 足し合わせる場合
+        if j - a >= 0:
+            next[1][j] += prev[0][j - a] + prev[1][j - a]
+            next[1][j] %= MOD
+
+        # 状態変化する
+        next[2][j] += prev[1][j] + prev[2][j]
+        next[2][j] %= MOD
+
+    prev = next
+
+print((prev[1][-1] + prev[2][-1]) % MOD)
+
+# ABC169 F - Knapsack for All Subsets
+N, S = getNM()
+A = getList()
+MOD = 998244353
+
+dp = [[0] * (S + 1) for i in range(N + 1)]
+dp[0][0] = 1
+
+for i in range(N):
+    # 通りの数を増やす
+    for j in range(S + 1):
+        dp[i + 1][j] += dp[i][j] * 2
+        dp[i + 1][j] %= MOD
+    # カウントが進むものを加える
+    for j in range(S + 1):
+        if j - A[i] >= 0:
+            dp[i + 1][j] += dp[i][j - A[i]]
+            dp[i + 1][j] %= MOD
+print(dp[N][S] % MOD)
+
+# C- 敵対的引用
+# 集合が２つであれば反転を考える
+
+"""
+pから辿る
+dislike = 0なら
+敵対的でないとこに行く
+dislike = 1なら
+敵対的なとこにいく
+その後も同様に
+s[i] = ""なら
+敵対的でないとこに
+s[i] = "ww"なら
+敵対的なとこにいく
+i段階進んだ時にどの集合が候補としてあるか
+愚直にやればO(N ** 2)かかる　まとめられそう
+各groupについて到達できるか　二部グラフ的なやつか？
+[True, True]を逆から辿ってpに辿りつけるか
+反対の反対は？
+t = 0 {0}
+t = 1 {2, 3} True
+t = 2 {1, 2, 3} True
+for j in range(N):
+    for k in all:
+        if jはkの敵対的引用としてありえるか
+        break
+
+all[i + 1] = {E[j]の集合} or {not E[j]の集合}
+エッジは10000以下だが
+敵対的の場合は簡単　エッジが少ないので
+友好的の場合は敵対的の反転
 """
 
 N, M = getNM()
-ans = 0
-for i in range(N + 1):
-    ans += (-1) ** (i % 2 == 1) * cmb(N, i) * factorial(M, i) * (factorial(M - i, N - i) ** 2)
-print(ans % mod)
+
+E = [set() for _ in range(N)]
+for _ in range(M):
+    a, b = getNM()
+    E[a - 1].add(b - 1)
+
+S = list(input().lstrip('"').split('"'))
+# "group2w"なら"w"だけ残る
+res = {int(S[0].strip("groupw")) - 1}
+
+for s in S:
+    if "w" in s:
+        tmp = set()
+        for i in range(N):
+            # エッジがあれば
+            if res & E[i]:
+                tmp.add(i)
+    else:
+        tmp = set(range(N))
+        for i in range(N):
+            # res[i - 1]がエッジの中に全て含まれるなら
+            if res <= E[i]:
+                tmp.remove(i)
+    res = tmp
+
+print(len(res))
