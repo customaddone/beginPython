@@ -43,7 +43,7 @@ from bisect import bisect_left, bisect_right
 
 import sys
 sys.setrecursionlimit(1000000000)
-mod = 10 ** 9 + 7
+mod = 998244353
 dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
 
@@ -51,101 +51,65 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+# AGC019 B - Reverse and Compare
+
 """
-y = x + (1 - p)y
-全てのアイドルを集めたいです
-N, M は非常に小さい
-bit　dpだろ
-5 2
+何通りあるか　comboかdp
+nC2を選んで i == jは意味ない
+1 2 aatt
+1 3 taat
+1 4 ttaa
+2 3 atat
+2 4 atta
+3 4 aatt
+無駄な動きはない？
+全通り選んでダブったのを引くか、前からdpか、comboか
 
-2 300　アイドルの人数2, 500円
-3 5 アイドル3が5%で手に入る
-4 95 アイドル4が95%で手に入る
-
-3 500
-5 20
-1 30
-2 50
-
-アイドル一種類の場合
-y = 1 + 0.95y 期待回数は1 / 0.05回
-アイドル複数種類、くじ1個の場合
-1 5
-2 95
-5パーセントの確率で(1を持っている状態)に移動し
-95パーセントの確率で(2を持っている確率)に移動する
-dp[1][0]: 0.0475の確率で何も持ってない
-dp[1][1]: 0.0025の確率で1のみ持っており、
-dp[1][2]: 0.9025の確率で2のみ持っている
-dp[1][3]: 0.0475の確率で2つとも持っている
-
-dp[2][0] = 0.0475 * dp[1][0]
-dp[2][1] = 0.0025 * dp[1][0] + 0.0475 * dp[1][1]
-dp[2][2] = 0.9025 * dp[1][0] + 0.0475 * dp[1][2]
-dp[2][3] = 0.0475 * dp[1][0] + 0.95 * dp[1][1] + 0.05 * dp[1][2] + dp[1][3]
-これを回せば答えは求まる
-
-くじが複数個ある場合
-最適な行動は
-どのクジを使うかは全探索
-全てのアイドルがもともとなかったらcontinue
-アイドル1はそのクジでしか引けない　それは絶対アイドルが出るまで回す
-いくつかのクジで引ける場合　最も有利なものを
-クジを融合する？
-2 2
-2 1000
-1 30
-2 70
-2 800
-1 80
-2 20
-
-dp[1] = 0.0025 * dp[0] + 0.0475 * dp[1] + M
-何も手に入らない確率は
+ataaの場合
+2 3 aata
+1 4 aata 同じ
+a, s1, s2...sn, aの場合
+a ~ aとs1 ~ s2は同じ
+ペアが１つあれば１つダブりが生まれる
+文字が同じ場所を探す
+abracadabraの場合
+2 10 と 1 11は同じだし、
+2 3 と 1 4も同じ
 """
 
-# 何これ？
-N, M = getNM()
-Q = []
-C = [0] * M
-for i in range(M):
-    ido, c = getNM()
-    C[i] = c
-    m1 = []
-    m2 = []
-    for j in range(ido):
-        ind, prob = getNM()
-        m1.append(ind - 1)
-        m2.append(prob / 100)
-    Q.append([m1, m2])
+A = input()
+N = len(A)
+l = [0] * 26
 
-prev = [float('inf')] * (1 << N)
-prev[0] = 0
-# クジ
-for _ in range(10):
-    for i, (id, prob) in enumerate(Q):
-        next = [float('inf')] * (1 << N)
-        next[0] = 0
-        # 配るdp
-        d = {}
-        for bit in range(1 << len(id)):
-            tar = 0
-            opt = 1
-            for j in range(len(id)):
-                if bit & (1 << j):
-                    tar |= (1 << id[j])
-                    opt *= prob[j]
-                else:
-                    opt *= (1 - prob[j])
-            d[tar] = opt
+for i in range(N):
+    l[ord(A[i]) - ord('a')] += 1
 
-        for bit in range(1 << N):
-            opt = C[i]
-            for key, value in d.items():
-                if key and bit & key == key:
-                    opt += prev[bit - key] * value
-            next[bit] = min(next[bit], opt / (1 - d[0]))
+ans = (N * (N - 1) // 2) + 1
+for i in range(26):
+    ans -= l[i] * (l[i] - 1) // 2
+print(ans)
 
-        prev = next
+# C - Inserting 'x'
+# 回文判定
 
-    print(prev)
+S = input()
+T = S[::-1]
+a = b = ans = 0
+
+# a, bの前半分を調べ終わるまで
+while a + b < len(S):
+    if S[a] == T[b]:
+        a += 1
+        b += 1
+    # Tにxを一つ増やす　bは進まない
+    elif S[a] == 'x':
+        a += 1
+        ans += 1
+    # Sにxを一つ増やす aは進まない
+    elif T[b] == 'x':
+        b += 1
+        ans += 1
+    else:
+        print(-1)
+        exit()
+print(ans)
