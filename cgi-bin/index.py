@@ -51,97 +51,270 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# AGC019 B - Reverse and Compare
+# AGC005 C - Tree Restoring
 
 """
-何通りあるか　comboかdp
-nC2を選んで i == jは意味ない
-1 2 aatt
-1 3 taat
-1 4 ttaa
-2 3 atat
-2 4 atta
-3 4 aatt
-無駄な動きはない？
-全通り選んでダブったのを引くか、前からdpか、comboか
+頂点数N Nは小さいが...
+木です　
+頂点1, 2... について最も遠い頂点がAi
+距離iがいくつあるかcntする
 
-ataaの場合
-2 3 aata
-1 4 aata 同じ
-a, s1, s2...sn, aの場合
-a ~ aとs1 ~ s2は同じ
-ペアが１つあれば１つダブりが生まれる
-文字が同じ場所を探す
-abracadabraの場合
-2 10 と 1 11は同じだし、
-2 3 と 1 4も同じ
+最遠N - 1の距離が作れるのはパスグラフ
+1 - 2 - 3 - 4 距離3が作れる
+この時距離3は2つ、距離2は2つ
+1 - 2 - 3
+      - 4 の場合
+距離2が3つ、距離1が1つ
+まずパスグラフから考える
+1 - 2 - 3 - 4 距離3が2つできる
+              距離2は2つ
+1 - 2 - 3 - 4
+    　　　 - 5 距離3が3つできる
+
+距離n - 1に一つ頂点をつなぐと距離nの頂点ができる
+1 - 2 - 3
+最初のパスグラフを作った時、max - 1, max - 2...の頂点が2個ずつできる
+残った頂点を順番にパスグラフに刺していく
+
+距離n - 1に一つ頂点をつなぐと距離nの頂点ができる
 """
 
-A = input()
-N = len(A)
-l = [0] * 26
+N = getN()
+A = getList()
 
+distance = [0] * N
 for i in range(N):
-    l[ord(A[i]) - ord('a')] += 1
+    distance[A[i]] += 1
 
-ans = (N * (N - 1) // 2) + 1
-for i in range(26):
-    ans -= l[i] * (l[i] - 1) // 2
-print(ans)
-
-
-# 第5回PAST J
-"""
-a:a
-b:ab
-2:ababab
-c:abababc
-1:abababcabababc
-文字列はまとめる
-指数関数的に増える
-ハンバーガーと同じか？
-2, 6, 7, 14 全体の長さがわかる
-
-a
-aaaaaaaaaa
-aaaaaaaaaa + aaaaaaaaaaを9回
-10 ** 15超えた時点でストップ
-[ab] * 1
-[ab] * 3
-ab * 3, c * 1
-ab * 3, c * 1, ab * 3, c * 1
-14 // 2 = 7
-
-7で引けるだけ引く
-X = 6なら
-X = 8なら
-
-[1, 2, 6, 7, 14]
-0になったら最初に出てくる文字
-
-６文字目まで出力した
-"""
-
-S = input()
-N = len(S)
-X = getN() - 1
-
-C = [0] * (N + 1)
-p = 0
-
-for i in range(N):
-    if S[i] <= '9':
-        C[i + 1] = C[i] * (int(S[i]) + 1)
-    else:
-        C[i + 1] = C[i] + 1
-    if C[i + 1] > X:
-        p = i
-        break
-
-for i in range(p, -1, -1):
-    if S[i] <= '9':
-        X %= C[i]
-    else:
-        if X == C[i]:
-            print(S[i])
+opt = [0] * N # 現在距離iの頂点はいくつあるか
+left = N # 残り頂点数
+for i in range(N - 1, -1, -1):
+    if distance[i] > 0:
+        if distance[i] == 1: # 最遠は必ず2つ以上ある
+            print('Impossible')
+            exit()
+        else:
+            # 最初のパスグラフを引く
+            for j in range(i + 1):
+                left -= 1
+                opt[max(i - j, j)] += 1
             break
+
+# distance（クエリ）とopt(パスグラフ)を見比べる
+for i in range(N - 1, 0, -1):
+    # optは基礎的に存在する頂点
+    # それを下回るようであればout
+    if distance[i] < opt[i]:
+        print('Impossible')
+        exit()
+    else:
+        diff = distance[i] - opt[i]
+        if diff: # 足さないといけない場合、距離がd - 1の頂点がなければいけない
+            if opt[i - 1] == 0:
+                print('Impossible')
+                exit()
+            else:
+                left -= diff
+                opt[i] += diff
+
+if left == 0: # 頂点をちょうど使い切ったら
+    print('Possible')
+else:
+    print('Impossible')
+
+# ABC173 F - Intervals on Tree
+# ある意味Unionfindか
+# 新しい頂点を加えると、連結成分が1 - (既にある頂点へのエッジ)の分増える
+
+"""
+木の問題
+N <= 10 ** 5
+辺があると連結するので連結成分の個数が減る
+L,RをnC2通り求める
+bitは普通に間に合わない
+
+やっぱり分解して考える
+小さいのから
+L = 1の時
+R = 1 ~ N これにO(1)で答える
+R = 1
+1
+R = 2 2は1と繋がってない
+1
+2 2
+R = 3 3は1, 2と繋がっている
+1 2 3 1
+
+頂点1は何回数えられるか
+頂点1が含まれるのは3回
+頂点2が含まれるのは4回
+頂点3が含まれるのは3回
+
+木dpとか
+前から順にやる？
+
+Rで新しい数を入れると急に結合したりする
+数え上げでしょう
+
+ダブった部分を引く
+全ての部分木の大きさを求めるのは無理そう
+新しい要素は高々２つの要素を繋げるだけ
+
+for i in range(N - 1):
+    u, v = getNM()
+    if u > v:
+        u, v = v, u
+    # 前に戻るエッジのみ
+    dist[v - 1].append(u - 1)
+for i in range(N):
+    dist[i].sort()
+
+ans = 0
+for i in range(N): # L
+    cnt = 0
+    for j in range(i, N): # R
+        # 範囲外に伸びるエッジは無視
+        cnt += 1 - (len(dist[j]) - bisect_left(dist[j], i))
+        ans += cnt
+
+これはO(N ** 2)かかる
+[[], [], [], [], [2], [], [1, 3, 4], [3], [0, 7], [5, 8]]
+累積されていく
+何もなければ1 ~ 10の累積で55のはず
+しかし控除が累積して1 + 1 + 4(len([2] + len([1, 3, 4]))) + 5 + 7 + 9 = 27あるのでこれを引く
+dist[4]の位置にある2はL = 1の時も引っかかる
+dist[8]にある0は一回のみ引っかかって被害はN - 8 = 2
+
+エッジが伸びることでいくら減るか
+"""
+
+N = getN()
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    u, v = getNM()
+    # 前に行くように
+    if u > v:
+        u, v = v, u
+    dist[v - 1].append(u - 1)
+
+ans = 0
+cnt = 0
+for i in range(N):
+    ans += (i + 1) * (i + 2) // 2
+    # distの探索
+    for j in dist[i]:
+        cnt += (j + 1) * (N - i)
+
+print(ans - cnt)
+
+# ARC028 C - 高橋王国の分割統治
+
+"""
+全方位木dpを使わない方法で
+頂点iについて
+iの子要素の部分木のサイズを調べる
+全方位木dpの要領でやっていく
+①葉から木dpしていく
+②遡る
+"""
+
+N = getN()
+E = [[] for i in range(N)]
+for i in range(N - 1):
+    p = getN()
+    E[i + 1].append(p)
+    E[p].append(i + 1)
+
+# dfsする
+ans = [0] * N
+
+def dfs(u, par):
+    res = 1 # 自分 + 子要素の部分木の大きさの合計
+    opt_c = 0 # 子要素の部分木の大きさの最大値
+    for v in E[u]:
+        if v != par:
+            c = dfs(v, u)
+            res += c
+            opt_c = max(opt_c, c)
+
+    # 親方向の部分木の大きさはN - res
+    ans[u] = max(opt_c, N - res)
+    return res
+
+dfs(0, -1)
+for i in ans:
+    print(i)
+
+# ABC146 D - Coloring Edges on Tree
+
+N = getN()
+
+dist = [[] for i in range(N)]
+edges = {}
+for i in range(N - 1):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
+    edges[(a - 1, b - 1)] = i
+    edges[(b - 1, a - 1)] = i
+
+color = [-1] * N
+color[0] = 0
+ans = [0] * (N - 1)
+pos = deque([0])
+
+while pos:
+    u = pos.popleft()
+    j = 1
+    for i in dist[u]:
+        if color[i] != -1:
+            continue
+        if j == color[u]:
+            j += 1
+        color[i] = j
+        ans[edges[(i, u)]] = j
+        pos.append(i)
+        j += 1
+
+print(max(ans))
+for i in ans:
+    print(i)
+
+# ARC108 C - Keep Graph Connected
+
+# 一方のみ　rootを犠牲にする
+# 辺にラベルがついている
+# 移動先の頂点に辺の数字を書き込む
+
+# 1の書き込み方をどうするか
+
+N, M = getNM()
+E = [[] for i in range(N)]
+for i in range(M):
+    u, v, c = getNM()
+    E[u - 1].append([v - 1, c - 1])
+    E[v - 1].append([u - 1, c - 1])
+
+ans = [-1] * N
+ans[0] = 0
+q = deque([0])
+
+while q:
+    u = q.popleft()
+    for v, p in E[u]:
+        if ans[v] >= 0:
+            continue
+        # vには違う(p + 1)数字を書き込む
+        if ans[u] == p:
+            ans[v] = (p + 1) % N
+            q.append(v)
+        # vには辺の数字pを書き込む
+        else:
+            ans[v] = p
+            q.append(v)
+
+if -1 in ans:
+    print('No')
+
+for i in ans:
+    print(i + 1)
