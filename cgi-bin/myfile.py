@@ -17,65 +17,59 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
-"""
-N <= 1000
-ブロックの価値の総和の最大値
-N個のブロックのうちいくつか選んで任意の順序で
-上に乗るブロックはブロックiのs以下でないといけない
+par = [-1] * N
+depth = [-1] * N
+depth[0] = 0
+pos = deque([0])
+while pos:
+    u = pos.popleft()
+    for i in E[u]:
+        if depth[i] == -1:
+            depth[i] = depth[u] + 1
+            par[i] = u
+            pos.append(i)
 
-どのブロックを選ぶか、どの順番で並べるか　dpしたくなる
-小さいブロックから作っていく
+logk = max(depth).bit_length()
 
-総重量がwの時の最大値
-4
-1 2 10
-3 1 10
-2 4 10
-1 6 10
+doubling = [[-1] * N for _ in range(logk)]
+for i in range(N):
+    doubling[0][i] = par[i]
 
-[[1, 2, 10], [1, 6, 10], [2, 4, 10], [3, 1, 10]] の時
-耐重量でソート
-[[3, 1, 10], [1, 2, 10], [2, 4, 10], [1, 6, 10]]
-どのようにしたらトポロジカルに
+for i in range(1, logk):
+    for j in range(N):
+        if doubling[i - 1][j] == -2:
+            doubling[i][j] = -2
+        else:
+            doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
 
-[[3, 1, 10], [1, 2, 10], [2, 4, 10], [1, 6, 10]]
-[0, 0, 0, 10, 10, 0, 0, 0, 0, 0]
-[0, 10, 10, 10, 10, 0, 0, 0, 0, 0]
-[0, 10, 10, 20, 20, 20, 20, 0, 0, 0]
-[0, 10, 20, 20, 30, 30, 30, 30, 0, 0]
-ソートするのは間違い
-ブロックを何個か選んで適当に並び替えたらそれは条件を満たせるか
-下のsの方が小さいとは限らない
-一つ目に何を置くか　順番が重要
-
-小さい順からつんていく　積むとそのブロックのsはもう必要なくなる
-[[], [[3, 10]], [[1, 10]], [], [[2, 10]], [], [[1, 10]], [], [], []]
-[3, 10]が使われない？
-融合させていくか
-"""
-
-for i in range(N + 1):
-    for j in range(32):
-        if A[i] & (1 << j):
-            bit[j].add(i, 1)
-            print(i, j)
-            print(bit[j].cum(i, i + 1))
-
-for i in range(N + 1):
-    cnt = 0
-    for j in range(32):
-        # print(i, bit[j].get(i), j)
-        cnt += (bit[j].cum(i, i + 1) % 2) * (2 ** j)
-    print(cnt)
-
-
-
-for t, x, y in T:
+Q = getN()
+for i in range(Q):
+    t, e, x = getNM()
     if t == 1:
-        for i in range(32):
-            if y & (1 << i):
-                bit[i].add(x, 1)
+        a, b = edges[e - 1]
     else:
-        cnt = 0
-        for i in range(32):
-            cnt += (bit[i].cum(x, y + 1) % 2) * (2 ** i)
+        b, a = edges[e - 1]
+
+    dep_diff = depth[a] - depth[b]
+
+    # aがbの親か
+    if dep_diff > 0:
+        now = a
+        for i in range(logk):
+            if dep_diff & (1 << i):
+                now = doubling[i][now]
+        if now == b:
+            print('Yes')
+        else:
+            print('No')
+    # bがaの親か
+    else:
+        dep_diff *= -1
+        now = b
+        for i in range(logk):
+            if dep_diff & (1 << i):
+                now = doubling[i][now]
+        if now == a:
+            print(a, b, 'Yes')
+        else:
+            print('No')

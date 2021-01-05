@@ -51,270 +51,398 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# AGC005 C - Tree Restoring
+# AGC022 B - GCD Sequence
 
 """
-頂点数N Nは小さいが...
-木です　
-頂点1, 2... について最も遠い頂点がAi
-距離iがいくつあるかcntする
+Aの各要素は全て異なる
+どのaiについても
+gcd(ai, sum(A) - ai)が1ではない
+aiとsum(A) - aiが共通因数をもつ
 
-最遠N - 1の距離が作れるのはパスグラフ
-1 - 2 - 3 - 4 距離3が作れる
-この時距離3は2つ、距離2は2つ
-1 - 2 - 3
-      - 4 の場合
-距離2が3つ、距離1が1つ
-まずパスグラフから考える
-1 - 2 - 3 - 4 距離3が2つできる
-              距離2は2つ
-1 - 2 - 3 - 4
-    　　　 - 5 距離3が3つできる
+aiとsum(A)が共通因数を持つ
 
-距離n - 1に一つ頂点をつなぐと距離nの頂点ができる
-1 - 2 - 3
-最初のパスグラフを作った時、max - 1, max - 2...の頂点が2個ずつできる
-残った頂点を順番にパスグラフに刺していく
+Aの全ての要素を同じ因数を持つものに変えれば簡単
+全ての要素の最大公約数が1である　の場合は？
+互いに素なものが１つでもあればOK
 
-距離n - 1に一つ頂点をつなぐと距離nの頂点ができる
+1 2 3 は条件を満たす　完全数なら話は早い　早くない　1に何してもgcdは1
+
+N <= 10000より　1 * n, 2 * n, 3 * n...とするのは諦める
+ターゲットとなるgcdの数は小さくないと間に合わない
+2と3で統一してみれば
+3の
+3の倍数を偶数個足すと偶数になる
+でも偶数と3の倍数である奇数のgcdは1
+要素は3万以下であることに注意
+
+2 ~ 30000までの偶数(15000個)
+3 ~ 30000までの3の倍数かつ奇数の数(5000個) できる！！！
+
+偶数の個数は
+N % 3 == 0の時 6の倍数を先頭に
+30000 + 29997, 29991
+N % 3 == 1の時
+2, 4 + 3, 9 逆から
+N % 3 == 2の時
+2, 4, 6 + 3, 9 楽
+
+制限ないと楽だけど
+限界まで2の倍数を並べればいい
+N % 3 == 0　2の倍数N - 2個
+N % 3 == 1  2の倍数N - 2個
+N % 3 == 2  2の倍数N - 2個
+
+N = 3の時は注意
+
+上限を15000にすると3の個数が変動する
+"""
+
+N = getN()
+
+def cnter(ans):
+    two = 0
+    three = 0
+    tw_l = 0
+    th_l = 0
+    for i in ans:
+        if i % 2 == 0:
+            two += 1
+            tw_l += i
+        elif i % 3 == 0:
+            three += 1
+            th_l += i
+
+    return tw_l % 3, th_l % 2, two, three, max(ans), min(ans)
+
+if N == 3:
+    print(2, 5, 63)
+    exit()
+
+if N % 3 == 0:
+    even = min(N - 2, 15000) # 偶数の個数
+    three = N - even # 基本的には2 これは偶数個でないといけない
+
+    caution = False
+    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
+        caution = True
+        three += 1
+
+    ans = [i * 2 for i in range(15000, 15000 - even, -1)]
+    if caution: # 調整2 even -= 1
+        ans.pop(0) # 30000を抜き取る
+
+    for i in range(three):
+        ans.append(i * 6 + 3)
+
+    print(*ans)
+
+else: # 2と3が絶対に並ぶのでgcd = 1
+    even = min(N - 2, 15000) # 偶数の個数
+    three = N - even
+
+    caution = False
+    if three % 2 != 0: # even == 15000 でthreeの個数が奇数になった場合　調整1
+        caution = True
+        three += 1
+
+    ans = [i * 2 for i in range(1, even + 1)]
+    if caution: # 調整2
+        ans.pop() # 30000を抜き取る
+
+    for i in range(three):
+        ans.append(i * 6 + 3)
+
+    print(*ans)
+
+# Judge System Update Test Contest 202004 D - Calculating GCD
+
+# Q個のSiについて次の問いに答えよ
+
+N, Q = getNM()
+A = getList()
+S = getList()
+
+gc = [0] * N # 最終的なXの値を求めるため
+gc[0] = A[0]
+# 共通因数として持っておかないといけない数が増えていく
+# nowの値とA[i]に共通因数があれば残る
+# 6 12 6 9 の場合は
+# 2 or 3 2 or 3 2 or 3 3のみ [6, 6, 6, 3]
+# gcd(S1, gc[i]) > 1なら通過 == 1なら値を出力
+
+# gc[i]は指数関数的に減少していくんじゃ！
+index = [0]
+for i in range(1, N):
+    gc[i] = math.gcd(gc[i - 1], A[i])
+    if gc[i] < gc[i - 1]:
+        index.append(i)
+
+# gcdが変化する部分だけでgcdすればいいとわかる
+# 精々2 ** 30なので30回程度
+for s in S:
+    for j in index:
+        opt = math.gcd(s, gc[j])
+        if opt == 1:
+            print(j + 1)
+            break
+    else:
+        print(math.gcd(s, gc[-1]))
+
+# AGC026 B - rng_10s
+
+"""
+ジュースの在庫A本
+B本減ります
+C本以下だった場合はD本増えます
+永遠にジュースを買えるか判定
+各Tについて答える
+数学問題か
+
+当たり前だけどB > DならNo
+A < BならNo
+else
+B <= CならYes
+B <= D, B <= AかつB > Cの場合について（閾値が低い場合）について考える
+
+ジュースの推移は折れ線グラフみたいになるが、
+これが0を下回らないか
+√Nぐらいまでならいける
+Aの大きさによってはめんどくさいことになる
+AをBで割ってみると
+試行回数を増やすことで0に近づけることを何回もできる
+0付近の動きがどうかにかかっている
+9 7 5 9の場合
+9 2
+5以下になったので9補充 11
+11 4
+5以下になったので9補充 13
+6 → ×
+9 7 6 9 の場合だと通る
+ループ検知はCが大きいので無理
+AをBで引き続けるとB未満の数になる
+B未満の全ての値を取りそうだが
+引き続けてC以下になるとsafe
+C + 1, C + 2... < Bだとout
+C < i < Bとなるiを取らなければOK
+BとDの倍数関係による
+9 7 5 9
+A + xD - yBがC + 1, C + 2...になるか　なるならout
+x = 0, y = 0 9
+x = 0, y = 1 2
+x = 1, y = 1 11
+x = 1, y = 2 4
+x = 2, y = 2 13
+x = 2, y = 3 6    out
+
+互いに素ならC + 1 == Bでない限りoutになる
+C + 1 < Bの場合について考える okになる場合がある
+CとC + 1は少なくとも偶奇は違う　互いに素である
+gcdをとる
+gcdでデッドゾーンを飛び越えればOK
+
+14 10 7 12 out 4 2
+4に着地 8にも着地する out
+14 10 7 11 out 4 1
+14 10 8 11 out 4 1
+
+10 10 5 10 safe 0 10
+11 10 5 10 safe 1 10
+1に着地　11にも着地 safe
+16 10 5 10 out  6 10
+10で引くと
+
+着地点がC + 1 ~ B - 1の範囲内に入るか
+
+A基点でmath.gcd(b, d)の部分にしか飛ばないのに気づく
+"""
+
+T = getN()
+apple = [getList() for i in range(T)]
+
+for a, b, c, d in apple:
+    if b > a or b > d:
+        print('No')
+    else:
+        if b <= c + 1:
+            print('Yes')
+        else:
+            base = a - (a // b) * b
+            split = math.gcd(b, d)
+            cnt = (c + 1 - base) // split
+            # 割り切れる場合 base + cnt * split = c + 1
+            # 割り切れない場合 base + (cnt + 1) * split が c + 1を超える
+            opt1 = base + cnt * split
+            opt2 = base + (cnt + 1) * split
+            # どちらかがデッドゾーンを踏んでればout
+            if c + 1 <= opt1 <= b - 1 or c + 1 <= opt2 <= b - 1:
+                print('No')
+            else:
+                print('Yes')
+
+# AGC010 B - Boxes
+
+"""
+N個の箱が円環状に並んでいる　ループする
+全ての石が取り除けるか判定せよ
+iを一つ選ぶ
+i + 1個目は1個、i + 2個目は2個...i - 1個目はN - 1個、i個目はN個取り除いていく
+1 2 3 4...のピラミッドをいい感じに積んでいくとAにできるか
+
+5
+4 5 1 2 3 は 4 5 + 1 2 3のピラミッドを一つ積む
+
+5
+6 9 12 10 8 は　
+
+1 2 3 4 5
+2 3 4 5 1
+3 4 5 1 2 のピラミッドを積む
+
+簡単なものだと
+1 2 3 4 5
+1 2 3 4 5
+2 4 6 8 10 この状態から初めていく 一個ずらすと
+
+1 2 3 4 5 ○
+5 1 2 3 4
+6 3 5 7 9 二個ずらすと
+
+1 2 3 4 5 △
+4 5 1 2 3
+5 7 4 6 8 三個ずらす
+
+1 2 3 4 5 △
+3 4 5 1 2
+4 6 8 5 7 四個ずらす
+
+1 2 3 4 5 ○
+2 3 4 5 1
+3 5 7 9 6 パターンは少ない？
+
+1 2 3 4 5 6
+1 2 3 4 5 6: 2 4 6 8 10 12
+2 3 4 5 6 1: 3 5 7 9 11 7 ○
+3 4 5 6 1 2: 4 6 8 10 6 8 △
+4 5 6 1 2 3: 5 7 9 5 7 9 □
+5 6 1 2 3 4: 6 8 4 6 8 10 △
+6 1 2 3 4 5: 7 3 5 7 9 11 ○
+
+iとN - iは同じ系統
+iは固定したものを基準に、N - iは動かしたものを基準にしたものだから
+
+1 2 3 4
+2 3 4 1 3 5 7 5
+3 4 1 2
+6 9 8 7
+
+1 2 3 4
+2 3 4 1
+2 3 4 1
+5 8 11 6
+所定の山を作るには
+
+1 2 3...N
+N + 1, 1 + 2, 2 + 3...N - 1 + N
+もっとも高いところ、低いところを見て判定する？
+6 + 9 + 12 + 10 + 8 = 45
+1 + 2 + 3 + 4 + 5 = 15を3回積めばいい
+例えば12は5 + 5 + 2 この時9は 4 + 4 + 1 6は?
+12 = 5 + 4 + 3 9 = 4 + 3 + 2 6 = 3 + 2 + 1
+5 と 1との間で崖ができる　崖の大きさはN - 1
+5をどの位置に置けるか
+
+1 2 3 4
+1 2 3 4
+1 2 3 4
+3 6 9 12
+N <= 10 ** 5
+cnt: 積む回数
+A1 = xと置くと、A1とA2の間に崖が存在しない場合はA2 = x + (1 * cnt)となる
+だが崖がある場合は1の代わりに(N - 1)を引く
+崖の個数をc(0 <= c <= N)とすると
+A2 = A1 + c * (N - 1) + 1 * (cnt - c)
+A2 - A1 = cN - c + cnt - c
+        = c(N - 2) + cnt
+N, cntは定数なので崖の個数は求められる
+
+崖になるなら+1 - N, ならないなら+1する
+これで崖がcnt個できるか
+
+コーナーケース
+2
+1 5 がプラスになる
+
+di = Ai+1 − Ai の変化を考える数学問題
 """
 
 N = getN()
 A = getList()
 
-distance = [0] * N
+if N == 1:
+    print('YES') # A1からA1回１を引くだけ
+    exit()
+
+split = N * (N + 1) // 2
+if sum(A) % split != 0:
+    print('NO')
+    exit()
+cnt = sum(A) // split # 積む回数
+criff = [0] * N
+
 for i in range(N):
-    distance[A[i]] += 1
-
-opt = [0] * N # 現在距離iの頂点はいくつあるか
-left = N # 残り頂点数
-for i in range(N - 1, -1, -1):
-    if distance[i] > 0:
-        if distance[i] == 1: # 最遠は必ず2つ以上ある
-            print('Impossible')
-            exit()
-        else:
-            # 最初のパスグラフを引く
-            for j in range(i + 1):
-                left -= 1
-                opt[max(i - j, j)] += 1
-            break
-
-# distance（クエリ）とopt(パスグラフ)を見比べる
-for i in range(N - 1, 0, -1):
-    # optは基礎的に存在する頂点
-    # それを下回るようであればout
-    if distance[i] < opt[i]:
-        print('Impossible')
+    opt = (A[i] + cnt) - A[(i + 1) % N]# 崖がないときに想定されるAiと実際のAiの差
+    if opt < 0 or opt % N != 0:
+        print('NO')
         exit()
-    else:
-        diff = distance[i] - opt[i]
-        if diff: # 足さないといけない場合、距離がd - 1の頂点がなければいけない
-            if opt[i - 1] == 0:
-                print('Impossible')
-                exit()
-            else:
-                left -= diff
-                opt[i] += diff
+    criff[i] = opt // N
 
-if left == 0: # 頂点をちょうど使い切ったら
-    print('Possible')
+# 判定
+if sum(criff) == cnt:
+    print('YES')
 else:
-    print('Impossible')
+    print('NO')
 
-# ABC173 F - Intervals on Tree
-# ある意味Unionfindか
-# 新しい頂点を加えると、連結成分が1 - (既にある頂点へのエッジ)の分増える
-
-"""
-木の問題
-N <= 10 ** 5
-辺があると連結するので連結成分の個数が減る
-L,RをnC2通り求める
-bitは普通に間に合わない
-
-やっぱり分解して考える
-小さいのから
-L = 1の時
-R = 1 ~ N これにO(1)で答える
-R = 1
-1
-R = 2 2は1と繋がってない
-1
-2 2
-R = 3 3は1, 2と繋がっている
-1 2 3 1
-
-頂点1は何回数えられるか
-頂点1が含まれるのは3回
-頂点2が含まれるのは4回
-頂点3が含まれるのは3回
-
-木dpとか
-前から順にやる？
-
-Rで新しい数を入れると急に結合したりする
-数え上げでしょう
-
-ダブった部分を引く
-全ての部分木の大きさを求めるのは無理そう
-新しい要素は高々２つの要素を繋げるだけ
-
-for i in range(N - 1):
-    u, v = getNM()
-    if u > v:
-        u, v = v, u
-    # 前に戻るエッジのみ
-    dist[v - 1].append(u - 1)
-for i in range(N):
-    dist[i].sort()
-
-ans = 0
-for i in range(N): # L
-    cnt = 0
-    for j in range(i, N): # R
-        # 範囲外に伸びるエッジは無視
-        cnt += 1 - (len(dist[j]) - bisect_left(dist[j], i))
-        ans += cnt
-
-これはO(N ** 2)かかる
-[[], [], [], [], [2], [], [1, 3, 4], [3], [0, 7], [5, 8]]
-累積されていく
-何もなければ1 ~ 10の累積で55のはず
-しかし控除が累積して1 + 1 + 4(len([2] + len([1, 3, 4]))) + 5 + 7 + 9 = 27あるのでこれを引く
-dist[4]の位置にある2はL = 1の時も引っかかる
-dist[8]にある0は一回のみ引っかかって被害はN - 8 = 2
-
-エッジが伸びることでいくら減るか
-"""
-
-N = getN()
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    u, v = getNM()
-    # 前に行くように
-    if u > v:
-        u, v = v, u
-    dist[v - 1].append(u - 1)
-
-ans = 0
-cnt = 0
-for i in range(N):
-    ans += (i + 1) * (i + 2) // 2
-    # distの探索
-    for j in dist[i]:
-        cnt += (j + 1) * (N - i)
-
-print(ans - cnt)
-
-# ARC028 C - 高橋王国の分割統治
+# 京都大学プログラミングコンテスト 2019
+# C - てんびんばかり
 
 """
-全方位木dpを使わない方法で
-頂点iについて
-iの子要素の部分木のサイズを調べる
-全方位木dpの要領でやっていく
-①葉から木dpしていく
-②遡る
+N種類の分銅をK個ずつ用意できる
+どちらにも置かない　ができる
+1 ~ Mgまで測りたい
+8 2
+1, 3gの分銅を用意すればいい
+
+二分探索っぽい
+
+K個ずつ用意できる
+K = 1の時
+M = 10 なら
+10 10 のみ
+5 5 10, 5がいける
+5 6 1, 5, 6, 11がいける　最大4つ
+3 5 6 1, 2, 3, 4, 5, 6,
+
+1, 3 1, 2, 3, 4が作れる
+1, 4 1, 3, 4, 5が作れる
+1, 3, 7 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11が作れる
+1, 3, 7, 13 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+全ての重さを作ることができるか　二分探索したいが　Mは√Mぐらいで解く
+
+1, 3, 9 1, 3で1 ~ 4まで作れる 9 - 4 = 5なので9 - 4 ~ 9 + 4まで作れる
+K = 1であれば1, 3, 9, 27...と用意していく
+Kが増えれば
+K = 2
+1 1 ~ 2まで用意できる (1 * 2) * 2 + 1 = 5
+1, 5　3を作れる 1 * 2 + 5 * 2 = 12まで作れる
 """
 
-N = getN()
-E = [[] for i in range(N)]
-for i in range(N - 1):
-    p = getN()
-    E[i + 1].append(p)
-    E[p].append(i + 1)
-
-# dfsする
-ans = [0] * N
-
-def dfs(u, par):
-    res = 1 # 自分 + 子要素の部分木の大きさの合計
-    opt_c = 0 # 子要素の部分木の大きさの最大値
-    for v in E[u]:
-        if v != par:
-            c = dfs(v, u)
-            res += c
-            opt_c = max(opt_c, c)
-
-    # 親方向の部分木の大きさはN - res
-    ans[u] = max(opt_c, N - res)
-    return res
-
-dfs(0, -1)
-for i in ans:
-    print(i)
-
-# ABC146 D - Coloring Edges on Tree
-
-N = getN()
-
-dist = [[] for i in range(N)]
-edges = {}
-for i in range(N - 1):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-    edges[(a - 1, b - 1)] = i
-    edges[(b - 1, a - 1)] = i
-
-color = [-1] * N
-color[0] = 0
-ans = [0] * (N - 1)
-pos = deque([0])
-
-while pos:
-    u = pos.popleft()
-    j = 1
-    for i in dist[u]:
-        if color[i] != -1:
-            continue
-        if j == color[u]:
-            j += 1
-        color[i] = j
-        ans[edges[(i, u)]] = j
-        pos.append(i)
-        j += 1
-
-print(max(ans))
-for i in ans:
-    print(i)
-
-# ARC108 C - Keep Graph Connected
-
-# 一方のみ　rootを犠牲にする
-# 辺にラベルがついている
-# 移動先の頂点に辺の数字を書き込む
-
-# 1の書き込み方をどうするか
-
-N, M = getNM()
-E = [[] for i in range(N)]
-for i in range(M):
-    u, v, c = getNM()
-    E[u - 1].append([v - 1, c - 1])
-    E[v - 1].append([u - 1, c - 1])
-
-ans = [-1] * N
-ans[0] = 0
-q = deque([0])
-
-while q:
-    u = q.popleft()
-    for v, p in E[u]:
-        if ans[v] >= 0:
-            continue
-        # vには違う(p + 1)数字を書き込む
-        if ans[u] == p:
-            ans[v] = (p + 1) % N
-            q.append(v)
-        # vには辺の数字pを書き込む
-        else:
-            ans[v] = p
-            q.append(v)
-
-if -1 in ans:
-    print('No')
-
-for i in ans:
-    print(i + 1)
+# バシェの分銅
+# 1, 3, 9...で全ての重さを作れる
+M, K = getNM()
+cnt = 1
+ok = cnt * K
+while ok < M:
+    new = ok * 2 + 1
+    ok += new * K
+    cnt += 1
+print(cnt)
