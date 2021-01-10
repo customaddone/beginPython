@@ -51,420 +51,468 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# キーエンス プログラミング コンテスト 2019 D - Double Landscape
+# ルートの決定方法はいじれる
+class UnionFind():
+    def __init__(self, n):
+        self.n = n
+        self.parents = [-1] * n
+
+    def find(self, x):
+        if self.parents[x] < 0:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
+
+    def union(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+
+        if x == y:
+            return
+
+        if x > y: # よりrootのインデックスが小さい方が親
+            x, y = y, x
+        # if self.parents[x] > self.parents[y]:
+            # x, y = y, x
+
+        self.parents[x] += self.parents[y]
+        self.parents[y] = x
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def size(self, x):
+        return -self.parents[self.find(x)]
+
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
+
+# ARC027 B - 大事な数なのでZ回書きまLた。
 
 """
-1 ~ N * M の整数を書き込む
-i行目の数字の最大の数字はA
-j行目の数字の最大の数字はB
+N桁の数字を覚えて置きたい
+大文字アルファベットがそれぞれ0 ~ 9のうちのどれかの数字に対応している
 
-反転数の数を求める時は列ごと入れ替え、列内入れ替えを行った
-書き込みの個数を求めよ dpかcombo?
+Unionfindとか最大流とか
+N <= 18 bit　dpまで狙える
 
-条件の満たし方を考える
-まず条件を満たすものを一つ出す
-Aiがn　i行目にはnとn以下の数字しか書かれていない
+覚えておく数字について何通り考えられるか
+10 ** 18通りの数字があるがその中で？
+ただし制約がある
+候補を絞って全探索
 
-AとB両方に登場するとは限らない
-ある数について指定の場所に置かないといけない
-あとは自由 comboで求める
-3 3
-5 9 7
-3 6 9
-  5 9 7
-3
+アルファベットと各数字を対応させる通りは10 ** 26通り
+4
+1XYX
+1Z48 の場合
+X - Zは同じ
+Y - 4は同じ
+X - 8は同じ
+なのでZ - 8
+S1とS2に出てくる文字がどの数字と対応しているかを求めればいい
+
 6
-9
+PRBLMB
+ARC027 の時
 
-9を置く
-  5 9 7
-3
-6
-9   9
-8を置く　置けない！
+P - A
+B - C
+L - 0
+M - 2
+B - 7
+B - 7よりC - B - 7
+P - AグループとRに対応する数字を求めればいい
 
-二次元累積和？
-N * M ~ 1まで１つずつ数を置いていく
-iがAにある and Bにある
-・解放する部分
-今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
-・置けるとこ
-1箇所　今回解放されるとこのクロス
+UnionFindする
+出現した文字のリスト
+出現した文字が何の数字か
+"""
 
-iがAにある ^ Bにある
-・解放する部分
-今まで解放された部分と今回解放する部分の交わるとこ
-・置けるとこ
-今回解放されたとこのいずれかに置く
+def ord_chr(array, fanc):
+    if fanc == 0:
+        res = [ord(s) for s in array]
+        # res = [ord(s) - ord('a') for s in array]
+        return res
 
-A,Bにない
-現在解放されているマスのどこにでも置ける
+    if fanc == 1:
+        res = [chr(i + ord('a')) for i in array]
+        res = ''.join(res)
+        return res
+
+N = getN()
+S1 = ord_chr(input(), 0)
+S2 = ord_chr(input(), 0)
+
+U = UnionFind(100) # 数字 + アルファベットのUnion
+
+# まず結合
+for s1, s2 in zip(S1, S2):
+    if 48 <= s1 <= 57: # 数字の場合
+        s1 -= 48
+    else: # アルファベット
+        s1 -= 65
+        s1 += 10 # 数字と区別するため段差をつける
+    if 48 <= s2 <= 57:
+        s2 -= 48
+    else:
+        s2 -= 65
+        s2 += 10
+
+    U.union(s1, s2) # UnionFindは数字が小さい方がrootになるよう操作
+
+tmp = -1 # S1の先頭の文字を記録
+ans = 1
+opt = set()
+for i, s1 in enumerate(S1):
+    if 48 <= s1 <= 57:
+        s1 -= 48
+    else:
+        s1 -= 65
+        s1 += 10
+
+    if i == 0: # 先頭の文字について
+        tmp = U.find(s1)
+        # アルファベットと繋がってたら
+        # 数字と結びついてたらans = 1のまま
+        if tmp >= 10:
+            ans = 9
+
+    opt.add(U.find(s1))
+
+opt.remove(tmp) # 先頭に使ったアルファベットを消す
+
+for o in opt:
+    if o >= 10: # 数字と結びついてなければ0 ~ 10を自由に選べる
+        ans *= 10
+
+print(ans)
+
+# AtCoder Petrozavodsk Contest 001 D - Forest
+
+"""
+森です Unionfind?
+森を連結にする最小コスト
+制約的に最大流無理
+
+Impossibleの条件
+一つ繋ぐごとに頂点が２つ減り、森が一つ減る
+森が2個以上でもう繋げなくなったらimpossible
+
+小さい例から考える
+7 5
+1 2 3 4 5 6 7
+3 0
+4 0
+1 2
+1 3
+5 6　の時
+
+1 - 2 - 3 - 4 - 5
+6 - 7
+
+1と6を繋げばいい
+1 - 2
+3 - 4 - 5
+6 - 7
+の場合
+motherを一つ決める(例えば1 - 2)
+childは3 - 4 - 5, 6 - 7
+motherの一番小さい奴とchildの一番小さい奴を消費して連結する
+グループ分けする
+[1, 2]
+[3, 4, 5]
+[6, 7] 全部ヒープキュー
+小さい2つを消費(ansに加える)
+併合
+
+motherは一番でかい奴から！！！
+ゆとりのある順に並べる
+
+motherは慎重に決めないといけない
+各グループの先頭列をみる
+小さい順に使いたい
+各グループの先頭は必ず使う
+合計で2 * (g_n - 1)頂点いる
+g_n - 1については各グループの先頭にしないといけない　他のは？
+あとは自分以外のところから自由に　全てmotherの所有物
+足すのはg_n - 1回だけでいい
+
+groupの隣同士を併合するだけでいい
+要素にグループ番号をつけて前から並べる
+unionしてなかったら
+motherは決めない
+
+先頭の奴は絶対に使う
+あとは小さい順から　自分以外のとこの適当なグループの先頭に繋げてやればよい
+
+UnionFindの問題は先頭とそれ以外　という考え方をする
 """
 
 N, M = getNM()
-A = set(getList())
-B = set(getList())
-if len(A) < N or len(B) < M: # A,B内で数字がダブってたら0
+A = getList()
+que = [getList() for i in range(M)]
+
+# グループ分け
+U = UnionFind(N)
+for a, b in que:
+    U.union(a, b)
+
+group = [[] for i in range(N)]
+for i in range(N):
+    group[U.find(i)].append(A[i])
+group = [sorted(i) for i in group if len(i) > 0]
+
+if len(group) == 1:
     print(0)
     exit()
 
-ans = 1
-opened = 0 # 解放されたマス
-a_allowed = 0 # 解放された行
-b_allowed = 0 # 解放された列
+g_n = len(group)
 
-for i in range(N * M, 0, -1):
-    if (i in A) and (i in B):
-        # 解放はできる
-        opened += (a_allowed + b_allowed) + 1 # 今まで解放された部分と今回解放する部分の交わるとこ + 今回解放されるとこのクロス
-        a_allowed += 1
-        b_allowed += 1
-        opened -= 1 # 解放されたマスに置く
-        # ans *= 1 # 置けるのは1箇所　今回解放されるとこのクロス
-    elif (i in A):
-        opened += b_allowed # 解放する行 * 解放されている列
-        a_allowed += 1
-        ans *= b_allowed # 今回解放された行のいずれかに置く
-        opened -= 1
-    elif (i in B):
-        opened += a_allowed
-        b_allowed += 1
-        ans *= a_allowed
-        opened -= 1
+ans = 0
+l = []
+
+# 先頭の絶対使う奴と二番手以降の遊撃隊に分ける
+for i in range(g_n):
+    ans += group[i][0]
+    while len(group[i]) > 1:
+        u = group[i].pop()
+        l.append(u)
+
+l.sort(reverse = True)
+
+# 残りの頂点は小さい順
+for i in range(g_n - 2):
+    if l:
+        u = l.pop()
+        ans += u
     else:
-        ans *= opened # 解放されている部分のどこに置いても良い
-        opened -= 1
-
-    ans %= mod
-
+        print('Impossible')
+        exit()
 print(ans)
 
-# SoundHound Inc. Programming Contest 2018 -Masters Tournament- C - Ordinary Beauty
+# ABC183 F - Confluence
+
+class UnionFind():
+    def __init__(self,n):
+        self.n = n
+        self.parents = [i for i in range(n)]
+        self.C = [defaultdict(int) for _ in range(n)]
+        self.size = [1] * n # サイズの大きさ
+
+    def find(self,x):
+        if self.parents[x] == x:
+            return x
+        else:
+            self.parents[x] = self.find(self.parents[x])
+            return self.parents[x]
+
+    def same(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def unite(self, x, y):
+        xRoot = self.find(x)
+        yRoot = self.find(y)
+        if xRoot == yRoot:
+            return
+
+        # サイズに基づいてrootを決める
+        if self.size[xRoot] < self.size[yRoot]:
+            xRoot, yRoot = yRoot, xRoot
+
+        self.parents[yRoot] = xRoot
+        self.size[xRoot] += self.size[yRoot]
+        self.size[yRoot] = 0
+
+        # 小さいサイズのものを大きいサイズの方に入れる
+        for k,v in self.C[yRoot].items():
+            self.C[xRoot][k] += v
+
+    def members(self, x):
+        root = self.find(x)
+        return [i for i in range(self.n) if self.find(i) == root]
+
+    def roots(self):
+        return [i for i, x in enumerate(self.parents) if x < 0]
+
+    def all_group_members(self):
+        return {r: self.members(r) for r in self.roots()}
+
+N, Q = getNM()
+tree = UnionFind(N)
+C = getList()
+
+# 使いたいときは使ったらいい
+for i in range(N):
+    tree.C[i][C[i] - 1] += 1
+
+for _ in range(Q):
+    q, a, b = getNM()
+    if q == 1:
+        tree.unite(a - 1, b - 1)
+    else:
+        r = tree.find(a - 1)
+        print(tree.C[r][b - 1])
+
+# ABC049 D - 連結
+
+N, K, L = getNM()
+road = [getList() for i in range(K)]
+line = [getList() for i in range(L)]
+
+# 道路をやる
+R = UnionFind(N)
+for p, q in road:
+    R.union(p - 1, q - 1)
+
+L = UnionFind(N)
+for i in range(N): # 自分がどの道路グループにいるか
+    L.C[i][R.find(i)] += 1
+
+for r, s in line:
+    L.union(r - 1, s - 1)
+
+# 自分の線路グループL.find(i)にある自分の道路グループR.find(i)の数
+ans = [L.C[L.find(i)][R.find(i)] for i in range(N)]
+print(*ans)
+
+# ABC173 F - Intervals on Tree
+# ある意味Unionfindか
+# 新しい頂点を加えると、連結成分が1 - (既にある頂点へのエッジ)の分増える
 
 """
-差の絶対値がdであるものだけをピックアップ
-合計でn ** m通り
-期待値　通りの数は求めなくていい
-m - 1の内1 ~ m - 1箇所について
-1つめの数字 n通り
-2つめの数字 n通りあるが、この内条件を満たす通りは
-上向き　1つ目 1なら 1 + d
-　　　　 　　 2なら 2 + d...(n - d)通り
-            n - dなら n
-下向きも同様に (n - d)通り
-合計2 * (n - d)通り
-つまりm - 1のうちの一つの谷間が条件を満たす確率は
-2(n - d) / n ** 2
-あとは美しさが1, 2...m - 1のものを足し合わせるだけ
-comboすら必要ない？
+木の問題
+N <= 10 ** 5
+辺があると連結するので連結成分の個数が減る
+L,RをnC2通り求める
+bitは普通に間に合わない
 
-足し合わせで求められる
-1つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
-2つ目が条件を満たす通り 2(n - d) / n ** 2 * (n ** M 全通り）足す
-1つ目が条件を満たす　と　2つ目が条件を満たす　は互いに独立
-n - dが0になることもそうすれば求める値は0
-またDが0なら上向き下向きではなく同じ値しか取れない
-"""
+やっぱり分解して考える
+小さいのから
+L = 1の時
+R = 1 ~ N これにO(1)で答える
+R = 1
+1
+R = 2 2は1と繋がってない
+1
+2 2
+R = 3 3は1, 2と繋がっている
+1 2 3 1
 
-N, M, D = getNM()
-# (M - 1): 1 ~ M - 1まで足し合わせる
-# 2 * (N - D): 2 * (N - D)) / (N ** 2) * (n ** M）を(n ** M）で割って平均値を出す
-if D == 0:
-    print((M - 1) * (max(0, N - D)) / (N ** 2))
-else:
-    print((M - 1) * 2 * (max(0, N - D)) / (N ** 2))
+頂点1は何回数えられるか
+頂点1が含まれるのは3回
+頂点2が含まれるのは4回
+頂点3が含まれるのは3回
 
-# AGC025 B - RGB Coloring
+木dpとか
+前から順にやる？
 
-"""
-数え上げcomboだろ
-rgbなのでbitもある
+Rで新しい数を入れると急に結合したりする
+数え上げでしょう
 
-ブロックが縦一列にあり、これを塗っていく
-赤色: A点
-緑色: A + B点
-青色: B点
-KはでかいがN, A, Bは小さい
-塗らないブロックがあってもいい　→ 塗らないブロックが1個、2個...N個の場合
+ダブった部分を引く
+全ての部分木の大きさを求めるのは無理そう
+新しい要素は高々２つの要素を繋げるだけ
 
-4 1 2 5 の場合
-緑色1つ、青色1つ 4 * 3
-赤色1つ、青色2つ 4 * 3
-赤色2つ、緑色1つ 4 * 3
-赤色3つ、青色1つ 4 * 1
-の40通り
-組み合わせを考えればいい
-
-赤を固定すると 各O(1)で
-赤0個, 赤1個, 赤2個...赤N個
-緑の個数を決めれば青の個数も定まる　これだとO(N ** 2)
-緑色: A + B点 が奇妙
-緑色: 赤と青を同時に塗ると考えれば
-A点加算されるブロックがi個(0 <= i <= N), B点加算されるブロックがj個
-A点が0個、1個...N個の場合を調べる
-4 1 2 5 の場合
-A点: 0個　なし
-A点: 1個(1点) B点は2個(4点)
-A点: 2個(2点) なし
-A点: 3個(3点) B点は1個(2点)
-A点: 4個(4点) なし
-
-A点に重ねて置いたB点（緑色になる）とそうでないB点は区別される
-
-数え上げの問題は包除原理使ってダブったのを捨てたり
-既に目標を達成した部分集合のcnt, まだ目標を達成してない部分集合とその達成度のcntを保持したり
-今回のように分解して解いたりできる
-"""
-
-N, A, B, K = getNM()
-ans = 0
-# A点が0個、1個...N個の場合を調べる
-for alpha in range(N + 1):
-    if (K - (A * alpha)) % B != 0:
-        continue
-    beta = (K - (A * alpha)) // B
-    ans += (cmb(N, alpha) * cmb(N, beta)) % mod
-    ans %= mod
-
-print(ans)
-
-# ABC127 E - Cell Distance
-
-"""
-全ての場合　＝　全ての通りの数をまず考える
-そのあと、ある事象が出現する確率を求める
-
-全ての通りは nmCk
-平均値の考え方　
-つまりO(N + M)の足し合わせみたいな
-ダブった奴は割ったり引いたりすればいい
-
-2 2 2なら
-4 * 3 // 2! = 6通り　順列分あとでわる
-nCr通りある
-この中でマスiとjが同時に出現する確率は　一定のはず
-iとjが同時に出現するのはn-2Ck-2通り
-iとjの選び方 nC2通り
-コストiになるペアがいくつあるか
-iとjのコスト * n-2Ck-2 をnC2通りやる
-nC2通りのうちいくつがコストi
-H - a * W - b コストa + b
-コストのとり方は最大でもN + M - 2数え上げ
-
-マンハッタン距離は上下と左右別々に求められる
-
-こういう問題でコストiを何回足したらいいかを考えるのは鉄則
-コストの規則性が分かりづらい　分けて考える
-コストiを何回足したらいいかは難しそう　マスiについてのコストの総和を求めればいい
-
-(1, 1)について
-横方向のマンハッタン距離
-距離1: 1 * H個
-距離2: 1 * H個...
-距離W - 1: 1 * H個
-つまり(1, 1)についてコストの合計はW(W - 1) // 2 * H * (n-2Ck-2)
-これを(1, 1) ~ (H, 1)までH回やる
-
-(1, 2)について
-距離1: 1 * H個
-距離2: 1 * H個...
-距離W - 2: 1 * H個
-(1, 2)についてコストの合計は(W - 1)(W - 2) // 2 * H * (n-2Ck-2)
-これを(1, 2) ~ (H, 2)までH回やる
-
-これを縦方向のマンハッタン距離でもやる
-
-巨大数のcmbをどうやる？
-n-2Ck-2
-"""
-
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
-
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-
-N, M, K = getNM()
+for i in range(N - 1):
+    u, v = getNM()
+    if u > v:
+        u, v = v, u
+    # 前に戻るエッジのみ
+    dist[v - 1].append(u - 1)
+for i in range(N):
+    dist[i].sort()
 
 ans = 0
-for i in range(M - 1, 0, -1):
-    ans += i * (i + 1) * (N ** 2) // 2
-    ans %= mod
+for i in range(N): # L
+    cnt = 0
+    for j in range(i, N): # R
+        # 範囲外に伸びるエッジは無視
+        cnt += 1 - (len(dist[j]) - bisect_left(dist[j], i))
+        ans += cnt
 
-for i in range(N - 1, 0, -1):
-    ans += i * (i + 1) * (M ** 2) // 2
-    ans %= mod
+これはO(N ** 2)かかる
+[[], [], [], [], [2], [], [1, 3, 4], [3], [0, 7], [5, 8]]
+累積されていく
+何もなければ1 ~ 10の累積で55のはず
+しかし控除が累積して1 + 1 + 4(len([2] + len([1, 3, 4]))) + 5 + 7 + 9 = 27あるのでこれを引く
+dist[4]の位置にある2はL = 1の時も引っかかる
+dist[8]にある0は一回のみ引っかかって被害はN - 8 = 2
 
-print(ans * cmb(N * M - 2, K - 2) % mod)
-
-# ABC168 E - ∙ (Bullet)
-
-"""
-美味しさA 香りB
-一匹以上を入れる通りの数
-そのままだと通りの数は2 ** N通り
-ただし、かけ合わせると0になるものは一緒に入れられない
-全て - NGの組み合わせを含むものもできる
-
-Ai * Aj = -1 * Bi * Bj になるとだめ
-マイナス逆数になるとだめ
-M = defaultdict(int)
-O = defaultdict(int)
-
-for a, b in I:
-    split = math.gcd(abs(a), abs(b))
-    M[(a // split), (b // split)] += 1
-    O[(a // split), (b // split)] += 1
-
-for a, b in I:
-    print(a, b)
-    print(O[(-b, a)], O[(b, -a)])
-個数でもつ
-dictで持てるんでは
-
-一緒にできないペアはわかった
-
-1番目までを使い、1番目を含む通り 2 ** 0 = 1通り
-2番目までを使い、2番目を含む通り 2 ** 1 = 2 通り
-3番目までを使い、3番目を含む通り 1は一緒に使えないので0(使わない)固定
-2 ** (2 - 1) = 2通り
-
-これまでに弾かれた通りを保持しておく
-10
-3 2
-3 2
--1 1
-2 -1
--3 -9
--8 12
-7 7
-8 1
-8 2
-8 4
-
--8 12 が存在する通り 2 ** 5 = 32通り
-そのうち32は登場しないようにするため2 ** (5 - 2) = 8通りのみ
-3 2登場 1通り
-3 2登場 前の3 2がある通り1通り + 無い通り1通り = 2通り
-
-どちらかが0の場合がある
-
-グループ組み合わせ掛け算
-(2, 1)と(-1, 2)は同時に選べないのでペアにする
-この時、(-1, 2)と(1, -2)は同値として扱う(1, 2, マイナス)とでもしとく
+エッジが伸びることでいくら減るか
 """
 
 N = getN()
+dist = [[] for i in range(N)]
+for i in range(N - 1):
+    u, v = getNM()
+    # 前に行くように
+    if u > v:
+        u, v = v, u
+    dist[v - 1].append(u - 1)
 
-d = defaultdict(int)
-z = 0
-for _ in range(N):
-    a, b = getNM()
-    if a == 0 and b == 0: # 後で足す
-        z += 1
-        continue
-    # a == 0の場合は(0, 1)で登録
-    if a == 0:
-        b = 1
-    if b == 0:
-        a = 1
-    if b < 0: # 強制的にbがプラスになるように
-        a, b = -a, -b
-    g = math.gcd(a, b)
-    a //= g
-    b //= g
-    d[(a, b)] += 1
-
-res = 1
-seen = set()
-for k in list(d):
-    a, b = k
-    if k in seen:
-        continue
-
-    # 掛けると0になる相手を作る
-    if a < 0:
-        x, y = b, -a
-    else:
-        x, y = -b, a
-    if a == 0:
-        x, y = 1, 0
-    if b == 0:
-        x, y = 0, 1
-
-    # 計算
-    res *= pow(2, d[(a, b)], mod) + pow(2, d[(x, y)], mod) - 1
-    res %= mod
-    # print(res)
-    seen.add(k)
-    seen.add((x,y))
-
-res += z
-res -= 1
-
-print(res % mod)
-
-# パ研合宿2020　第1日「SpeedRun」L - のびたす 
-
-"""
-x nob y はx, yを文字列として見る
-全ての場合を求める
-だいたいは成分分解
-
-2 ** Q通りある
-分解して数え上げ
-
-x + Ai or x nob Ai
-全て操作1, 操作2の場合は楽
-
-nobとは ?
-x * 10 ** (len(Ai)) + Aiすること
-結局Aiをたすのは変わらない　そのAiがどうなっていくか
-操作2を行う時点で10 ** (len(Ai))される
-
-それ以降の操作でnobされるか
-10 ** (len(Ai))される場合とされない場合
-x（初期値）は
-1でされる cnt += 100 されない cnt += 1
-4 10
-12
-21
-30
-9 の場合
-
-合計16通り
-10はされる、されないが16通り
-12はされる、されないが8通り あとで2倍する
-21はされる、されないが4通り　あとで4倍する
-
-powする
-"""
-
-Q, X = getNM()
-A = getArray(Q)
-l = [len(str(A[i])) for i in range(Q)]
-
-cnt = [1] * (Q + 1)
 ans = 0
-for i in range(Q - 1, -1, -1):
-    cnt[i] = (cnt[i + 1] * (pow(10, l[i], mod) + 1)) % mod
-for i in range(Q + 1):
-    cnt[i] *= pow(2, i, mod)
-    cnt[i] %= mod
+cnt = 0
+for i in range(N):
+    ans += (i + 1) * (i + 2) // 2
+    # distの探索
+    for j in dist[i]:
+        cnt += (j + 1) * (N - i)
 
-ans += X * cnt[0]
-for i in range(Q):
-    ans += A[i] * cnt[i + 1]
-    ans %= mod
-print(ans % mod)
+print(ans - cnt)
+
+# ARC111 Reversible Cards
+"""
+N枚のカードがある
+表面に見える色の種類の最大値　二分探索できない？
+a, bのどちらかしか選べない　
+種類の数だけでいい　貪欲？
+最大数を達成する場合　どれか一枚を裏返しても他の色になるかすでに見えてる色になるか
+
+dpも考えられる
+貪欲が有力　誰が何を担当するか　レア/コモンならレアを表にすると損はない
+
+まずaのみ表にする　ダブってるものは捨てられる
+5 5 ○
+5 2
+5 6
+1 2
+9 7
+2 7
+4 2 ○
+6 7 ○
+2 2
+7 8 ○
+9 7
+1 8
+超頂点する
+木になっていない集合は超頂点に繋いでまとめて１つで数える
+木になっていない集合 U.size(U.root(i))(木になっていない集合の集まり + 超頂点) - 1(超頂点)
+木になっている集合 U.size(U.root(i)) - 1 集合のうちどれか一つはとることができない
+"""
+
+N = getN()
+ma = 10 ** 6
+U = UnionFind(ma + 1)
+for i in range(N):
+    a, b = getNM()
+    a -= 1
+    b -= 1
+    # aとbが同じ集合ならb = 超頂点に繋ぐ
+    if U.same(a, b):
+        b = ma
+    U.union(a, b)
+
+ans = 0
+# 全ての色を調べる
+for i in range(ma + 1):
+    if i == U.find(i):
+        ans += U.size(i) - 1
+print(ans)
