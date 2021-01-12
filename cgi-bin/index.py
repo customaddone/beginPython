@@ -51,468 +51,474 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ルートの決定方法はいじれる
-class UnionFind():
+# ABC038 D-プレゼント
+class BIT:
     def __init__(self, n):
         self.n = n
-        self.parents = [-1] * n
+        self.data = [0] * (n + 1)
 
-    def find(self, x):
-        if self.parents[x] < 0:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
+    def ope(self, x, y):
+        return max(x, y)
 
-    def union(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
+    def update(self, i, v):
+        j = i
+        while j <= self.n:
+            self.data[j] = self.ope(self.data[j], v)
+            j += j & -j
 
-        if x == y:
-            return
+    def query(self, i):
+        ret = 0
+        j = i
+        while 0 < j:
+            ret = self.ope(self.data[j], ret)
+            j &= (j - 1)
+        return ret
 
-        if x > y: # よりrootのインデックスが小さい方が親
-            x, y = y, x
-        # if self.parents[x] > self.parents[y]:
-            # x, y = y, x
+bit = BIT(10 ** 5)
 
-        self.parents[x] += self.parents[y]
-        self.parents[y] = x
+for w, h in que:
+    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
+    # 最初は0個
+    q = bit.query(h - 1)
+    # 高さhの時の箱の数を更新
+    bit.update(h, q + 1)
+print(bit.query(10 ** 5))
 
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
+# ABC140 E - Second Sum
+# [Pl, Pr]間で２番目に大きいものの総和を
+# l, rについてのnC2通りの全てについて求めよ
 
-    def size(self, x):
-        return -self.parents[self.find(x)]
+# 8 2 7 3 4 5 6 1
+# 8 2: 2
+# 8 2 7: 7
+# 2 7 3: 3
+# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
+# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
 
-    def members(self, x):
-        root = self.find(x)
-        return [i for i in range(self.n) if self.find(i) == root]
+# N <= 10 ** 5
+# Piが２番目になる通りが何通り　みたいな感じで求められる？
+# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
 
-    def roots(self):
-        return [i for i, x in enumerate(self.parents) if x < 0]
+# ヒープキューとか使える？
+# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
+# 尺取り使える？
 
-    def all_group_members(self):
-        return {r: self.members(r) for r in self.roots()}
+# 累積？　一番
 
-# ARC027 B - 大事な数なのでZ回書きまLた。
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-"""
-N桁の数字を覚えて置きたい
-大文字アルファベットがそれぞれ0 ~ 9のうちのどれかの数字に対応している
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-Unionfindとか最大流とか
-N <= 18 bit　dpまで狙える
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-覚えておく数字について何通り考えられるか
-10 ** 18通りの数字があるがその中で？
-ただし制約がある
-候補を絞って全探索
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-アルファベットと各数字を対応させる通りは10 ** 26通り
-4
-1XYX
-1Z48 の場合
-X - Zは同じ
-Y - 4は同じ
-X - 8は同じ
-なのでZ - 8
-S1とS2に出てくる文字がどの数字と対応しているかを求めればいい
-
-6
-PRBLMB
-ARC027 の時
-
-P - A
-B - C
-L - 0
-M - 2
-B - 7
-B - 7よりC - B - 7
-P - AグループとRに対応する数字を求めればいい
-
-UnionFindする
-出現した文字のリスト
-出現した文字が何の数字か
-"""
-
-def ord_chr(array, fanc):
-    if fanc == 0:
-        res = [ord(s) for s in array]
-        # res = [ord(s) - ord('a') for s in array]
-        return res
-
-    if fanc == 1:
-        res = [chr(i + ord('a')) for i in array]
-        res = ''.join(res)
-        return res
+    def lowerbound(self,w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
 N = getN()
-S1 = ord_chr(input(), 0)
-S2 = ord_chr(input(), 0)
-
-U = UnionFind(100) # 数字 + アルファベットのUnion
-
-# まず結合
-for s1, s2 in zip(S1, S2):
-    if 48 <= s1 <= 57: # 数字の場合
-        s1 -= 48
-    else: # アルファベット
-        s1 -= 65
-        s1 += 10 # 数字と区別するため段差をつける
-    if 48 <= s2 <= 57:
-        s2 -= 48
-    else:
-        s2 -= 65
-        s2 += 10
-
-    U.union(s1, s2) # UnionFindは数字が小さい方がrootになるよう操作
-
-tmp = -1 # S1の先頭の文字を記録
-ans = 1
-opt = set()
-for i, s1 in enumerate(S1):
-    if 48 <= s1 <= 57:
-        s1 -= 48
-    else:
-        s1 -= 65
-        s1 += 10
-
-    if i == 0: # 先頭の文字について
-        tmp = U.find(s1)
-        # アルファベットと繋がってたら
-        # 数字と結びついてたらans = 1のまま
-        if tmp >= 10:
-            ans = 9
-
-    opt.add(U.find(s1))
-
-opt.remove(tmp) # 先頭に使ったアルファベットを消す
-
-for o in opt:
-    if o >= 10: # 数字と結びついてなければ0 ~ 10を自由に選べる
-        ans *= 10
-
-print(ans)
-
-# AtCoder Petrozavodsk Contest 001 D - Forest
-
-"""
-森です Unionfind?
-森を連結にする最小コスト
-制約的に最大流無理
-
-Impossibleの条件
-一つ繋ぐごとに頂点が２つ減り、森が一つ減る
-森が2個以上でもう繋げなくなったらimpossible
-
-小さい例から考える
-7 5
-1 2 3 4 5 6 7
-3 0
-4 0
-1 2
-1 3
-5 6　の時
-
-1 - 2 - 3 - 4 - 5
-6 - 7
-
-1と6を繋げばいい
-1 - 2
-3 - 4 - 5
-6 - 7
-の場合
-motherを一つ決める(例えば1 - 2)
-childは3 - 4 - 5, 6 - 7
-motherの一番小さい奴とchildの一番小さい奴を消費して連結する
-グループ分けする
-[1, 2]
-[3, 4, 5]
-[6, 7] 全部ヒープキュー
-小さい2つを消費(ansに加える)
-併合
-
-motherは一番でかい奴から！！！
-ゆとりのある順に並べる
-
-motherは慎重に決めないといけない
-各グループの先頭列をみる
-小さい順に使いたい
-各グループの先頭は必ず使う
-合計で2 * (g_n - 1)頂点いる
-g_n - 1については各グループの先頭にしないといけない　他のは？
-あとは自分以外のところから自由に　全てmotherの所有物
-足すのはg_n - 1回だけでいい
-
-groupの隣同士を併合するだけでいい
-要素にグループ番号をつけて前から並べる
-unionしてなかったら
-motherは決めない
-
-先頭の奴は絶対に使う
-あとは小さい順から　自分以外のとこの適当なグループの先頭に繋げてやればよい
-
-UnionFindの問題は先頭とそれ以外　という考え方をする
-"""
-
-N, M = getNM()
-A = getList()
-que = [getList() for i in range(M)]
-
-# グループ分け
-U = UnionFind(N)
-for a, b in que:
-    U.union(a, b)
-
-group = [[] for i in range(N)]
+P = getList()
+dic = {}
+bit = BIT(N)
 for i in range(N):
-    group[U.find(i)].append(A[i])
-group = [sorted(i) for i in group if len(i) > 0]
+    dic[P[i]] = i + 1
 
-if len(group) == 1:
-    print(0)
-    exit()
-
-g_n = len(group)
-
+# 両端に何もない時用
+# [0] + Pの各要素 + [N + 1]みたいになる
+dic[0] = 0
+dic[N + 1] = N + 1
 ans = 0
-l = []
 
-# 先頭の絶対使う奴と二番手以降の遊撃隊に分ける
-for i in range(g_n):
-    ans += group[i][0]
-    while len(group[i]) > 1:
-        u = group[i].pop()
-        l.append(u)
-
-l.sort(reverse = True)
-
-# 残りの頂点は小さい順
-for i in range(g_n - 2):
-    if l:
-        u = l.pop()
-        ans += u
-    else:
-        print('Impossible')
-        exit()
+for i in range(N, 0, -1):
+    # 8のインデックス、7のインデックス...に1を登録していく
+    bit.add(dic[i], 1)
+    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
+    c = bit.get(dic[i] + 1)
+    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
+    # l2: l1の一つ左側にあるもの
+    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
+    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
+    # r2: r1の一つ右側にあるもの
+    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
+    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
+    ans += S * i
 print(ans)
 
-# ABC183 F - Confluence
+# ABC174 F - Range Set Query
 
-class UnionFind():
-    def __init__(self,n):
-        self.n = n
-        self.parents = [i for i in range(n)]
-        self.C = [defaultdict(int) for _ in range(n)]
-        self.size = [1] * n # サイズの大きさ
-
-    def find(self,x):
-        if self.parents[x] == x:
-            return x
-        else:
-            self.parents[x] = self.find(self.parents[x])
-            return self.parents[x]
-
-    def same(self, x, y):
-        return self.find(x) == self.find(y)
-
-    def unite(self, x, y):
-        xRoot = self.find(x)
-        yRoot = self.find(y)
-        if xRoot == yRoot:
-            return
-
-        # サイズに基づいてrootを決める
-        if self.size[xRoot] < self.size[yRoot]:
-            xRoot, yRoot = yRoot, xRoot
-
-        self.parents[yRoot] = xRoot
-        self.size[xRoot] += self.size[yRoot]
-        self.size[yRoot] = 0
-
-        # 小さいサイズのものを大きいサイズの方に入れる
-        for k,v in self.C[yRoot].items():
-            self.C[xRoot][k] += v
-
-    def members(self, x):
-        root = self.find(x)
-        return [i for i in range(self.n) if self.find(i) == root]
-
-    def roots(self):
-        return [i for i, x in enumerate(self.parents) if x < 0]
-
-    def all_group_members(self):
-        return {r: self.members(r) for r in self.roots()}
-
+# 色の種類
+# 同じ色のボールがある場合、どの情報があれば良いか
+# 最もrに近いボールの位置がわかればいい
 N, Q = getNM()
-tree = UnionFind(N)
-C = getList()
+C = [0] + getList() # 1-indexに
+que = [[] for i in range(N + 1)]
+for i in range(Q):
+    l, r = getNM()
+    que[r].append([l, i])
 
-# 使いたいときは使ったらいい
-for i in range(N):
-    tree.C[i][C[i] - 1] += 1
+ans = [0] * Q # これだけ0-index
+place = [-1] * (N + 1) # 一番右にあるボールの場所
+bit = BIT(N + 1) # できるならbitに
 
-for _ in range(Q):
-    q, a, b = getNM()
-    if q == 1:
-        tree.unite(a - 1, b - 1)
+# 前から更新していく
+for r in range(1, N + 1):
+    # 更新
+    c = C[r]
+    bit.add(r, 1) # 立てる
+    if place[c] > 0: # 登録済みなら
+        bit.add(place[c], -1)
+    place[c] = r
+
+    # 答える
+    while que[r]:
+        l, index = que[r].pop()
+        ans[index] = bit.cum(l, r + 1)
+
+for a in ans:
+    print(a)
+
+# ARC031 C - 積み木
+"""
+最小回数を求める
+ヒストグラムは
+A = {1, 2, 3...}について
+Aiより左にある自分より小さいものの数　の総和
+順番は小さい順に
+2 4 1 3　1を動かす
+一回動かしたものはswapに関係なくなる
+"""
+
+N = getN()
+B = [0] + getList()
+B = [[B[i], i] for i in B]
+B.sort(reverse = True)
+
+bit = BIT(N + 1)
+
+ans = 0
+# 今までi - 1個置いた
+for i, (val, ind) in enumerate(B[:-1]):
+    # 左にある自分より大きいもの vs 右にある自分より大きいもの
+    ans += min(bit.get(ind), bit.cum(ind, N + 1))
+    bit.add(ind, 1)
+
+print(ans)
+
+
+# ARC033 C - データ構造
+# 座圧BIT
+Q = getN()
+que = [getList() for i in range(Q)]
+
+# データに入れる数字を抽出する
+A = []
+for t, x in que:
+    if t == 1:
+        A.append(x)
+# 座標圧縮
+# alter: A[i] → alt_A[i]
+# rev: alt[i] → A[i]
+def compress(array):
+    s = set(array)
+    s = sorted(list(s))
+    alter = {}
+    rev = {}
+    for i in range(len(s)):
+        alter[s[i]] = i
+        rev[i] = s[i]
+
+    return alter, rev
+
+alter, rev = compress(A)
+
+limit = Q + 1
+bit = BIT(limit)
+for t, x in que:
+    if t == 1:
+        bit.add(alter[x] + 1, 1)
     else:
-        r = tree.find(a - 1)
-        print(tree.C[r][b - 1])
+        # xを超えないギリギリの場所が1-indexで与えられる
+        opt = bit.lowerbound(x) - 1
+        # 1-indexなのでそのままprintする
+        print(rev[opt])
+        # xを超えないギリギリの場所の一つ右を-1する
+        bit.add(opt + 1, -1)
 
-# ABC049 D - 連結
-
-N, K, L = getNM()
-road = [getList() for i in range(K)]
-line = [getList() for i in range(L)]
-
-# 道路をやる
-R = UnionFind(N)
-for p, q in road:
-    R.union(p - 1, q - 1)
-
-L = UnionFind(N)
-for i in range(N): # 自分がどの道路グループにいるか
-    L.C[i][R.find(i)] += 1
-
-for r, s in line:
-    L.union(r - 1, s - 1)
-
-# 自分の線路グループL.find(i)にある自分の道路グループR.find(i)の数
-ans = [L.C[L.find(i)][R.find(i)] for i in range(N)]
-print(*ans)
-
-# ABC173 F - Intervals on Tree
-# ある意味Unionfindか
-# 新しい頂点を加えると、連結成分が1 - (既にある頂点へのエッジ)の分増える
+# AGC005 B - Minimum Sum
 
 """
-木の問題
-N <= 10 ** 5
-辺があると連結するので連結成分の個数が減る
-L,RをnC2通り求める
-bitは普通に間に合わない
-
-やっぱり分解して考える
-小さいのから
-L = 1の時
-R = 1 ~ N これにO(1)で答える
-R = 1
-1
-R = 2 2は1と繋がってない
-1
-2 2
-R = 3 3は1, 2と繋がっている
-1 2 3 1
-
-頂点1は何回数えられるか
-頂点1が含まれるのは3回
-頂点2が含まれるのは4回
-頂点3が含まれるのは3回
-
-木dpとか
-前から順にやる？
-
-Rで新しい数を入れると急に結合したりする
-数え上げでしょう
-
-ダブった部分を引く
-全ての部分木の大きさを求めるのは無理そう
-新しい要素は高々２つの要素を繋げるだけ
-
-for i in range(N - 1):
-    u, v = getNM()
-    if u > v:
-        u, v = v, u
-    # 前に戻るエッジのみ
-    dist[v - 1].append(u - 1)
-for i in range(N):
-    dist[i].sort()
-
-ans = 0
-for i in range(N): # L
-    cnt = 0
-    for j in range(i, N): # R
-        # 範囲外に伸びるエッジは無視
-        cnt += 1 - (len(dist[j]) - bisect_left(dist[j], i))
-        ans += cnt
-
-これはO(N ** 2)かかる
-[[], [], [], [], [2], [], [1, 3, 4], [3], [0, 7], [5, 8]]
-累積されていく
-何もなければ1 ~ 10の累積で55のはず
-しかし控除が累積して1 + 1 + 4(len([2] + len([1, 3, 4]))) + 5 + 7 + 9 = 27あるのでこれを引く
-dist[4]の位置にある2はL = 1の時も引っかかる
-dist[8]にある0は一回のみ引っかかって被害はN - 8 = 2
-
-エッジが伸びることでいくら減るか
+全ての連続部分列について、その最小値の総和を求めよ
+N = 3
+A = [2, 1, 3]の時
+[2]:2 [1]:1 [3]:3
+[2, 1]:1 [1, 3]:1
+[2, 1, 3]:1
+合計9
+BITを使うと思う
+小さいものから順に置いていく
+iが最小値を取る領域[l, r]を求める
+1を置く
+[ , 1, ]
+この時、左端は1番目、右端は3番目までを領域に含めることができる
+左側は2 - 1 + 1 = 2通り、右側は3 - 2 + 1 = 2通りある
+ans += (2 - 1 + 1) * (3 - 2 + 1) * 1
+2を置く
+[2, 1, ]
+左端は1番目、右端も1番目
 """
 
 N = getN()
-dist = [[] for i in range(N)]
-for i in range(N - 1):
-    u, v = getNM()
-    # 前に行くように
-    if u > v:
-        u, v = v, u
-    dist[v - 1].append(u - 1)
-
-ans = 0
-cnt = 0
+A = getList()
+index = [0] * (N + 1)
 for i in range(N):
-    ans += (i + 1) * (i + 2) // 2
-    # distの探索
-    for j in dist[i]:
-        cnt += (j + 1) * (N - i)
+    index[A[i]] = i + 1
 
-print(ans - cnt)
+bit = BIT(N)
+ans = 0
+for i in range(1, N + 1):
+    c = bit.get(index[i]) # 左側にあるフラグの数を求める
+    # フラグがc個になる場所 + 1、フラグがc + 1個にある場所 - 1を求める
+    # つまり、
+    # 左側にある自分より小さいもののうち最も右側にあるもの + 1
+    # 右側にある自分より小さいもののうち最も左側にあるもの - 1
+    # の場所を求める
+    l, r = bit.lowerbound(c) + 1, bit.lowerbound(c + 1) - 1
+    ans += (index[i] - l + 1) * (r - index[i] + 1) * i
+    bit.add(index[i], 1) # 自身を置く
+print(ans)
 
-# ARC111 Reversible Cards
+# ARC069 E - Frequency
+
 """
-N枚のカードがある
-表面に見える色の種類の最大値　二分探索できない？
-a, bのどちらかしか選べない　
-種類の数だけでいい　貪欲？
-最大数を達成する場合　どれか一枚を裏返しても他の色になるかすでに見えてる色になるか
+N個の山がある
+石の数が最大の山のうち最も前の番号をsにappend
+石を一つとる
+これを繰り返す
 
-dpも考えられる
-貪欲が有力　誰が何を担当するか　レア/コモンならレアを表にすると損はない
+Sが辞書順で最小の数列になるようにした時、sに数はそれぞれいくつずつ含まれるか
+A = [1, 2, 1, 3, 2, 4, 2, 5, 8, 1]の時
+Sの最終的な長さはsum(A)
 
-まずaのみ表にする　ダブってるものは捨てられる
-5 5 ○
-5 2
-5 6
-1 2
-9 7
-2 7
-4 2 ○
-6 7 ○
-2 2
-7 8 ○
-9 7
-1 8
-超頂点する
-木になっていない集合は超頂点に繋いでまとめて１つで数える
-木になっていない集合 U.size(U.root(i))(木になっていない集合の集まり + 超頂点) - 1(超頂点)
-木になっている集合 U.size(U.root(i)) - 1 集合のうちどれか一つはとることができない
+S = []
+S = [9]: 一つ目はどういう操作をしても共通
+出来るだけ前の方のをindexに指定したい
+最大値の位置を出来るだけ前に寄せるためには？
+現在より前の数字について最大の数字に移動する セグ木?
+
+現在より前の数字について最大の数字まで数を減らす
+それより後ろの数字についてnextの数字まで減らす
+A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
+1 + 1つの5を4まで下げる
+A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
+
+前からとって行った時の最小値の場所しか加算されない
+この場合[1, 2,  , 3,  , 4,  , 5, 8,  ]
+index = 9についてindex以降の数字を全て5まで下げる
+ans[index] += index以降の5以上の部分
+index = 8についてindex以降の数字を全て4まで下げる
+ans[index] += index以降の4以上5以下の部分
+5以上を加算、４以上４以下を加算、３以上３以下を
+この場所にどのように加算するか
+全てのindexについてO(1)で答えるか？
+５以上のものを足す、４以上のものを足す...
+
+各場所ind_l[i]についてそれより右側の部分のunder以上upper未満の部分について
+総和を求める
+
+BITを使って
+ある範囲内のunder以上の場所の数を答える　これは簡単
+          upper以下の場所の数を答える　これも簡単 bitの結果を足し引きすればOK
+
 """
 
 N = getN()
-ma = 10 ** 6
-U = UnionFind(ma + 1)
-for i in range(N):
-    a, b = getNM()
-    a -= 1
-    b -= 1
-    # aとbが同じ集合ならb = 超頂点に繋ぐ
-    if U.same(a, b):
-        b = ma
-    U.union(a, b)
+A = getList()
 
+cnt = [] # 数字iがどこにあるか
+ma = [] # 1 ~ i個目までの最大値
+for i in range(N):
+    cnt.append([A[i], i + 1])
+    if i == 0:
+        ma.append(A[i])
+    else:
+        ma.append(max(ma[-1], A[i]))
+
+ind_l = [] # 加算する場所
+for i in range(N - 1, 0, -1):
+    if ma[i - 1] < ma[i]:
+        ind_l.append(i + 1)
+ind_l.append(1)
+ma.insert(0, 0) # 1-indexに修正した方がいい
+ma.insert(0, 0)
+
+cnt.sort()
+
+upper = max(A)
+bit = BIT(N)
+ans = [0] * (N + 1)
+
+# 自分より右側のunder ~ upperを足し合わせる
+for i in range(len(ind_l)):
+    index = ind_l[i]
+    under = ma[ind_l[i]]
+    left = 0
+    while cnt and cnt[-1][0] > under:
+        p, ind = cnt.pop()
+        left += max(0, upper - p) # upperに到達しない部分について控除分
+        bit.add(ind, 1)
+    ans[index] = bit.cum(index, N + 1) * (upper - under) - left
+    upper = under
+
+for i in ans[1:]:
+    print(i)
+
+# ARC075 E - Meaningful Mean
+
+N, K = getNM()
+A = getArray(N)
+
+# 連続部分列: imos, 尺取り法, セグ木, 数え上げdpなどが使えそう
+# 算術平均がK以上であるものは何個あるでしょうか？ 尺取りっぽい
+# → 平均なので尺取りではない　{100, 1 100...100}みたいな場合
+
+# 平均なので各項をKで引いて見ようか
+# N, K = 3, 6
+# A = [7, 5, 7] の場合
+# A = [1, -1, 1]になる 累計が0以上のもの → これだとO(n2)かかる
+# 右端rを決めた時にペアになる左端lはいくつあるか
+
+# N, K = 7, 26
+# A = [10, 20, 30, 40, 30, 20, 10]の時
+# imos = [0, -16, -22, -18, -4, 0, -6, -22]
+# l ~ r区間の平均 = imos[r] - imos[l - 1] これが0以上なら
+# = imos[r] >= imos[l - 1]なら
+# imos[b] - imos[a] >= 0になるペアがいくつあるかをO(n)で
+
+# つまり
+# imos上のimos[i] = bについてより左側にb以下の数はいくつあるか
+
+A = [i - K for i in A]
+imos = [0]
+for i in range(N):
+    imos.append(imos[i] + A[i])
+mi = min(imos)
+imos = [i - mi for i in imos] # imosの全ての要素が0以上になるように調整
+N += 1
+
+# 座標圧縮BIT
+# alter: A[i] → alt_A[i]
+# rev: alt[i] → A[i]
+def compress(array):
+    s = set(array)
+    s = sorted(list(s))
+    alter = {}
+    rev = {}
+    for i in range(len(s)):
+        alter[s[i]] = i
+        rev[i] = s[i]
+    return alter, rev
+
+alter, rev = compress(imos)
+limit = N + 1
+bit = BIT(limit)
 ans = 0
-# 全ての色を調べる
-for i in range(ma + 1):
-    if i == U.find(i):
-        ans += U.size(i) - 1
+for i in range(N):
+    # 自身以下の数字が左にいくつあるか
+    ans += bit.get(alter[imos[i]] + 2) # 変換してから調べる
+    bit.add(alter[imos[i]] + 1, 1) # 変換してからレコード
+
+print(ans)
+
+# ABC186 F - Rook on Grid
+
+"""
+盤は十分広い
+最初[1, 1]にいます
+１手なら楽勝
+下→右と右→下のパターンがある　どちらか一方なら
+下→右
+下方向への一番近い障害物を探す iにあるとする
+2 ~ i - 1について
+障害物があれば　最も近いもの
+なければW個進める
+
+領域は[H, 1]方向の一番上にあるもの * [1, W]方向の一番左にあるもの
+
+下→右と右→下両方試した場合ダブル場合がある
+逆に絶対に侵入できないところがある
+マス[i][j]について
+上方向のどこか and 左方向のどこか　両方に障害物がある場合は侵入できない
+
+入力例2
+5の段
+[5, 2]より左にある[5, 1]については無条件で通る
+[5, 2]より右にある[5, 3] ~ [5, 4]について
+各行の一番上の障害物の高さを保持しておく
+[6, 3, 6, 3]
+5の段: 1と3は通過
+4の段: 1と3は通過
+3の段: 1と3は通過
+2の段: 全て通過
+1の段: 全て通過
+bitするか
+
+各列の一番左にある障害物を保持する
+各行の一番上にある障害物を保持する
+
+①右→下でいけるとこ
+②下→右でいけるとこのうち①で数えてないとこ
+"""
+
+H, W, M = getNM()
+bit = BIT(W + 1) # 通過すると解放していく
+row = [W + 1] * (H + 1) # 各列の一番左にある障害物
+col = [H + 1] * (W + 1) # 各行の一番上にある障害物
+for i in range(M):
+    y, x = getNM()
+    row[y] = min(row[y], x)
+    col[x] = min(col[x], y)
+
+# まず右→下でいける範囲
+ans = 0
+for i in range(1, row[1]):
+    ans += col[i] - 1
+
+# どこで上に障害物が出現するか
+check = [[] for i in range(H + 2)]
+for i in range(1, W + 1):
+    check[col[i]].append(i)
+
+# 下→右でいけるとこのうち①で数えてないとこ
+for i in range(1, col[1]):
+    # 範囲は1 ~ row[i]まで
+    # row[1] - 1までは上に障害物があるとこ
+    ans += bit.get(min(row[i], row[1]))
+    # それ以降は全て
+    ans += max(row[i] - row[1], 0)
+    # 障害物追加
+    while check[i]:
+        bit.add(check[i].pop(), 1)
 print(ans)
