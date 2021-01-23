@@ -51,474 +51,263 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC038 D-プレゼント
-class BIT:
-    def __init__(self, n):
-        self.n = n
-        self.data = [0] * (n + 1)
+N = 10
+logk = N.bit_length()
 
-    def ope(self, x, y):
-        return max(x, y)
+# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]
+# 一般項が出ない漸化式は行列の形に落とし込める
+dp = [[[0, 0] for i in range(2)] for i in range(logk)]
+dp[0] = [[1, 1], [1, 0]]
 
-    def update(self, i, v):
-        j = i
-        while j <= self.n:
-            self.data[j] = self.ope(self.data[j], v)
-            j += j & -j
+# 行列掛け算 O(n3)かかる
+def array_cnt(ar1, ar2):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
 
-    def query(self, i):
-        ret = 0
-        j = i
-        while 0 < j:
-            ret = self.ope(self.data[j], ret)
-            j &= (j - 1)
-        return ret
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j]):
+                cnt += x * y
+            res[i][j] = cnt
+    return res
 
-bit = BIT(10 ** 5)
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
 
-for w, h in que:
-    # 高さh未満の箱が何個あるか(wは昇順にソートしてるので考える必要なし)
-    # 最初は0個
-    q = bit.query(h - 1)
-    # 高さhの時の箱の数を更新
-    bit.update(h, q + 1)
-print(bit.query(10 ** 5))
+# 行列の単位元
+ans = [[1, 0], [0, 1]]
+for i in range(logk):
+    if N & (1 << i):
+        ans = array_cnt(ans, dp[i])
 
-# ABC140 E - Second Sum
-# [Pl, Pr]間で２番目に大きいものの総和を
-# l, rについてのnC2通りの全てについて求めよ
+# [Fi+2, Fi+1] = [[1, 1], [1, 0]][Fi+1, Fi]より
+# [Fn+1, Fn] = A ** n[F1, F0] = A ** n[1, 0]
+# Fn = ans[1][0] * 1 + ans[1][1] * 0
+print(array_cnt(ans, [[1], [0]])[1][0])
 
-# 8 2 7 3 4 5 6 1
-# 8 2: 2
-# 8 2 7: 7
-# 2 7 3: 3
-# 8を含むもの（７通り）について2が２番目になるもの、7が２番目になるもの...
-# 2を含むものについて（６通り）について7が...をそれぞれO(1)で求められれば
+# ABC113 D - Number of Amidakuji
 
-# N <= 10 ** 5
-# Piが２番目になる通りが何通り　みたいな感じで求められる？
-# Piが２番目になる条件　→　自分より上位のものを一つだけ含む
+H, W, K = getNM()
+logk = H.bit_length()
 
-# ヒープキューとか使える？
-# 二つ数字を入れる　→　最小値を取り出せばそれは２番目の数字
-# 尺取り使える？
+if W == 1:
+    print(1)
+    exit()
 
-# 累積？　一番
-
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
-
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
-
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
-
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
-
-    def lowerbound(self,w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
-N = getN()
-P = getList()
-dic = {}
-bit = BIT(N)
-for i in range(N):
-    dic[P[i]] = i + 1
-
-# 両端に何もない時用
-# [0] + Pの各要素 + [N + 1]みたいになる
-dic[0] = 0
-dic[N + 1] = N + 1
-ans = 0
-
-for i in range(N, 0, -1):
-    # 8のインデックス、7のインデックス...に1を登録していく
-    bit.add(dic[i], 1)
-    # 左側にある既に登録したもの（自分より大きいもの + 自分）の数を数える
-    c = bit.get(dic[i] + 1)
-    # l1: 左側にある既に登録したもの（自分より大きいもの）のうち、一番右にあるもの
-    # l2: l1の一つ左側にあるもの
-    l1, l2 = bit.lowerbound(c - 1), bit.lowerbound(c - 2)
-    # r1: 右側にある既に登録したもの（自分より大きいもの）のうち、一番左にあるもの
-    # r2: r1の一つ右側にあるもの
-    r1, r2 = bit.lowerbound(c + 1), bit.lowerbound(c + 2)
-    S = (l1 - l2) * (r1 - dic[i]) + (r2 - r1) * (dic[i] - l1)
-    ans += S * i
-print(ans)
-
-# ABC174 F - Range Set Query
-
-# 色の種類
-# 同じ色のボールがある場合、どの情報があれば良いか
-# 最もrに近いボールの位置がわかればいい
-N, Q = getNM()
-C = [0] + getList() # 1-indexに
-que = [[] for i in range(N + 1)]
-for i in range(Q):
-    l, r = getNM()
-    que[r].append([l, i])
-
-ans = [0] * Q # これだけ0-index
-place = [-1] * (N + 1) # 一番右にあるボールの場所
-bit = BIT(N + 1) # できるならbitに
-
-# 前から更新していく
-for r in range(1, N + 1):
-    # 更新
-    c = C[r]
-    bit.add(r, 1) # 立てる
-    if place[c] > 0: # 登録済みなら
-        bit.add(place[c], -1)
-    place[c] = r
-
-    # 答える
-    while que[r]:
-        l, index = que[r].pop()
-        ans[index] = bit.cum(l, r + 1)
-
-for a in ans:
-    print(a)
-
-# ARC031 C - 積み木
-"""
-最小回数を求める
-ヒストグラムは
-A = {1, 2, 3...}について
-Aiより左にある自分より小さいものの数　の総和
-順番は小さい順に
-2 4 1 3　1を動かす
-一回動かしたものはswapに関係なくなる
-"""
-
-N = getN()
-B = [0] + getList()
-B = [[B[i], i] for i in B]
-B.sort(reverse = True)
-
-bit = BIT(N + 1)
-
-ans = 0
-# 今までi - 1個置いた
-for i, (val, ind) in enumerate(B[:-1]):
-    # 左にある自分より大きいもの vs 右にある自分より大きいもの
-    ans += min(bit.get(ind), bit.cum(ind, N + 1))
-    bit.add(ind, 1)
-
-print(ans)
-
-
-# ARC033 C - データ構造
-# 座圧BIT
-Q = getN()
-que = [getList() for i in range(Q)]
-
-# データに入れる数字を抽出する
-A = []
-for t, x in que:
-    if t == 1:
-        A.append(x)
-# 座標圧縮
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-
-    return alter, rev
-
-alter, rev = compress(A)
-
-limit = Q + 1
-bit = BIT(limit)
-for t, x in que:
-    if t == 1:
-        bit.add(alter[x] + 1, 1)
+mat = [[0] * W for i in range(W)]
+# 列の数はH個
+# うまく行列に
+for bit in range(1 << (W - 1)):
+    for i in range(1, (W - 1)):
+        # 両方にフラグがあればとばす
+        if bit & (1 << i) and bit & (1 << (i - 1)):
+            break
     else:
-        # xを超えないギリギリの場所が1-indexで与えられる
-        opt = bit.lowerbound(x) - 1
-        # 1-indexなのでそのままprintする
-        print(rev[opt])
-        # xを超えないギリギリの場所の一つ右を-1する
-        bit.add(opt + 1, -1)
+        for i in range(W):
+            if bit & (1 << i):
+                # 目的地、出発地
+                mat[i + 1][i] += 1
+            # negative shiftしないよう
+            elif i > 0 and bit & (1 << (i - 1)):
+                mat[i - 1][i] += 1
+            else:
+                mat[i][i] += 1
 
-# AGC005 B - Minimum Sum
+dp = [[[0] * W for i in range(W)] for i in range(logk)]
+dp[0] = mat
 
-"""
-全ての連続部分列について、その最小値の総和を求めよ
-N = 3
-A = [2, 1, 3]の時
-[2]:2 [1]:1 [3]:3
-[2, 1]:1 [1, 3]:1
-[2, 1, 3]:1
-合計9
-BITを使うと思う
-小さいものから順に置いていく
-iが最小値を取る領域[l, r]を求める
-1を置く
-[ , 1, ]
-この時、左端は1番目、右端は3番目までを領域に含めることができる
-左側は2 - 1 + 1 = 2通り、右側は3 - 2 + 1 = 2通りある
-ans += (2 - 1 + 1) * (3 - 2 + 1) * 1
-2を置く
-[2, 1, ]
-左端は1番目、右端も1番目
-"""
+# 行列掛け算 O(n3)かかる
+def array_cnt(ar1, ar2):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
 
-N = getN()
-A = getList()
-index = [0] * (N + 1)
-for i in range(N):
-    index[A[i]] = i + 1
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j]):
+                cnt += x * y
+            res[i][j] = cnt
+    return res
 
-bit = BIT(N)
-ans = 0
-for i in range(1, N + 1):
-    c = bit.get(index[i]) # 左側にあるフラグの数を求める
-    # フラグがc個になる場所 + 1、フラグがc + 1個にある場所 - 1を求める
-    # つまり、
-    # 左側にある自分より小さいもののうち最も右側にあるもの + 1
-    # 右側にある自分より小さいもののうち最も左側にあるもの - 1
-    # の場所を求める
-    l, r = bit.lowerbound(c) + 1, bit.lowerbound(c + 1) - 1
-    ans += (index[i] - l + 1) * (r - index[i] + 1) * i
-    bit.add(index[i], 1) # 自身を置く
-print(ans)
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
 
-# ARC069 E - Frequency
+# スタート地点
+ans = [[0] * W]
+ans[0][0] = 1
+# 計算
+for i in range(logk):
+    if H & (1 << i):
+        ans = array_cnt(ans, dp[i])
+
+print(ans[0][K - 1] % mod)
+
+# EDPC R - Walk
 
 """
-N個の山がある
-石の数が最大の山のうち最も前の番号をsにappend
-石を一つとる
-これを繰り返す
+通りの数を答える
+同じ辺を複数回通ってもいい
+長さKの有効パス　二分グラフとか？
+Kがクソでか
+ループで解けという
+N <= 50 巡回セールスか
+Kが小さいものを求める
 
-Sが辞書順で最小の数列になるようにした時、sに数はそれぞれいくつずつ含まれるか
-A = [1, 2, 1, 3, 2, 4, 2, 5, 8, 1]の時
-Sの最終的な長さはsum(A)
+dp iターン目にjにいる時、その通りは？
+行列累乗する
 
-S = []
-S = [9]: 一つ目はどういう操作をしても共通
-出来るだけ前の方のをindexに指定したい
-最大値の位置を出来るだけ前に寄せるためには？
-現在より前の数字について最大の数字に移動する セグ木?
+4 2
+0 1 0 0
+0 0 1 1
+0 0 0 1
+1 0 0 0
 
-現在より前の数字について最大の数字まで数を減らす
-それより後ろの数字についてnextの数字まで減らす
-A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
-1 + 1つの5を4まで下げる
-A = [1, 2, 1, 3, 2, 4, 2, 5, 5, 1]
+0 1 2 3 縦に使う
+0 - 1, 1 - 2, 1 - 3...
 
-前からとって行った時の最小値の場所しか加算されない
-この場合[1, 2,  , 3,  , 4,  , 5, 8,  ]
-index = 9についてindex以降の数字を全て5まで下げる
-ans[index] += index以降の5以上の部分
-index = 8についてindex以降の数字を全て4まで下げる
-ans[index] += index以降の4以上5以下の部分
-5以上を加算、４以上４以下を加算、３以上３以下を
-この場所にどのように加算するか
-全てのindexについてO(1)で答えるか？
-５以上のものを足す、４以上のものを足す...
-
-各場所ind_l[i]についてそれより右側の部分のunder以上upper未満の部分について
-総和を求める
-
-BITを使って
-ある範囲内のunder以上の場所の数を答える　これは簡単
-          upper以下の場所の数を答える　これも簡単 bitの結果を足し引きすればOK
-
+prev = [1, 1, 1, 1]
+next[0] = 1 * 0 + 1 * 0 + 1 * 0 + 1 * 1
+next[1] = 1 * 1 + 1 * 0 + 1 * 0 + 1 * 0
+next[2] = 1 * 0 + 1 * 1 + 1 * 0 + 1 * 0
+next[3] = 1 * 0 + 1 * 1 + 1 * 1 + 1 * 0
 """
-
-N = getN()
-A = getList()
-
-cnt = [] # 数字iがどこにあるか
-ma = [] # 1 ~ i個目までの最大値
-for i in range(N):
-    cnt.append([A[i], i + 1])
-    if i == 0:
-        ma.append(A[i])
-    else:
-        ma.append(max(ma[-1], A[i]))
-
-ind_l = [] # 加算する場所
-for i in range(N - 1, 0, -1):
-    if ma[i - 1] < ma[i]:
-        ind_l.append(i + 1)
-ind_l.append(1)
-ma.insert(0, 0) # 1-indexに修正した方がいい
-ma.insert(0, 0)
-
-cnt.sort()
-
-upper = max(A)
-bit = BIT(N)
-ans = [0] * (N + 1)
-
-# 自分より右側のunder ~ upperを足し合わせる
-for i in range(len(ind_l)):
-    index = ind_l[i]
-    under = ma[ind_l[i]]
-    left = 0
-    while cnt and cnt[-1][0] > under:
-        p, ind = cnt.pop()
-        left += max(0, upper - p) # upperに到達しない部分について控除分
-        bit.add(ind, 1)
-    ans[index] = bit.cum(index, N + 1) * (upper - under) - left
-    upper = under
-
-for i in ans[1:]:
-    print(i)
-
-# ARC075 E - Meaningful Mean
 
 N, K = getNM()
-A = getArray(N)
+logk = K.bit_length()
 
-# 連続部分列: imos, 尺取り法, セグ木, 数え上げdpなどが使えそう
-# 算術平均がK以上であるものは何個あるでしょうか？ 尺取りっぽい
-# → 平均なので尺取りではない　{100, 1 100...100}みたいな場合
+mat = [getList() for i in range(N)]
+dp = [[[0] * N for i in range(N)] for i in range(logk)]
+dp[0] = mat
 
-# 平均なので各項をKで引いて見ようか
-# N, K = 3, 6
-# A = [7, 5, 7] の場合
-# A = [1, -1, 1]になる 累計が0以上のもの → これだとO(n2)かかる
-# 右端rを決めた時にペアになる左端lはいくつあるか
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
 
-# N, K = 7, 26
-# A = [10, 20, 30, 40, 30, 20, 10]の時
-# imos = [0, -16, -22, -18, -4, 0, -6, -22]
-# l ~ r区間の平均 = imos[r] - imos[l - 1] これが0以上なら
-# = imos[r] >= imos[l - 1]なら
-# imos[b] - imos[a] >= 0になるペアがいくつあるかをO(n)で
+ans = [[1] * N]
+for i in range(logk):
+    if K & (1 << i):
+        ans = array_cnt(ans, dp[i])
 
-# つまり
-# imos上のimos[i] = bについてより左側にb以下の数はいくつあるか
-
-A = [i - K for i in A]
-imos = [0]
-for i in range(N):
-    imos.append(imos[i] + A[i])
-mi = min(imos)
-imos = [i - mi for i in imos] # imosの全ての要素が0以上になるように調整
-N += 1
-
-# 座標圧縮BIT
-# alter: A[i] → alt_A[i]
-# rev: alt[i] → A[i]
-def compress(array):
-    s = set(array)
-    s = sorted(list(s))
-    alter = {}
-    rev = {}
-    for i in range(len(s)):
-        alter[s[i]] = i
-        rev[i] = s[i]
-    return alter, rev
-
-alter, rev = compress(imos)
-limit = N + 1
-bit = BIT(limit)
-ans = 0
-for i in range(N):
-    # 自身以下の数字が左にいくつあるか
-    ans += bit.get(alter[imos[i]] + 2) # 変換してから調べる
-    bit.add(alter[imos[i]] + 1, 1) # 変換してからレコード
-
-print(ans)
-
-# ABC186 F - Rook on Grid
+print(sum(ans[0]) % mod)
 
 """
-盤は十分広い
-最初[1, 1]にいます
-１手なら楽勝
-下→右と右→下のパターンがある　どちらか一方なら
-下→右
-下方向への一番近い障害物を探す iにあるとする
-2 ~ i - 1について
-障害物があれば　最も近いもの
-なければW個進める
+A, Cの長さは100 O(N ** 3)までいける
+K + 1以降は自分で計算しろ　まともに1個ずつするのは無理　法則を見つけるかダブリングするか
+3 5
+10 20 30
+7 19 13 の場合
+A4 = 7 & 30 ^ 20 & 19 ^ 10 & 13
+10 20 30 30
+ 7 19 13
+A5は
+10 [20 30 30]
+ [7 19 13]
+ 7 & 30 ^ 19 & 30 ^ 13 & 20
 
-領域は[H, 1]方向の一番上にあるもの * [1, W]方向の一番左にあるもの
+for i in range(M - K):
+    res = C[0] & A[-1]
+    for j in range(1, K):
+        res ^= (C[j] & A[-j - 1])
+    A.append(res)
 
-下→右と右→下両方試した場合ダブル場合がある
-逆に絶対に侵入できないところがある
-マス[i][j]について
-上方向のどこか and 左方向のどこか　両方に障害物がある場合は侵入できない
+A[3] = (C[0] & A[2]) ^ (C[1] & A[1]) ^ (C[2] & A[0]) これを簡単にできないか
+A[4] = (C[0] & A[3]) ^ (C[1] & A[2]) ^ (C[2] & A[1])
 
-入力例2
-5の段
-[5, 2]より左にある[5, 1]については無条件で通る
-[5, 2]より右にある[5, 3] ~ [5, 4]について
-各行の一番上の障害物の高さを保持しておく
-[6, 3, 6, 3]
-5の段: 1と3は通過
-4の段: 1と3は通過
-3の段: 1と3は通過
-2の段: 全て通過
-1の段: 全て通過
-bitするか
+(C[0] & A[3]) = (C[0] & ((C[0] & A[2]) ^ (C[1] & A[1]) ^ (C[2] & A[0])))
+論理積　全てにフラグが立っている場合に立つ
 
-各列の一番左にある障害物を保持する
-各行の一番上にある障害物を保持する
+A[99] = (C[0] & A[98]) ^ (C[1] & A[97]) ^ (C[2] & A[96]) ^ (C[3] & A[95]) ^ (C[4] & A[94])
+各数字が0か1なら
+0 1 1
+1 0 0 フラグが両方立っているときにしか反応しない　両方フラグが立っている本数は？
+3 100
+0 1 1
+1 0 1
+[0, 1, 1, 1,
+ 0, 1, 0,
+ 0, 1, 1, 1,
+ 0, 1, 0,
+ 0, 1, 1, 1,
+ 0, 1, 0...　周期性あり
 
-①右→下でいけるとこ
-②下→右でいけるとこのうち①で数えてないとこ
+[0, 1, 0, 1, 0,
+ 0, 1, 0, 1, 0,
+ 0, 1, 0, 1, 0,
+ 0, 1, 0, 1, 0,
+ 0, 1, 0, 1, 0, 0,
+
+スライドした時のフラグの構成が同じであれば同じ結果がループされる
+ローリングハッシュの要領
+
+AND XORの半環の性質を使う
+掛け合わせするCが固定なので行列累乗できるのん
+ANDを掛け算、XORを足し算だと思え
+[[0, 0, 7],
+ [1, 0, 19],
+ [0, 1, 13]] の行列を作る　最後の一項だけ計算す
+計算は逆になる
 """
 
-H, W, M = getNM()
-bit = BIT(W + 1) # 通過すると解放していく
-row = [W + 1] * (H + 1) # 各列の一番左にある障害物
-col = [H + 1] * (W + 1) # 各行の一番上にある障害物
-for i in range(M):
-    y, x = getNM()
-    row[y] = min(row[y], x)
-    col[x] = min(col[x], y)
+K, M = getNM()
+A = getList()
+C = getList()
 
-# まず右→下でいける範囲
-ans = 0
-for i in range(1, row[1]):
-    ans += col[i] - 1
+if M <= K:
+    print(A[M - 1])
+    exit()
 
-# どこで上に障害物が出現するか
-check = [[] for i in range(H + 2)]
-for i in range(1, W + 1):
-    check[col[i]].append(i)
+# 行列累乗
+k = M - K
+logk = k.bit_length()
+dp = [[[0] * K for j in range(K)] for i in range(logk)]
+# 初項を書き込む
+for i in range(K - 1):
+    dp[0][K - i - 2][i] = 2 ** 32 - 1
+for i in range(K):
+    dp[0][i][-1] = C[i]
 
-# 下→右でいけるとこのうち①で数えてないとこ
-for i in range(1, col[1]):
-    # 範囲は1 ~ row[i]まで
-    # row[1] - 1までは上に障害物があるとこ
-    ans += bit.get(min(row[i], row[1]))
-    # それ以降は全て
-    ans += max(row[i] - row[1], 0)
-    # 障害物追加
-    while check[i]:
-        bit.add(check[i].pop(), 1)
-print(ans)
+def array_cnt(ar1, ar2):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
+
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j][::-1]): # 計算は逆になる
+                cnt ^= x & y # ここを変更
+            res[i][j] = cnt
+    return res
+
+for i in range(1, logk):
+    dp[i] = array_cnt(dp[i - 1], dp[i - 1])
+
+ans = [A]
+for i in range(logk):
+    if k & (1 << i):
+        ans = array_cnt(ans, dp[i])
+
+print(ans[0][-1])
