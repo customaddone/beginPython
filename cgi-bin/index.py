@@ -51,35 +51,69 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+# 天下一プログラマーコンテスト2013予選B B - 天下一後入れ先出しデータ構造
+
+Q, L = getNM()
+query = [input().split() for i in range(Q)]
+s = [] # 配列の中身
+l = 0 # 配列の大きさ
+
+for q in query:
+    if q[0] == "Push":
+        s.append([int(q[1]), int(q[2])])
+        l += int(q[1])
+    if l > L:
+        print("FULL")
+        exit()
+
+    elif q[0] == "Pop":
+        x = int(q[1])
+        l -= x
+        while s: # sが空になるまで xがゼロになるとbreakで抜ける
+            c, y = s[-1]
+            if x >= c:
+                x -= c
+                s.pop() # 抜く
+            else:
+                s[-1][0] -= x # 引くだけで抜かない
+                x = 0
+                break
+        if x:
+            print("EMPTY")
+            exit()
+
+    elif q[0] == "Size":
+        print(l)
+
+    elif q[0] == "Top":
+        if s:
+            print(s[-1][1])
+        else:
+            print("EMPTY")
+            exit()
+
+print("SAFE")
+
+# ヒストグラムの最大長方形
+
 N = getN()
 A = getList()
-A = [[A[i], i] for i in range(N)]
-A.sort()
 
-ans = 0
-check = [0] * N
-U = UnionFind(N)
+def largestRectangleArea(A):
+    ans = 0
+    A = [-1] + A # 最初に番兵
+    A.append(-1) # 最後に番兵
+    n = len(A)
 
-while A:
-    now = A[-1][0]
-    index = []
-    # 同じ数を引き終わるまで引き続ける
-    while A and A[-1][0] == now:
-        val, ind = A.pop()
-        index.append(ind)
-        check[ind] = 1
+    stack = [0]  # store index
 
-    # uniteする
-    for ind in index:
-        # 左側と
-        if ind > 0 and check[ind - 1] == 1:
-            U.union(ind - 1, ind)
-        # 右側と
-        if ind < N - 1 and check[ind + 1] == 1:
-            U.union(ind, ind + 1)
+    for i in range(n):
+        # A[i]が一番大きくなるよう
+        while A[i] < A[stack[-1]]:
+            h = A[stack.pop()]
+            area = h * (i - stack[-1] - 1)
+            ans = max(ans, area)
+        stack.append(i)
+    return ans
 
-    # 計算
-    for ind in index:
-        ans = max(ans, now * U.size(ind))
-
-print(ans)
+print(largestRectangleArea(A))
