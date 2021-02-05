@@ -11,7 +11,8 @@ from operator import mul, itemgetter
 from functools import reduce, lru_cache
 from bisect import bisect_left, bisect_right
 
-input = sys.stdin.readline
+def input():
+    return sys.stdin.readline().rstrip()
 def getN():
     return int(input())
 def getNM():
@@ -31,80 +32,131 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N = 5
-#es = [[1,2,3],[0,2],[0,1],[0,4],[3]] # False
-dist = [
-[1, 3],
-[0, 2],
-[1, 3],
-[0, 2, 4],
-[3]
-] # True
+#####segfunc#####
+def segfunc(x, y):
+    return min(x, y)
+#################
 
-#n個の頂点の色を初期化。0:未着色、1:黒、-1:白
-colors = [0] * N
+#####ide_ele#####
+ide_ele = float('inf')
+#################
 
-#頂点vをcolor(1 or -1)で塗り、再帰的に矛盾がないか調べる。矛盾があればFalse
-def dfs(v, color):
-    #今いる点を着色
-    colors[v] = color
-    #今の頂点から行けるところをチェック
-    for to in dist[v]:
-        #同じ色が隣接してしまったらFalse
-        if colors[to] == color:
-            return False
-        #未着色の頂点があったら反転した色を指定し、再帰的に調べる
-        if colors[to] == 0 and not dfs(to, -color):
-            return False
-    #調べ終わったら矛盾がないのでTrue
-    return True
+class SegTree:
+    def __init__(self, init_val, segfunc, ide_ele):
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
 
-#2部グラフならTrue, そうでなければFalse
-def is_bipartite():
-    return dfs(0,1) # 頂点0を黒(1)で塗ってDFS開始
+    def update(self, k, x):
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
 
-print(is_bipartite())
+    def query(self, l, r):
+        res = self.ide_ele
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
 
-# AGC039 B-Graph Partition
+class BIT:
+    def __init__(self, N):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
 
-N = getN()
-S = [list(input()) for i in range(N)]
-G = [[] for i in range(N)]
-E = [[INF] * N for i in range(N)]
-for i in range(N):
-    E[i][i] = 0
-for i in range(N):
-    for j in range(N):
-        if S[i][j] == '1':
-            G[i].append(j)
-            E[i][j] = 1
+    def add(self, a, w):
+        x = a
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
 
-def bipartite(edges):
-    colors = [0] * N
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
-    def dfs(v, color):
-        colors[v] = color
-        for to in edges[v]:
-            if colors[to] == color:
-                return False
-            if colors[to] == 0 and not dfs(to, -color):
-                return False
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
 
-        return True
+    def lowerbound(self,w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
-    return dfs(0, 1) # 頂点0を黒(1)で塗ってDFS開始
+N = 10
+A = [0] + [3, 1, 4, 1, 5, 9, 2, 6, 5, 3] # 1-indexに
+Q = 10
+query = [
+[1, 1, 2],
+[2, 2, 5],
+[1, 1, 1],
+[1, 3, 8],
+[2, 6, 9],
+[2, 5, 8],
+[1, 8, 3],
+[2, 1, 2],
+[2, 5, 10],
+[2, 3, 7],
+]
 
-if not bipartite(G):
-    print(-1)
-    exit()
+event = [[] for i in range(9 + 1)] # 実際には圧縮する
+seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
+for i in range(1, N + 1):
+    event[A[i]].append([1, -1, i, 1]) # Aの書き込み
+    seg.update(i, A[i])
+for i in range(Q):
+    kind, in1, in2 = query[i]
+    # フラグ書き込み、消去
+    if kind == 1:
+        prev = A[in1]
+        event[in2].append([1, i, in1, 1]) # 書き込み
+        event[prev].append([1, i, in1, -1]) # 消去
+        A[in1] = in2
+        seg.update(in1, in2)
+    # クエリ
+    else:
+        target = seg.query(in1, in2) # [l, r)の最小値を求める
+        event[target].append([2, i, in1, 0])
 
-def warshall_floyd(dist):
-    for k in range(N):
-        # i:start j:goal k:中間地点でループ回す
-        for i in range(N):
-            for j in range(N):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    return dist
+ans = []
+for i in range(1, 9 + 1):
+    bit = BIT(N)
+    event[i].sort(key = lambda j: j[1])
+    for kind, que, place, a in event[i]:
+        # 書き込み
+        if kind == 1:
+            bit.add(place, a)
+        else:
+            # pleceより右に立っているフラグの中で一番左にあるもの
+            c = bit.get(place)
+            ans.append([que, bit.lowerbound(c + 1)])
 
-warshall_floyd(E)
-print(max([max(E[i]) for i in range(N)]) + 1)
+ans.sort()
+print(ans) # [[1, 2], [4, 7], [5, 7], [7, 1], [8, 7], [9, 4]]
