@@ -129,7 +129,7 @@ query = [
 event = [[] for i in range(9 + 1)] # 実際には圧縮する
 seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
 
-# 計算量O(N）
+# 計算量O(NlogN）
 for i in range(1, N + 1):
     event[A[i]].append([1, -1, i, 1]) # Aの書き込み
     seg.update(i, A[i])
