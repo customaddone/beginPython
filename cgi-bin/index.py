@@ -128,9 +128,13 @@ query = [
 
 event = [[] for i in range(9 + 1)] # 実際には圧縮する
 seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
+
+# 計算量O(N）
 for i in range(1, N + 1):
     event[A[i]].append([1, -1, i, 1]) # Aの書き込み
     seg.update(i, A[i])
+
+# 計算量O(QlogQ)
 for i in range(Q):
     kind, in1, in2 = query[i]
     # フラグ書き込み、消去
@@ -145,6 +149,8 @@ for i in range(Q):
         target = seg.query(in1, in2) # [l, r)の最小値を求める
         event[target].append([2, i, in1, 0])
 
+# 計算量O(log(N + Q) * (N + Q))
+# イベントのソートがネックになる
 ans = []
 for i in range(1, 9 + 1):
     bit = BIT(N)
