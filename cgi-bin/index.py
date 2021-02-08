@@ -32,29 +32,23 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# 全探索
+# 0 ~ n - 1までのうち重複を許して個取ってくれる
 
-# 全ての条件をクリアできるものの個数を調べる
-# 三井住友信託銀行プログラミングコンテスト2019 D - Lucky PIN
+def rep_comb_pow(n, r):
+    def child_pow(i, array):
+        global cnt
+        if i == r:
+            print(array)
+            return
 
-N = 19
-S = '3141592653589793238'
+        last = -1
+        if len(array) > 0:
+            last = array[-1]
 
-# 種類数は最大1000個(000 ~ 999)それらについて全探索
-# それぞれの候補targetについて条件が3つある
-# 1: target[0]がある
-# 2: 1の後ろにtarget[1]がある
-# 3: 2の後ろにtarget[2]がある
-# いくつ条件をクリアしたかcntで管理する
-ans = 0
-for i in range(1000):
-    target = str(i).zfill(3) # 3桁になるよう桁埋め
-    cnt = 0
-    for j in range(len(S)):
-        if target[cnt] == S[j]:
-            cnt += 1
-        if cnt == 3:
-            ans += 1
-            break
+        for j in range(last, n):
+            new_array = array + [j]
+            child_pow(i + 1, new_array)
 
-print(ans)
+    child_pow(0, [])
+
+rep_comb_pow(4, 2)

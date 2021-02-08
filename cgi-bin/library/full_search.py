@@ -58,3 +58,70 @@ for i in range(1000):
             break
 
 print(ans)
+
+# bit全探索
+# 計算量: (2 ** N) * N
+N = 5
+for bit in range(1 << N):
+    # bitの「右から」何番目にフラグが立っているか数える
+    for j in range(N):
+        if bit & (1 << j):
+            print(bin(bit), j)
+    # bitの本数を数える
+    print(bin(bit), bin(bit).count('1'))
+
+# itertools系
+# 0 ~ power - 1までの数字がpower ** exponent個出る
+def power_func(power, exponent):
+    def child_pow(i, array):
+        global cnt
+        if i == exponent:
+            print(array) # ここに何か操作を入れる
+            return
+        for j in range(power):
+            new_array = array + [j]
+            child_pow(i + 1, new_array)
+
+    child_pow(0, [])
+
+power_func(4, 2)
+
+# 0 ~ n - 1までのうちr個取ってくれる
+def comb_pow(n, r):
+    def child_pow(i, array):
+        global cnt
+        if i == r:
+            print(array)
+            return
+
+        last = -1
+        if len(array) > 0:
+            last = array[-1]
+
+        for j in range(last + 1, n):
+            new_array = array + [j]
+            child_pow(i + 1, new_array)
+
+    child_pow(0, [])
+
+comb_pow(4, 2)
+
+# 0 ~ n - 1までのうち重複を許して個取ってくれる
+def rep_comb_pow(n, r):
+    def child_pow(i, array):
+        global cnt
+        if i == r:
+            print(array)
+            return
+
+        last = -1
+        if len(array) > 0:
+            last = array[-1]
+
+        for j in range(last, n):
+            new_array = array + [j]
+            child_pow(i + 1, new_array)
+
+    child_pow(0, [])
+
+rep_comb_pow(4, 2)
