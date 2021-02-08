@@ -83,7 +83,7 @@ N = 10
 A = [33,18, 45, 28, 8, 19, 89, 86, 2, 4] # [2, 19, 33, 45, 89]
 
 # array内に自分以外の自分の約数がないものを出す
-def co_prime(array):
+def not_divisible(array):
     limit = max(array)
     table = [0] * (limit + 1) # Aiの倍数を書き込むテーブル
     double = [0] * (limit + 1) # Aiに何が何回出たかを書き込むテーブル
@@ -104,6 +104,32 @@ def co_prime(array):
             res.append(i)
 
     return res
+
+print(not_divisible(A))
+
+N = 3
+A = [6, 10, 15]
+# 全てのAiの要素について互いに素か
+def co_prime(array):
+    limit = max(array)
+    table = [0] * (limit + 1) # Aに何の要素が何個あるか
+    prime = [0] * (limit + 1) # 素数だけを取り出すためのテーブル
+    for a in array:
+        table[a] += 1
+    # iで割り切れるAの要素は何個あるか
+    for i in range(2, limit + 1):
+        cnt = 0
+        # 素数のみを探索する
+        if prime[i] == 1:
+            continue
+        for j in range(i, limit + 1, i):
+            cnt += table[j] # iの倍数であるAの要素は何個あるか調べる
+            prime[j] = 1
+
+        if cnt > 1:
+            return False
+
+    return True
 
 print(co_prime(A))
 
