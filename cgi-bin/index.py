@@ -32,23 +32,39 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# 0 ~ n - 1までのうち重複を許して個取ってくれる
+# 調和級数
+# ABC170 D - Not Divisible
+# A内の全てが素数ならエラストテネスにO(N ** 2)かかる
 
-def rep_comb_pow(n, r):
-    def child_pow(i, array):
-        global cnt
-        if i == r:
-            print(array)
-            return
+# Amaxが小さいなぁ...
+# Amaxが小さいので、長さAmax + 1のテーブルを用意し、Aを小さい順に
+# A1の倍数を消す、A2の倍数を消す...を繰り返す
+# 実はそんなに計算量は増えない（調和級数) AmaxlogAmax程度
+# AのソートにNlogNかかるので合計AmaxlogAmax + NlogN
 
-        last = -1
-        if len(array) > 0:
-            last = array[-1]
+N = 10
+A = [33,18, 45, 28, 8, 19, 89, 86, 2, 4]
 
-        for j in range(last, n):
-            new_array = array + [j]
-            child_pow(i + 1, new_array)
+def co_prime(array):
+    limit = max(array)
+    table = [0] * (limit + 1) # Aiの倍数を書き込むテーブル
+    double = [0] * (limit + 1) # Aiに何が何回出たかを書き込むテーブル
+    array.sort()
+    for a in array:
+        double[a] += 1
+        # すでにaの約数が出ている場合は飛ばす
+        if table[a] > 0:
+            continue
+        # aの倍数2a, 3a, 4a...を書き込む
+        for j in range(a * 2, limit + 1, a):
+            table[j] = 1
 
-    child_pow(0, [])
+    # 集計
+    res = []
+    for i in range(1, limit + 1):
+        if table[i] == 0 and double[i] == 1:
+            res.append(i)
 
-rep_comb_pow(4, 2)
+    return res
+
+print(co_prime(A))
