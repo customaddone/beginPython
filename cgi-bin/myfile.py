@@ -1,3 +1,18 @@
+from collections import defaultdict, deque, Counter
+import sys
+from decimal import *
+from heapq import heapify, heappop, heappush
+import math
+import random
+import string
+from copy import deepcopy
+from itertools import combinations, permutations, product
+from operator import mul, itemgetter
+from functools import reduce, lru_cache
+from bisect import bisect_left, bisect_right
+
+def input():
+    return sys.stdin.readline().rstrip()
 def getN():
     return int(input())
 def getNM():
@@ -6,20 +21,13 @@ def getList():
     return list(map(int, input().split()))
 def getArray(intn):
     return [int(input()) for i in range(intn)]
-def input():
-    return sys.stdin.readline().rstrip()
 
-import sys
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
+INF = float('inf')
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
 
 #############
 # Main Code #
 #############
-
-# 単純にswapできるか
-come, w2 = carry[go]
-if come == i and A[i] > w2 and A[go] > w1:
-    ans += 1
-    move.append([i + 1, go + 1])
-    carry[i], carry[go] = carry[go], carry[i]
