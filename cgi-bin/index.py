@@ -34,11 +34,13 @@ dy = [0, 1, 0, -1]
 
 N = 3
 A = [6, 10, 15]
-# 全てのAiの要素について互いに素か判定
+# Aiは他の全ての要素と互いに素か？
+# GCD(Ai, 任意の他の要素) == 1となるAiのみ取り出す
 def co_prime(array):
     limit = max(array)
     table = [0] * (limit + 1) # Aに何の要素が何個あるか
     prime = [0] * (limit + 1) # 素数だけを取り出すためのテーブル
+    forbit = [0] * (limit + 1)
     for a in array:
         table[a] += 1
     # iで割り切れるAの要素は何個あるか
@@ -52,8 +54,13 @@ def co_prime(array):
             prime[j] = 1
 
         if cnt > 1:
-            return False
+            for j in range(i, limit + 1, i):
+                forbit[j] = 1
+    res = []
+    for a in array:
+        if table[a] and not forbit[a]:
+            res.append(a)
 
-    return True
+    return res
 
 print(co_prime(A))
