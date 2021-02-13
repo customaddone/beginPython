@@ -32,60 +32,55 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ARC060 E 高橋君とホテル
+# ABC127 F - Absolute Minima
 
 """
-クエリがたくさん
-それぞれlogNで処理しろ
-愚直な方法は
-方向は逆にしても同じ結果
-要するにオーバーしてもいい
+基礎ポイントはb
+愚直は a b大きいな
+クエリに対してlogNぐらいで求めたい
+次々と|x - a|が立っていく　
+|x - a|に近づけると小さくなる
+つまりsum(aとの差) + bが答え
+なるべく真ん中に置けばいいと思うけど
+aが2つの場合はa1 ~ a2のどれ選んでもいい
+aが3つの場合は？
+a1    a2   a3 三分探索したいが
+a1 ~ a2間にpがある場合　右に動かすことで減らせる
+小さい方から(aの数 + 1) // 2番目に置けばOK ヒープ使えばできるはず
+値の求め方　BITでも使うか 合計なのでBITで間に合う
+中央値をpとすると
+左側の値 p * n - sum
+右側の値 sum(p以降) - p * n
+右側、左側で考える
 
-最大N - 1回飛べる
+1こ 1
+2こ 1
+3こ 2
+4こ 2
+5こ 3
 """
 
-N = getN()
-A = getList()
-D = getN()
+MIN = []
+MAX = []
+ans = 0
+value = 0
+
 Q = getN()
-que = [getList() for i in range(Q)]
+for i in range(Q):
+    q = getList()
 
-dest = [0] * N
-r = 0
-# 一回でどこまで飛べるか
-for l in range(N):
-    while r < N and A[r] - A[l] <= D:
-        r += 1
-    dest[l] = r - 1
+    if q[0] == 1:
+        ans += q[2] # bを足す
+        heappush(MIN, q[1]) # 右半分
+        heappush(MAX, -q[1]) # 左半分　マイナスつける
 
-logn = N.bit_length()
-# 2 ** N回飛んでどこまで行けるか
-doubling = [[0] * N for i in range(logn)]
-doubling[0] = dest
+        if MIN[0] < -MAX[0]: # オーバーすれば
+            x = heappop(MIN) # 最小値
+            y = -heappop(MAX) # 最大値
 
-for i in range(1, logn):
-    for j in range(N):
-        # 前回の時点ですでに欄外に飛んでる場合
-        if doubling[i - 1][j] == N:
-            doubling[i][j] = N
-        # それ以外はダブリング
-        else:
-            doubling[i][j] = doubling[i - 1][doubling[i - 1][j]]
+            value += (y - x)
+            heappush(MIN, y) # 反対側に入れる
+            heappush(MAX, -x)
 
-# ギリギリ超えないところを探す
-for a, b in que:
-    if a > b:
-        a, b = b, a
-    a -= 1
-    b -= 1
-    # 計算
-    cnt = 0
-    now = a
-    for j in range(logn - 1, -1, -1):
-        # ゴールまで辿りつく前まで進む
-        if doubling[j][now] < b:
-            cnt += 1 << j
-            now = doubling[j][now]
-
-    # 限界まで近づいた後 +1する
-    print(cnt + 1)
+    else:
+        print(-MAX[0], ans + value)
