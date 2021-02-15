@@ -32,55 +32,76 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC127 F - Absolute Minima
+# ☦️全方位木dp☦️
+# https://qiita.com/Kiri8128/items/a011c90d25911bdb3ed3
+class Reroot():
+    def __init__(self, query):
+        graph = [[] for i in range(N)]
+        dist = [{} for i in range(N)]
+        # 0-index
+        for x, y, z in query:
+            graph[x].append(y)
+            graph[y].append(x)
+            dist[x][y] = z
+            dist[y][x] = z
 
-"""
-基礎ポイントはb
-愚直は a b大きいな
-クエリに対してlogNぐらいで求めたい
-次々と|x - a|が立っていく　
-|x - a|に近づけると小さくなる
-つまりsum(aとの差) + bが答え
-なるべく真ん中に置けばいいと思うけど
-aが2つの場合はa1 ~ a2のどれ選んでもいい
-aが3つの場合は？
-a1    a2   a3 三分探索したいが
-a1 ~ a2間にpがある場合　右に動かすことで減らせる
-小さい方から(aの数 + 1) // 2番目に置けばOK ヒープ使えばできるはず
-値の求め方　BITでも使うか 合計なのでBITで間に合う
-中央値をpとすると
-左側の値 p * n - sum
-右側の値 sum(p以降) - p * n
-右側、左側で考える
+        self.graph = graph
+        self.dist = dist
+        # トポソ
+        P = [-1] * N # 親
+        Q = deque([0])
+        R = [] # 巡回した順番
+        while Q:
+            i = deque.popleft(Q)
+            R.append(i)
+            for a in self.graph[i]:
+                if a != P[i]:
+                    P[a] = i
+                    # 親への辺を消す
+                    self.graph[a].remove(i)
+                    deque.append(Q, a)
 
-1こ 1
-2こ 1
-3こ 2
-4こ 2
-5こ 3
-"""
+        ##### Settings #####
+        self.unit = 0 # 単位元
+        self.merge = lambda a, b: max(a, b)
+        self.adj_bu = lambda a, i: a + dist[i][P[i]] # マージする時の調整 iに都合のいい値を設定しよう
+        # 頂点iから最も遠い点とかの場合はa + 1（子から親に行く際にエッジを一つ遡る）
+        self.adj_td = lambda a, i, p: a + dist[i][P[i]]
+        self.adj_fin = lambda a, i: a
+        ####################
+        # bottom-up
+        # 頂点iからその親 piに向かうもの）
+        ME = [self.unit] * N # mergeを使う
+        XX = [0] * N # dpする
+        for i in R[1:][::-1]: # 巡回を逆順に辿る
+            XX[i] = self.adj_bu(ME[i], i) # adj_buで子要素が白である通りを追加する
+            p = P[i] # 親を取り出す
+            # 子要素jの持つ状態の個数 + 子要素が白である(1通り)を親要素に掛ける
+            ME[p] = self.merge(ME[p], XX[i]) # iの親要素とiの値をマージする
+        XX[R[0]] = self.adj_fin(ME[R[0]], R[0]) # 先頭については答えが求められるのでXXにレコード
+        TD = [self.unit] * N
+        for i in R: # 巡回した順番に
+            ac = TD[i] # 左からDP（結果はTDに入れている）
+            for j in self.graph[i]: # 各子要素について順番に更新を試みる
+                TD[j] = ac # TDにはjまで累積した分が入っている
+                ac = self.merge(ac, XX[j])  # マージする
+            ac = self.unit # リセット 右からDP（結果はacに入れている）
+            for j in self.graph[i][::-1]: # 各子要素について逆順に
+                # TDに残っている左から累積した分とacにある右から累積した分をTDにマージ
+                TD[j] = self.adj_td(self.merge(TD[j], ac), j, i)
+                ac = self.merge(ac, XX[j]) # acの累積更新 # 逆向きにマージしていく
+                # レコード 順向きのものと逆向きのものをマージする
+                XX[j] = self.adj_fin(self.merge(ME[j], TD[j]), j)
+        self.res = XX
 
-MIN = []
-MAX = []
-ans = 0
-value = 0
+# AOJ Diameter of a Tree
+# 各頂点からもっとも遠い点
+N = 4
+query = [
+[0, 1, 1],
+[1, 2, 2],
+[2, 3, 4]
+]
 
-Q = getN()
-for i in range(Q):
-    q = getList()
-
-    if q[0] == 1:
-        ans += q[2] # bを足す
-        heappush(MIN, q[1]) # 右半分
-        heappush(MAX, -q[1]) # 左半分　マイナスつける
-
-        if MIN[0] < -MAX[0]: # オーバーすれば
-            x = heappop(MIN) # 最小値
-            y = -heappop(MAX) # 最大値
-
-            value += (y - x)
-            heappush(MIN, y) # 反対側に入れる
-            heappush(MAX, -x)
-
-    else:
-        print(-MAX[0], ans + value)
+tree = Reroot(query)
+print(tree.res) # [7, 6, 4, 7]
