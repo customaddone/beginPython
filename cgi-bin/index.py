@@ -34,6 +34,11 @@ dy = [0, 1, 0, -1]
 
 # ☦️全方位木dp☦️
 # https://qiita.com/Kiri8128/items/a011c90d25911bdb3ed3
+
+# unit(単位元)
+# merge(親pの子要素iについてどういう基準でdpするか最大値、最小値、合計など)
+# adj_bu, adj_td(基本的に同じものを書き込む　根の方向に遡る時に子の要素に何をして親要素に渡すか)
+
 class Reroot():
     def __init__(self, query):
         graph = [[] for i in range(N)]
@@ -47,38 +52,36 @@ class Reroot():
 
         self.graph = graph
         self.dist = dist
-        # トポソ
-        P = [-1] * N # 親
+        # トポロジカルソート Rに収納する
+        P = [-1] * N
         Q = deque([0])
-        R = [] # 巡回した順番
+        R = []
         while Q:
             i = deque.popleft(Q)
             R.append(i)
             for a in self.graph[i]:
                 if a != P[i]:
                     P[a] = i
-                    # 親への辺を消す
                     self.graph[a].remove(i)
                     deque.append(Q, a)
 
         ##### Settings #####
-        self.unit = 0 # 単位元
+        self.unit = 0
         self.merge = lambda a, b: max(a, b)
-        self.adj_bu = lambda a, i: a + dist[i][P[i]] # マージする時の調整 iに都合のいい値を設定しよう
-        # 頂点iから最も遠い点とかの場合はa + 1（子から親に行く際にエッジを一つ遡る）
+        self.adj_bu = lambda a, i: a + dist[i][P[i]]
         self.adj_td = lambda a, i, p: a + dist[i][P[i]]
         self.adj_fin = lambda a, i: a
         ####################
-        # bottom-up
-        # 頂点iからその親 piに向かうもの）
+
         ME = [self.unit] * N # mergeを使う
         XX = [0] * N # dpする
-        for i in R[1:][::-1]: # 巡回を逆順に辿る
+        for i in R[1:][::-1]: # 巡回を逆順に辿る bottom-up
             XX[i] = self.adj_bu(ME[i], i) # adj_buで子要素が白である通りを追加する
-            p = P[i] # 親を取り出す
+            p = P[i] # 親pを取り出す
             # 子要素jの持つ状態の個数 + 子要素が白である(1通り)を親要素に掛ける
             ME[p] = self.merge(ME[p], XX[i]) # iの親要素とiの値をマージする
         XX[R[0]] = self.adj_fin(ME[R[0]], R[0]) # 先頭については答えが求められるのでXXにレコード
+
         TD = [self.unit] * N
         for i in R: # 巡回した順番に
             ac = TD[i] # 左からDP（結果はTDに入れている）
