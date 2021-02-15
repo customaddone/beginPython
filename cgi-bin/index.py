@@ -81,6 +81,7 @@ class Reroot():
             # 子要素jの持つ状態の個数 + 子要素が白である(1通り)を親要素に掛ける
             ME[p] = self.merge(ME[p], XX[i]) # iの親要素とiの値をマージする
         XX[R[0]] = self.adj_fin(ME[R[0]], R[0]) # 先頭については答えが求められるのでXXにレコード
+        print(ME)
 
         TD = [self.unit] * N
         for i in R: # 巡回した順番に

@@ -72,27 +72,29 @@ class Reroot():
         self.adj_fin = lambda a, i: a
         ####################
 
-        ME = [self.unit] * N # mergeを使う
-        XX = [0] * N # dpする
-        for i in R[1:][::-1]: # 巡回を逆順に辿る bottom-up
-            XX[i] = self.adj_bu(ME[i], i) # adj_buで子要素が白である通りを追加する
+        # 順向きのものの答え ME
+        ME = [self.unit] * N # resの暫定値
+        XX = [0] * N # ME + 親要素に伸びる辺の重み
+        for i in R[1:][::-1]: # 根以外について逆順に辿る bottom-up
+            XX[i] = self.adj_bu(ME[i], i) # resの更新
             p = P[i] # 親pを取り出す
-            # 子要素jの持つ状態の個数 + 子要素が白である(1通り)を親要素に掛ける
-            ME[p] = self.merge(ME[p], XX[i]) # iの親要素とiの値をマージする
-        XX[R[0]] = self.adj_fin(ME[R[0]], R[0]) # 先頭については答えが求められるのでXXにレコード
+            ME[p] = self.merge(ME[p], XX[i]) # dpの累積を更新する
+        XX[R[0]] = self.adj_fin(ME[R[0]], R[0])
 
         TD = [self.unit] * N
-        for i in R: # 巡回した順番に
-            ac = TD[i] # 左からDP（結果はTDに入れている）
-            for j in self.graph[i]: # 各子要素について順番に更新を試みる
-                TD[j] = ac # TDにはjまで累積した分が入っている
+        for i in R: # 根から順にたどる
+            # 左からDP（結果はTDに入れている）
+            ac = TD[i]
+            for j in self.graph[i]: # 元々の親要素も含めた全ての子要素を順番に
+                TD[j] = ac # 累積したものをTDに入れる
                 ac = self.merge(ac, XX[j])  # マージする
-            ac = self.unit # リセット 右からDP（結果はacに入れている）
-            for j in self.graph[i][::-1]: # 各子要素について逆順に
+            # リセットして右からDP（結果はacに入れている）
+            ac = self.unit
+            for j in self.graph[i][::-1]: # 逆順に
                 # TDに残っている左から累積した分とacにある右から累積した分をTDにマージ
                 TD[j] = self.adj_td(self.merge(TD[j], ac), j, i)
                 ac = self.merge(ac, XX[j]) # acの累積更新 # 逆向きにマージしていく
-                # レコード 順向きのものと逆向きのものをマージする
+                # レコード 順向きのものME[j]と逆向きのものをマージする
                 XX[j] = self.adj_fin(self.merge(ME[j], TD[j]), j)
         self.res = XX
 
