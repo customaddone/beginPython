@@ -126,3 +126,24 @@ def router(n, sta, end):
             break
 
     return list(route)
+
+ans = 0
+# 部分木の色ぬり + 閉路検出
+def search(sta, dist):
+    global ans
+    # 現在の位置とparent
+    pos = deque([[sta, -1]])
+    ignore[x] = 1
+    flag = True
+
+    while pos:
+        u, parent = pos.popleft()
+        for i in dist[u]:
+            if i != parent:
+                if ignore[i] == 1:
+                    flag = False
+                    continue
+                ignore[i] = 1
+                pos.append([i, u])
+    if flag:
+        ans += 1
