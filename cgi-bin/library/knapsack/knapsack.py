@@ -69,6 +69,24 @@ def part_sum_1(num, limit):
     return dp[N][limit]
 # print(part_sum_1(num, limit))
 
+array = [1, 3, 5, 7, 9]
+
+# 個数制限あり重複なし部分和
+# dict ver
+def part_sum_dict(array):
+    N = len(array)
+    prev = {}
+    prev[0] = 1
+
+    for i in range(N):
+        next = deepcopy(prev)
+        for key, value in prev.items():
+            next[key + array[i]] = 1
+        prev = next
+    return prev
+
+print(part_sum_dict(array))
+
 # 個数制限なし重複あり部分和
 # 合計でlimitになる通りの数が出てくる
 # 1 + 3 と3 + 1 と1 + 1 + 1 + 1は違う通りになる

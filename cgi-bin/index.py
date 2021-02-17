@@ -32,21 +32,36 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# 決め打ち二分探索
-# ABC146 C - Buy an Integer
+N, M = getNM()
+V = getList()
+R = getList()
+A, B = getNM()
+# 個数制限あり重複なし部分和
+# 合計でlimitになる通りの数が出てくる
+# numは数字のリスト、limitは部分和
+def part_sum_dict(array):
+    N = len(array)
+    prev = defaultdict(int)
+    prev[0] = 1
 
-A, B, X = getNM()
+    for i in range(N):
+        next = deepcopy(prev)
+        for key, value in prev.items():
+            next[key + array[i]] += 1
+        prev = next
 
-ok = 0
-ng = 10 ** 9 + 1
+    return prev
 
-def f(x):
-    return A * x + B * len(str(x)) <= X
+su_v = sorted([[key, value] for key, value in part_sum_dict(V).items()])
+su_r = sorted([[key, value] for key, value in part_sum_dict(R).items()])
 
-while abs(ok - ng) > 1:
-    mid = (ok + ng) // 2
-    if f(mid):
-        ok = mid
-    else:
-        ng = mid
-print(ok)
+l = 0
+r = 0
+print(su_v)
+print(su_r)
+for opt in su_r[1:]:
+    while l < len(su_v) and A * opt >= su_v[l][0]:
+        l += 1
+    while r < len(su_v) and B * opt >= su_v[r][0]:
+        r += 1
+    print(opt, l, r)
