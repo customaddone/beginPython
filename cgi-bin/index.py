@@ -32,45 +32,54 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ARC005 C - 器物損壊！高橋君
-# 隣マスにコスト0で移動する場合は0-1bfsする
+N, K = getNM()
+S = input()
 
-H, W = 4, 5
-maze = [
-['s', '#', '#', '#', '#'],
-['.', '.', '.', '.', '#'],
-['#', '#', '#', '#', '#'],
-['#', '.', '.', '.', 'g'],
-]
+if(K * 2 > N):
+    print('NO')
+    exit()
 
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == 's':
-            si = [i, j]
-            maze[i][j] = '.'
-        elif maze[i][j] == 'g':
-            gi = [i, j]
-            maze[i][j] = '.'
+# ダブらない場所に長さKの同じ文字の種類と数で構成された部分があるか
+def check(n, s, k, base, alp):
+    # 各アルファベットをエンコード
+    encode = {}
+    for i, ch in enumerate(alp, 10001):
+        # modは最強の2 ** 61 - 1を使う
+        encode[ch] = pow(base, i, 2 ** 61 - 1)
 
-pos = deque([[si[0], si[1]]])
-dist = [[-1] * W for j in range(H)]
-dist[si[0]][si[1]] = 0
+    # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
+    res = 0
+    for i in range(k):
+        res += encode[s[i]]
+        res %= mod
 
-# 0-1bfs
-while pos:
-    y, x = pos.popleft()
-    for i in range(4):
-        ny = y + dy[i]
-        nx = x + dx[i]
-        if 0 <= ny < H and 0 <= nx < W and dist[ny][nx] == -1:
-            if maze[ny][nx] == '.':
-                dist[ny][nx] = dist[y][x]
-                pos.appendleft([ny, nx]) # 0コストはappendleftで
-            else:
-                dist[ny][nx] = dist[y][x] + 1
-                pos.append([ny, nx])
+    dic = {res: 0}
+    # ローリングする
+    for i in range(n - k):
+        res += encode[s[i + k]] - encode[s[i]]
+        res %= mod
+        # 既出なら
+        if res in dic.keys():
+            # ダブってもいいなら以下はいらん
+            index = dic[res]
+            if index + k <= i + 1:# ダブって無いか
+                return True
+        else:
+            dic[res] = i + 1
 
-if dist[gi[0]][gi[1]] <= 2:
+    return False
+
+def rolling_hash(n, s, m):
+    res = True
+    # 原子根を適当に手動で乱択してね
+    for base in [161971, 167329, 191911]:
+        # アルファベットをランダムに並べた表でエンコード表を作る
+        for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
+            # これ一回の計算量はO(N)
+            res &= check(n, s, m, base, alp)
+    return res
+
+if rolling_hash(N, S, K):
     print('YES')
 else:
     print('NO')

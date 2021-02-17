@@ -69,11 +69,12 @@ if(K * 2 > N):
     exit()
 
 # ダブらない場所に長さKの同じ文字の種類と数で構成された部分があるか
-def check(n, s, k, mod, alp):
+def check(n, s, k, base, alp):
     # 各アルファベットをエンコード
     encode = {}
     for i, ch in enumerate(alp, 10001):
-        encode[ch] = pow(172603, i, mod)
+        # modは最強の2 ** 61 - 1を使う
+        encode[ch] = pow(base, i, 2 ** 61 - 1)
 
     # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
     res = 0
@@ -97,17 +98,17 @@ def check(n, s, k, mod, alp):
 
     return False
 
-ans = True
-ps = '9999217 9999221 9999233 9999271 9999277 9999289 9999299 9999317 9999337 9999347 9999397 9999401 9999419 9999433 9999463 9999469 9999481 9999511 9999533 9999593 9999601 9999637 9999653 9999659 9999667 9999677 9999713 9999739 9999749 9999761 9999823 9999863 9999877 9999883 9999889 9999901 9999907 9999929 9999931 9999937 9999943 9999971 9999973'
-ps = list(map(int, ps.split(' ')))
+def rolling_hash(n, s, m):
+    res = True
+    # 原子根を適当に手動で乱択してね
+    for base in [161971, 167329, 191911]:
+        # アルファベットをランダムに並べた表でエンコード表を作る
+        for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
+            # これ一回の計算量はO(N)
+            res &= check(n, s, m, base, alp)
+    return res
 
-# 各modについて
-for p in ps:
-    # アルファベットをランダムに並べた表でエンコード表を作る
-    for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
-        ans = (ans & check(N, S, K, p, alp))
-
-if ans:
+if rolling_hash(N, S, K):
     print('YES')
 else:
     print('NO')
