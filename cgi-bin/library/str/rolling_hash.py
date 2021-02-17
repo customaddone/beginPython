@@ -60,20 +60,21 @@ dy = [0, 1, 0, -1]
 
 def check(n, s, k, base, alp):
     power = [1] * (N + 1)
+    mo = 2 ** 61 - 1 # 最強のものを使用
     # 部分文字列を数字に
     # ハッシュ生成
     for i in range(1, N + 1):
-        power[i] = power[i - 1] * base % mod
+        power[i] = power[i - 1] * base % mo
 
     res = 0
     # 頭m文字のハッシュ生成
     for i in range(k):
         res += s[i] * power[k - i - 1]
-        res %= mod
+        res %= mo
     dic = {res: 0}
     for i in range(N - k):
         # ハッシュをローリングしていって次々m文字のハッシュを生成していく
-        res = ((res - s[i] * power[k - 1]) * base + s[i + k]) % mod
+        res = ((res - s[i] * power[k - 1]) * base + s[i + k]) % mo
         # もし既出なら
         if res in dic.keys():
             index = dic[res]
@@ -171,7 +172,6 @@ else:
     print('NO')
 
 # 天下一プログラマーコンテスト2014予選B B - エターナルスタティックファイナル
-# 順番を考慮しない
 
 # ローリングハッシュ
 # sの連続部分列とkがマッチした部分を全て記録する

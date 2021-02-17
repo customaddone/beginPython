@@ -32,35 +32,37 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+# ダブらない場所に長さKの同じ文字の種類と数で構成された部分があるか
 def check(n, s, k, base, alp):
-    power = [1] * (N + 1)
-    # 部分文字列を数字に
-    # ハッシュ生成
-    for i in range(1, N + 1):
-        power[i] = power[i - 1] * base % mod
+    # 各アルファベットをエンコード
+    encode = {}
+    for i, ch in enumerate(alp, 10001):
+        # modは最強の2 ** 61 - 1を使う
+        encode[ch] = pow(base, i, 2 ** 61 - 1)
 
+    # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
     res = 0
-    # 頭m文字のハッシュ生成
     for i in range(k):
-        res += s[i] * power[k - i - 1]
+        res += encode[s[i]]
         res %= mod
+
     dic = {res: 0}
-    for i in range(N - k):
-        # ハッシュをローリングしていって次々m文字のハッシュを生成していく
-        res = ((res - s[i] * power[k - 1]) * base + s[i + k]) % mod
-        # もし既出なら
+    # ローリングする
+    for i in range(n - k):
+        res += encode[s[i + k]] - encode[s[i]]
+        res %= mod
+        # 既出なら
         if res in dic.keys():
+            # ダブってもいいなら以下はいらん
             index = dic[res]
-            if index + k <= i + 1: # 重ならないか
+            if index + k <= i + 1:# ダブって無いか
                 return True
         else:
-            dic[res] = i + 1 # i + 1:頭の位置を記録する
+            dic[res] = i + 1
 
     return False
 
 def rolling_hash(n, s, m):
-    s = list(map(ord, s)) # pythonは遅いので
-
     res = True
     # 原子根を適当に手動で乱択してね
     for base in [161971, 167329, 191911]:
@@ -70,10 +72,14 @@ def rolling_hash(n, s, m):
             res &= check(n, s, m, base, alp)
     return res
 
-N, M = getNM()
+N, K = getNM()
 S = input()
 
-if rolling_hash(N, S, M):
+if(K * 2 > N):
+    print('NO')
+    exit()
+
+if rolling_hash(N, S, K):
     print('YES')
 else:
     print('NO')
