@@ -99,5 +99,4 @@ while len(pos) > 0:
         if s & (1 << u):
             continue
         pos.append([s | (1 << u), u])
-        
 print(cnt)
