@@ -55,8 +55,65 @@ dy = [0, 1, 0, -1]
 # 文字Sのl ~ r文字目をハッシュ化する
 # 順番を考慮するものとしないものがある
 
+# ABC141 E - Who Says a Pun?
+# 順番も考慮する
+
+def check(n, s, k, base, alp):
+    power = [1] * (N + 1)
+    # 部分文字列を数字に
+    # ハッシュ生成
+    for i in range(1, N + 1):
+        power[i] = power[i - 1] * base % mod
+
+    res = 0
+    # 頭m文字のハッシュ生成
+    for i in range(k):
+        res += s[i] * power[k - i - 1]
+        res %= mod
+    dic = {res: 0}
+    for i in range(N - k):
+        # ハッシュをローリングしていって次々m文字のハッシュを生成していく
+        res = ((res - s[i] * power[k - 1]) * base + s[i + k]) % mod
+        # もし既出なら
+        if res in dic.keys():
+            index = dic[res]
+            if index + k <= i + 1: # 重ならないか
+                return True
+        else:
+            dic[res] = i + 1 # i + 1:頭の位置を記録する
+
+    return False
+
+def rolling_hash(n, s, m):
+    if n - m < m:
+        return False
+    s = list(map(ord, s)) # pythonは遅いので
+
+    res = True
+    # 原子根を適当に手動で乱択してね
+    for base in [161971, 167329, 191911]:
+        # アルファベットをランダムに並べた表でエンコード表を作る
+        for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
+            # これ一回の計算量はO(N)
+            res &= check(n, s, m, base, alp)
+    return res
+
+N = getN()
+S = input()
+
+ok = 0
+ng = N + 1
+while ng - ok > 1:
+    mid = (ok + ng) // 2
+
+    if rolling_hash(N, S, mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
+
 # ARC024 だれじゃ
-# 順番を考慮するもの
+# 順番を考慮しないもの　種類だけ見るもの
 # abc, bcd, cdb...を次々ハッシュ化していく
 # 共通するものがあるか
 # psが一つの場合はnoのものがyesになる場合があるのでたくさん用意する
@@ -117,7 +174,7 @@ else:
 # 順番を考慮しない
 
 # ローリングハッシュ
-# sの連続部分列とkがマッチした部分s[i:j]についてのi, jを求める
+# sの連続部分列とkがマッチした部分を全て記録する
 # 文字列を数字に変換してから使おう
 def check(stri, targ, base):
     s = list(map(ord, list(stri)))
