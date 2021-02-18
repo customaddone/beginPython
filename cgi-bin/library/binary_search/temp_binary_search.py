@@ -50,3 +50,28 @@ while abs(ok - ng) > 1:
     else:
         ng = mid
 print(ok)
+
+# ABC034 D-食塩水
+# 小数ver
+
+N, K = getNM()
+query = [getList() for i in range(N)]
+
+def judge(target):
+    alta = []
+    for i in range(N):
+        salt = query[i][0] * (query[i][1] - target)
+        alta.append(salt)
+    alta.sort(reverse = True)
+    return sum(alta[:K]) >= 0
+
+left = -1
+right = 101 # 大きい値を
+
+for i in range(100):
+    mid = left + (right - left) / 2
+    if judge(mid):
+        left = mid
+    else:
+        right = mid
+print(left)
