@@ -32,6 +32,9 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+# ABC030 D - へんてこ辞書
+# ループを飛ばす
+
 N, A = getNM()
 K = getN()
 B = getList()
