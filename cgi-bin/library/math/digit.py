@@ -32,26 +32,22 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N, M = getNM()
-S = input()
-P = []
-for i in range(N + 1):
-    if S[i] == '0':
-        P.append(i)
-now = P.pop()
-ans = []
+# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
+def bitflag(n, flaglist):
+    if n > 0:
+        for i in range(1, 61):
+            split = 2 ** i
+            flag1 = (n // split) * (split // 2)
+            flag2 = max(n % split + 1 - (split // 2), 0)
+            flaglist[i] += flag1 + flag2
 
-while now > 0:
-    # 行けない
-    if P and P[-1] + M < now:
-        print(-1)
-        exit()
-    next = float('inf')
-    # いけるとこまでいく
-    while next > 0 and P[-1] + M >= now:
-        next = P.pop()
-
-    ans.append(now - next)
-    now = next
-
-print(*list(reversed(ans)))
+l = [[0, 0] for i in range(61)]
+# bitの各桁が１か０かをlistaに収納
+def splitbit(n):
+    for i in range(61):
+        if n & (1 << i):
+            l[i][1] += 1
+        else:
+            l[i][0] += 1
+for i in A:
+    splitbit(i)
