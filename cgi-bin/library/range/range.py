@@ -32,6 +32,9 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+# 区間の問題について
+# ARC045 B - ドキドキデート大作戦高橋君
+
 N, M = getNM()
 R = [getList() for i in range(M)]
 
