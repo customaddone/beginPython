@@ -129,6 +129,17 @@ n = (x + y - 2 * x * y) * pow(x * y - x - y, mod - 2, mod)
 k = (y - x * y) * pow(x * y - x - y, mod - 2, mod)
 print((n - k) % mod, k % mod)
 
+mod = [0]
+pw = 1
+# c = 1817181712114なら
+# 4, 14, 114, 2114のmodでのあまりを出す
+for c in input()[::-1]:
+    mod.append((int(c) * pw + mod[-1]) % 2019)
+    pw = pw * 10 % 2019
+from collections import *
+
+print(sum(v * (v - 1) // 2 for v in Counter(mod).values()))
+
 # F - Knapsack for All Segments
 
 N, P = getNM()
