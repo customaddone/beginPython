@@ -100,7 +100,15 @@ def event_sort(section, query):
 for i in event_sort(section, query):
     print(i)
 
-# 各queryがどのsectionの開区間[s, t)内にあるか
+section = [
+[-3, 3],
+[-1, 1],
+[5, 7],
+[1, 2],
+]
+
+query = [0, 1, 2, 3]
+
 def event_sort(section, query):
     s = len(section)
     q = len(query)
@@ -116,6 +124,7 @@ def event_sort(section, query):
 
     # 引っかかってる場所の管理
     se = set()
+    res = []
 
     for a, b, c in task:
         # ゴールが来ると削除
@@ -126,15 +135,10 @@ def event_sort(section, query):
             se.add(c)
         # queについてなら
         else:
-            print(se)
+            res.append(deepcopy(se))
 
-section = [
-[-3, 3],
-[-1, 1],
-[5, 7],
-[1, 2],
-]
+    return res
 
-query = [0, 1, 2, 3]
+# query内の点iがどのsection内の点j内にあるか
 # [{0, 1}, {0, 3}, {0}, set()]
-event_sort(section, query)
+print(event_sort(section, query))

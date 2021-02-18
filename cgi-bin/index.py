@@ -32,68 +32,56 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-H, W, T = 2, 3, 10
-maze = [
-'S##',
-'.#G'
+N, M = getNM()
+R = [getList() for i in range(M)]
+
+imos = [0] * (N + 1)
+for l, r in R:
+    imos[l - 1] += 1
+    imos[r] += 1
+
+for i in range(1, N + 1):
+    imos[i] += imos[i - 1]
+
+section = [
+[-3, 3],
+[-1, 1],
+[5, 7],
+[1, 2],
 ]
 
-start = [0, 0]
-goal = [0, 0]
-for i in range(H):
-    for j in range(W):
-        if maze[i][j] == 'S':
-            start = [i, j]
-            break
-        if maze[i][j] == 'G':
-            goal = [i, j]
-            break
+query = [0, 1, 2, 3]
+# [{0, 1}, {0, 3}, {0}, set()]
 
-# 二次元ダイクストラ
-def dijkstra(start, goal, size, d):
-    sy, sx = start
-    gy, gx = goal
+def event_sort(section, query):
+    s = len(section)
+    q = len(query)
+    # イベント生成
+    task = []
+    for i in range(s):
+        s, t = section[i]
+        task.append((s, 0, i))
+        task.append((t, 1, i))
+    for i in range(q):
+        task.append((query[i], 2, i))
+    task.sort()
 
-    dist = [[float('inf')] * W for i in range(H)]
-    dx = [1, 0, -1, 0]
-    dy = [0, 1, 0, -1]
-    pos = [(0, sy, sx)]
-    heapify(pos)
-    dist[sy][sx] = 0
+    # 引っかかってる場所の管理
+    se = set()
+    res = []
 
-    while len(pos):
-        cost, y, x = heappop(pos)
+    for a, b, c in task:
+        # ゴールが来ると削除
+        if b == 1:
+            se.remove(c)
+        # スタートが来ると追加
+        elif b == 0:
+            se.add(c)
+        # queについてなら
+        else:
+            res.append(deepcopy(se))
 
-        if y == gy and x == gx:
-            return cost
-        if dist[y][x] < cost:
-            continue
-        # エッジは探索のたびに生成していく
-        for i in range(4):
-            ny = y + dy[i]
-            nx = x + dx[i]
-            if 0 <= ny < H and 0 <= nx < W:
-                # '.'
-                if (maze[ny][nx] == '.' or maze[ny][nx] == 'G') and dist[ny][nx] > cost + 1:
-                    dist[ny][nx] = cost + 1
-                    heappush(pos, (cost + 1, ny, nx))
-                # '#'
-                if maze[ny][nx] == "#" and  dist[ny][nx] > cost + d:
-                    dist[ny][nx] = cost + d
-                    heappush(pos, (cost + d, ny, nx))
+    return res
 
-    return dist[gy][gx]
-
-# にぶたん
-ok = -1
-ng = 10 ** 9 + 1
-
-while ng - ok > 1:
-    mid = (ok + ng) // 2
-
-    if dijkstra(start, goal, H * W, mid) > T:
-        ng = mid
-    else:
-        ok = mid
-
-print(ok)
+# query内の点iがどのsection内の点j内にあるか
+event_sort(section, query)
