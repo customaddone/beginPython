@@ -69,3 +69,19 @@ for i in range(M):
 print(ans)
 for i in index:
     print(i)
+
+# ARC026 蛍光灯
+# 全ての区間をつけるための最小費用は？
+# セグ木を使う
+
+N, M = getNM()
+seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
+L = [getList() for i in range(N)]
+L.sort()
+seg.update(0, 0)
+
+for l, r, c in L:
+    opt = seg.query(l, r) # 蛍光灯を新たにつける場合
+    vs = seg.query(r, r + 1) # 何もしない場合
+    seg.update(r, min(vs, opt + c))
+print(seg.query(M, M + 1))
