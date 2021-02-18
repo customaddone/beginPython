@@ -100,3 +100,25 @@ while len(pos) > 0:
             continue
         pos.append([s | (1 << u), u])
 print(cnt)
+
+# N * N の距離の票をあらかじめ作ろう
+def counter(sta):
+    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
+    dp = [[float('inf')] * N for i in range(1 << N)]
+    dp[1 << sta][sta] = 0
+
+    for bit in range(1, 1 << N):
+        if not bit & (1 << sta):
+            continue
+        # s:現在の場所
+        for s in range(N):
+            # sを踏んだことになっていなければ飛ばす
+            if not bit & (1 << s):
+                continue
+            # t:次の場所
+            for t in range(N):
+                # tを過去踏んでいない and s → tへのエッジがある
+                if (bit & (1 << t)) == 0:
+                    dp[bit|(1 << t)][t] = min(dp[bit|(1 << t)][t], dp[bit][s] + dist[s][t])
+
+    return dp[-1]
