@@ -32,31 +32,68 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N, X = getNM()
-X -= 1
-H = getList() # フラグが立っている部分だけ
-dist =[[] for _ in range(N)]
-for i in range(N - 1):
-    a, b = getNM()
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
+H, W, T = 2, 3, 10
+maze = [
+'S##',
+'.#G'
+]
 
-# 地点vのans
-def dfs(par, v):
-    res = 0
-    for i in dist[v]:
-        if i == par:
+start = [0, 0]
+goal = [0, 0]
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == 'S':
+            start = [i, j]
+            break
+        if maze[i][j] == 'G':
+            goal = [i, j]
+            break
+
+# 二次元ダイクストラ
+def dijkstra(start, goal, size, d):
+    sy, sx = start
+    gy, gx = goal
+
+    dist = [[float('inf')] * W for i in range(H)]
+    dx = [1, 0, -1, 0]
+    dy = [0, 1, 0, -1]
+    pos = [(0, sy, sx)]
+    heapify(pos)
+    dist[sy][sx] = 0
+
+    while len(pos):
+        cost, y, x = heappop(pos)
+
+        if y == gy and x == gx:
+            return cost
+        if dist[y][x] < cost:
             continue
-        # 子要素iのans
-        opt = dfs(v, i)
-        if opt > 0: # 宝石があるルートの帰り道
-            # もしiの部分木に宝石があれば親→子 + opt + 子→親の経路を通らないといけない
-            res += opt + 2
-        elif H[i]:
-            # もしiの部分木の中でiにのみ宝石がある場合にはopt = 0だが,
-            # iの宝石を回収するために親→子 + 子→親の経路を通らないといけない
-            res += 2
+        # エッジは探索のたびに生成していく
+        for i in range(4):
+            ny = y + dy[i]
+            nx = x + dx[i]
+            if 0 <= ny < H and 0 <= nx < W:
+                # '.'
+                if (maze[ny][nx] == '.' or maze[ny][nx] == 'G') and dist[ny][nx] > cost + 1:
+                    dist[ny][nx] = cost + 1
+                    heappush(pos, (cost + 1, ny, nx))
+                # '#'
+                if maze[ny][nx] == "#" and  dist[ny][nx] > cost + d:
+                    dist[ny][nx] = cost + d
+                    heappush(pos, (cost + d, ny, nx))
 
-    return res
+    return dist[gy][gx]
 
-print(dfs(-1, X))
+# にぶたん
+ok = -1
+ng = 10 ** 9 + 1
+
+while ng - ok > 1:
+    mid = (ok + ng) // 2
+
+    if dijkstra(start, goal, H * W, mid) > T:
+        ng = mid
+    else:
+        ok = mid
+
+print(ok)
