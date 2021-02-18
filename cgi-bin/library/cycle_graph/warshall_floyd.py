@@ -86,3 +86,21 @@ for x, y, z in question:
         for j in range(i + 1, N):
             res += dist[i][j]
     print(res)
+
+# エッジ[u, v, c]が最短路を構成するか
+# ワーシャル回したあとでやる
+
+def needed_path(edges):
+    m = len(edges)
+    need_dist = [0] * m
+
+    for i in range(N): # 全ての中間地点を試す
+        for j in range(m):
+            s, t, c = edges[j]
+            s -= 1
+            t -= 1
+            # ぴったり最短路になるなら必要
+            if dist[i][s] + c == dist[i][t]:
+                need_dist[j] = 1
+
+    return need_dist

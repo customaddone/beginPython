@@ -32,28 +32,40 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N, A = getNM()
-K = getN()
-B = getList()
-A -= 1
-B = [i - 1 for i in B] # 次の行き先
+N, M = getNM()
+query = [getList() for i in range(M)]
 
-# スタートからtステップでどこまで行けるか
-def roop(s, t):
-    visited = [-1] * N
-    visited[s] = 1
+dist = [[float('inf')] * N for i in range(N)]
+for i in range(N):
+    dist[i][i] = 0
+for i in range(M):
+    a, b, c = query[i]
+    dist[a - 1][b - 1] = c
+    dist[b - 1][a - 1] = c
 
-    cnt = 1
-    to = B[s]
+def warshall_floyd(dist):
+    for k in range(N):
+        # i:start j:goal k:中間地点でループ回す
+        for i in range(N):
+            for j in range(N):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist
 
-    while cnt < t:
-        cnt += 1
-        if visited[to] >= 0:
-            cnt += ((K - cnt) // (cnt - visited[to])) * (cnt - visited[to])
-            visited = [-1] * N
-        visited[to] = cnt
-        to = B[to]
+warshall_floyd(dist)
 
-    return to
+def needed_path(edges):
+    m = len(edges)
+    need_dist = [0] * m
 
-print(roop(A, K) + 1)
+    for i in range(N): # 全ての中間地点を試す
+        for j in range(m):
+            s, t, c = edges[j]
+            s -= 1
+            t -= 1
+            # ぴったり最短路になるなら必要
+            if dist[i][s] + c == dist[i][t]:
+                need_dist[j] = 1
+
+    return need_dist
+
+print(M - sum(needed_path(query)))
