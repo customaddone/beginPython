@@ -217,6 +217,25 @@ w = [7550, 9680, 9790, 7150, 5818, 7712, 8227, 8671, 8228, 2461]
 v = [540, 691, 700, 510, 415, 551, 587, 619, 588, 176]
 A = 9999
 
+# ARC073 D - Simple Knapsack
+# dict ver
+
+N, W = getNM()
+WV = [getList() for i in range(N)]
+d = defaultdict(int)
+d[0] = 0 # dictで持つ
+
+for i in range(N):
+    w, v = WV[i]
+    all = list(d.items()) # アイテム解放
+    for w_s, v_s in all:
+        if w_s + w <= W:
+            # w1近辺, w1 * 2近辺, w1 * 3近辺...に集まるので
+            # サイズはそんなに大きくならない
+            d[w_s + w] = max(d[w_s + w], v_s + v)
+
+print(max(d.values()))
+
 # ABC153 E - Crested Ibis vs Monster
 # Aをvalueで引き切るための最小weightを求める
 def knapsack_4(N, limit, weight, value):
