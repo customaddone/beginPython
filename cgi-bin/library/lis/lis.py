@@ -64,3 +64,24 @@ def lis(A):
             L[bisect_left(L, a)] = a
     return len(L)
 print(n - lis(lista))
+
+# E - Sequence Decomposing
+
+N = getN()
+A = getArray(N)
+
+# Lisだろ
+# [2, 1, 4, 5, 3]の場合
+# L:[2] 1が入ってきたらappendleft
+# L:[1, 2] 4が入ってきたら現在のLの中で4を下回る最も大きいものを更新
+# これが最も勿体無くないやり方
+# L:[1, 4]
+
+L = deque([A[0]])
+for i in A[1:]:
+    index = bisect_left(L, i)
+    if index == 0:
+        L.appendleft(i)
+    else:
+        L[index - 1] = i
+print(len(L))
