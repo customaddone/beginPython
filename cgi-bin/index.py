@@ -32,54 +32,31 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ダブらない場所に長さKの同じ文字の種類と数で構成された部分があるか
-def check(n, s, k, base, alp):
-    # 各アルファベットをエンコード
-    encode = {}
-    for i, ch in enumerate(alp, 10001):
-        # modは最強の2 ** 61 - 1を使う
-        encode[ch] = pow(base, i, 2 ** 61 - 1)
+N, X = getNM()
+X -= 1
+H = getList() # フラグが立っている部分だけ
+dist =[[] for _ in range(N)]
+for i in range(N - 1):
+    a, b = getNM()
+    dist[a - 1].append(b - 1)
+    dist[b - 1].append(a - 1)
 
-    # 文字列の先頭からm文字、k文字目からm文字をハッシュしていく
+# 地点vのans
+def dfs(par, v):
     res = 0
-    for i in range(k):
-        res += encode[s[i]]
-        res %= mod
+    for i in dist[v]:
+        if i == par:
+            continue
+        # 子要素iのans
+        opt = dfs(v, i)
+        if opt > 0: # 宝石があるルートの帰り道
+            # もしiの部分木に宝石があれば親→子 + opt + 子→親の経路を通らないといけない
+            res += opt + 2
+        elif H[i]:
+            # もしiの部分木の中でiにのみ宝石がある場合にはopt = 0だが,
+            # iの宝石を回収するために親→子 + 子→親の経路を通らないといけない
+            res += 2
 
-    dic = {res: 0}
-    # ローリングする
-    for i in range(n - k):
-        res += encode[s[i + k]] - encode[s[i]]
-        res %= mod
-        # 既出なら
-        if res in dic.keys():
-            # ダブってもいいなら以下はいらん
-            index = dic[res]
-            if index + k <= i + 1:# ダブって無いか
-                return True
-        else:
-            dic[res] = i + 1
-
-    return False
-
-def rolling_hash(n, s, m):
-    res = True
-    # 原子根を適当に手動で乱択してね
-    for base in [161971, 167329, 191911]:
-        # アルファベットをランダムに並べた表でエンコード表を作る
-        for alp in ['qwertyuioplkmnjhbvgfcdxsaz','qazxcsdwertfgvbnmhjyuioklp']:
-            # これ一回の計算量はO(N)
-            res &= check(n, s, m, base, alp)
     return res
 
-N, K = getNM()
-S = input()
-
-if(K * 2 > N):
-    print('NO')
-    exit()
-
-if rolling_hash(N, S, K):
-    print('YES')
-else:
-    print('NO')
+print(dfs(-1, X))
