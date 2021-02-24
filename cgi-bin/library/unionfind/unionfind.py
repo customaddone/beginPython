@@ -72,7 +72,7 @@ class UnionFind():
             return
 
         if self.parents[x] > self.parents[y]:
-            # x, y = y, x
+            x, y = y, x
         # if x > y: # よりrootのインデックスが小さい方が親
             # x, y = y, x
 
