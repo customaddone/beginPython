@@ -102,23 +102,46 @@ while len(pos) > 0:
 print(cnt)
 
 # N * N の距離の票をあらかじめ作ろう
-def counter(sta):
+def counter(sta, K, G):
     # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
-    dp = [[float('inf')] * N for i in range(1 << N)]
+    dp = [[float('inf')] * K for i in range(1 << K)]
     dp[1 << sta][sta] = 0
 
-    for bit in range(1, 1 << N):
+    for bit in range(1, 1 << K):
         if not bit & (1 << sta):
             continue
         # s:現在の場所
-        for s in range(N):
+        for s in range(K):
             # sを踏んだことになっていなければ飛ばす
             if not bit & (1 << s):
                 continue
             # t:次の場所
-            for t in range(N):
+            for t in range(K):
                 # tを過去踏んでいない and s → tへのエッジがある
                 if (bit & (1 << t)) == 0:
-                    dp[bit|(1 << t)][t] = min(dp[bit|(1 << t)][t], dp[bit][s] + dist[s][t])
+                    dp[bit|(1 << t)][t] = min(dp[bit|(1 << t)][t], dp[bit][s] + G[s][t])
 
-    return dp[-1]
+    return min(dp[-1])
+
+# 任意の地点からスタート
+def counter(sta, K, G):
+    # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
+    dp = [[float('inf')] * K for i in range(1 << K)]
+    for i in range(K):
+        dp[1 << i][i] = 0
+
+    for bit in range(1, 1 << K):
+        if not bit:
+            continue
+        # s:現在の場所
+        for s in range(K):
+            # sを踏んだことになっていなければ飛ばす
+            if not bit & (1 << s):
+                continue
+            # t:次の場所
+            for t in range(K):
+                # tを過去踏んでいない and s → tへのエッジがある
+                if (bit & (1 << t)) == 0:
+                    dp[bit|(1 << t)][t] = min(dp[bit|(1 << t)][t], dp[bit][s] + G[s][t])
+
+    return min(dp[-1])
