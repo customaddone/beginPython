@@ -28,18 +28,9 @@ def rand_query(ran1, ran2, rantime):
       r_query.append(n_q)
   return sorted(r_query)
 
-from collections import defaultdict, deque, Counter
+
 from sys import exit
-from decimal import *
-from heapq import heapify, heappop, heappush
-import math
-import random
-import string
-from copy import deepcopy
-from itertools import combinations, permutations, product
-from operator import mul, itemgetter
-from functools import reduce
-from bisect import bisect_left, bisect_right
+
 
 import sys
 sys.setrecursionlimit(1000000000)
@@ -124,7 +115,7 @@ def counter(sta, K, G):
     return min(dp[-1])
 
 # 任意の地点からスタート
-def counter(sta, K, G):
+def counter(K, G):
     # dp[bit][i]これまでに踏んだ場所がbitであり、現在の場所がiである
     dp = [[float('inf')] * K for i in range(1 << K)]
     for i in range(K):

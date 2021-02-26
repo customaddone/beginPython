@@ -1,15 +1,6 @@
-from collections import defaultdict, deque, Counter
+from collections import deque
 import sys
-from decimal import *
-from heapq import heapify, heappop, heappush
-import math
-import random
-import string
-from copy import deepcopy
-from itertools import combinations, permutations, product
-from operator import mul, itemgetter
-from functools import reduce, lru_cache
-from bisect import bisect_left, bisect_right
+
 
 def input():
     return sys.stdin.readline().rstrip()
