@@ -52,29 +52,23 @@ K = getN()
 C = [i - 1 for i in getList()]
 set_c = set(C)
 
-def dij(start, edges):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start)]
-    parent = [-1] * N
+def distance(n, edges, sta):
+    ignore = [float('inf')] * N
+    ignore[sta] = 0
+    pos = deque([sta])
 
-    # pqの先頭がgoal行きのものなら最短距離を返す
-    while len(pq) > 0:
-        di, now = heappop(pq)
-        if (di > dist[now]):
-            continue
-        for i in edges[now]:
-            if dist[i[0]] > dist[now] + i[1]:
-                dist[i[0]] = dist[now] + i[1]
-                parent[i[0]] = now
-                heappush(pq, (dist[i[0]], i[0]))
-
-    return dist
+    while len(pos) > 0:
+        u = pos.popleft()
+        for i in edges[u]:
+            if ignore[i[0]] == float('inf'):
+                ignore[i[0]] = ignore[u] + i[1]
+                pos.append(i[0])
+    return ignore
 
 G = []
 for i in range(K):
     g = []
-    opt = dij(C[i], E)
+    opt = distance(N, E, C[i])
     for j in range(N):
         if j in set_c:
             g.append(opt[j])

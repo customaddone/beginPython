@@ -88,7 +88,7 @@ search(N, G1, 0)
 # staからの距離
 # staからの距離を求めてそのもっとも遠い店からまた距離を求めた時のもっとも遠い店が木の直径
 def distance(n, edges, sta):
-    ignore = [-1] * N
+    ignore = [-1] * N # 距離を求めたいときはfloat('inf')にする
     ignore[sta] = 0
     pos = deque([sta])
 
