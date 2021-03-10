@@ -29,6 +29,8 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+# 積分したい
+
 # 正の整数x, yについて、y <= n / x を満たす点(x,y)の個数（積分）を返したい
 # x = i(1 <= i <= n)としたとき、対応するyの最大値は何かを返す関数を作る
 # N = 10の時
@@ -56,34 +58,4 @@ def integral(n):
         res_y.appendleft(n // i)
     return list(res_x), list(res_y)
 
-N, K = getNM()
-x, y = integral(N)
-
-m = len(x)
-
-# y[i]まで許容できる通りがimos(prev)個ある
-cnt = [1] * m
-for i in range(1, m):
-    cnt[i] = x[i] - x[i - 1]
-prev = deepcopy(cnt)
-
-# x:[1, 2, 3, 5, 10] y:[10, 5, 3, 2, 1]
-for i in range(K - 1):
-    next = [0] * m
-    now = m - 1
-    # 累積
-    for i in range(1, m):
-        prev[i] += prev[i - 1]
-    # どこまで足すか xでやる
-    for i in range(m):
-        while now > 0 and x[now] * x[i] > N:
-            now -= 1
-        next[i] += prev[now]
-    # ウェートをつける
-    for i in range(m):
-        next[i] *= cnt[i]
-        next[i] %= mod
-
-    prev = next
-
-print(sum(prev) % mod)
+print(integral(10))
