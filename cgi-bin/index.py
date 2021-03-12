@@ -20,7 +20,7 @@ def getArray(intn):
     return [int(input()) for i in range(intn)]
 
 sys.setrecursionlimit(1000000000)
-mod = 998244353
+mod = 10 ** 9 + 7
 INF = float('inf')
 dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
@@ -422,3 +422,31 @@ if su % 2 == 0:
     diff -= dp[(su + 1) // 2]
 
 print((pow(3, N, mod) - 3 * diff) % mod)
+
+# エクサウィザーズ2019 D - Modulo Operations
+
+N, X = getNM()
+S = getList()
+
+S.sort()
+
+# XがS[i]より大きい場合にXが小さくなる
+prev = [0] * (X + 1)
+prev[X] = 1
+
+# Sを逆から見ていく
+for i in range(N - 1, -1, -1):
+    next = [0] * (X + 1)
+    # 5 82
+    # 22 11 6 5 13 の場合
+    # それぞれを操作列として採用するか
+    for j in range(X + 1):
+        prev[j] %= mod
+        # 採用しない場合
+        # 今までの数列のうち先頭以外に挿入する この通りがi通り
+        next[j] += prev[j] * i % mod
+        # 採用する場合
+        next[j % S[i]] += prev[j]
+    prev = next
+
+print(sum(i * prev[i] % mod for i in range(S[0])) % mod)
