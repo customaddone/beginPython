@@ -29,39 +29,60 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-class BIT:
-    def __init__(self, N):
-        self.N = N
-        self.bit = [0] * (N + 1)
-        self.b = 1 << N.bit_length() - 1
+# ABC127 F - Absolute Minima
 
-    def add(self, a, w):
-        x = a
-        while(x <= self.N):
-            self.bit[x] += w
-            x += x & -x
+"""
+基礎ポイントはb
+愚直は a b大きいな
+クエリに対してlogNぐらいで求めたい
+次々と|x - a|が立っていく　
+|x - a|に近づけると小さくなる
+つまりsum(aとの差) + bが答え
+なるべく真ん中に置けばいいと思うけど
+aが2つの場合はa1 ~ a2のどれ選んでもいい
+aが3つの場合は？
+a1    a2   a3 三分探索したいが
+a1 ~ a2間にpがある場合　右に動かすことで減らせる
+小さい方から(aの数 + 1) // 2番目に置けばOK ヒープ使えばできるはず
+値の求め方　BITでも使うか 合計なのでBITで間に合う
+中央値をpとすると
+左側の値 p * n - sum
+右側の値 sum(p以降) - p * n
+右側、左側で考える
 
-    def get(self, a):
-        ret, x = 0, a - 1
-        while(x > 0):
-            ret += self.bit[x]
-            x -= x & -x
-        return ret
+1こ 1
+2こ 1
+3こ 2
+4こ 2
+5こ 3
+"""
 
-    def cum(self, l, r):
-        return self.get(r) - self.get(l)
+MIN = []
+MAX = []
+ans = 0
+value = 0
 
-    def lowerbound(self, w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
+Q = getN()
+for i in range(Q):
+    q = getList()
+
+    if q[0] == 1:
+        ans += q[2] # bを足す
+        heappush(MIN, q[1]) # 右半分
+        heappush(MAX, -q[1]) # 左半分　マイナスつける
+
+        if MIN[0] < -MAX[0]: # オーバーすれば
+            x = heappop(MIN) # 最小値
+            y = -heappop(MAX) # 最大値
+
+            value += (y - x)
+            heappush(MIN, y) # 反対側に入れる
+            heappush(MAX, -x)
+
+    else:
+        print(-MAX[0], ans + value)
+
+# aising2020 E. Camel Train
 
 """
 T個のテストケースについて答えましょう
@@ -84,26 +105,47 @@ L - Rのdiffを保持する
 プラスが大きいものから順に探索していく
 期限ギリギリに置く　置けない場合はその前に置く
 逆にマイナスの方にもリミットはある
+
+プラスから処理
+limの小さい順に
+マイナスなら保留　プラスなら抜いて突っ込む
+抜かれたやつは永久に放逐される
+
+二つを独立事象として捉える
 """
 
-N = getN()
-K = []
-for i in range(N):
-    k, l, r = getList()
-    # l - rは反転させている
-    heappush(K, [r - l, k, l, r])
+T = getN()
+for _ in range(T):
+    N = getN()
+    fore = [[] for i in range(N)]
+    rev = [[] for i in range(N)]
+    ans = 0
+    for i in range(N):
+        k, l, r = getNM()
+        ans += min(l, r)
+        if l - r > 0:
+            fore[k - 1].append(l - r)
+        elif k < N:
+            rev[N - k - 1].append(r - l)
 
-bit = BIT(N) # 最寄りの空いている場所を探す
-for i in range(N):
-    bit.add(i + 1, 1)
+    que = []
+    # 順
+    for i in range(N):
+        while fore[i]:
+            heappush(que, fore[i].pop())
+        # いっぱいなら小さいものから抜いていく
+        while len(que) > i + 1:
+            heappop(que)
+    while que:
+        ans += heappop(que)
+    # 逆
+    for i in range(N):
+        while rev[i]:
+            heappush(que, rev[i].pop())
+        # いっぱいなら小さいものから抜いていく
+        while len(que) > i + 1:
+            heappop(que)
+    while que:
+        ans += heappop(que)
 
-for i in range(N):
-    diff, lim, ok, ng = heappop(K)
-    # bit.get(lim + 1)になる点、つまりlim + 1地点よりフラグが1小さくなる地点を探す
-    flag = bit.get(lim + 1)
-    if flag:
-        index = bit.lowerbound(flag)
-        bit.add(index, -1)
-    else:
-        index = float('inf')
-    # print(index, diff, lim, ok, ng)
+    print(ans)
