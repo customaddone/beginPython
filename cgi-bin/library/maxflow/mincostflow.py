@@ -155,6 +155,42 @@ for v in range(1001):
 # N個のボールを送るための最小費用
 print(mcf.flow(1001, 1005, N))
 
+# ABC194 D - Shipping Center
+
+N, M, Q = getNM()
+C = [getList() for i in range(N)]
+B = getList()
+que = []
+for i in range(Q):
+    l, r = getNM()
+    que.append([l - 1, r - 1])
+
+for l, r in que:
+    mcf = MinCostFlow(N + M + 2)
+    # C: 0 ~ N - 1, B, N ~ N + M - 1
+    # start: N + M, end: N + M + 1
+    for i in range(N):
+        # 始点 ~ Ci
+        mcf.add_edge(N + M, i, 1, 0)
+        for j in range(M):
+            # Ci ~ Bi
+            if not l <= j <= r and C[i][0] <= B[j]:
+                mcf.add_edge(i, N + j, 1, -C[i][1])
+    # B ~ 終点
+    for j in range(M):
+        mcf.add_edge(N + j, N + M + 1, 1, 0)
+
+    ans = 0
+    # 一個ずつ流してみる
+    for i in range(N):
+        res = -mcf.flow(N + M, N + M + 1, 1)
+        if res != -INF:
+            ans += res
+        else:
+            break
+
+    print(ans)
+
 # dinic法
 
 class Dinic:
