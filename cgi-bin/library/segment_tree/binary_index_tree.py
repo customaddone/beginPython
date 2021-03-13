@@ -154,3 +154,27 @@ for t, x in que:
         res = bit.query(x)
         print(res)
         bit.erase(res)
+
+N = 2
+K = [[1, 1, 10], [1, 3, 10]]
+for i in range(N):
+    k, l, r = getList()
+    # l - rは反転させている
+    heappush(K, [r - l, k, l, r])
+
+bit = BIT(N) # 最寄りの空いている場所を探す
+for i in range(N):
+    bit.add(i + 1, 1)
+
+for i in range(N):
+    diff, lim, ok, ng = heappop(K)
+    # bit.get(lim + 1)になる点、つまりlim + 1地点よりフラグが1小さくなる地点を探す
+    flag = bit.get(lim + 1)
+    if flag:
+        index = bit.lowerbound(flag)
+        bit.add(index, -1)
+    else:
+        index = float('inf')
+    # 1 7 1 3 10
+    # inf 9 1 1 10
+    # print(index, diff, lim, ok, ng)
