@@ -136,3 +136,31 @@ def counter(K, G):
                     dp[bit|(1 << t)][t] = min(dp[bit|(1 << t)][t], dp[bit][s] + G[s][t])
 
     return min(dp[-1])
+
+# ARC056 C - 部門分け
+
+N, K = getNM()
+V = [getList() for i in range(N)]
+diff = sum([sum(v) for v in V]) // 2
+
+dp = [K] * (1 << N) # 固有値k
+dp[0] = 0
+
+# 部分集合を作り、その中の任意の2つを選んであれこれする
+for bit in range(1 << N):
+    o = [i for i in range(N) if bit & (1 << i)]
+    n = len(o)
+    for i in range(n):
+        for j in range(i + 1, n):
+            dp[bit] += V[o[i]][o[j]]
+
+# 部分集合についてさらに２つのグループに分ける
+for bit in range(1 << N):
+    j = bit # 例: 1010(10)
+    while j:
+        # 1010と0
+        dp[bit] = max(dp[bit], dp[j] + dp[bit ^ j])
+        j -= 1 # 1010 → 1001 1だけ減らして数字を変える
+        j &= bit # 1010 → 1000 実質引き算 同じ要素があるところまで数字を減らす
+
+print(dp[-1] - diff)
