@@ -104,6 +104,7 @@ if M <= K:
     exit()
 
 # 行列累乗
+# res: 横 mat: 縦
 k = M - K
 logk = k.bit_length()
 dp = [[[0] * K for j in range(K)] for i in range(logk)]
@@ -142,3 +143,25 @@ for i in range(logk):
         ans = array_cnt(ans, dp[i])
 
 print(ans[0][-1])
+
+# mod付き行列累乗
+def array_cnt(ar1, ar2, m):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
+
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j]):
+                cnt += x * y
+            res[i][j] = cnt
+            res[i][j] %= m
+    return res

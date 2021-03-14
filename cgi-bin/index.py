@@ -29,93 +29,74 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-class MinCostFlow:
-    # 最小費用流(ベルマンフォード版、負コストに対応可)
+# mod付き行列累乗
+def array_cnt(ar1, ar2, m):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
 
-    INF = 10 ** 18
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j]):
+                cnt += x * y
+            res[i][j] = cnt
+            res[i][j] %= m
+    return res
 
-    def __init__(self, N):
-        self.N = N
-        self.G = [[] for i in range(N)]
+"""
+Aは非常に大きいLもでかい
+mod算を使うのは難しい
+O(N ** 2)ならギリギリ
+貪欲は
+r = len(a)とすると
+a1 % B
+a1 *= (10 ** r)
+a1 + a1をL - 1回繰り返す
 
-    def add_edge(self, fr, to, cap, cost):
-        G = self.G
-        G[fr].append([to, cap, cost, len(G[to])])
-        G[to].append([fr, 0, -cost, len(G[fr])-1])
+now = 0
+for a, l in Q:
+    r = len(str(a))
+    for i in range(l):
+        now *= (10 ** r)
+        now += a
+        now %= B
 
-    def flow(self, s, t, f):
+123
+123123
+1231234
+12312344
+231234449
 
-        N = self.N; G = self.G
-        INF = MinCostFlow.INF
+Lが大きい　ダブリングしたいが
+now はせいぜい10 ** 9 + 7
+2個先、4個先の変換
+写像Tはどのようなものか
+"""
 
-        res = 0
-        prv_v = [0] * N
-        prv_e = [0] * N
+N = getN()
+Q = [getList() for i in range(N)]
+B = getN()
 
-        while f:
-            dist = [INF] * N
-            dist[s] = 0
-            update = True
+res = [[0, 1]]
+for a, l in Q:
+    r = len(str(a))
+    # 行列累乗
+    logk = l.bit_length()
+    dp = [[[0] * 2 for i in range(2)] for j in range(logk)]
+    dp[0] = [[10 ** r, 0], [a, 1]]
+    for i in range(1, logk):
+        dp[i] = array_cnt(dp[i - 1], dp[i - 1], B)
 
-            while update:
-                update = False
-                for v in range(N):
-                    if dist[v] == INF:
-                        continue
-                    for i, (to, cap, cost, _) in enumerate(G[v]):
-                        if cap > 0 and dist[to] > dist[v] + cost:
-                            dist[to] = dist[v] + cost
-                            prv_v[to] = v; prv_e[to] = i
-                            update = True
+    for i in range(logk):
+        if l & (1 << i):
+            res = array_cnt(res, dp[i], B)
 
-            # 流れない場合
-            if dist[t] == INF:
-                return float('inf')
-
-            d = f; v = t
-            while v != s:
-                d = min(d, G[prv_v[v]][prv_e[v]][1])
-                v = prv_v[v]
-            f -= d
-            res += d * dist[t]
-            v = t
-            while v != s:
-                e = G[prv_v[v]][prv_e[v]]
-                e[1] -= d
-                G[v][e[3]][1] += d
-                v = prv_v[v]
-        return res
-
-N, M, Q = getNM()
-C = [getList() for i in range(N)]
-B = getList()
-que = []
-for i in range(Q):
-    l, r = getNM()
-    que.append([l - 1, r - 1])
-
-for l, r in que:
-    mcf = MinCostFlow(N + M + 2)
-    # C: 0 ~ N - 1, B, N ~ N + M - 1
-    # start: N + M, end: N + M + 1
-    for i in range(N):
-        # 始点 ~ Ci
-        mcf.add_edge(N + M, i, 1, 0)
-        for j in range(M):
-            # Ci ~ Bi
-            if not l <= j <= r and C[i][0] <= B[j]:
-                mcf.add_edge(i, N + j, 1, -C[i][1])
-    # B ~ 終点
-    for j in range(M):
-        mcf.add_edge(N + j, N + M + 1, 1, 0)
-
-    ans = 0
-    # 一個ずつ流してみる
-    for i in range(N):
-        res = -mcf.flow(N + M, N + M + 1, 1)
-        if res != -INF:
-            ans += res
-        else:
-            break
-
-    print(ans)
+print(res[0][0])
