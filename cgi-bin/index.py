@@ -30,33 +30,59 @@ dy = [0, 1, 0, -1]
 #############
 
 """
-3 3
-0 1 5
-1 0 1
-5 1 0
-の場合
-部門の数 * K + 同じ部門の中の信頼度 - sum(V)
+dpで何とかいけそう
+A:これまでのゲーム数
+W:これまでの勝ち数
+a:今回のゲーム数
+w:今回の勝ち数
+とすると
+W * a < w * A(W / A < w / a)にしたい
+W * a / A < w
+
+dp[i][j]: i日目まででj回勝った時の期限が良かった日の最大値
+どういう風に振り分けるか
+i日目に勝つか負けるか
+負ける場合はその回0勝でOK
+その回までで機嫌がいい日がi日あった場合に必要な勝ち数の最小値
 """
 
 N, K = getNM()
-V = [getList() for i in range(N)]
-diff = sum([sum(v) for v in V]) // 2
+A = [0] + getArray(N)
+imos = deepcopy(A)
+for i in range(1, N + 1):
+    imos[i] += imos[i - 1]
 
-dp = [K] * (1 << N) # 固有値k
-dp[0] = 0
-for bit in range(1 << N):
-    o = [i for i in range(N) if bit & (1 << i)]
-    n = len(o)
-    for i in range(n):
-        for j in range(i + 1, n):
-            dp[bit] += V[o[i]][o[j]]
+# 勝った回数の下限があるのに気をつける
+under = [0] * (N + 1)
+psu = K
+for i in range(N, 0, -1):
+    diff = min(psu, A[i])
+    psu -= diff
+    under[i] += diff
+for i in range(1, N + 1):
+    under[i] += under[i - 1]
 
-for bit in range(1 << N):
-    j = bit # 例: 1010(10)
-    while j:
-        # 1010と0
-        dp[bit] = max(dp[bit], dp[j] + dp[bit ^ j])
-        j -= 1 # 1010 → 1001 1だけ減らして数字を変える
-        j &= bit # 1010 → 1000 実質引き算 同じ要素があるところまで数字を減らす
+prev = [float('inf') for i in range(N + 1)]
+prev[0] = 0
+prev[1] = max(1, under[1]) # 最初の1勝は1回勝つだけでいい
 
-print(dp[-1] - diff)
+for i in range(2, N + 1):
+    next = [float('inf') for i in range(N + 1)]
+    for j in range(N):
+        # 負けたい場合
+        next[j] = min(next[j], prev[j])
+        # 勝ちたい場合 相手はprev[j - 1](これまでの勝ち数)
+        # 0 → 1の場合は1追加 最低でも1は追加される
+        if j > 0:
+            want = ((prev[j - 1] * A[i]) // imos[i - 1]) + 1
+            if want <= A[i]: # 今回の試合数の範囲内なら
+                next[j] = min(next[j], prev[j - 1] + want)
+        next[j] = max(next[j], under[i]) # 下限を見る
+        
+    prev = next
+
+ans = 0
+for i in range(N + 1):
+    if prev[i] <= K:
+        ans = i
+print(ans)
