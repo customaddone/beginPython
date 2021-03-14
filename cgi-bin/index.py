@@ -10,7 +10,7 @@ for i in range(1,n):
     a=al[i]
     dp[i][0]=0
     dp[i][1]=1
-    for j in range(2,n):
+    for j in range(2,n+1):
         if dp[i-1][j-1]==INF:break
         need=dp[i-1][j-1]*a//csum+1
         dp[i][j]=min(dp[i-1][j],dp[i][j],dp[i-1][j-1]+need)
