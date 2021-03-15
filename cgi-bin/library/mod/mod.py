@@ -207,3 +207,5 @@ dfs(0, -1) # 実行
 deno = pow(2, N, mod)
 # denoの逆元の出し方（pythonでしかできません）
 print((ans * pow(deno, -1, mod)) % mod)
+# pypyでもできる
+print((ans * pow(deno, mod - 2, mod)) % mod)
