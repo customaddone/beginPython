@@ -29,23 +29,41 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-n = 7
-r = 4
+"""
+期待値を求める問題
+すべての場合が2^N通りある
+それぞれについての穴の数がHi個ある
+その総和をHとすると、答えはH / 2^N個
+答えは逆元をかける
 
-# n個の数字をr個に分割する方法
-# nCr通り出ます
-def comb_pow(i, array, n, r):
-    global cnt
-    if i == r:
-        print(array)
-        return
-    # ここの4を変えてrootを変更
-    last = -1
-    if len(array) > 0:
-        last = array[-1]
+黒い頂点を全て繋ぐと求める部分木ができる
+頂点iが穴あきになる場合の数
+頂点iが穴あき = パス上に頂点iがある黒い点Bi, Bjがある
+頂点iの子要素のうちどれか2つ以上が黒い木
+"""
 
-    for j in range(last, n):
-        new_array = array + [j]
-        comb_pow(i + 1, new_array, n, r)
+N = getN()
+E = [[] for i in range(N)]
+for i in range(N - 1):
+    s, t = getNM()
+    E[s - 1].append(t - 1)
 
-comb_pow(0, [], n, r)
+def parents(n, sta, dist):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    path[sta] = -1
+
+    while pos:
+        u = pos.popleft()
+        ignore[u] = 1
+
+        for i in dist[u]:
+            if ignore[i] != 1:
+                path[i] = u
+                pos.append(i)
+
+    return path
+
+P = parents(N, 0, E)
+print(P)

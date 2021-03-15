@@ -127,6 +127,24 @@ def router(n, sta, end):
 
     return list(route)
 
+# staからbfsして親要素を記録
+def parents(n, sta, dist):
+    pos = deque([sta])
+    ignore = [0] * n
+    path = [0] * n
+    path[sta] = -1
+
+    while pos:
+        u = pos.popleft()
+        ignore[u] = 1
+
+        for i in dist[u]:
+            if ignore[i] != 1:
+                path[i] = u
+                pos.append(i)
+
+    return path
+
 ans = 0
 # 部分木の色ぬり + 閉路検出
 def search(sta, dist):
