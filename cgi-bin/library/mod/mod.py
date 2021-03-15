@@ -167,3 +167,43 @@ else:
         pw = pw * 10 % P # 10 ** iをPで割った時の余りから10 ** (i + 1)をPで割った時の余りを求める
 
     print(sum(v * (v - 1) // 2 for v in Counter(mod).values()))
+
+# ABC149 F - Surrounded Nodes
+# 特殊なmodでの出力方法
+# 逆元の出し方
+# xz ≡ y(mod 10 ** 9 + 7)を満たすような　の問題で使う
+
+N = getN()
+E = [[] for i in range(N)]
+for i in range(N - 1):
+    s, t = getNM()
+    E[s - 1].append(t - 1)
+    E[t - 1].append(s - 1)
+
+ans = 0
+
+# 2^(N - 1) - 1 - (2^(ciの大きさ) - 1の合計)
+# を求めていく
+def dfs(u, par):
+    global ans
+    res = 1
+    add = pow(2, N - 1, mod) - 1
+    for v in E[u]:
+        if v != par:
+            size_c = dfs(v, u)
+            # 2^(ciの大きさ) - 1
+            add -= (pow(2, size_c, mod) - 1)
+            add %= mod
+            res += size_c
+    # 最後に親方向に行く部分木の分を引く
+    add -= (pow(2, N - res, mod) - 1)
+    add %= mod
+    ans += add
+    ans %= mod
+
+    return res
+
+dfs(0, -1) # 実行
+deno = pow(2, N, mod)
+# denoの逆元の出し方（pythonでしかできません）
+print((ans * pow(deno, -1, mod)) % mod)
