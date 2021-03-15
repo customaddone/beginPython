@@ -145,6 +145,20 @@ def parents(n, sta, dist):
 
     return path
 
+# dfsで子要素の部分木の大きいを求める
+def dfs(u, par):
+    res = 1 # 自身のサイズ
+    for v in E[u]:
+        if v != par:
+            size_c = dfs(v, u) # 子方向の部分木のサイズ
+            # print(u, size_c, 'c')
+            res += size_c
+    size_p = N - res # 親方向に伸びる部分木のサイズ
+    # print(u, size_p, 'p')
+    return res
+
+dfs(0, -1) # 実行
+
 ans = 0
 # 部分木の色ぬり + 閉路検出
 def search(sta, dist):

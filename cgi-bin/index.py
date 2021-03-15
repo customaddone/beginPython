@@ -75,31 +75,15 @@ for i in range(N - 1):
     E[s - 1].append(t - 1)
     E[t - 1].append(s - 1)
 
-ans = 0
-
-# 2^(N - 1) - 1 - (2^(ciの大きさ) - 1の合計)
-# を求めていく
 def dfs(u, par):
-    global ans
-    res = 1
-    add = pow(2, N - 1, mod) - 1
+    res = 1 # 自身のサイズ
     for v in E[u]:
         if v != par:
-            size_c = dfs(v, u)
-            # 2^(ciの大きさ) - 1
-            add -= (pow(2, size_c, mod) - 1)
-            add %= mod
+            size_c = dfs(v, u) # 子方向の部分木のサイズ
+            # print(u, size_c, 'c')
             res += size_c
-    # 最後に親方向に行く部分木の分を引く
-    add -= (pow(2, N - res, mod) - 1)
-    add %= mod
-    ans += add
-    ans %= mod
-
+    size_p = N - res # 親方向に伸びる部分木のサイズ
+    # print(u, size_p, 'p')
     return res
 
 dfs(0, -1) # 実行
-deno = pow(2, N, mod)
-# denoの逆元のやり方（pythonでしかできません）
-# xz ≡ y(mod 10 ** 9 + 7)を満たすような　の問題で使う
-print((ans * pow(deno, -1, mod)) % mod)
