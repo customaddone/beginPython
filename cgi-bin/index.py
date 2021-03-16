@@ -29,52 +29,159 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+from collections import defaultdict, deque, Counter
+from heapq import heapify, heappop, heappush
+import sys
+import math
+import random
+import string
+from copy import deepcopy
+from itertools import combinations, permutations, product
+from bisect import bisect_left, bisect_right
+
+def input():
+    return sys.stdin.readline().rstrip()
+def getN():
+    return int(input())
+def getNM():
+    return map(int, input().split())
+def getList():
+    return list(map(int, input().split()))
+def getArray(intn):
+    return [int(input()) for i in range(intn)]
+
+sys.setrecursionlimit(1000000000)
+mod = 10 ** 9 + 7
+INF = float('inf')
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
+
+#############
+# Main Code #
+#############
+
 """
-まず
-ルンルンの渡すコインの種類と数を考える
-y // An 枚渡す
-y %= An する
-y // An-1 枚渡す
-y %= An-1 する...
+# 長さkの配列を作る
+# 初項はxであり、
+3 1
+3 1 4
+5 3 2 なら
 
-y - Xも同様
-yとy - Xで同じコインが使われてはならない
-二進数の 1001(9)と0110(6)みたいな感じ X = 3の時条件を満たす
-互いに背反な要素を2つ作ればいい
-ルンルンの渡したコインは崩されないといけない（上限）
+3に +3 +1 +4 +3...していく
+周期kでループする
+a1 vs a2
+a2 vs a3 をしていき右側の方が大きい組み合わせをカウントする
+各queについてO(k)で答えればいい
+あらかじめkの値を各mでmodしてもいい
+3 1
+3 1 4
+mod 2だと
+1 1 0
+最初の値が1
+1 + 1 = 0
+0 + 1 = 1
+0 + 0 = 0
 
-最小枚数で渡す Ai * コインの枚数 < Ai+1でないといけない
-1 5 10の場合、渡せる5のコインは1まいだけ
-Xの上位貨幣An(X <= Anとなる)について 渡せるのは1枚だけ
-2枚以上渡すと...
+nが小さければ十分いけるが ループについて考える
+d > 0 かつ x + d < m ならcnt += 1
+一回kを探索したらあとはループで済むようにしたい
 
-X = 10 An = 10の場合
-1枚でぴったし 2枚だと1枚帰ってくるのでNG 一枚使ったらそれ以上の上位貨幣は使えない
-Anを逆からdpしていく
-3, 9
-1 5 10の場合
-10: 0 ~ 1枚だけ　上位貨幣なので
-5: 0 ~ 1枚 (10 - 1) // 5
-1: 0 ~ 4枚
-合計で0 ~ 19まで表現できる　ここから絞る dpやろなぁ
-桁dpっぽい
-各場所で0の部分と1 ~ 枚のところを
-yのAi桁部分が0, yのAi桁部分が1~　の桁dpになる
+同じ場所に同じ数で到達すればあとはループする
+modがでかいんだわ
+# [6, 4, 0, 4, 0, 4, 6] これの合計が次の周回でプラスされる
+縦に見ていくと
+[0, 4, 4, 1, 1, 5, 4] 最初の0について
+この値が6 ~ 6(周期 - 1)なら数字が増えている
+0 ~ 5なら増えていない
+一番最初の地点になんの数字がいくつ来るか
+割り切れない場合は周期はmodになる
 """
 
-N, X = getNM()
-A = getList()
-A.sort(reverse = True)
-L = [1] * N
-sta = 0 # 最大貨幣の場所
-alt = [0] * N
+K, Q = getNM()
+D = getList()
+que = [getList() for i in range(Q)]
+for n, x, m in que:
+    d = [i % m for i in D]
+    su = sum(d)
+    zero = d.count(0)
+    # 何回modを超えているか
+    # 0の部分は控除する
+    # 全体でk個(合計su)がmain回
+    # そこから超えた回数(x // m)と(0の個数 * main回)を引く
+    ans = 0
+    main, left = divmod(n - 1, K)
+    x %= m
+    x += su * main
+    ans += ((K - zero) * main - (x // m))
+    # 残りは自分で
+    x %= m
+    for i in range(left):
+        next = (x + d[i]) % m
+        if x < next:
+            ans += 1
+        x = next
+    print(ans)
 
-for i in range(1, N):
-    if X <= A[i]:
-        sta = i
-    L[i] = (A[i - 1] - 1) // A[i]
-# 換算
-x = X
-for i in range(N):
-    alt[i] = x // A[i]
-    x %= A[i]
+"""
+# 長さkの配列を作る
+# 初項はxであり、
+3 1
+3 1 4
+5 3 2 なら
+
+3に +3 +1 +4 +3...していく
+周期kでループする
+a1 vs a2
+a2 vs a3 をしていき右側の方が大きい組み合わせをカウントする
+各queについてO(k)で答えればいい
+あらかじめkの値を各mでmodしてもいい
+3 1
+3 1 4
+mod 2だと
+1 1 0
+最初の値が1
+1 + 1 = 0
+0 + 1 = 1
+0 + 0 = 0
+
+nが小さければ十分いけるが ループについて考える
+d > 0 かつ x + d < m ならcnt += 1
+一回kを探索したらあとはループで済むようにしたい
+
+同じ場所に同じ数で到達すればあとはループする
+modがでかいんだわ
+# [6, 4, 0, 4, 0, 4, 6] これの合計が次の周回でプラスされる
+縦に見ていくと
+[0, 4, 4, 1, 1, 5, 4] 最初の0について
+この値が6 ~ 6(周期 - 1)なら数字が増えている
+0 ~ 5なら増えていない
+一番最初の地点になんの数字がいくつ来るか
+割り切れない場合は周期はmodになる
+
+全体から超えた回数と+0の回数を引く
+"""
+
+K, Q = getNM()
+D = getList()
+que = [getList() for i in range(Q)]
+for n, x, m in que:
+    d = [i % m for i in D]
+    su = sum(d)
+    zero = d.count(0)
+    # 何回modを超えているか
+    # 0の部分は控除する
+    # 全体でk個(合計su)がmain回
+    # そこから超えた回数(x // m)と(0の個数 * main回)を引く
+    ans = 0
+    main, left = divmod(n - 1, K)
+    x %= m
+    x += su * main
+    ans += ((K - zero) * main - (x // m))
+    # 残りは自分で
+    x %= m
+    for i in range(left):
+        next = (x + d[i]) % m
+        if x < next:
+            ans += 1
+        x = next
+    print(ans)
