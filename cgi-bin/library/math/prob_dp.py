@@ -98,3 +98,23 @@ for i in range(N + M + 1):
         rec[i + 1] += P[i] * (E[i] + 1) / M
         rec[i + M + 1] -= P[i] * (E[i] + 1) / M
 print(P, E, rec)
+
+# トポロジカルソートにすればs < tの条件がなくても使える
+# エッジを逆向きにして前から探索すると前からの期待値が計算できる
+def calc(edges):
+    # 確率を計算
+    P = [0] * N
+    P[0] = 1
+    for u in range(N):
+        for v in edges[u]:
+            P[v] += P[u] / len(edges[u])
+
+    # 期待値を計算　ゴールから逆向きで期待値を求める
+    # あと何回進めばゴールまで行けるか
+    E = [0] * N
+    for u in range(N - 1, -1, -1):
+        for v in edges[u]:
+            # この(E[v] + 1)が大きくなるものを削ればいい
+            E[u] += (E[v] + 1) / len(edges[u])
+
+    return P, E
