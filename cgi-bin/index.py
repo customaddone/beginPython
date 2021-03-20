@@ -29,51 +29,48 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC195 F. Coprime Present
+from collections import deque
 
-"""
-A以上B以下　幅は72以下
-A, Bがでかい
-連続する数　ここポイント
-連続する数は互いに素
+def bfs(s):
+    q = deque()
+    q.append((s, 1))
+    visit = [0] * n0
+    visit[s] = 1
+    while q:
+        i, now = q.popleft()
+        for j, m in G[i]:
+            if not visit[j]:
+                dist[s][j] = now * m
+                q.append((j, now * m))
+                visit[j] = 1
+    return
 
-Q:どの数とどの数をペアにしてはいけないか
-偶数は一緒にしてはいけない　偶数のどれか1つ or 全くない
-奇数はどんな感じ
-3の倍数の場合は6つ前、6つ後ろと一緒になってはいけない
-5の倍数は10こ前、10こ後ろと一緒になってはいけない...
-2の倍数が入る通り、3の倍数が入る通り...をdp
-bit dpすれば
-2 4
-0b1 2は3の倍数
-0b10 3は3の倍数
-0b1 4は2の倍数
-"""
-
-A, B = getNM()
-# 72までに素数が20個あります
-prime = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
-N = [i for i in range(A, B + 1)]
-L = len(N)
-
-# 各数字をbit棒に変換する
-for i in range(L):
-    # なんの約数かをbit形式で記録
-    opt = 0
-    for j in range(20):
-        if N[i] % prime[j] == 0:
-            opt += (1 << j)
-    N[i] = opt
-
-prev = [0] * (1 << 20)
-prev[0] = 1 # 空集合が1
-for i in range(L):
-    next = [0] * (1 << 20)
-    # 配るdpで
-    for bit in range(1 << 20):
-        next[bit] += prev[bit] # 何も足さない場合
-        if not bit & N[i]: # 共通の約数がなければ
-            next[bit | N[i]] += prev[bit]
-    prev = next
-
-print(sum(prev))
+n = int(input())
+d = dict()
+w = []
+n0 = 0
+G = [[] for _ in range(405)]
+for _ in range(n):
+    s, m, l = input().split()
+    if not s in d:
+        d[s] = n0
+        w.append(s)
+        n0 += 1
+    if not l in d:
+        d[l] = n0
+        w.append(l)
+        n0 += 1
+    G[d[l]].append([d[s], int(m)])
+    G[d[s]].append([d[l], 1 / int(m)])
+dist = [[1] * n0 for _ in range(n0)]
+for i in range(n0):
+    bfs(i)
+maxdist = 0
+x, y = 0, 0
+for i in range(n0):
+    for j in range(n0):
+        if maxdist < dist[i][j]:
+            maxdist = dist[i][j]
+            x, y = i, j
+ans = "".join(map(str, [1, w[y], "=", maxdist, w[x]]))
+print(ans)
