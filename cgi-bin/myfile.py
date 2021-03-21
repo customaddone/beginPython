@@ -32,23 +32,41 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-E = [0] * (N + M + 1)
-cnt = [0] * (N + M + 1)
-
-
-# 0からマスiに到達する期待値を求める
-for i in range(N + M + 1):
-    if 1 < i:
-        E[i] += E[i - 1]
-        cnt[i] += cnt[i - 1]
-    E[i] = max(0, E[i]) # マイナスにはならない
-    if cnt[i]:
-        E[i] = E[i] * M / cnt[i] # 足したのはM回中cnt[i]回だけなので
-
-    if i < N and not i in A:
-        E[i + 1] += (E[i] + 1) / M
-        E[i + M + 1] -= (E[i] + 1) / M
-        cnt[i + 1] += 1
-        cnt[i - 1] -= 1
-
-    print(i, E, cnt, P)
+H, W, A, B = getNM()
+for bit in range(1 << H * W):
+    tatami = []
+    for h in range(H):
+        opt = []
+        for j in range(W):
+            if bit & (1 << (h * W + j)):
+                opt.append(-1)
+            else:
+                opt.append(1)
+        tatami.append(opt)
+    # あとは判定
+    # 1を二色で塗る
+    bef = tatami
+    for h in range(H):
+        for w in range(W):
+            if tatami[h][w] == -1:
+                continue
+            # 右
+            if w < W - 1 and tatami[h][w + 1] != -1:
+                tatami[h][w + 1] = (tatami[h][w] + 1) % 2
+            # 下
+            if h < H - 1 and tatami[h + 1][w] != -1:
+                tatami[h + 1][w] = (tatami[h][w] + 1) % 2
+    one = 0
+    zero = 0
+    hanjo = 0
+    for h in range(H):
+        for w in range(W):
+            if tatami[h][w] == 0:
+                zero += 1
+            if tatami[h][w] == 1:
+                one += 1
+            if tatami[h][w] == -1:
+                hanjo += 1
+    if one == zero and hanjo == B:
+        print('bef', bef)
+        print(tatami)
