@@ -29,105 +29,96 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-#####segfunc#####
-def segfunc(x, y):
-    return x + y
-#################
-#####ide_ele#####
-ide_ele = 0
-#################
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-
-    def query(self, l, r):
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-
 """
-チェックポイントごとの掛け算にならないか
-x1+y1Cx1 * x2+y2Cx2...
-セグ木?
-0 ~ 1 seg(0, 1)
-1 ~ 2 seg(1, 2)...
-i番目のチェックポイントが変更されると
-seg.update(i)とseg.update(i + 1)する
-組み合わせの数が大きい　どうやって状態を持つか
-因数を持つとか
-10 * 9 * 8 と3 * 2 * 1を持つ
+mod mで考える
+お気に入りがない場合
+((ai+1 + m) - ai) % m回押す
+お気に入りがある場合は上記の他に一発でmにする方法がある
+mは意外と小さいぞ
 
-分子の方はx!で共通している
-分母の状態を持てばいいr!(n - r)!
-rと(n - r)でそれぞれセグ木
-対数を持つか　足し算引き算になる
-x2-x1 + y2-y1
-i番目を変更
+((ai+1 + m) - ai) % m or ((ai+1 + m) - x) % m + 1
+xの値を自由に決めてこれを最小化せよ
+ai <= ai+1の時
+ai+1 - ai
+ai > ai+1の時
+ai+1 + m - ai
+xの値を決めた時に、お気に入りを使わない場合と比べてどれだけ軽減できるか考える
+BITでできそうだけど
+x <= ai+1の時
+ai+1 - x + 1回
+x > ai+1の時
+ai+1 + m - x + 1
+つまり aiとai+1、xとai+1の大小関係について計4通りを考える
+ai <= ai+1, x <= ai+1の時
+(x - 1) - ai分軽減できる
+ai + 1 <= xなら軽減できる　（下回った値の個数) * (x - 1) - 下回った値の合計分減らせる
+
+ai <= ai+1, x > ai+1
+(ai+1 - ai) - (ai+1 + m - x + 1)
+x - m - 1 - ai分軽減
+
+ai > ai+1, x <= ai+1
+(ai+1 + m - ai) - (ai+1 - x + 1)
+(x - 1) + m - ai回
+
+ai > ai+1,　x > ai+1
+(ai+1 + m - ai) - (ai+1 + m - x + 1)
+(x - 1) - ai回
+
+・x - 1 - ai (ai <= ai+1, x <= ai+1)
+・x - m - 1 - ai (ai <= ai+1, x > ai+1)
+・x + m - 1 - ai (ai > ai+1, x <= ai+1)
+・x - 1 - ai (ai > ai+1,　x > ai+1)
+これらは全て独立ですが ai+1の値が関係なくなるので
+
+4 6
+1 5 1 4
+[1, 0, 1] <=
+[0, 5, 0] >
+
+BITを4本持とう
+aiの値を保持する ai+1を基準に変更していく
+xの数を順に増やしていって、ai+1が同じになったところから消していく
+x = 1
+[1, 0, 1]
+[0, 0, 0]
+[0, 5, 0]
+[0, 0, 0]
+x = 2
+[1, 0, 1]
+[0, 0, 0]
+[0, 0, 0]
+[0, 5, 0] 上のとスイッチした
+x = 4
+[1, 0, 1] 4 - 1 - 1 = 2を二回 4軽減できる
+[0, 0, 0]
+[0, 0, 0]
+[0, 5, 0] 4 - 1 - 5 = -2できるがやる必要はない
+
+待機してもらう
 """
 
-N = getN()
-P = [getList() for i in range(N)]
-Q = getN()
-que = [getList() for i in range(Q)]
+N, M = getNM()
+A = getList()
 
-# combo数を対数化して返す
-table = [0] * (2 * 10 ** 6 + 7)
-for i in range(2, 2 * 10 ** 6 + 7):
-    table[i] = math.log2(i) + table[i - 1]
+cnt = [0] * 4 # 個数を数える
+value = [0] * 4 # 合計の値
+que = [[] for i in range(4)] # 待機
+bef = [A[i] for i in range(N - 1)]
+aft = [[A[i + 1], i, 0] for i in range(N - 1)]
 
-def comb(p1, p2):
-    x = abs(p1[0] - p2[0])
-    y = abs(p1[1] - p2[1])
-    # x+y! / x!y!
-    return table[x + y] - table[x] - table[y]
-
-seg = SegTree([0] * N, segfunc, ide_ele)
 for i in range(N - 1):
-    # seg(i): i ~ i + 1のcombo数
-    seg.update(i, comb(P[i], P[i + 1]))
-
-for q in que:
-    # 更新
-    # 前のやつと今のやつが変更
-    if q[0] == 1:
-        t, k, a, b = q
-        k -= 1
-        P[k] = [a, b]
-        # 前のやつ
-        if k > 0:
-            seg.update(k - 1, comb(P[k - 1], P[k]))
-        # 今のやつ
-        if k < N - 1:
-            seg.update(k, comb(P[k], P[k + 1]))
+    if bef[i] <= aft[i][0]:
+        heappush(que[0], bef[i])
     else:
-        t, f1, f2, s1, s2 = q
-        if seg.query(f1 - 1, f2 - 1) > seg.query(s1 - 1, s2 - 1):
-            print('FIRST')
+        heappush(que[2], bef[i])
+        aft[i][2] = 1 # 印をつける
+
+aft.sort(reverse = True)
+for m in range(1, M + 1):
+    while aft and aft[-1][0] < m:
+        _, index, dir = aft.pop()
+        if dir == 0:
+            que1[index], que2[index] = que2[index], que1[index]
         else:
-            print('SECOND')
+            que3[index], que4[index] = que4[index], que3[index]
