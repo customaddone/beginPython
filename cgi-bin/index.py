@@ -29,65 +29,105 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+#####segfunc#####
+def segfunc(x, y):
+    return x + y
+#################
+#####ide_ele#####
+ide_ele = 0
+#################
+class SegTree:
+    def __init__(self, init_val, segfunc, ide_ele):
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+
+    def update(self, k, x):
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
+
+    def query(self, l, r):
+        res = self.ide_ele
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
+
 """
-遠方に行くには金貨をどこかで補充しないと
-変形ダイクストラ　銀貨をA枚持ってた時の最短距離
-銀貨何枚を持っていれば何分でどこにいけるかはわかる
-ルート上のどこかで金を交換すればいい　交換分数のみが重要
+チェックポイントごとの掛け算にならないか
+x1+y1Cx1 * x2+y2Cx2...
+セグ木?
+0 ~ 1 seg(0, 1)
+1 ~ 2 seg(1, 2)...
+i番目のチェックポイントが変更されると
+seg.update(i)とseg.update(i + 1)する
+組み合わせの数が大きい　どうやって状態を持つか
+因数を持つとか
+10 * 9 * 8 と3 * 2 * 1を持つ
+
+分子の方はx!で共通している
+分母の状態を持てばいいr!(n - r)!
+rと(n - r)でそれぞれセグ木
+対数を持つか　足し算引き算になる
+x2-x1 + y2-y1
+i番目を変更
 """
 
-# 最短経路へのパス付きダイクストラ
-# 運賃s以内でいけるか
-def dij(start, edges, s):
-    dist = [float('inf') for i in range(N)]
-    dist[start] = 0
-    pq = [(0, start, s)] # 銀S枚を持ってスタート
-    parent = [-1] * N
-    cost = [float('inf')] * N
-    cost[0] = 0
+N = getN()
+P = [getList() for i in range(N)]
+Q = getN()
+que = [getList() for i in range(Q)]
 
-    # pqの先頭がgoal行きのものなら最短距離を返す
-    while len(pq) > 0:
-        di, now, sil = heappop(pq)
-        if (di > dist[now]):
-            continue
-        for v, c, d in edges[now]:
-            if dist[v] > dist[now] + d and sil >= c:
-                dist[v] = dist[now] + d
-                parent[v] = now
-                cost[v] = s - sil + c
-                heappush(pq, (dist[v], v, sil - c))
+# combo数を対数化して返す
+table = [0] * (2 * 10 ** 6 + 7)
+for i in range(2, 2 * 10 ** 6 + 7):
+    table[i] = math.log2(i) + table[i - 1]
 
-    return dist, cost
+def comb(p1, p2):
+    x = abs(p1[0] - p2[0])
+    y = abs(p1[1] - p2[1])
+    # x+y! / x!y!
+    return table[x + y] - table[x] - table[y]
 
-N, M, S = getNM()
-road = [[] for i in range(N)]
-for i in range(M):
-    u, v, a, b = getNM()
-    road[u - 1].append([v - 1, a, b])
-    road[v - 1].append([u - 1, a, b])
-exc = [getList() for i in range(N)]
+seg = SegTree([0] * N, segfunc, ide_ele)
+for i in range(N - 1):
+    # seg(i): i ~ i + 1のcombo数
+    seg.update(i, comb(P[i], P[i + 1]))
 
-# iスタート、銀貨がj枚でどこにいけるか
-table = [[] for i in range(N)]
-for i in range(N):
-    for j in range(5001):
-        table[i].append(dij(i, road, j)[0])
-
-ans = [float('inf')] * N
-cost = dij(0, road, S)[1]
-print(cost)
-# 点iで金を補充して点jまで行くことを考える
-# 中継地点
-for i in range(N):
-    c, d = exc[i]
-    # 中継地点スタートの時銀貨s枚
-    for s in range(5001):
-        # s - S + cost[i]枚足らないのだから
-        add = ((max(s + cost[i] - S, 0) + c - 1) // c) * d
-        # ゴール地点
-        for j in range(N):
-            if ans[j] > table[0][S][i] + add + table[i][s][j]:
-                print(table[0][S][i], add, table[i][s][j], i, j, s)
-            ans[j] = min(ans[j], table[0][S][i] + add + table[i][s][j])
-print(ans)
+for q in que:
+    # 更新
+    # 前のやつと今のやつが変更
+    if q[0] == 1:
+        t, k, a, b = q
+        k -= 1
+        P[k] = [a, b]
+        # 前のやつ
+        if k > 0:
+            seg.update(k - 1, comb(P[k - 1], P[k]))
+        # 今のやつ
+        if k < N - 1:
+            seg.update(k, comb(P[k], P[k + 1]))
+    else:
+        t, f1, f2, s1, s2 = q
+        if seg.query(f1 - 1, f2 - 1) > seg.query(s1 - 1, s2 - 1):
+            print('FIRST')
+        else:
+            print('SECOND')

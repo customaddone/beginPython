@@ -139,3 +139,47 @@ def comb_pow(i, array, n, r):
         comb_pow(i + 1, new_array, n, r)
 
 comb_pow(0, [], n, r)
+
+# ARC035 D - 高橋くんとマラソンコース
+# 値が巨大になる組み合わせは対数で持つ
+
+N = getN()
+P = [getList() for i in range(N)]
+Q = getN()
+que = [getList() for i in range(Q)]
+
+# combo数を対数化して返す
+table = [0] * (2 * 10 ** 6 + 7)
+for i in range(2, 2 * 10 ** 6 + 7):
+    table[i] = math.log2(i) + table[i - 1]
+
+def comb(p1, p2):
+    x = abs(p1[0] - p2[0])
+    y = abs(p1[1] - p2[1])
+    # x+y! / x!y!
+    return table[x + y] - table[x] - table[y]
+
+seg = SegTree([0] * N, segfunc, ide_ele)
+for i in range(N - 1):
+    # seg(i): i ~ i + 1のcombo数
+    seg.update(i, comb(P[i], P[i + 1]))
+
+for q in que:
+    # 更新
+    # 前のやつと今のやつが変更
+    if q[0] == 1:
+        t, k, a, b = q
+        k -= 1
+        P[k] = [a, b]
+        # 前のやつ
+        if k > 0:
+            seg.update(k - 1, comb(P[k - 1], P[k]))
+        # 今のやつ
+        if k < N - 1:
+            seg.update(k, comb(P[k], P[k + 1]))
+    else:
+        t, f1, f2, s1, s2 = q
+        if seg.query(f1 - 1, f2 - 1) > seg.query(s1 - 1, s2 - 1):
+            print('FIRST')
+        else:
+            print('SECOND')
