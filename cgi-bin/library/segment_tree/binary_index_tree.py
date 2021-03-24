@@ -86,7 +86,7 @@ class BIT:
             k //= 2
         return x + 1
 
-# 二分探索木
+# 二分探索木もどき
 # binary search tree
 class BST:
     # arrayでどんな値が来るか読み込ませる
@@ -96,10 +96,18 @@ class BST:
         self.bit = [0] * (N + 1)
         self.comp = {} # value → index
         self.rev = {} # index → value
-        for i, a in enumerate(array):
+        for i, a in enumerate(array + [float('inf')]):
             self.comp[a] = i + 1
             self.rev[i + 1] = a
         self.b = 1 << N.bit_length() - 1
+
+    # rev[a]以下の数字の個数を数える
+    def get(self, a):
+        ret, x = 0, a - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
 
     # 追加 1-indexで収納される
     def add(self, a):
@@ -126,6 +134,14 @@ class BST:
                 x += k
             k //= 2
         return x + 1
+
+    # xより大きい最小の値を返す
+    def up_min(self, x):
+        # self.get(self.comp[x])でx以上の値のうち最小のもの
+        # self.get(self.comp[x] + 1)でxより大きい最小の値を返す
+        now = self.get(self.comp[x])
+        ind = self.lowerbound(now + 1)
+        return self.rev[ind]
 
     # x番目の値を返す
     def query(self, x):
