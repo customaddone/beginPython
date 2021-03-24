@@ -93,7 +93,7 @@ class BST:
     # arrayはソートした配列をいれてね
     def __init__(self, N, array):
         self.N = N
-        self.bit = [0] * (N + 1)
+        self.bit = [0] * (N + 2)
         self.comp = {} # value → index
         self.rev = {} # index → value
         for i, a in enumerate(array + [float('inf')]):
