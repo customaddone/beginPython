@@ -230,3 +230,21 @@ def counter(sta):
     return cnt
 
 print(counter(a - 1)[b - 1] % mod)
+
+# 赤黒木
+# 距離が3とか5離れている頂点を探せる？
+color = [-1] * N
+color[s] = 1
+que = deque([s]) # 赤スタート
+
+while que:
+    u = que.popleft()
+    for v in E[u]:
+        if color[v] != -1:
+            continue
+        # 親のmodが1なら2を入れる
+        if color[u] == 1:
+            color[v] = 2
+        else:
+            color[v] = 1
+        que.append(v)

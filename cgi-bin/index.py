@@ -29,166 +29,94 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC144 F - Fork in the Road
-
 """
-塞いだあと高橋くんがどこかで詰まったらだめ
-辺を一つ消す　判定するをN回繰り返す
-dpする？
-dp[i][j]: 頂点iにj回の移動で到達する確率
+構築問題？　都合のいいものから
+距離が3離れてるものはすぐわかる？
+2なら　子ノードの子ノードのうち自分以外の要素
+3の倍数を使えば簡単　これはN / 3個使える
+mod 0, mod1, mod2, mod1, mod0...という風に分配していけばいい
+すぐに枯渇しそう
+3の倍数以外で作ってみる
+1, 2, 1, 2...って感じで置いていく
+枯渇するけど倍数3を使えばいい
 
-# dp[i][j]: 頂点iにj回の移動で到達する確率
-dp = [[0] * (N + 1) for i in range(N)]
-dp[0][0] = 1
+葉から順に赤、黒...と塗っていき
+赤にmod1, 黒にmod2の数を入れる
+なければmod 0の値を入れる
 
-# 頂点
-for i in range(N):
-    # j回の移動で
-    for j in range(i + 1):
-        for v in E[i]:
-            dp[v][j + 1] += dp[i][j] / len(E[i])
-print(dp)
-
-一回の判定でO(M)ぐらいかかる
-エッジにウェートをかけると？
-エッジを見るだけでなんとかなるように
-dpの全てについて調べる必要はないんでは
-P[s] * (1 / M)の大きさが最も大きいものが一番Nの期待値への寄与度が大きい
+もう2つとも枯渇するパターン
 """
 
-N, M = getNM()
-dist = [[] for i in range(N)]
-for i in range(M):
-    s, t = getNM()
-    dist[s - 1].append(t - 1)
+N = getN()
+E = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = getNM()
+    E[a - 1].append(b - 1)
+    E[b - 1].append(a - 1)
+
+s = 0
 for i in range(N):
-    dist[i].sort()
+    if len(E[i]) == 1:
+        s = i
+        break
 
-# トポロジカルソートにすればs < tの条件がなくても使える
-def calc(edges):
-    # 確率を計算
-    P = [0] * N
-    P[0] = 1
-    for u in range(N):
-        for v in edges[u]:
-            P[v] += P[u] / len(edges[u])
+one, two, thr = [], [], []
+for i in range(1, N + 1):
+    if i % 3 == 1:
+        one.append(i)
+    elif i % 3 == 2:
+        two.append(i)
+    else:
+        thr.append(i)
 
-    # 期待値を計算　ゴールから逆向きで期待値を求める
-    # あと何回進めばゴールまで行けるか
-    E = [0] * N
-    for u in range(N - 1, -1, -1):
-        for v in edges[u]:
-            # この(E[v] + 1)が大きくなるものを削ればいい
-            E[u] += (E[v] + 1) / len(edges[u])
+ans = [-1] * N
+color = [-1] * N
+color[s] = 1
+que = deque([s]) # 赤スタート
 
-    return P, E
+while que:
+    u = que.popleft()
+    for v in E[u]:
+        if color[v] != -1:
+            continue
+        # 親のmodが1なら2を入れる
+        if color[u] == 1:
+            color[v] = 2
+        else:
+            color[v] = 1
+        que.append(v)
 
-P, E = calc(dist)
-ans = E[0]
-diff = 0
+# 1が極端に少ない場合
+if color.count(1) <= len(thr):
+    for i in range(N):
+        if color[i] == 1:
+            ans[i] = thr.pop()
+    left = one + two + thr
+    for i in range(N):
+        if ans[i] == -1:
+            ans[i] = left.pop()
+    print(*ans)
 
-for u in range(N):
-    for v in dist[u]:
-        if len(dist[u]) > 1:
-            # u ~ vの辺を削ると(E[v] + 1) / len(dist[u])の分だけ軽くなるが
-            # 残った分が len(dist[u]) / (len(dist[u]) - 1)でかけられる
-            ban = (E[v] + 1) / len(dist[u]) # これが消える予定
-            new = (E[u] - ban) * len(dist[u]) / (len(dist[u]) - 1)
-            diff = max(diff, (E[u] - new) * P[u])
-
-print(ans - diff)
-
-# M-SOLUTION プロコン　C - Best-of-(2n-1)
-
-"""
-数学問題でーす
-どちらかが累計でN回勝てば良い　遷移を考える N^2解から考える
-高橋くんが1回勝って終わる確率
-答えは整数 / 整数になるらしい
-
-高橋くんがN回勝って終わる時
-青木くんはN - 1回以下の任意の整数回勝って終わっている
-青木くんが勝つ確率をb回で固定して足し合わせ
-引き分けは無限回あって良い
-青木くんがN回勝って終わるのは逆になる
-２つは独立事象か？
-
-N+b+cCc * N+bCb * (A / 100)^N * (B / 100)^b * (C / 100)^c
-
-期待値を計算
-dp[1][0] = A / 100 * (dp[0][0] + 1) + C / 100 * (dp[1][0] + 1)
-dp[i][j] = A / 100 * (dp[i - 1][j] + 1) + B / 100 * (dp[i][j - 1] + 1) + C / 100 * (dp[i][j])
-(100 - C)dp[i][j] = A * (dp[i - 1][j] + 1) + B * (dp[i][j - 1] + 1)
-
-合計でN回勝つ期待値でdpとるか
-dp[i]: どちらかがN回勝って終わっている
-i+1だと？
-
-一発では無理
-ans += 期待値 / 確率を全ての場合で求めるやり方
-
-確率の求め方
-高橋くんがa回、青木くんがb回出すとすれば
-a+bCa * (A / A + B)^a * (B / A + B)^b
-a+bCa * A^a * B^b * (A + B)^a+b
-高橋くんがN回、青木くんが0回、1回...その逆を求めるなら
-
-高橋くんがN-1回、青木くんがi回勝ち、さらに高橋くんが勝てば良い
-
-高橋くんがN回、青木くんがi回勝つのにかかる期待値
-マスを一つ移動するのにかかる期待値は？
-C = 0なら自明にa + bになる
-100 * (N + i) / 100 - C
-100 / 100 - Cは空回り分
-
-A == B == 0はない
-"""
-
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
-
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    factinv.append((factinv[-1] * inv[-1]) % mod)
-
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-
-N, A, B, C = getNM()
-a_pow = [1] * (10 ** 6 + 1)
-b_pow = [1] * (10 ** 6 + 1)
-for i in range(1, 10 ** 6 + 1):
-    a_pow[i] = (a_pow[i - 1] * A) % mod
-    b_pow[i] = (b_pow[i - 1] * B) % mod
-
-ans = 0
-
-for i in range(N):
-    prob = ((cmb(N + i - 1, i) * a_pow[N - 1] * b_pow[i]) * A) % mod
-    prob *= pow(A + B, N - i - 1, mod)
-    prob %= mod
-
-    exp = 100 * (N + i)
-    ans += prob * exp
-    ans %= mod
-
-for i in range(N):
-    prob = ((cmb(N + i - 1, i) * a_pow[i] * b_pow[N - 1]) * B) % mod
-    prob *= pow(A + B, N - i - 1, mod)
-    prob %= mod
-
-    exp = 100 * (N + i)
-    ans += prob * exp
-    ans %= mod
-
-# この問題は 15625000000000 / 100000000000000 とかをmodで表すことになる問題
-# 巨大数の場合は、まず分子分母をそれぞれmodして計算すればできる
-# 分母の逆元の計算はこうやる
-deno = (pow(A + B, 2 * N, mod)) % mod
-print((ans * pow(deno, mod - 2, mod)) % mod)
+elif color.count(2) <= len(thr):
+    for i in range(N):
+        if color[i] == 2:
+            ans[i] = thr.pop()
+    left = one + two + thr
+    for i in range(N):
+        if ans[i] == -1:
+            ans[i] = left.pop()
+    print(*ans)
+# バランスがいい場合
+else:
+    for i in range(N):
+        if color[i] == 1:
+            if one:
+                ans[i] = one.pop()
+            else:
+                ans[i] = thr.pop()
+        else:
+            if two:
+                ans[i] = two.pop()
+            else:
+                ans[i] = thr.pop()
+    print(*ans)
