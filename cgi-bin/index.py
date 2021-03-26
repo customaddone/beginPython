@@ -144,8 +144,6 @@ C = 0なら自明にa + bになる
 A == B == 0はない
 """
 
-# 逆元事前処理ver
-# nが小さい場合に
 lim = 10 ** 6 + 1
 fact = [1, 1]
 factinv = [1, 1]
@@ -154,7 +152,6 @@ inv = [0, 1]
 for i in range(2, lim + 1):
     fact.append((fact[-1] * i) % mod)
     inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
     factinv.append((factinv[-1] * inv[-1]) % mod)
 
 def cmb(n, r):
@@ -171,23 +168,16 @@ for i in range(1, 10 ** 6 + 1):
     b_pow[i] = (b_pow[i - 1] * B) % mod
 
 ans = 0
-# 高橋くんがN-1回、青木くんが0 ~ N - 1回勝ったあと、高橋くんが勝つ
 
 for i in range(N):
-    # 分子はpowして良い
     prob = ((cmb(N + i - 1, i) * a_pow[N - 1] * b_pow[i]) * A) % mod
-    # 分母は(A + B) ** (2 * N - 1)に揃える
     prob *= pow(A + B, N - i - 1, mod)
     prob %= mod
-    # deno = (A + B) ** (2 * N - 1)
 
-    # 期待値　分子部分
     exp = 100 * (N + i)
-    # 分母はA + B
     ans += prob * exp
     ans %= mod
 
-# 青木くんサイド
 for i in range(N):
     prob = ((cmb(N + i - 1, i) * a_pow[i] * b_pow[N - 1]) * B) % mod
     prob *= pow(A + B, N - i - 1, mod)
@@ -197,8 +187,8 @@ for i in range(N):
     ans += prob * exp
     ans %= mod
 
-# 最後に確率計算(A + B) ** (2 * N - 1)、期待値(A + B)
-# 計((A + B) ** (2 * N))で割ることにする
+# この問題は 15625000000000 / 100000000000000 とかをmodで表すことになる問題
+# 巨大数の場合は、まず分子分母をそれぞれmodして計算すればできる
 # 分母の逆元の計算はこうやる
 deno = (pow(A + B, 2 * N, mod)) % mod
 print((ans * pow(deno, mod - 2, mod)) % mod)
