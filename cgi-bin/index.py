@@ -1,3 +1,15 @@
+from collections import defaultdict, deque, Counter
+from heapq import heapify, heappop, heappush
+import sys
+import math
+import random
+import string
+from copy import deepcopy
+from itertools import combinations, permutations, product
+from bisect import bisect_left, bisect_right
+
+def input():
+    return sys.stdin.readline().rstrip()
 def getN():
     return int(input())
 def getNM():
@@ -6,44 +18,10 @@ def getList():
     return list(map(int, input().split()))
 def getArray(intn):
     return [int(input()) for i in range(intn)]
-def input():
-    return sys.stdin.readline().rstrip()
-def rand_N(ran1, ran2):
-    return random.randint(ran1, ran2)
-def rand_List(ran1, ran2, rantime):
-    return [random.randint(ran1, ran2) for i in range(rantime)]
-def rand_ints_nodup(ran1, ran2, rantime):
-  ns = []
-  while len(ns) < rantime:
-    n = random.randint(ran1, ran2)
-    if not n in ns:
-      ns.append(n)
-  return sorted(ns)
 
-def rand_query(ran1, ran2, rantime):
-  r_query = []
-  while len(r_query) < rantime:
-    n_q = rand_ints_nodup(ran1, ran2, 2)
-    if not n_q in r_query:
-      r_query.append(n_q)
-  return sorted(r_query)
-
-from collections import defaultdict, deque, Counter
-from sys import exit
-from decimal import *
-from heapq import heapify, heappop, heappush
-import math
-import random
-import string
-from copy import deepcopy
-from itertools import combinations, permutations, product
-from operator import mul, itemgetter
-from functools import reduce
-from bisect import bisect_left, bisect_right
-
-import sys
 sys.setrecursionlimit(1000000000)
-mod = 998244353
+mod = 10 ** 9 + 7
+INF = float('inf')
 dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
 
@@ -54,37 +32,52 @@ dy = [0, 1, 0, -1]
 N, A = getNM()
 w = []
 v = []
+I = []
 for i in range(N):
     o_v, o_w = getNM()
     w.append(o_w)
     v.append(o_v)
+    I.append([o_v, o_w])
 
-# 半分全列挙 + 二分探索
-def half_knapsack(N, limit, weight, value):
-    # 半分全列挙
-    L, R = [[0, 0]], [[0, 0]]
-    for w, v in zip(weight[:20], value[:20]):
-        for i in range(len(L)):
-            L.append([w + L[i][0], v + L[i][1]])
-    for w, v in zip(weight[20:], value[20:]):
-        for i in range(len(R)):
-            R.append([w + R[i][0], v + R[i][1]])
+# items: [value, weight]
+def half_knap(items, const):
 
-    # 整理
-    R.sort(key = lambda i:i[1], reverse = True)
-    R.sort()
-    R_w, R_v = [0], [0]
-    for w, v in R:
-        if R_w[-1] < w:
-            R_w.append(w)
-            R_v.append(max(R_v[-1], v))
-    # 探索
+    def merge(A, X): # merge A and A + X
+        B = []
+        i = 0
+        nv, nw = X
+        # aとその前の要素を比べる
+        for v, w in A:
+            while A[i][1] + nw < w or (A[i][1] + nw == w and A[i][0] + nv < v):
+                B.append([A[i][0] + nv, A[i][1] + nw])
+                i += 1
+            B.append([v, w])
+        # 残ったものを吐き出す
+        while i < len(A):
+            B.append([A[i][0] + nv, A[i][1] + nw])
+            i += 1
+        return B
+
+    #　マージ
+    L = [[0, 0]]
+    R = [[0, 0]]
+    for item in items[:10]:
+        L = merge(L, item)
+    for item in items[10:]:
+        R = merge(R, item)
+
+    # valの書き換え
+    for i in range(1, len(R)):
+        R[i][0] = max(R[i][0], R[i - 1][0])
+
+    # 尺取り
     ans = 0
-    for w1, v1 in L:
-        if w1 > limit:
-            continue
-        o = R_v[bisect_right(R_w, limit - w1) - 1]
-        ans = max(ans, v1 + o)
+    for v, w in L:
+        if w > const:
+            break
+        while w + R[-1][1] > const:
+            R.pop()
+        ans = max(ans, v + R[-1][0])
 
     return ans
 
@@ -118,7 +111,7 @@ def knapsack_val(N, limit, weight, value):
             return i
 
 if N <= 30:
-    print(half_knapsack(N, A, w, v))
+    print(half_knap(I, A))
     exit()
 elif max(w) <= 1000:
     print(knapsack_wei(N, A, w, v))

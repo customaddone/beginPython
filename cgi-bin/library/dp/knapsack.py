@@ -462,3 +462,47 @@ def knapsack_6(N, upper, limit, weight, value):
     return prev[limit][upper]
 
 print(knapsack_6(N, W, K, w, v))
+
+# マージ型半分全列挙
+# 計算量をN * 2^N/2から2^N/2にできる
+# items: [value, weight]でやってね
+def half_knap(items, const):
+
+    def merge(A, X): # merge A and A + X
+        B = []
+        i = 0
+        nv, nw = X
+        # aとその前の要素を比べる
+        for v, w in A:
+            while A[i][1] + nw < w or (A[i][1] + nw == w and A[i][0] + nv < v):
+                B.append([A[i][0] + nv, A[i][1] + nw])
+                i += 1
+            B.append([v, w])
+        # 残ったものを吐き出す
+        while i < len(A):
+            B.append([A[i][0] + nv, A[i][1] + nw])
+            i += 1
+        return B
+
+    #　マージ
+    L = [[0, 0]]
+    R = [[0, 0]]
+    for item in items[:10]:
+        L = merge(L, item)
+    for item in items[10:]:
+        R = merge(R, item)
+
+    # valの書き換え
+    for i in range(1, len(R)):
+        R[i][0] = max(R[i][0], R[i - 1][0])
+
+    # 尺取り
+    ans = 0
+    for v, w in L:
+        if w > const:
+            break
+        while w + R[-1][1] > const:
+            R.pop()
+        ans = max(ans, v + R[-1][0])
+
+    return ans
