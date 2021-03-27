@@ -32,36 +32,38 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-"""
-数学問題でーす
-どちらかが累計でN回勝てば良い　遷移を考える N^2解から考える
-高橋くんが1回勝って終わる確率
-答えは整数 / 整数になるらしい
+# items: [value, weight]
+def half_knap(items, const):
 
-高橋くんがN回勝って終わる時
-青木くんはN - 1回以下の任意の整数回勝って終わっている
-青木くんが勝つ確率をb回で固定して足し合わせ
-引き分けは無限回あって良い
-青木くんがN回勝って終わるのは逆になる
-２つは独立事象か？
+    def merge(A, X): # merge A and A + X
+        B = []
+        i = 0
+        nv, nw = X
+        # aとその前の要素を比べる
+        for v, w in A:
+            while A[i][1] + nw < w or (A[i][1] + nw == w and A[i][0] + nv < v):
+                B.append([A[i][0] + nv, A[i][1] + nw])
+                i += 1
+            B.append([v, w])
+        # 残ったものを吐き出す
+        while i < len(A):
+            B.append([A[i][0] + nv, A[i][1] + nw])
+            i += 1
+        return B
 
-N+b+cCc * N+bCb * (A / 100)^N * (B / 100)^b * (C / 100)^c
+    L = [[0, 0]]
+    R = [[0, 0]]
+    for item in items[:10]:
+        L = merge(L, item)
+    for item in items[10:]:
+        R = merge(R, item)
 
-期待値を計算
-dp[1][0] = A / 100 * (dp[0][0] + 1) + C / 100 * (dp[1][0] + 1)
-dp[i][j] = A / 100 * (dp[i - 1][j] + 1) + B / 100 * (dp[i][j - 1] + 1) + C / 100 * (dp[i][j])
-(100 - C)dp[i][j] = A * (dp[i - 1][j] + 1) + B * (dp[i][j - 1] + 1)
+    ans = 0
+    for v, w in L:
+        if w > const:
+            break
+        while w + R[-1][1] > const:
+            R.pop()
+        ans = max(ans, v + R[-1][0])
 
-合計でN回勝つ期待値でdpとるか
-dp[i]: どちらかがN回勝って終わっている
-i+1だと？
-
-"""
-
-N, A, B, C = getNM()
-dp = [[0] * (N + 1) for i in range(N + 1)]
-
-for i in range(N):
-    for j in range(N):
-        if i == j == 0:
-            continue
+    return ans
