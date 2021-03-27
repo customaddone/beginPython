@@ -55,6 +55,17 @@ ans = (A ** 2) + (B ** 2) - (2 * A * B * math.cos(math.radians(angle)))
 # 三角形の面積4.564257194330056
 print(math.sqrt(ans))
 
+# 回転行列
+# vec = [[x, y]]
+# vecをang(ラジアンで)だけ回転してくれる
+vec = [[1, -2]]
+def rotate(vec, ang):
+    rot = [[math.cos(ang), -math.sin(ang)], [math.sin(ang), math.cos(ang)]]
+    # 行列累乗して返す
+    return array_cnt(vec, rot)
+
+r = rotate(vec, -math.pi * 2 / N)
+
 # 二つの点を通る直線の方程式を求める
 # y = line[0]x + line[1]
 # 傾きmaxならx = line[3]
@@ -226,7 +237,6 @@ ans = DB / DA
 print(ans)
 
 # 凸包
-
 def area(X, Y, Z):  # 三角形の符号付き面積の2倍
     return (Y[0] - X[0]) * (Z[1] - X[1]) - (Y[1] - X[1]) * (Z[0] - X[0])
 
