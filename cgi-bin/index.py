@@ -63,27 +63,30 @@ for i in range(N):
 def half_knapsack(N, limit, weight, value):
     # 半分全列挙
     L, R = [[0, 0]], [[0, 0]]
-    for w, v in zip(weight[:15], value[:15]):
+    for w, v in zip(weight[:20], value[:20]):
         for i in range(len(L)):
             L.append([w + L[i][0], v + L[i][1]])
-
-    for w, v in zip(weight[15:], value[15:]):
-        for i in range(len(L)):
+    for w, v in zip(weight[20:], value[20:]):
+        for i in range(len(R)):
             R.append([w + R[i][0], v + R[i][1]])
-    R.sort()
-    R_w, R_v = [R[i][0] for i in range(len(R))], [R[i][1] for i in range(len(R))]
 
+    # 整理
+    R.sort(key = lambda i:i[1], reverse = True)
+    R.sort()
+    R_w, R_v = [0], [0]
+    for w, v in R:
+        if R_w[-1] < w:
+            R_w.append(w)
+            R_v.append(max(R_v[-1], v))
+    # 探索
     ans = 0
-    for w, v in L:
-        if w > limit:
+    for w1, v1 in L:
+        if w1 > limit:
             continue
-        o = R_v[bisect_right(R_w, limit - w) - 1]
-        if ans < v + o:
-            ans = v + o
+        o = R_v[bisect_right(R_w, limit - w1) - 1]
+        ans = max(ans, v1 + o)
 
     return ans
-
-
 
 # あるweightで獲得できる最大のvalue
 def knapsack_wei(N, limit, weight, value):
