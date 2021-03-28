@@ -164,3 +164,25 @@ for bit in range(1 << N):
         j &= bit # 1010 → 1000 実質引き算 同じ要素があるところまで数字を減らす
 
 print(dp[-1] - diff)
+
+# フラグが立ってないところについて最寄りのフラグを教えてくれる
+def close(bit, n):
+    # n = bit.bit_length()
+    res = [[] for i in range(n)]
+    build = -1
+    not_build = []
+    for i in range(n):
+        # フラグが立っている
+        if bit & (1 << i):
+            build = i
+            # 右側のフラグについて
+            while not_build:
+                p = not_build.pop()
+                res[p].append(build)
+        else:
+            # 左側のフラグについて
+            if build >= 0:
+                res[i].append(build)
+            not_build.append(i)
+
+    return res

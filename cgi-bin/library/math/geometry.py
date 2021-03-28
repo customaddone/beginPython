@@ -61,7 +61,7 @@ print(math.sqrt(ans))
 vec = [[1, -2]]
 def rotate(vec, ang):
     rot = [[math.cos(ang), -math.sin(ang)], [math.sin(ang), math.cos(ang)]]
-    # 行列累乗して返す
+    # 行列累乗して返す(matrix.pyに置いてある)
     return array_cnt(vec, rot)
 
 r = rotate(vec, -math.pi * 2 / N)
