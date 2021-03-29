@@ -29,220 +29,390 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC021 C - 正直者の高橋くん
-# 経路の通りを求める問題
-N = 7
-a, b = 1, 7
-M = 8
-que = [
-[1, 2],
-[1, 3],
-[4, 2],
-[4, 3],
-[4, 5],
-[4, 6],
-[7, 5],
-[7, 6]
-]
-dist = [[] for i in range(N)]
-for x, y in que:
-    dist[x - 1].append(y - 1)
-    dist[y - 1].append(x - 1)
+# ABC027 C - 倍々ゲーム
+# ２人が最善を尽くす時、どちらが勝つか
+# パターン1:ある状態になるように収束させれば必ず勝つ
+# パターン2:ある場所を目指せば必ず勝つようになる
+# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
 
-# スタートからの最短距離測定
-def distance(sta):
-    # 木をstaから順にたどる（戻るの禁止）
-    pos = deque([sta])
-    ignore = [-1] * N
-    ignore[sta] = 0
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        for i in dist[u]:
-            if ignore[i] == -1:
-                ignore[i] = ignore[u] + 1
-                pos.append(i)
-
-    return ignore
-
-d = distance(a - 1)
-
-# スタートから特定の点まで最短距離で行く通りの数
-def counter(sta):
-    pos = deque([sta])
-    ignore = [0] * N
-    cnt = [0] * N
-    cnt[sta] = 1
-
-    while len(pos) > 0:
-        u = pos.popleft()
-        if ignore[u] == 0:
-            ignore[u] = 1
-            # d[i] == d[u] + 1を満たすuの子ノード全てに
-            # 「スタートからuまでの通りの数」をプラス（他のルートからも来る）
-            for i in dist[u]:
-                if d[i] == d[u] + 1:
-                    cnt[i] += cnt[u]
-                    pos.append(i)
-    return cnt
-
-print(counter(a - 1)[b - 1] % mod)
-
-# ARC044 B - 最短路問題
-# 通りの数を求める問題
-# 深さ1のものは,深さ2のものは
+# まずは全通り試してみる　その中で勝ちが偏っている部分がある
 N = getN()
-A = getList()
-M = max(A)
+k = N
+depth = 0
+while k > 1:
+    k //= 2
+    depth += 1
+x = 1
+cnt = 1
+if depth % 2:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
+        else:
+            x *= 2
+            x += 1
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
+    else:
+        print("Aoki")
+else:
+    while x <= N:
+        if cnt % 2:
+            x *= 2
+            x += 1
+        else:
+            x *= 2
+        cnt += 1
+    if cnt % 2:
+        print("Takahashi")
+    else:
+        print("Aoki")
 
-if A[0] != 0:
-    print(0)
-    exit()
+# ABC048 D - An Ordinary Game
+# 最終的にどのような形で終わるか
+S = input()
+if (S[0] != S[-1]) ^ (len(S) % 2):
+    print('Second')
+else:
+    print('First')
 
-lista = [0] * (M + 1)
-lista[0] = 1
-for i in range(1, N):
-    if A[i] == 0:
-        print(0)
+# ABC059 D - Alice&Brown
+# まずは全通り試してみる
+
+# 最終形をイメージする →
+# 1 0 操作出来ない　終わり
+# 1 1 操作出来ない　終わり
+# 逆に2 0 や 3 0 なら操作できる
+# 2以上開く、０か１開くを繰り返す
+X, Y = getNM()
+X = int(X)
+Y = int(Y)
+
+if (X - Y) ** 2 > 1:
+    print("Alice")
+else:
+    print("Brown")
+
+# AGC033 LRUD Game
+
+"""
+制約よりゲーム木とも違う
+つまりnim
+スタート地点にコマが置いてある　これを２人で動かす
+S[i]の方向に動かす、もしくは動かさない
+盤上から落ちるか残るか
+逆から見てみると
+
+最適行動　とは？
+中央に寄るように、もしくは遠ざかるように？
+
+全ての行動をシミュレートして偏りを探す
+RとLの数の差、UとDの数の差によって勝敗がわかる
+
+高橋くんが如何なる行為をしても青木くんは盤上に残すことができる
+青木くんが如何なる行為をしても高橋くんは盤上から落とすことができる
+
+高橋くんは駒の振れ幅を大きくする
+青木くんは駒の振れ幅を小さくする
+基本高橋くん有利？
+
+2人は相手の行動を先読みできるか
+あとで相手がRを大量に持っている　→　できるだけ左にずらす
+最後のL or Rの処理のあと、コマが残っている
+相手の最悪の行動に対応できるか
+高橋と青木のLRUDの差で考える
+LL
+  RRRの場合
+
+２人が最適な行動をするとは
+相手が最悪の行動をしてくるということ
+コマが一番左にいても絶対に落とせる
+L, R, U, Dのそれぞれが独立に
+R, L, D, Uと対戦できる
+"""
+
+H, W, N = getNM() # H:縦 W:横
+start = getList()
+S = input()
+T = input()
+
+LRUD_range = [start[1], start[1], start[0], start[0]]
+
+for i in range(N):
+    # 高橋のターン
+    if S[i] == 'L': # 高橋のL対青木のR
+        LRUD_range[0] -= 1
+    elif S[i] == 'R':
+        LRUD_range[1] += 1
+    elif S[i] == 'U':
+        LRUD_range[2] -= 1
+    else:
+        LRUD_range[3] += 1
+
+    if LRUD_range[0] < 1 or W < LRUD_range[1] or LRUD_range[2] < 1 or H < LRUD_range[3]:
+        print('NO')
         exit()
-    lista[A[i]] += 1
 
-ans = 1
-for i in range(1, M + 1):
-    if lista[i] == 0:
-        print(0)
-        exit()
-    # 全ての距離i - 1の点とある距離iの点との辺について
-    # 繋いだ場合辺はi - 1の点の数だけあるが、これらのうち１つ以上と繋ぐ
-    opt1 = (pow(2, lista[i - 1], mod) - 1)
-    # それが距離iの点の数分ある
-    depth = pow(opt1, lista[i], mod)
-    # 距離i間の辺について
-    # 辺はlista[i] * (lista[i] - 1) // 2だけあるが、そのうち０本以上と繋ぐ
-    # これによって頂点の最短距離が変わることはない
-    width = pow(2, lista[i] * (lista[i] - 1) // 2, mod)
-    ans *=  depth * width
-    ans %= mod
+    # 青木のターン
+    if T[i] == 'L': # 高橋のR対青木のL ただしleftできるのは1まで
+        LRUD_range[1] = max(1, LRUD_range[1] - 1)
+    elif T[i] == 'R':
+        LRUD_range[0] = min(W, LRUD_range[0] + 1)
+    elif T[i] == 'U':
+        LRUD_range[3] = max(1, LRUD_range[3] - 1)
+    else:
+        LRUD_range[2] = min(H, LRUD_range[2] + 1)
+
+print('YES')
+
+# AGC033 C - Removing Coins
+# 木の直径 + nim
+
+"""
+最適行動する
+ある形に収束する
+
+相手の手がどうであれ
+全ての通りを試してみる
+
+木の問題であり、nimの問題である
+
+一つ頂点を選び、コインを取る
+その後他のコインを吸い寄せる
+ある点iを選択する
+iから各コインへの距離が1小さくなる
+
+各コインへの最短距離の最大値が1になると負け
+木なのでコインが２つ隣り合うだけになったら負け
+コインの木の直径が2で回ってきたら負け
+コインの木はちぎれることはない
+
+コインの木の直径を2にする
+
+1 - 2 - 3 - 4 - 5のパスグラフを考える
+1を選ぶと木の直径は1 - 2 - 3 - 4で4になる
+そのあと2を選ぶと2 - 3になり直径2で勝ち
+端っこを取ると木の直径が1減る
+端以外を取ると木の直径が2減る
+
+1 - 2 - 3 - 4 - 5
+firが1取る 1 - 2 - 3 - 4 → secが2取る 2 - 3
+firが2取る 2 - 3 - 4 → secが4取る 3 - 4
+
+1 - 2 - 3 - 4 - 5 - 6
+fir 1取る 1 - 2 - 3 - 4 - 5 firの勝ち
+
+相手に直径5になるように回す　
+firは6か7で回ってきたら勝ち　8で回ってきたら
+
+2 + 3 * iで回ってきたら負け 2, 5, 8...
+2 * (3 * i) + 1 端を選ぶ
+2 * (3 * i) + 2 真ん中を選ぶ
+
+直径を取るパスの端じゃない点か関係ない点を取ると-2される
+N = 1なら自動的に勝ち
+"""
+
+N = getN()
+Q = [getList() for i in range(N - 1)]
+
+G = [[] for i in range(N)]
+for i in range(N - 1):
+    s, t = Q[i]
+    G[s - 1].append(t - 1)
+    G[t - 1].append(s - 1)
+
+# 木の直径を求める
+def bfs(s):
+    dist = [-1] * N
+    que = deque([s])
+    dist[s] = 1
+
+    while que:
+        u = que.popleft()
+        for i in G[u]:
+            if dist[i] >= 0:
+                continue
+            dist[i] = dist[u] + 1
+            que.append(i)
+    d = max(dist)
+    # 全部並べて一番値がでかいやつ
+    return dist.index(d), d
+
+# 0から最も遠い点uを求める
+u, _ = bfs(0)
+# uから最も遠い点vとその距離を求める（つまり直径）
+v, d = bfs(u)
+
+# 2 + 3 * iで回ってきたら負け
+if (d - 2) % 3 == 0:
+    print('Second')
+else:
+    print('First')
+
+# 全国統一プログラミング王 予選　C - Different Strokes
+
+"""
+一つの数字を最大化できないか
+結局青木さんの点数は高橋くんが選ばなかったもののBの総和になる
+つまり高橋くんがi個目を選ぶとAi獲得するだけでなくBi特することになる
+逆に青木さんがj個目を選ぶとBi獲得するだけでなくAi高橋くんを損させられる
+高橋くん、青木さんはAi + Biが大きい順に取っていく
+"""
+
+N = getN()
+dish = []
+for i in range(N):
+    a, b = getNM()
+    dish.append([a, b, a + b])
+
+dish.sort(key = lambda i:i[2])
+
+ans = 0
+while True:
+    if dish: # 高橋くん
+        a, b, total = dish.pop()
+        ans += a
+    else:
+        break
+
+    if dish: # 青木さん
+        a, b, total = dish.pop()
+        ans -= b
+    else:
+        break
+
 print(ans)
 
-# F - Pure
+# EDPC K - Stones
 
 """
-強連結成分分解とかの話に繋がってくる
-つまりループを作ればいい
-1 - 2 - 3 - 4 - 1みたいな
-1 が2以外の例えば1 - 3みたいなパスがあれば
-1 - 3 - 4 - 1で作ればいい
+nimする
+K個から石を取る
+Ai個（何回も選んでもいい）取る
+N <= 100 小さい
+(石の数) < min(A)となるようにすればいい
+相手に上記の条件になるようにさせない　
+2 4
+2 3 なら 1になるようにする　もしくは相手が1になるようにさせない
+K = 0なら
+0: 先手が勝つ
+1: 後手が勝つ
 
-最小のループが答え
-bfsなら早々に最小のものが見つかる
-
-強連結
-有向グラフにおいて、すべての頂点間で互いに行き来できる
-強連結成分を一つの頂点に潰すと、DAGになる　トポソできる
-
-まずbfsする　その後、戻れるエッジがあるか
-あればその最小値が答え
-
-まずbfsしてDAGで考えるともう処理したものを考えなくていいのでいろいろ便利
+0 1 2 3 4 5
+1 1 0 0 0
+基本先行有利
+自分が勝利するルートがあるか　なければ
+自分が勝利するルートが一つでもあれば　の発想
 """
 
-N, M = getNM()
-dist = [set() for i in range(N)]
-for i in range(M):
-    a, b = getNM()
-    dist[a - 1].add(b - 1)
+N, K = getNM()
+A = getList()
 
-ignore = [-1] * N
-path = [set() for i in range(N)] # 始点からのパス
-parents = [-1] * N
-roop = [-1] * N #  ループの始点と終点
-roop_len = [-1] * N # ループの長さ
+# 0: 先手が勝つ
+# 1: 後手が勝つ
+dp = [1] * (K + 1)
 
-for i in range(N):
-    if ignore[i] >= 0:
-        continue
+for i in range(1, K + 1):
+    for j in range(N):
+        if i - A[j] >= 0 and dp[i - A[j]] == 1:
+            dp[i] = 0
+            break
+    else:
+        dp[i] = 1
 
-    ignore[i] = i
-    pos = deque([[i, 0]])
-    path[i].add(i)
-
-    while pos:
-        u, dis = pos.popleft()
-        for j in list(dist[u]):
-            if ignore[j] == -1:
-                ignore[j] = i
-                parents[j] = u
-                # ループ判定
-                path[j] = deepcopy(path[u])
-                path[j].add(j)
-                for i, e in enumerate(list(path[j])[::-1]): # 後ろから一つずつ
-                    if e in dist[j]: # もし戻るパスがあれば
-                        roop[j] = e # 終点j, 始点eのループがある
-                        roop_len[j] = i + 1 # ループの長さ
-                        break # 一番小さいのしかいらない
-
-                pos.append([j, dis + 1])
-
-# 最小のループを探す
-l = float('inf')
-index = -1
-for i in range(N):
-    if roop_len[i] >= 0 and roop_len[i] < l:
-        l = min(l, roop_len[i])
-        index = i
-
-if index == -1:
-    print(-1)
-    exit()
-
-# 構築
-ans = [index + 1]
-now = index
-while now != roop[index]: # 始点に戻るまで
-    now = parents[now]
-    ans.append(now + 1)
-
-print(l)
-for i in ans[::-1]:
-    print(i)
-
-# AtCoder Beginner Contest 197（Sponsored by Panasonic）
-# F Construct a Palindrome
-
-N, M = getNM()
-E = [[[] for i in range(26)] for i in range(N)]
-adj = [set() for i in range(N)] # 隣接する頂点について
-for _ in range(M):
-    a, b, c = input().split()
-    a = int(a) - 1
-    b = int(b) - 1
-    E[a][ord(c) - ord('a')].append(b)
-    E[b][ord(c) - ord('a')].append(a)
-    adj[a].add(b)
-    adj[b].add(a)
-
-ans = float('inf')
-que = deque([(0, N - 1, 0)])
-used = set()
-
-while que:
-    s, e, d = que.popleft()
-    # 探索が一回目か
-    if (s, e) in used:
-        continue
-    used.add((s, e))
-    if s == e:
-        ans = min(ans, d * 2)
-    if e in adj[s]:
-        ans = min(ans, d * 2 + 1)
-    # a ~ zまでについて同じ文字の辺はあるか
-    for i in range(26):
-        for n_s in E[s][i]:
-            for n_e in E[e][i]:
-                que.append((n_s, n_e, d + 1))
-
-if ans == float('inf'):
-    print(-1)
+if not dp[-1]:
+    print('First')
 else:
-    print(ans)
+    print('Second')
+
+# ARC112 C - DFS Game
+
+"""
+最終的にコインは全てなくなる
+移動する場合はコインの回収ができないのでやらない方がいい？
+高橋くんと青木くんは同じ戦略
+
+部分木の偶奇によって変わりそう
+相手がコインをとった場合は自分は移動するしかない
+
+コインの乗った箇所に乗られるとそこから葉まで全てかっさらわれる
+そこから戻る
+当然そこから根までは何もない
+奇数個戻るとターンが入れ替わる
+
+その途中で枝があればまたそこからスタートする
+どの枝を選ぶかは任意
+任意で選ぶ場所に戦略性
+
+一回葉まで行ったら下の部分木から処理される
+戦略通りいけば部分木についてどのようだったかが一意に定まりそう
+小さい部分木で考える
+
+部分木の根に移動した状態でターンがスタートすれば
+部分木のコインを全て刈った状態でターンが回ってくるのはだれ？
+逆転するかそのまんまか　コインの枚数は
+
+子がない場合は
+
+親要素から子に移動した
+手番は逆転している方がいい
+必ず手番が入れ替わるものを選ぶ
+
+手番が入れ替わるものは小さい順に回収される
+
+dfsを行う
+保持する情報は
+fore/rev 親頂点から本頂点に移動した場合、親頂点に戻った場合に手順が入れ代わってるかどうか
+val: 親頂点から本頂点に移動した場合、自分はいくら獲得できるか
+
+子頂点の情報を元にresを作成する
+f/r: ()子頂点のrの数 + 1) % 2 == 0ならf 1ならr
+val: (+でforeのもの) + (rの大きい方から奇数個目) - (rの大きい方から偶数個目) + (-でforeのもの) * (-1 ** (len(r) == 0))
+(-でforeのもの)はrの長さが偶数であればこちらが引き受ける
+"""
+
+N = getN()
+P = getList()
+E = [[] for i in range(N)]
+for i in range(N - 1):
+    E[P[i] - 1].append(i + 1)
+
+# turn: 0なら順番そのまま 1なら逆転
+def dfs(u):
+    turn = 0
+    # point計算用　移動した先のコインは必ず取られるのでまず-1
+    point = -1
+    rev = []
+    fore_minus = 0
+    for v in E[u]:
+        t, val = dfs(v)
+        turn += t
+        # 順向きなら
+        if t == 0:
+            # +の値なら
+            if val >= 0:
+                point += val
+            else:
+                fore_minus += val
+        # 逆向きになるなら
+        else:
+            rev.append(val)
+    # 計算
+    rev.sort(reverse = True)
+    # revを大きい方から交互にとっていく
+    rev = [rev[i] if i % 2 == 0 else -rev[i] for i in range(len(rev))]
+    point += sum(rev)
+    # -でforeのものはその時の手番の人が全てとる
+    if len(rev) % 2 == 0:
+        point += fore_minus
+    else:
+        point -= fore_minus
+
+    return (turn + 1) % 2, point
+
+# 頂点0に移動する人、つまり青木くんのプラマイが出てくる
+t, p = dfs(0)
+
+print((N - p) // 2)
