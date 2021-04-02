@@ -131,8 +131,9 @@ def router(n, sta, end):
 def parents(n, sta, dist):
     pos = deque([sta])
     ignore = [0] * n
-    path = [0] * n
+    path = [0] * n # 親要素
     path[sta] = -1
+    d = [[] for i in range(n)] # 有向辺
 
     while pos:
         u = pos.popleft()
@@ -141,6 +142,7 @@ def parents(n, sta, dist):
         for i in dist[u]:
             if ignore[i] != 1:
                 path[i] = u
+                d[u].append(i)
                 pos.append(i)
 
     return path
