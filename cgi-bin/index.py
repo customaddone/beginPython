@@ -29,209 +29,363 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# CODE FESTIVAL 2017 qual B C - 3 Steps
+# ABC004 マーブル
+# ベルマンフォード式最小
 
-"""
-N頂点の連結な無向グラフがある　M辺既にある(M >= N - 1)
-N <= 10 ** 5
-一応M <= 10 ** 5なのでダイクストラ使える
-辺を追加していく
-頂点uから距離3ある（最短距離でなくてもいい）vを取り、直通の辺をプラス
-最大でいくつ
+# 全てのボールを全て違う箱に入れる
+# 地点からi離れたところに置くためにはi回試行が必要
 
-辺を追加する度に他の頂点の選択肢は増えるはずだから
-parentから3 = childから2]
-uのchildでない頂点vに線を引く　そこから
-u - vに線を引くと
-uのchild - vのchildにも線を引ける
-つまりuのchildとvのchildは同じグループであり、互いに線を引ける
+# 原点pのボールを(s, e)に一列に置くときの試行回数
+def counter(s, e, p):
+    sp = abs(s - p)
+    ep = abs(e - p)
+    if e < p:
+        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
+    elif s <= p <= e:
+        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
+    else:
+        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
 
-M本の辺について順に探索していくか
-結局グループは２つにしかならないのでは
-頂点1から見た距離
-頂点uのchildのどれかと頂点vのchildのどれかに線があれば繋げる
+# 全範囲を探索すると微妙に間に合わない
+# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
+# 緑がこの位置にある時、赤の最適な置き方は...
+# 緑がこの位置にある時、青の最適な置き方は...
+# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
 
-一本ずつ引いていくと最悪N ** 2になる
-UnionFindか
-1とiはufか
-u - vに線を引くと
-uのchild - vのchildにも線を引ける
+class MinCostFlow:
+    # 最小費用流(ベルマンフォード版、負コストに対応可)
 
-周４の輪ができる
-距離３、５、７...の辺はあるか
-距離１の場合は既に線がある
-奇数長のパスはあるか
+    INF = 10 ** 18
 
-二部グラフでなければ偶奇関係なく好きな回数で好きな場所に行ける
-"""
+    def __init__(self, N):
+        self.N = N
+        self.G = [[] for i in range(N)]
 
-N, M = getNM()
-Q = [getList() for i in range(M)]
+    def add_edge(self, fr, to, cap, cost):
+        G = self.G
+        G[fr].append([to, cap, cost, len(G[to])])
+        G[to].append([fr, 0, -cost, len(G[fr])-1])
 
-# 1 - indexで
-def bipartite(N, M, edges):
-    g = defaultdict(list)
-    for a, b in edges:
-        g[a - 1].append(b - 1)
-        g[b - 1].append(a - 1)
+    def flow(self, s, t, f):
 
-    color = [0] * (N + 1)
-    dq = deque([(0, 1)])
+        N = self.N; G = self.G
+        INF = MinCostFlow.INF
 
-    while dq:
-        v, c = dq.popleft()
-        color[v] = c
-        c *= -1
-        for nv in g[v]: # 頂点vの各childを調べる
-            if color[nv] == 0: # もし未探索なら
-                dq.append((nv, c))
-            if color[nv] == -c: # もしcolor[nv]がvの色を反転させたものでなければ
-                dq = []
-                return False, color
+        res = 0
+        prv_v = [0] * N
+        prv_e = [0] * N
 
-    return True, color
+        while f:
+            dist = [INF] * N
+            dist[s] = 0
+            update = True
 
-res =  bipartite(N, M, Q)
-if res[0]:
-    nb = res[1].count(1)
-    nw = res[1].count(-1)
-    print(nb * nw - M)
-else:
-    print(N * (N - 1) // 2 - M)
+            while update:
+                update = False
+                for v in range(N):
+                    if dist[v] == INF:
+                        continue
+                    for i, (to, cap, cost, _) in enumerate(G[v]):
+                        if cap > 0 and dist[to] > dist[v] + cost:
+                            dist[to] = dist[v] + cost
+                            prv_v[to] = v; prv_e[to] = i
+                            update = True
+            if dist[t] == INF:
+                return -1
 
-# ARC099 E - Independence
-# 補グラフ　エッジの反転を考える
-# iとjは同じグループにならない　を繰り返す
+            d = f; v = t
+            while v != s:
+                d = min(d, G[prv_v[v]][prv_e[v]][1])
+                v = prv_v[v]
+            f -= d
+            res += d * dist[t]
+            v = t
+            while v != s:
+                e = G[prv_v[v]][prv_e[v]]
+                e[1] -= d
+                G[v][e[3]][1] += d
+                v = prv_v[v]
+        return res
 
-"""
-N <= 700 探索できるか
-貪欲しかないが
-N個の都市、M個の道
-２つのグループにする
+R, G, B = getNM()
+N = R + G + B
 
-まず分けることは可能かどうか　
-最低でも道はi(i + 1) / 2ないといけない
-鳩の巣原理使う？
-グループ1の大きさ:a
-グループ2の大きさ:b とすると
-求める答えはM - a(a+1)/2 - b(b+1)/2
-なるべくaとbがイーブンになるようにしたいね
+# 最小費用流
+mcf = MinCostFlow(1006)
+# 始点からRGBの移動前
+# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
+mcf.add_edge(1001, 1002, R, 0)
+mcf.add_edge(1001, 1003, G, 0)
+mcf.add_edge(1001, 1004, B, 0)
 
-分けることは可能かどうか
-グループaに都市iを加えることはできるか
-N <= 700しかないのか
-前にエッジが飛ぶようにする
-各頂点は頂点0と同じか違うかしかない
-aとbがイーブンになるように
-[[], [0], [0], [2], [2, 3]]
-頂点1は0とグループ可能
-頂点3は2とグループ可能
-頂点4は2, 3とグループ可能
-N ** 2までは十分可能なので
-0と同じにするか違うにするか
+# 0~1000の頂点番号は座標位置と一致させてある
+# 各頂点1個まで通れる
+for v in range(1001):
+    # R => 各座標
+    mcf.add_edge(1002, v, 1, abs(400-v))
+    # G => 各座標
+    mcf.add_edge(1003, v, 1, abs(500-v))
+    # B => 各座標
+    mcf.add_edge(1004, v, 1, abs(600-v))
+    # 各座標 => 終点(1005)
+    mcf.add_edge(v, 1005, 1, 0)
 
-単純な方法だと2 ** Nこれを減らす
-自明に違うグループに属するものは
-二部グラフについて考える
+# N個のボールを送るための最小費用
+print(mcf.flow(1001, 1005, N))
 
-ないもの（グループにできない）をエッジにする
-二部グラフ　残ったやつで二部グラフ
-"""
-
-N, M = getNM()
-E = [[i for i in range(N)] for j in range(N)]
-for i in range(M):
+# ABC010
+# 最小カット問題
+# 始点、終点と各点を結びつける
+N, G, E = getNM()
+P = getList()
+query = []
+for i in range(E):
     a, b = getNM()
-    E[b - 1].remove(a - 1)
-    E[a - 1].remove(b - 1)
-for i in range(N):
-    E[i].remove(i)
-
-ign = [1] * N
-flag = True
-l = []
-
-# 二部グラフ判定
-for i in range(N):
-    if ign[i] == 0:
-        continue
-    ign[i] = 0
-    color = [0] * N
-    color[i] = 1
-    q = deque([i])
-    while q:
-        u = q.popleft()
-        for v in E[u]:
-            if color[v] == 0:
-                color[v] = color[u] * (-1)
-                ign[v] = 0
-                q.append(v)
-            elif color[v] != color[u] * (-1):
-                flag = False
-                break
-
-    l.append([color.count(1), color.count(-1)])
-
-if not flag:
-    print(-1)
-    exit()
-
-# 部分和
-prev = [0] * 701
-prev[0] = 1
-for i in range(len(l)):
-    next = [0] * 701
-    for j in range(701):
-        if j - l[i][0] >= 0:
-            next[j] += prev[j - l[i][0]]
-        if j - l[i][1] >= 0:
-            next[j] += prev[j - l[i][1]]
-    prev = next
-
-ans = float('inf')
-for i in range(701):
-    if prev[i]:
-        o = N - i
-        ans = min(ans, i * (i - 1) // 2 + o * (o - 1) // 2)
-print(ans)
-
-# C - オレンジグラフ
-
-"""
-奇数長の閉路はできない　二分グラフか
-まず木の作り方は何通りあるか
-そして偶数長を埋めると
-木だから条件は緩いはず
-
-bitでグループAとグループBに分ける
-グループAの頂点はグループBの頂点につなぐ
-全てつなぐ　だから
-"""
-
-N, M = getNM()
-E = []
-for i in range(M):
-    x, y = getNM()
-    E.append([x - 1, y - 1])
+    query.append([a, b, 1])
+    query.append([b, a, 1])
+# goalへのquery増築
+N += 1
+for i in range(G):
+    query.append([N - 1, P[i], 1])
+    query.append([P[i], N - 1, 1])
 
 ans = 0
-for bit in range(1 << N):
-    a = set()
-    b = set()
-    U = UnionFind(N)
-    for i in range(N):
-        if bit & (1 << i):
-            a.add(i)
+lines = defaultdict(set)
+cost = defaultdict(lambda: defaultdict(int))
+for i in range(len(query)):
+    a, b, c = query[i]
+    if c != 0:
+        lines[a].add(b)
+        cost[a][b] += c
+
+# 蟻本  p205 asteroid
+N = 3
+K = 4
+que = [
+[1, 1],
+[1, 3],
+[2, 2],
+[3, 2]
+]
+
+# 始点を0、縦座標rowを1 ~ N, 横座標colをN + 1 ~ 2N, 終点を2N + 1にする
+# 1-indexならこれでいい
+# 二分グラフの最小点被覆は最大マッチング
+# 二分グラフの最大安定集合は上記を除く補集合
+dist = []
+for i in range(1, N + 1): # 始点、終点
+    dist.append([0, i, 1])
+    dist.append([i + N, 2 * N + 1, 1])
+for a, b in que: # 各惑星について
+    dist.append([a, b + N, 1])
+
+N = 2 * N + 2 # 2 * N + 2倍に拡張する
+lines = defaultdict(set)
+cost = [[0] * N for i in range(N)]
+for i in range(len(dist)):
+    a, b, c = dist[i]
+    lines[a].add(b)
+    cost[a][b] += c
+ans = 0
+
+# sからスタート
+def Ford_Fulkerson(sta, end):
+    global ans
+    queue = deque()
+    queue.append([sta, float('inf')])
+
+    ignore = [1] * N
+    ignore[sta] = 0
+
+    route = [0] * N
+    route[sta] = -1
+
+    while queue:
+        s, flow = queue.pop()
+        for t in lines[s]:  #s->t
+            if ignore[t]: #未到達
+                # flowは入ってくる量、出る量のうち小さい方
+                flow = min(cost[s][t], flow)
+                route[t] = s
+                queue.append([t, flow])
+                ignore[t] = 0
+                if t == end: #ゴール到達
+                    ans += flow
+                    break
         else:
-            b.add(i)
-    for x, y in E:
-        # 違うグループにあったら
-        # 条件を満たすものは全てつなぐ
-        if not ((x in a) ^ (y in b)):
-            U.union(x, y)
+            continue #breakされなければWhile節の先頭に戻る
+        # Falseはされない
+        break
+    else:
+        return False
 
-    if len(U.roots()) == 1:
-        ans += 1
+    t = end
+    s = route[t]
+    # goalまで流れた量はflow
+    # 逆向きの辺を貼る
+    while s != -1:
+        #s->tのコスト減少，ゼロになるなら辺を削除
+        cost[s][t] -= flow
+        if cost[s][t] == 0:
+            lines[s].remove(t)
+            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
+        if cost[t][s] == 0:
+            lines[t].add(s)
 
-# 0101と1010は同じものであるため
-print(ans // 2)
+        cost[t][s] += flow
+
+        # 一つ上の辺をたどる
+        t = s
+        s = route[t]
+
+    return True
+
+while True:
+    # ちょびちょび流して行ってゴールまで流れなくなったら終了
+    if Ford_Fulkerson(0, N - 1):
+        continue
+    else:
+        break
+
+print(ans)
+
+# ABC010 D - 浮気予防
+
+class FordFulkerson:
+    def __init__(self, N):
+        self.N = N
+        self.edge = [[] for i in range(N)] # 各頂点からのエッジ
+
+    # add_edge(出発、到着、量)
+    def add_edge(self, fr, to, cap):
+        forward = [to, cap, None]
+        forward[2] = backward = [fr, 0, forward] # 行きがけのエッジに帰りがけの情報を埋め込む
+        self.edge[fr].append(forward) # 行きがけ
+        self.edge[to].append(backward) # 帰りがけ
+
+    def add_multi_edge(self, v1, v2, cap1, cap2):
+        edge1 = [v2, cap1, None]
+        edge1[2] = edge2 = [v1, cap2, edge1]
+        self.edge[v1].append(edge1)
+        self.edge[v2].append(edge2)
+
+    # v ~ t にfだけ流してみる
+    def dfs(self, v, t, f):
+        if v == t:
+            return f
+        used = self.used # ignoreを設定
+        used[v] = 1 # ignoreを設定
+        for e in self.edge[v]:
+            w, cap, rev = e
+            if cap and not used[w]: # まだ流せる
+                d = self.dfs(w, t, min(f, cap)) # さらに下にいくら流れる
+                if d:
+                    e[1] -= d # forwardの数が減る
+                    rev[1] += d # backwardの数が増える
+                    return d
+        return 0
+
+    def flow(self, s, t):
+        flow = 0
+        f = INF = 10 ** 9 + 7
+        N = self.N
+        while f:
+            self.used = [0] * N # 更新
+            f = self.dfs(s, t, INF) # 少しずつ流す
+            flow += f
+        return flow
+
+N, G, E = getNM()
+F = FordFulkerson(N + 1)
+P = getList()
+
+for i in range(E):
+    u, v = getNM()
+    # 両方エッジつけても問題ない
+    F.add_edge(u, v, 1)
+    F.add_edge(v, u, 1)
+
+# 高橋くんの所に流す
+for p in P:
+    F.add_edge(p, N, 1)
+
+ans = F.flow(0, N)
+
+print(ans)
+
+"""
+# N人の人がいます　2人1組になります
+# i番目の人とj番目の人がペアになった時、Aij点獲得します
+# 得点を最大化してください
+# 2 - 4, 4 - 2とならないようにi + 1からjをスタートさせる
+
+4
+0 50 -20 10
+50 0 30 -40
+-20 30 0 60
+10 -40 60 0
+
+-110
+"""
+
+N = getN()
+P = [getList() for i in range(N)]
+mcf = MinCostFlow(2 * N + 2)
+
+for i in range(N):
+    mcf.add_edge(2 * N, i, 1, 0)
+    mcf.add_edge(N + i, 2 * N + 1, 1, 0)
+
+for i in range(N):
+    for j in range(i + 1, N):
+        if i != j:
+            mcf.add_edge(i, N + j, 1, -P[i][j])
+
+print(mcf.flow(2 * N, 2 * N + 1, N // 2))
+
+# C - 天下一美術館
+
+"""
+まず数字の反転だけでアートは変換できる
+交換によってうまくコストダウンしたいが
+1 1 → 0 0 にする場合は
+反転2回
+交換する必要があるのは1 0 → 0 1にする場合のみ
+その最大枚数は 最大流を使いそう
+"""
+
+H, W = getNM()
+bef = [getList() for i in range(H)]
+aft = [getList() for i in range(H)]
+
+eratta = [[0] * W for i in range(H)]
+cnt = 0
+for i in range(H):
+    for j in range(W):
+        if bef[i][j] == 1 and aft[i][j] == 0:
+            eratta[i][j] = 1
+            cnt += 1
+        elif bef[i][j] == 0 and aft[i][j] == 1:
+            eratta[i][j] = -1
+            cnt += 1
+
+s = H * W
+g = H * W + 1
+F = FordFulkerson(H * W + 2)
+
+# 何枚ドミノを敷けるかの問題
+for i in range(H):
+    for j in range(W):
+        if eratta[i][j] == 1:
+            # i * W + jでエッジは貼ります　Hではなく　注意
+            F.add_edge(s, i * W + j, 1)
+            for k in range(4):
+                ni = i + dy[k]
+                nj = j + dx[k]
+                if 0 <= ni < H and 0 <= nj < W and eratta[ni][nj] == -1:
+                    F.add_edge(i * W + j, ni * W + nj, 1)
+        elif eratta[i][j] == -1:
+            F.add_edge(i * W + j, g, 1)
+
+res = F.flow(s, g) # この分だけ短縮できる
+print(cnt - res)
