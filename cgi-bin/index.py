@@ -29,363 +29,244 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC004 マーブル
-# ベルマンフォード式最小
+# ABC144 F - Fork in the Road
 
-# 全てのボールを全て違う箱に入れる
-# 地点からi離れたところに置くためにはi回試行が必要
+"""
+塞いだあと高橋くんがどこかで詰まったらだめ
+辺を一つ消す　判定するをN回繰り返す
+dpする？
+dp[i][j]: 頂点iにj回の移動で到達する確率
 
-# 原点pのボールを(s, e)に一列に置くときの試行回数
-def counter(s, e, p):
-    sp = abs(s - p)
-    ep = abs(e - p)
-    if e < p:
-        return (sp * (sp + 1) // 2) - ((ep - 1) * ep // 2)
-    elif s <= p <= e:
-        return (sp * (sp + 1) // 2) + (ep * (ep + 1) // 2)
-    else:
-        return (ep * (ep + 1) // 2) - ((sp - 1) * sp // 2)
+# dp[i][j]: 頂点iにj回の移動で到達する確率
+dp = [[0] * (N + 1) for i in range(N)]
+dp[0][0] = 1
 
-# 全範囲を探索すると微妙に間に合わない
-# 緑の位置を最初に決めると(-300 ~ 300ぐらいで全探索)、
-# 緑がこの位置にある時、赤の最適な置き方は...
-# 緑がこの位置にある時、青の最適な置き方は...
-# という風にO(n2)で求められる（赤と青は互いに干渉しないため）
+# 頂点
+for i in range(N):
+    # j回の移動で
+    for j in range(i + 1):
+        for v in E[i]:
+            dp[v][j + 1] += dp[i][j] / len(E[i])
+print(dp)
 
-class MinCostFlow:
-    # 最小費用流(ベルマンフォード版、負コストに対応可)
+一回の判定でO(M)ぐらいかかる
+エッジにウェートをかけると？
+エッジを見るだけでなんとかなるように
+dpの全てについて調べる必要はないんでは
+P[s] * (1 / M)の大きさが最も大きいものが一番Nの期待値への寄与度が大きい
+"""
 
-    INF = 10 ** 18
+N, M = getNM()
+dist = [[] for i in range(N)]
+for i in range(M):
+    s, t = getNM()
+    dist[s - 1].append(t - 1)
+for i in range(N):
+    dist[i].sort()
 
-    def __init__(self, N):
-        self.N = N
-        self.G = [[] for i in range(N)]
+# トポロジカルソートにすればs < tの条件がなくても使える
+def calc(edges):
+    # 確率を計算
+    P = [0] * N
+    P[0] = 1
+    for u in range(N):
+        for v in edges[u]:
+            P[v] += P[u] / len(edges[u])
 
-    def add_edge(self, fr, to, cap, cost):
-        G = self.G
-        G[fr].append([to, cap, cost, len(G[to])])
-        G[to].append([fr, 0, -cost, len(G[fr])-1])
+    # 期待値を計算　ゴールから逆向きで期待値を求める
+    # あと何回進めばゴールまで行けるか
+    E = [0] * N
+    for u in range(N - 1, -1, -1):
+        for v in edges[u]:
+            # この(E[v] + 1)が大きくなるものを削ればいい
+            E[u] += (E[v] + 1) / len(edges[u])
 
-    def flow(self, s, t, f):
+    return P, E
 
-        N = self.N; G = self.G
-        INF = MinCostFlow.INF
+P, E = calc(dist)
+ans = E[0]
+diff = 0
 
-        res = 0
-        prv_v = [0] * N
-        prv_e = [0] * N
+for u in range(N):
+    for v in dist[u]:
+        if len(dist[u]) > 1:
+            # u ~ vの辺を削ると(E[v] + 1) / len(dist[u])の分だけ軽くなるが
+            # 残った分が len(dist[u]) / (len(dist[u]) - 1)でかけられる
+            ban = (E[v] + 1) / len(dist[u]) # これが消える予定
+            new = (E[u] - ban) * len(dist[u]) / (len(dist[u]) - 1)
+            diff = max(diff, (E[u] - new) * P[u])
 
-        while f:
-            dist = [INF] * N
-            dist[s] = 0
-            update = True
+print(ans - diff)
 
-            while update:
-                update = False
-                for v in range(N):
-                    if dist[v] == INF:
-                        continue
-                    for i, (to, cap, cost, _) in enumerate(G[v]):
-                        if cap > 0 and dist[to] > dist[v] + cost:
-                            dist[to] = dist[v] + cost
-                            prv_v[to] = v; prv_e[to] = i
-                            update = True
-            if dist[t] == INF:
-                return -1
+# M-SOLUTION プロコン　C - Best-of-(2n-1)
 
-            d = f; v = t
-            while v != s:
-                d = min(d, G[prv_v[v]][prv_e[v]][1])
-                v = prv_v[v]
-            f -= d
-            res += d * dist[t]
-            v = t
-            while v != s:
-                e = G[prv_v[v]][prv_e[v]]
-                e[1] -= d
-                G[v][e[3]][1] += d
-                v = prv_v[v]
-        return res
+"""
+数学問題でーす
+どちらかが累計でN回勝てば良い　遷移を考える N^2解から考える
+高橋くんが1回勝って終わる確率
+答えは整数 / 整数になるらしい
 
-R, G, B = getNM()
-N = R + G + B
+高橋くんがN回勝って終わる時
+青木くんはN - 1回以下の任意の整数回勝って終わっている
+青木くんが勝つ確率をb回で固定して足し合わせ
+引き分けは無限回あって良い
+青木くんがN回勝って終わるのは逆になる
+２つは独立事象か？
 
-# 最小費用流
-mcf = MinCostFlow(1006)
-# 始点からRGBの移動前
-# 1001（始点）から1002(赤色原点)へエッジ, R個まで、コスト0
-mcf.add_edge(1001, 1002, R, 0)
-mcf.add_edge(1001, 1003, G, 0)
-mcf.add_edge(1001, 1004, B, 0)
+N+b+cCc * N+bCb * (A / 100)^N * (B / 100)^b * (C / 100)^c
 
-# 0~1000の頂点番号は座標位置と一致させてある
-# 各頂点1個まで通れる
-for v in range(1001):
-    # R => 各座標
-    mcf.add_edge(1002, v, 1, abs(400-v))
-    # G => 各座標
-    mcf.add_edge(1003, v, 1, abs(500-v))
-    # B => 各座標
-    mcf.add_edge(1004, v, 1, abs(600-v))
-    # 各座標 => 終点(1005)
-    mcf.add_edge(v, 1005, 1, 0)
+期待値を計算
+dp[1][0] = A / 100 * (dp[0][0] + 1) + C / 100 * (dp[1][0] + 1)
+dp[i][j] = A / 100 * (dp[i - 1][j] + 1) + B / 100 * (dp[i][j - 1] + 1) + C / 100 * (dp[i][j])
+(100 - C)dp[i][j] = A * (dp[i - 1][j] + 1) + B * (dp[i][j - 1] + 1)
 
-# N個のボールを送るための最小費用
-print(mcf.flow(1001, 1005, N))
+合計でN回勝つ期待値でdpとるか
+dp[i]: どちらかがN回勝って終わっている
+i+1だと？
 
-# ABC010
-# 最小カット問題
-# 始点、終点と各点を結びつける
-N, G, E = getNM()
-P = getList()
-query = []
-for i in range(E):
-    a, b = getNM()
-    query.append([a, b, 1])
-    query.append([b, a, 1])
-# goalへのquery増築
-N += 1
-for i in range(G):
-    query.append([N - 1, P[i], 1])
-    query.append([P[i], N - 1, 1])
+一発では無理
+ans += 期待値 / 確率を全ての場合で求めるやり方
 
-ans = 0
-lines = defaultdict(set)
-cost = defaultdict(lambda: defaultdict(int))
-for i in range(len(query)):
-    a, b, c = query[i]
-    if c != 0:
-        lines[a].add(b)
-        cost[a][b] += c
+確率の求め方
+高橋くんがa回、青木くんがb回出すとすれば
+a+bCa * (A / A + B)^a * (B / A + B)^b
+a+bCa * A^a * B^b * (A + B)^a+b
+高橋くんがN回、青木くんが0回、1回...その逆を求めるなら
 
-# 蟻本  p205 asteroid
-N = 3
-K = 4
-que = [
-[1, 1],
-[1, 3],
-[2, 2],
-[3, 2]
-]
+高橋くんがN-1回、青木くんがi回勝ち、さらに高橋くんが勝てば良い
 
-# 始点を0、縦座標rowを1 ~ N, 横座標colをN + 1 ~ 2N, 終点を2N + 1にする
-# 1-indexならこれでいい
-# 二分グラフの最小点被覆は最大マッチング
-# 二分グラフの最大安定集合は上記を除く補集合
-dist = []
-for i in range(1, N + 1): # 始点、終点
-    dist.append([0, i, 1])
-    dist.append([i + N, 2 * N + 1, 1])
-for a, b in que: # 各惑星について
-    dist.append([a, b + N, 1])
+高橋くんがN回、青木くんがi回勝つのにかかる期待値
+マスを一つ移動するのにかかる期待値は？
+C = 0なら自明にa + bになる
+100 * (N + i) / 100 - C
+100 / 100 - Cは空回り分
 
-N = 2 * N + 2 # 2 * N + 2倍に拡張する
-lines = defaultdict(set)
-cost = [[0] * N for i in range(N)]
-for i in range(len(dist)):
-    a, b, c = dist[i]
-    lines[a].add(b)
-    cost[a][b] += c
-ans = 0
+A == B == 0はない
+"""
 
-# sからスタート
-def Ford_Fulkerson(sta, end):
-    global ans
-    queue = deque()
-    queue.append([sta, float('inf')])
+# 逆元事前処理ver
+# nが小さい場合に
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
 
-    ignore = [1] * N
-    ignore[sta] = 0
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
 
-    route = [0] * N
-    route[sta] = -1
-
-    while queue:
-        s, flow = queue.pop()
-        for t in lines[s]:  #s->t
-            if ignore[t]: #未到達
-                # flowは入ってくる量、出る量のうち小さい方
-                flow = min(cost[s][t], flow)
-                route[t] = s
-                queue.append([t, flow])
-                ignore[t] = 0
-                if t == end: #ゴール到達
-                    ans += flow
-                    break
-        else:
-            continue #breakされなければWhile節の先頭に戻る
-        # Falseはされない
-        break
-    else:
-        return False
-
-    t = end
-    s = route[t]
-    # goalまで流れた量はflow
-    # 逆向きの辺を貼る
-    while s != -1:
-        #s->tのコスト減少，ゼロになるなら辺を削除
-        cost[s][t] -= flow
-        if cost[s][t] == 0:
-            lines[s].remove(t)
-            #t->s(逆順)のコスト増加，元がゼロなら辺を作成
-        if cost[t][s] == 0:
-            lines[t].add(s)
-
-        cost[t][s] += flow
-
-        # 一つ上の辺をたどる
-        t = s
-        s = route[t]
-
-    return True
-
-while True:
-    # ちょびちょび流して行ってゴールまで流れなくなったら終了
-    if Ford_Fulkerson(0, N - 1):
-        continue
-    else:
-        break
-
-print(ans)
-
-# ABC010 D - 浮気予防
-
-class FordFulkerson:
-    def __init__(self, N):
-        self.N = N
-        self.edge = [[] for i in range(N)] # 各頂点からのエッジ
-
-    # add_edge(出発、到着、量)
-    def add_edge(self, fr, to, cap):
-        forward = [to, cap, None]
-        forward[2] = backward = [fr, 0, forward] # 行きがけのエッジに帰りがけの情報を埋め込む
-        self.edge[fr].append(forward) # 行きがけ
-        self.edge[to].append(backward) # 帰りがけ
-
-    def add_multi_edge(self, v1, v2, cap1, cap2):
-        edge1 = [v2, cap1, None]
-        edge1[2] = edge2 = [v1, cap2, edge1]
-        self.edge[v1].append(edge1)
-        self.edge[v2].append(edge2)
-
-    # v ~ t にfだけ流してみる
-    def dfs(self, v, t, f):
-        if v == t:
-            return f
-        used = self.used # ignoreを設定
-        used[v] = 1 # ignoreを設定
-        for e in self.edge[v]:
-            w, cap, rev = e
-            if cap and not used[w]: # まだ流せる
-                d = self.dfs(w, t, min(f, cap)) # さらに下にいくら流れる
-                if d:
-                    e[1] -= d # forwardの数が減る
-                    rev[1] += d # backwardの数が増える
-                    return d
+def cmb(n, r):
+    if (r < 0) or (n < r):
         return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
 
-    def flow(self, s, t):
-        flow = 0
-        f = INF = 10 ** 9 + 7
-        N = self.N
-        while f:
-            self.used = [0] * N # 更新
-            f = self.dfs(s, t, INF) # 少しずつ流す
-            flow += f
-        return flow
+N, A, B, C = getNM()
+a_pow = [1] * (10 ** 6 + 1)
+b_pow = [1] * (10 ** 6 + 1)
+for i in range(1, 10 ** 6 + 1):
+    a_pow[i] = (a_pow[i - 1] * A) % mod
+    b_pow[i] = (b_pow[i - 1] * B) % mod
 
-N, G, E = getNM()
-F = FordFulkerson(N + 1)
-P = getList()
-
-for i in range(E):
-    u, v = getNM()
-    # 両方エッジつけても問題ない
-    F.add_edge(u, v, 1)
-    F.add_edge(v, u, 1)
-
-# 高橋くんの所に流す
-for p in P:
-    F.add_edge(p, N, 1)
-
-ans = F.flow(0, N)
-
-print(ans)
-
-"""
-# N人の人がいます　2人1組になります
-# i番目の人とj番目の人がペアになった時、Aij点獲得します
-# 得点を最大化してください
-# 2 - 4, 4 - 2とならないようにi + 1からjをスタートさせる
-
-4
-0 50 -20 10
-50 0 30 -40
--20 30 0 60
-10 -40 60 0
-
--110
-"""
-
-N = getN()
-P = [getList() for i in range(N)]
-mcf = MinCostFlow(2 * N + 2)
+ans = 0
+# 高橋くんがN-1回、青木くんが0 ~ N - 1回勝ったあと、高橋くんが勝つ
 
 for i in range(N):
-    mcf.add_edge(2 * N, i, 1, 0)
-    mcf.add_edge(N + i, 2 * N + 1, 1, 0)
+    # 分子はpowして良い
+    prob = ((cmb(N + i - 1, i) * a_pow[N - 1] * b_pow[i]) * A) % mod
+    # 分母は(A + B) ** (2 * N - 1)に揃える
+    prob *= pow(A + B, N - i - 1, mod)
+    prob %= mod
+    # deno = (A + B) ** (2 * N - 1)
 
+    # 期待値　分子部分
+    exp = 100 * (N + i)
+    # 分母はA + B
+    ans += prob * exp
+    ans %= mod
+
+# 青木くんサイド
 for i in range(N):
-    for j in range(i + 1, N):
-        if i != j:
-            mcf.add_edge(i, N + j, 1, -P[i][j])
+    prob = ((cmb(N + i - 1, i) * a_pow[i] * b_pow[N - 1]) * B) % mod
+    prob *= pow(A + B, N - i - 1, mod)
+    prob %= mod
 
-print(mcf.flow(2 * N, 2 * N + 1, N // 2))
+    exp = 100 * (N + i)
+    ans += prob * exp
+    ans %= mod
 
-# C - 天下一美術館
+# 最後に確率計算(A + B) ** (2 * N - 1)、期待値(A + B)
+# 計((A + B) ** (2 * N))で割ることにする
+# 分母の逆元の計算はこうやる
+deno = (pow(A + B, 2 * N, mod)) % mod
+print((ans * pow(deno, mod - 2, mod)) % mod)
+
+# ARC106 D-power
 
 """
-まず数字の反転だけでアートは変換できる
-交換によってうまくコストダウンしたいが
-1 1 → 0 0 にする場合は
-反転2回
-交換する必要があるのは1 0 → 0 1にする場合のみ
-その最大枚数は 最大流を使いそう
+掛け算をする
+N(N - 1) // 2個全てを計算するのは無理
+天才式変換をしよう
+(a + b)^3 = a^3 + 3a^2b + 3ab^2 + b^3
+a1, a2...が出る回数はそれぞれ(N - 1)回
+a^3, b^3部分のsumはすぐでる
+あらゆるa^2bのsumを求めたい
+1^2 * 2^1 + 1^1 * 2^2
+1^2 * 3^1 + 1^1 * 3^2
+2^2 * 3^1 + 2^1 * 3^2
+1^1の相手は2^2, 3^2
+一般化すると
+k乗する場合
+0-indexでの第i項目、第k - i項目のことを考える
+kCiをあとでかける
+ai^iの相手は(任意のaj^k-i)
+ai^k-iの相手は(任意のaj^i)
+これのsumは
+1 0 1
+2 0 2 真ん中が抜ける
+3 0 3
+3 1 2
+[[1, 1, 1], [1, 2, 3], [1, 4, 9], [1, 8, 27]]
+[3, 6, 14, 36]
+ここで72
+1^0の相手は36 - 1 = 35
+2^0の相手は36 - 8 = 28
+3^0の相手は36 - 27 = 9 これらは3C0でかける
+ここで144
+1^1の相手は2^2 + 3^2 = 14 - 1^2 = 13
+2^1の相手は14 - 4 = 10
+3^1の相手は14 - 9 = 5 これらは3C1でかける　合計216
+
+まとめたいが
+su_p[i] * su_p[x - i] - (p_l[i][n] * p_l[x - i][n]の合計)
+(p_l[i][n] * p_l[x - i][n]の合計)はsu_p[x]で一定
+kCi * (su_p[i] * su_p[x - i] - su_p[x])
+
+0-indexでの第i項目、第k - i項目のことを考えると
+a^i * b^k-iは合計でN(N - 1)//2個ある
+a^k-i * b^iも合計でN(N - 1)//2個ある
+その合計は(各Aをi乗した値の合計) * (各Aをk-i乗した値の合計) - (各Aについて^i * ^k-i = k乗した値の合計)
+これらに係数kCiをかける
 """
 
-H, W = getNM()
-bef = [getList() for i in range(H)]
-aft = [getList() for i in range(H)]
+N, K = getNM()
+A = getList()
 
-eratta = [[0] * W for i in range(H)]
-cnt = 0
-for i in range(H):
-    for j in range(W):
-        if bef[i][j] == 1 and aft[i][j] == 0:
-            eratta[i][j] = 1
-            cnt += 1
-        elif bef[i][j] == 0 and aft[i][j] == 1:
-            eratta[i][j] = -1
-            cnt += 1
+p_l = [[0] * N for i in range(K + 1)]
+for i in range(K + 1):
+    for j in range(N):
+        if i == 0:
+            p_l[i][j] = 1
+        else:
+            p_l[i][j] = (p_l[i - 1][j] * A[j]) % mod
 
-s = H * W
-g = H * W + 1
-F = FordFulkerson(H * W + 2)
+su_p = [sum(p_l[i]) % mod for i in range(K + 1)]
 
-# 何枚ドミノを敷けるかの問題
-for i in range(H):
-    for j in range(W):
-        if eratta[i][j] == 1:
-            # i * W + jでエッジは貼ります　Hではなく　注意
-            F.add_edge(s, i * W + j, 1)
-            for k in range(4):
-                ni = i + dy[k]
-                nj = j + dx[k]
-                if 0 <= ni < H and 0 <= nj < W and eratta[ni][nj] == -1:
-                    F.add_edge(i * W + j, ni * W + nj, 1)
-        elif eratta[i][j] == -1:
-            F.add_edge(i * W + j, g, 1)
-
-res = F.flow(s, g) # この分だけ短縮できる
-print(cnt - res)
+for x in range(1, K + 1):
+    ans = 0
+    for i in range(x + 1):
+        ans += cmb(x, i) * (su_p[i] * su_p[x - i] - su_p[x])
+        ans %= mod
+    print((ans * pow(2, mod - 2, mod)) % mod)

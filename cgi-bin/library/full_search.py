@@ -125,3 +125,19 @@ def rep_comb_pow(n, r):
     child_pow(0, [])
 
 rep_comb_pow(4, 2)
+
+# たこ焼き
+dp = [[0] * (W + 1) for i in range(H + 1)]
+for i in range(H):
+    for j in range(W):
+        dp[i + 1][j + 1] = B[i][j]
+        dp[i + 1][j + 1] += dp[i + 1][j]
+
+for i in range(H):
+    for j in range(W):
+        dp[i + 1][j + 1] += dp[i][j + 1]
+
+def calc(y1, x1, y2, x2, l):
+    return l[y2 + 1][x2 + 1] - l[y2 + 1][x1] - l[y1][x2 + 1] + l[y1][x1]
+
+print(calc(1, 0, 1, 2, dp))
