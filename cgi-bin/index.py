@@ -29,29 +29,85 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ユークリッド距離を求める
-def euc(px1, py1, px2, py2):
-    return math.sqrt((px2 - px1) ** 2 + (py2 - py1) ** 2)
+# ABC189 C - Mandarin Orange
 
-# 交点がない場合は使えないよ
-def cross(x1, y1, x2, y2, r1, r2):
+N = getN()
+A = getList()
+A = [[A[i], i] for i in range(N)]
+A.sort()
 
-    # cosθを求める
-    d = euc(x1, y1, x2, y2)
-    cos = (r1 ** 2 + d ** 2 - r2 ** 2) / (2 * r1 * d)
-    # |P1H|
-    d1 = r1 * cos
+ans = 0
+check = [0] * N
+U = UnionFind(N)
 
-    # |AH|
-    d3 = math.sqrt(r1 ** 2 - d1 ** 2)
-    # P1 ~ Hのベクトル
-    e = (x2 - x1, y2 - y1)
-    e1 = (e[0] * d1 / d, e[1] * d1 / d)
-    # A ~ Hのベクトル
-    # eを90度回転させたものにd3 / dをかける
-    e2u, e2d = ((e[1] * (-1)) * d3 / d, e[0] * d3 / d), (e[1] * d3 / d, (e[0] * (-1)) * d3 / d)
+while A:
+    now = A[-1][0]
+    index = []
+    # 同じ数を引き終わるまで引き続ける
+    while A and A[-1][0] == now:
+        val, ind = A.pop()
+        index.append(ind)
+        check[ind] = 1
 
-    return (x1 + e1[0] + e2u[0], y1 + e1[1] + e2u[1]), (x1 + e1[0] + e2d[0], y1 + e1[1] + e2d[1])
+    # uniteする
+    for ind in index:
+        # 左側と
+        if ind > 0 and check[ind - 1] == 1:
+            U.union(ind - 1, ind)
+        # 右側と
+        if ind < N - 1 and check[ind + 1] == 1:
+            U.union(ind, ind + 1)
+
+    # 計算
+    for ind in index:
+        ans = max(ans, now * U.size(ind))
+
+print(ans)
+
+# 技術室奥プログラミングコンテスト#4 Day2
+# E - 引きこもり
+
+N, M, Q = getNM()
+E = [getList() for i in range(M)]
+E.sort(reverse = True, key = lambda i:i[2])
+query = getArray(Q)
+
+U = UnionFind(N)
+d = [float('inf')] * (10 ** 5 + 7)
+d[1] = 0
+que = []
+for i in range(N):
+    heappush(que, [1, i])
+
+# 混ぜこぜでqueにぶち込んで取り出すときにそれが正しいか判定する
+while E:
+    now = E[-1][2]
+    al = []
+    # 抜き取る
+    while E and E[-1][2] == now:
+        a, b, c = E.pop()
+        U.union(a - 1, b - 1)
+        al.append([a - 1, b - 1])
+    # 判定
+    for a, b in al:
+        heappush(que, [U.size(a), a])
+        heappush(que, [U.size(b), b])
+
+    # 正規のやつを引くまで
+    while que[0][0] != U.size(U.find(que[0][1])):
+        heappop(que)
+    d[que[0][0]] = min(d[que[0][0]], now)
+
+for i in range(len(d) - 2, -1, -1):
+    d[i] = min(d[i], d[i + 1])
+
+for q in query:
+    if d[q] == float('inf'):
+        print('trumpet')
+    else:
+        print(d[q])
+
+# ABC181 F - Silver Woods
 
 """
 二分探索　っぽいが
@@ -89,31 +145,44 @@ x1 ~ x2を通過できるか
 二つの円の中心から垂直に
 
 接する　場合は通れる　誤差はちょっとであればOKぽいので
+
+上下の直線を結べてしまったらout
 """
-
-# print(cross(0, 0, 1, -1, 3, 2))
-# 2つの円の中心、円の大きさから禁止地点を割り出す
-def forbit(x1, y1, x2, y2, rad):
-    r = rad + 10 ** -12
-    if euc(x1, y1, x2, y2) > 2 * r:
-        return []
-    p1, p2 = cross(x1, y1, x2, y2, r, r)
-    print(p1, p2)
-    # そのxについて禁止区間は
-    def y_calc(y1, y2):
-        return [min(y1, y1 - 2 * (y1 - y2)), max(y1, y1 - 2 * (y1 - y2))]
-
-    res = []
-    res.append([p1[0]] + y_calc(p1[1], y1))
-    res.append([p1[0]] + y_calc(p2[1], y1))
-    res.append([p2[0]] + y_calc(p1[1], y2))
-    res.append([p2[0]] + y_calc(p2[1], y2))
-
-    return res
 
 N = getN()
 P = [getList() for i in range(N)]
 
-for i in range(N):
-    for j in range(i + 1, N):
-        print(forbit(P[i][0], P[i][1], P[j][0], P[j][1], 50))
+# ユークリッド距離を求める
+def euc(px1, py1, px2, py2):
+    return math.sqrt((px2 - px1) ** 2 + (py2 - py1) ** 2)
+
+def f(x):
+    U = UnionFind(N + 2)
+    line1 = N
+    line2 = N + 1
+    for i in range(N):
+        # 点と直線の判定
+        x1, y1 = P[i]
+        if 100 - y1 < 2 * x:
+            U.union(i, N)
+        if y1 - (-100) < 2 * x:
+            U.union(i, N + 1)
+        # 点同士の判定
+        for j in range(i + 1, N):
+            x2, y2 = P[j]
+            if euc(x1, y1, x2, y2) < 2 * x:
+                U.union(i, j)
+
+    return not U.same(line1, line2)
+
+ok = 0
+ng = 10 ** 12
+
+while ng > ok + 10 ** -10:
+    # mid二つ
+    mid = (ok + ng) / 2
+    if f(mid):
+        ok = mid
+    else:
+        ng = mid
+print(ok)
