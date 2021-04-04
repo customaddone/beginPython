@@ -305,3 +305,28 @@ for i in range(len(C) - 2):
     SD += area(D[0], D[i + 1], D[i + 2])
 
 print((SD / SC) ** .5)
+
+# ユークリッド距離を求める
+def euc(px1, py1, px2, py2):
+    return math.sqrt((px2 - px1) ** 2 + (py2 - py1) ** 2)
+
+# ２円の交点を求める
+# 交点がない場合は使えないよ
+def cross(x1, y1, x2, y2, r1, r2):
+
+    # cosθを求める
+    d = euc(x1, y1, x2, y2)
+    cos = (r1 ** 2 + d ** 2 - r2 ** 2) / (2 * r1 * d)
+    # |P1H|
+    d1 = r1 * cos
+
+    # |AH|
+    d3 = math.sqrt(r1 ** 2 - d1 ** 2)
+    # P1 ~ Hのベクトル
+    e = (x2 - x1, y2 - y1)
+    e1 = (e[0] * d1 / d, e[1] * d1 / d)
+    # A ~ Hのベクトル
+    # eを90度回転させたものにd3 / dをかける
+    e2u, e2d = ((e[1] * (-1)) * d3 / d, e[0] * d3 / d), (e[1] * d3 / d, (e[0] * (-1)) * d3 / d)
+
+    return (x1 + e1[0] + e2u[0], y1 + e1[1] + e2u[1]), (x1 + e1[0] + e2d[0], y1 + e1[1] + e2d[1])
