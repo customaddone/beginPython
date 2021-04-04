@@ -51,3 +51,26 @@ def splitbit(n):
             l[i][0] += 1
 for i in A:
     splitbit(i)
+
+# ABC126 F - XOR Matching
+# 0 ~ 2^N - 1までには
+# 2^0, 2^1...2^N-1のフラグがそれぞれ2^N-1本ずつあり
+# xorの総和は0になる
+# 2 と 1 3 4 5 6 7はxorの総和がそれぞれ2
+
+M, K = getNM()
+
+if M == 1:
+    if K == 0:
+        print(0, 1, 1, 0)
+    else:
+        print(-1)
+    exit()
+
+if K >= 2 ** M:
+    print(-1)
+    exit()
+
+res = [i for i in range(1 << M) if i != K]
+res = [K] + res + [K] + res[::-1]
+print(*res)

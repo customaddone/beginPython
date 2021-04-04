@@ -127,83 +127,6 @@ def square(x1, y1, x2, y2):
 
 print(*square(1, 1, 2, 4))
 
-# ABC151 F - Enclose All
-
-"""
-点全てを内包する円の半径の最小値は
-二点間の距離の最大値　にはならない
-def dis(p1, p2):
-    x1, y1 = p1
-    x2, y2 = p2
-    return math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
-N = getN()
-P = [getList() for i in range(N)]
-ans = 0
-for i in range(N):
-    for j in range(N):
-        ans = max(ans, dis(P[i], P[j]))
-正三角形になったら当てはまらない
-重心か？
-3
-0 0
-0 1
-1 0 の時重心は0.33だが実際の答えは√2/2, √2/2
-二分探索したいなぁ
-半径rで全てを包めるか
-各点を中心に半径rの円を書く
-全ての円が共有する部分があればその範囲内の1点を中心に円を書けるので
-もっとrを小さくできる
-"""
-
-N = getN()
-P = [getList() for i in range(N)]
-
-def check(d):
-    eps = 1 / (10 ** 10)
-    points = []
-    for i in range(N):
-        for j in range(N):
-            if i == j:
-                continue
-            x1, y1 = P[i]
-            x2, y2 = P[j]
-
-            dif = (x1 - x2) ** 2 + (y1 - y2) ** 2
-            # 半径を超えてないか
-            if(dif > 4 * d ** 2):
-                return False
-
-            h = (d ** 2 - dif / 4) ** 0.5
-            xm, ym = (x1 + x2) / 2, (y1 + y2) / 2
-
-            dx,dy = (y1 - y2), -1 * (x1 - x2)
-            dxy = (dx ** 2 + dy ** 2) ** 0.5
-
-            points.append((xm + dx * h / dxy, ym + dy * h / dxy))
-            points.append((xm - dx * h / dxy, ym - dy * h / dxy))
-
-    for xp, yp in points:
-        for i in range(N):
-            xi, yi = P[i]
-            dif = (xp - xi) ** 2 + (yp - yi) ** 2
-            if(dif > d ** 2 + eps):
-                break
-        else:
-            return True
-
-    return False
-
-ok = 1000
-ng = 0
-for _ in range(50):
-    mid = (ok + ng) / 2
-    if(check(mid)):
-        ok = mid
-    else:
-        ng = mid
-
-print(ok)
-
 # 点が２つだと面積ができない
 if N == 2:
     print(((B[1][0] - B[0][0]) ** 2 + (B[1][1] - B[0][1]) ** 2) ** .5 / ((A[1][0] - A[0][0]) ** 2 + (A[1][1] - A[0][1]) ** 2) ** .5)
@@ -330,3 +253,58 @@ def cross(x1, y1, x2, y2, r1, r2):
     e2u, e2d = ((e[1] * (-1)) * d3 / d, e[0] * d3 / d), (e[1] * d3 / d, (e[0] * (-1)) * d3 / d)
 
     return (x1 + e1[0] + e2u[0], y1 + e1[1] + e2u[1]), (x1 + e1[0] + e2d[0], y1 + e1[1] + e2d[1])
+
+# ABC151 F - Enclose All
+
+N = getN()
+P = [getList() for i in range(N)]
+def f(x):
+    point = []
+    # 2円の交点を作成
+    for i in range(N):
+        for j in range(i + 1, N):
+            x1, y1 = P[i]
+            x2, y2 = P[j]
+            # 線分が存在しない
+            if euc(x1, y1, x2, y2) > 2 * x:
+                return False
+            p1, p2 = cross(x1, y1, x2, y2, x, x)
+            point.append(p1)
+            point.append(p2)
+
+    # 各中心からx以内の点が一つでもある
+    l_n = len(point)
+    for i in range(l_n):
+        x1, y1 = point[i]
+        for j in range(N):
+            x2, y2 = P[j]
+            # ここに修正を入れる
+            if euc(x1, y1, x2, y2) > x + 10 ** -10:
+                break
+        else:
+            return True
+
+    return False
+
+ok = 10 ** 12
+ng = 0
+
+while ok > ng + 10 ** -10:
+    # mid二つ
+    mid = (ok + ng) / 2
+    if f(mid):
+        ok = mid
+    else:
+        ng = mid
+
+print(ok)
+
+# 交差判定
+# 線分p1 ~ p2と線分p3 ~ p4が交差しているか
+def crossing(p1, p2, p3, p4):
+    t1 = (p1[0] - p2[0]) * (p3[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p3[0])
+    t2 = (p1[0] - p2[0]) * (p4[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p4[0])
+    t3 = (p3[0] - p4[0]) * (p1[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p1[0])
+    t4 = (p3[0] - p4[0]) * (p2[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p2[0])
+
+    return t1 * t2 < 0 and t3 * t4 < 0

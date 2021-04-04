@@ -91,6 +91,27 @@ def dij(start, edges):
 
     return dist, parent
 
+# ABC132 E - Hopscotch Addict
+# mod?付きダイクストラ
+def dij(start, edges, m):
+    # 頂点3倍ダイクストラ
+    dist = [[float('inf')] * m for i in range(N)]
+    dist[start][0] = 0
+    pq = [(0, start)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        d, now = heappop(pq)
+        if (d > dist[now][d % m]):
+            continue
+        for i in edges[now]:
+            # 現在の距離d, 次の距離d + 1
+            if dist[i[0]][(d + i[1]) % m] > dist[now][d % m] + i[1]:
+                dist[i[0]][(d + i[1]) % m] = dist[now][d % m] + i[1]
+                heappush(pq, (dist[i[0]][(d + i[1]) % m], i[0]))
+
+    return dist
+
 # ARC008 THE☆たこ焼き祭り2012
 # 完全グラフのダイクストラ
 N = 4

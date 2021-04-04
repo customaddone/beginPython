@@ -29,160 +29,78 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC189 C - Mandarin Orange
+# 部分和dpができる
+class Bitset():
+    def __init__(self, n, limit):
+        # データ 初期設定は1で(0だけがある)
+        self.diff = limit
+        self.n = (n << self.diff)
 
-N = getN()
-A = getList()
-A = [[A[i], i] for i in range(N)]
-A.sort()
+    # 値を追加する
+    def add(self, x):
+        self.n |= (1 << (self.diff + x))
 
-ans = 0
-check = [0] * N
-U = UnionFind(N)
+    # 数の配列ごとまとめて追加する
+    # x > 0なら数の配列にxを足した値を追加する
+    def list_add(self, d, x):
+        if x >= 0:
+            self.n |= (d << x)
+        else:
+            self.n |= (d >> -x)
 
-while A:
-    now = A[-1][0]
-    index = []
-    # 同じ数を引き終わるまで引き続ける
-    while A and A[-1][0] == now:
-        val, ind = A.pop()
-        index.append(ind)
-        check[ind] = 1
 
-    # uniteする
-    for ind in index:
-        # 左側と
-        if ind > 0 and check[ind - 1] == 1:
-            U.union(ind - 1, ind)
-        # 右側と
-        if ind < N - 1 and check[ind + 1] == 1:
-            U.union(ind, ind + 1)
+    # 全ての値にxをたす 元の数は消える
+    def all_add(self, x):
+        if x >= 0:
+            self.n = (self.n << x)
+        else:
+            self.n = (self.n >> -x)
 
-    # 計算
-    for ind in index:
-        ans = max(ans, now * U.size(ind))
+    # 全ての値に足す、足さないをする
+    def all_add2(self, x):
+        if x >= 0:
+            self.n |= (self.n << x)
+        else:
+            self.n |= (self.n >> -x)
 
-print(ans)
+    # データを引き出す　他のインスタンスに渡す用
+    def data(self):
+        return self.n
 
-# 技術室奥プログラミングコンテスト#4 Day2
-# E - 引きこもり
+    # 復元用
+    def res(self):
+        r = []
+        for i in range(self.n.bit_length()):
+            if self.n & (1 << i):
+                r.append(i - self.diff)
+        return r
 
-N, M, Q = getNM()
-E = [getList() for i in range(M)]
-E.sort(reverse = True, key = lambda i:i[2])
-query = getArray(Q)
+# 使い方
+# ABC147 E - Balanced Path
 
-U = UnionFind(N)
-d = [float('inf')] * (10 ** 5 + 7)
-d[1] = 0
-que = []
-for i in range(N):
-    heappush(que, [1, i])
+H, W = getNM()
+A = [getList() for i in range(H)]
+B = [getList() for i in range(H)]
 
-# 混ぜこぜでqueにぶち込んで取り出すときにそれが正しいか判定する
-while E:
-    now = E[-1][2]
-    al = []
-    # 抜き取る
-    while E and E[-1][2] == now:
-        a, b, c = E.pop()
-        U.union(a - 1, b - 1)
-        al.append([a - 1, b - 1])
-    # 判定
-    for a, b in al:
-        heappush(que, [U.size(a), a])
-        heappush(que, [U.size(b), b])
+# dp[i][j][k]: i行j列の差
+# -6400まで扱える
+dp = [[Bitset(0, 6401) for i in range(W)] for i in range(H)]
+# bitsetインスタンスに値を入れる
+dp[0][0].add(B[0][0] - A[0][0])
+dp[0][0].add(A[0][0] - B[0][0])
 
-    # 正規のやつを引くまで
-    while que[0][0] != U.size(U.find(que[0][1])):
-        heappop(que)
-    d[que[0][0]] = min(d[que[0][0]], now)
+for i in range(H):
+    for j in range(W):
+        now = dp[i][j]
+        if j < W - 1: # 右
+            d = A[i][j + 1] - B[i][j + 1]
+            # 現在の配列にdを足したものを次のインスタンスに渡している
+            dp[i][j + 1].list_add(now.data(), d)
+            dp[i][j + 1].list_add(now.data(), -d)
+        if i < H - 1: # 下
+            d = A[i + 1][j] - B[i + 1][j]
+            dp[i + 1][j].list_add(now.data(), d)
+            dp[i + 1][j].list_add(now.data(), -d)
 
-for i in range(len(d) - 2, -1, -1):
-    d[i] = min(d[i], d[i + 1])
-
-for q in query:
-    if d[q] == float('inf'):
-        print('trumpet')
-    else:
-        print(d[q])
-
-# ABC181 F - Silver Woods
-
-"""
-二分探索　っぽいが
-半径をrに設定した時にクリアできるか
-
-幅200の道がある
-釘がある
-釘をうまく避けてゴールに行けるか
-
-釘が少ないケース、釘が一直線なケースを考える
-釘が1本なら
-上下どちらかの幅が大きい方が答え
-釘2本　真上にできる場合は
-3つある幅のうち一番大きいやつ
-真左にある場合は上下どちらかの幅が大きい方
-左上にある場合は
-点ABとの距離、上下の幅のうち大きいやつ
-釘3本
-ルートによって無視していい釘が出てくる
-平面走査するか x = iを突破できるか
-
-上下xだけ内側に線を引く
-各釘から半径xの円を描く
-隙間は残っているか
-隙間がなくなるケース
-どうやって判定する
-円と円の間を通過するか確かめるか
-考えるのは2点間
-x1 ~ x2を通過できるか
-釘によって三角形ができるけど、その三角形に入れるかどうか
-
-接触するなら円弧の反対側まで被害が広がる
-まず2つの円が交わる点を計算する
-ひし形になる
-二つの円の中心から垂直に
-
-接する　場合は通れる　誤差はちょっとであればOKぽいので
-
-上下の直線を結べてしまったらout
-"""
-
-N = getN()
-P = [getList() for i in range(N)]
-
-# ユークリッド距離を求める
-def euc(px1, py1, px2, py2):
-    return math.sqrt((px2 - px1) ** 2 + (py2 - py1) ** 2)
-
-def f(x):
-    U = UnionFind(N + 2)
-    line1 = N
-    line2 = N + 1
-    for i in range(N):
-        # 点と直線の判定
-        x1, y1 = P[i]
-        if 100 - y1 < 2 * x:
-            U.union(i, N)
-        if y1 - (-100) < 2 * x:
-            U.union(i, N + 1)
-        # 点同士の判定
-        for j in range(i + 1, N):
-            x2, y2 = P[j]
-            if euc(x1, y1, x2, y2) < 2 * x:
-                U.union(i, j)
-
-    return not U.same(line1, line2)
-
-ok = 0
-ng = 10 ** 12
-
-while ng > ok + 10 ** -10:
-    # mid二つ
-    mid = (ok + ng) / 2
-    if f(mid):
-        ok = mid
-    else:
-        ng = mid
-print(ok)
+# [-7, -6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 6, 7]
+print(min([abs(i) for i in dp[-1][-1].res()]))
