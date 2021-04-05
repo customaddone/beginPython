@@ -140,7 +140,7 @@ A = [getList() for i in range(H)]
 B = [getList() for i in range(H)]
 
 # dp[i][j][k]: i行j列の差
-# -6401まで扱える
+# -6400まで扱える
 dp = [[Bitset(0, 6401) for i in range(W)] for i in range(H)]
 # bitsetインスタンスに値を入れる
 dp[0][0].add(B[0][0] - A[0][0])
