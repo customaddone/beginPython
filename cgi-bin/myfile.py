@@ -32,38 +32,24 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# items: [value, weight]
-def half_knap(items, const):
+S = 'aabbcc'
+s_n = len(S)
+K = 'abc'
+k_n = len(K)
 
-    def merge(A, X): # merge A and A + X
-        B = []
-        i = 0
-        nv, nw = X
-        # aとその前の要素を比べる
-        for v, w in A:
-            while A[i][1] + nw < w or (A[i][1] + nw == w and A[i][0] + nv < v):
-                B.append([A[i][0] + nv, A[i][1] + nw])
-                i += 1
-            B.append([v, w])
-        # 残ったものを吐き出す
-        while i < len(A):
-            B.append([A[i][0] + nv, A[i][1] + nw])
-            i += 1
-        return B
+# dp[i][j]: Sのi文字目までで部分文字列(Kのj文字目まで)を取り出せる通りの数
+prev = [0] * (k_n + 1)
+prev[0] = 1
 
-    L = [[0, 0]]
-    R = [[0, 0]]
-    for item in items[:10]:
-        L = merge(L, item)
-    for item in items[10:]:
-        R = merge(R, item)
+for i in range(s_n):
+    # S[i]を選択しない
+    # 前の状態から変化なしなのでそのまま引き継ぐ
+    next = prev
+    for j in range(k_n):
+        # S[i]を選択する 状態数が増える
+        if S[i] == K[j]:
+            next[j + 1] += prev[j]
 
-    ans = 0
-    for v, w in L:
-        if w > const:
-            break
-        while w + R[-1][1] > const:
-            R.pop()
-        ans = max(ans, v + R[-1][0])
+    prev = next
 
-    return ans
+print(prev[-1])
