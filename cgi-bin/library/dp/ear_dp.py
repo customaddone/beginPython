@@ -69,33 +69,24 @@ for i in range(s_n):
 
 print(dp[s_n][k_n])
 
-# ABC104 D - We Love ABC
-S = '????C?????B??????A???????'
-N = len(S)
+# ABC169 F - Knapsack for All Subsets
+N, S = getNM()
+A = getList()
+MOD = 998244353
 
-# 状態数はA, AB, ABCの３通り
-# dp[i][j]: i番目にjまで丸をつけ終えている通り
-dp = [[0] * 4 for _ in range(N + 1)]
+# 状態の数は 1 ~ SまでS通り
+dp = [[0] * (S + 1) for i in range(N + 1)]
 dp[0][0] = 1
 
 for i in range(N):
     # S[i]を選択しない
-    for j in range(4):
-        if S[i] != '?':
-            dp[i + 1][j] += dp[i][j]
-            dp[i + 1][j] %= mod
-        else:
-            dp[i + 1][j] += 3 * dp[i][j]
-            dp[i + 1][j] %= mod
-    # S[i]を選択する　カウントが進む
-    if S[i] == 'A' or S[i] == '?':
-        dp[i + 1][1] += dp[i][0]
-        dp[i + 1][1] %= mod
-    if S[i] == 'B' or S[i] == '?':
-        dp[i + 1][2] += dp[i][1]
-        dp[i + 1][2] %= mod
-    if S[i] == 'C' or S[i] == '?':
-        dp[i + 1][3] += dp[i][2]
-        dp[i + 1][3] %= mod
-        
-print(dp[N][3] % mod)
+    for j in range(S + 1):
+        dp[i + 1][j] += dp[i][j] * 2
+        dp[i + 1][j] %= MOD
+    # S[i]を選択する
+    for j in range(S + 1):
+        if j - A[i] >= 0:
+            dp[i + 1][j] += dp[i][j - A[i]]
+            dp[i + 1][j] %= MOD
+
+print(dp[N][S] % MOD)
