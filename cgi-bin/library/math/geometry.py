@@ -249,6 +249,53 @@ def angle(c, p):
     else:
         return 360 - math.degrees(math.acos(x))
 
+# epsの使い方（ABC033-D 三角形の分類)
+# 大小判定をするときはepsを使う　幅を大きくする
+# epsは偶然には作り出せないほどの小さな差
+N = getN()
+P = [getList() for i in range(N)]
+eps = 10 ** (-10)
+
+right = 0
+obtuse = 0
+
+for i in range(N):
+    l = []
+    for j in range(N):
+        if i == j:
+            continue
+        opt = angle(P[i], P[j])
+        l.append(opt)
+        l.append(opt + 360)
+    l.sort()
+
+    b1 = 0 # 90度のライン
+    b2 = 0 # 270度のライン
+    for j in range(N - 1):
+        # このようにして 90 < x < 270を実現している
+        # ちょうど90度になるものはギリギリ超える
+        while l[b1] <= l[j] + 90 + eps:
+            b1 += 1
+        # ちょうど270度になるものはギリギリ超えない
+        while l[b2] < l[j] + 270 - eps:
+            b2 += 1
+
+        # ちょうど90になりうるものはl[b1 - 1] - l[j]
+        # ちょうど270になりうるものはl[b2] - l[j]
+        # 差がeps以内であればそればコンピュータが作り出した誤差
+        # 直角三角形を数える
+        if abs(90 - (l[b1 - 1] - l[j])) < eps:
+            right += 1
+        if abs(270 - (l[b2] - l[j])) < eps:
+            right += 1
+
+        obtuse += (b2 - b1)
+
+right //= 2
+obtuse //= 2
+all = N * (N - 1) * (N - 2) // 6
+print(all - right - obtuse, right , obtuse)
+
 # ２円の交点を求める
 # 交点がない場合は使えないよ
 def cross(x1, y1, x2, y2, r1, r2):
