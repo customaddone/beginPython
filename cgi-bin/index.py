@@ -19,6 +19,7 @@ def getArray(intn):
 
 sys.setrecursionlimit(1000000000)
 mod = 10 ** 9 + 7
+MOD = 998244353
 INF = float('inf')
 dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
@@ -27,100 +28,45 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# 集合[a1, a2...an]内で以下２つの条件を満たす部分集合の組(T, U)はいくつあるか問題
-# 1: U ⊆ Tである
-# 2: Uがある条件を満たす
+N = int(input())
+P = [list(map(int, input().split())) for i in range(N)]
 
-# Tの中にUがいくつか含まれる
-# ①iが進むごとにTの候補がn倍ずつ増えていく
-# ②その後、Uを組むためのカウントを進める
+def euc(p1, p2):
+    px1, py1 = p1
+    px2, py2 = p2
+    return math.sqrt((px2 - px1) ** 2 + (py2 - py1) ** 2)
 
-# ABC104 D - We Love ABC
-S = '????C?????B??????A???????'
-N = len(S)
-# dp[i][j]: i番目にjまで丸をつけ終えている通り
-dp = [[0] * 4 for _ in range(N + 1)]
-dp[0][0] = 1
-
-for i in range(N):
-    # 通りの数を増やす
-    for j in range(4):
-        if S[i] != '?':
-            dp[i + 1][j] += dp[i][j]
-            dp[i + 1][j] %= mod
-        else:
-            dp[i + 1][j] += 3 * dp[i][j]
-            dp[i + 1][j] %= mod
-    # カウントが進むものを加える
-    if S[i] == 'A' or S[i] == '?':
-        dp[i + 1][1] += dp[i][0]
-        dp[i + 1][1] %= mod
-    if S[i] == 'B' or S[i] == '?':
-        dp[i + 1][2] += dp[i][1]
-        dp[i + 1][2] %= mod
-    if S[i] == 'C' or S[i] == '?':
-        dp[i + 1][3] += dp[i][2]
-        dp[i + 1][3] %= mod
-print(dp[N][3] % mod)
-
-# ABC169 F - Knapsack for All Subsets
-N, S = getNM()
-A = getList()
-MOD = 998244353
-
-dp = [[0] * (S + 1) for i in range(N + 1)]
-dp[0][0] = 1
-
-for i in range(N):
-    # 通りの数を増やす
-    for j in range(S + 1):
-        dp[i + 1][j] += dp[i][j] * 2
-        dp[i + 1][j] %= MOD
-    # カウントが進むものを加える
-    for j in range(S + 1):
-        if j - A[i] >= 0:
-            dp[i + 1][j] += dp[i][j - A[i]]
-            dp[i + 1][j] %= MOD
-print(dp[N][S] % MOD)
-
-# みんなのプロコン 2019 D - Ears
-
-L = getN()
-A = getArray(L)
-
-dp = [[float('inf')] * 5 for i in range(L + 1)]
-# 状態0: 0区間、
-# 状態1: 偶数区間、
-# 状態2: 奇数区間。
-# 状態3: 偶数区間、
-# 状態4: 0区間
-dp[0][0] = 0
-
-# 偶数区間で0なら2を払ってもらう
-def zero_e(a):
-    if a == 0:
-        return 2
+# 線分cpとcからx軸方向に伸びる半直線とのなす角の大きさ
+def angle(c, p):
+    d = euc(c, p)
+    x = (p[0] - c[0]) / d
+    y = (p[1] - c[1]) / d
+    # sinθ >= 0なので角度は180度以内
+    if y >= 0:
+        return math.degrees(math.acos(x))
     else:
-        return (a % 2 != 0)
-# 奇数区間で0なら1を払ってもらう
-def zero_o(a):
-    if a == 0:
-        return 1
-    else:
-        return (a % 2 == 0)
+        return 360 - math.degrees(math.acos(x))
 
-# dp[i + 1]を更新していく
-# 状態k(k <= j)から遷移することができる
-for i in range(L):
-    # 状態0 遷移はない
-    dp[i + 1][0] = dp[i][0] + A[i]
-    # 状態1
-    dp[i + 1][1] = min(dp[i][1], dp[i][0]) + zero_e(A[i])
-    # 状態2
-    dp[i + 1][2] = min(dp[i][2], dp[i][1], dp[i][0]) + zero_o(A[i])
-    # 状態3
-    dp[i + 1][3] = min(dp[i][3], dp[i][2], dp[i][1], dp[i][0]) + zero_e(A[i])
-    # 状態4
-    dp[i + 1][4] = min(dp[i][4], dp[i][3], dp[i][2], dp[i][1], dp[i][0]) + A[i]
+ans = float('inf')
+# 点P[i]を中心に各線分について
+for i in range(N):
+    # 線分P[i]-P[j]とx軸の正の部分とのなす角を昇順に並べて二分探索or尺取り法
+    l = []
+    for j in range(N):
+        if i == j:
+            continue
+        opt = angle(P[i], P[j])
+        l.append(opt)
+        l.append(opt + 360) #　一周後の
+    l.sort()
 
-print(min(dp[L]))
+    # 尺取り法 線分はN - 1本できるのでそれについて
+    now = 0
+    for j in range(N - 1):
+        # 180度離れるまで
+        while l[now] < l[j] + 180:
+            now += 1
+        # l[now] - l[j]は180度以上であり、l[now - 1] - l[j]は180度未満である
+        ans = min(ans, abs(180 - (l[now] - l[j])), abs(180 - (l[now - 1] - l[j])))
+
+print(180 - ans)

@@ -233,6 +233,22 @@ print((SD / SC) ** .5)
 def euc(px1, py1, px2, py2):
     return math.sqrt((px2 - px1) ** 2 + (py2 - py1) ** 2)
 
+def euc(p1, p2):
+    px1, py1 = p1
+    px2, py2 = p2
+    return math.sqrt((px2 - px1) ** 2 + (py2 - py1) ** 2)
+
+# 線分cpとcからx軸方向に伸びる半直線とのなす角の大きさ
+def angle(c, p):
+    d = euc(c, p)
+    x = (p[0] - c[0]) / d
+    y = (p[1] - c[1]) / d
+    # sinθ >= 0なので角度は180度以内
+    if y >= 0:
+        return math.degrees(math.acos(x))
+    else:
+        return 360 - math.degrees(math.acos(x))
+
 # ２円の交点を求める
 # 交点がない場合は使えないよ
 def cross(x1, y1, x2, y2, r1, r2):
