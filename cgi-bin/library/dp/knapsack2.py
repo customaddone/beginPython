@@ -37,7 +37,7 @@ for _ in range(N):
     d, c, s = getNM()
     day[d].append([c, s])
 
-# マージ型knapsack
+# マージ型
 def merge(bucket, items, day):
     prev = bucket
     # 新規アイテムについて
