@@ -7,6 +7,8 @@
 N = int(input())
 I = [list(map(int, input().split())) for i in range(N)]
 I.sort()
+from collections import defaultdict
+from copy import deepcopy
 
 prev = defaultdict(int)
 prev[0] = 0
