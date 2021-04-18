@@ -326,3 +326,61 @@ while abs(ok - ng) > 1:
         ng = mid
 
 print(code[ok + 1])
+
+# AOJ LthKthNumber
+
+"""
+N = 4, K = 3, L = 2
+[4, 3, 1, 2]
+K = 3を満たすのは
+[4, 3, 1], [4, 3, 1, 2], [3, 1, 2]
+それぞれについて小さい方からK番目の数字を取り出す
+それのL番目の数字
+連続部分列はN^2//2あるので全部書き出すのは無理
+K番目に小さな文字がx以下であるもの　
+[4, 3, 1]については4以下の数字を並べるとk番目に小さい数字は4になる
+K番目の数字を取り出せるか
+3以下の数字のみをupすると
+[ , 3, 1]は取り出せない
+[ , 3, 1, 2]は取り出せる
+[3, 1, 2]は取り出せる
+これの合計がLを超えるか
+連続部分列について右端がrのもので何個取り出せるかをlogNでできるか
+[]できない
+[2]できない
+[ , 1, 2]できない
+[ , 3, 1, 2]できる　現れる数字の累積がK個以上な点を抑える
+尺取りでいけそうな気が
+累積がKより大きくなるまでlを右に進める
+"""
+
+N, K, L = getNM()
+A = getList()
+
+def f(x):
+    I = [0] + [1 if A[i] <= x else 0 for i in range(N)]
+    for i in range(1, N + 1):
+        I[i] += I[i - 1]
+    res = 0
+    # 尺取り
+    l = 0
+    for r in range(1, N + 1):
+        while l < N + 1 and I[r] - I[l] >= K:
+            l += 1
+        if r - l + 1 >= K:
+            res += l
+
+    # x以下のK番目の数字をres個取れる
+    return res
+
+code = [0] + sorted(A) + [float('inf')] # 長さN + 2
+ok = -1
+ng = N + 2
+while abs(ok - ng) > 1:
+    mid = (ok + ng) // 2
+    if f(code[mid]) < L:
+        ok = mid
+    else:
+        ng = mid
+
+print(code[ok + 1])
