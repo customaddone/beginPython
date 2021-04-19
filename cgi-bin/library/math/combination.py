@@ -69,6 +69,30 @@ def factorial(n, r):
 # 10個のものから重複を許して3つとる
 print(cmb_1(10 + 3 - 1, 3))
 
+# Lucasの定理 pが小さい場合使える
+# nCr (mod p)を求めてくれる
+# 前処理 p^2
+# cmb logn
+class Lucas():
+    def __init__(self, p):
+        self.p = p
+        # 前計算
+        self.tab = [[0] * p for i in range(p)]
+        self.tab[0][0] = 1
+        for i in range(1, p):
+            self.tab[i][0] = 1
+            for j in range(i, 0, -1):
+                self.tab[i][j] = (self.tab[i - 1][j - 1] + self.tab[i - 1][j]) % self.p
+
+    def cmb(self, n, r):
+        res = 1
+        while n:
+            ni, ri = n % self.p, r % self.p
+            res = (res * self.tab[ni][ri]) % self.p
+            n //= self.p
+            r //= self.p
+        return res
+
 # modが素数じゃない時
 def cmb_compose(n, k, mod):
     dp = [[0] * (k + 1) for i in range(n + 1)]
