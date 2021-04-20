@@ -31,11 +31,11 @@ dy = [0, 1, 0, -1]
 N = getN()
 N *= 2
 A = getList()
+# dp[j][j + i]: [j, j + i)の区間を全て消すための最小費用
 dp = [[float('inf')] * (N + 1) for i in range(N + 1)]
 
-# [j, j + i)の区間を全て消すための最小費用
 for i in range(0, N + 1, 2): # 区間の幅
-    for j in range(N - i + 1): # lの場所
+    for j in range(N - i + 1): # 左端(j)の場所
         if i == 0:
             dp[j][j + i] = 0
             continue
