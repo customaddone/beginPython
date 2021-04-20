@@ -76,7 +76,7 @@ def counter(s, e, p):
 
 class MinCostFlow:
     # 最小費用流(ベルマンフォード版、負コストに対応可)
-
+    # 116行目を状況に応じ変更
     INF = 10 ** 18
 
     def __init__(self, N):
@@ -113,7 +113,7 @@ class MinCostFlow:
                             prv_v[to] = v; prv_e[to] = i
                             update = True
             if dist[t] == INF:
-                return -1
+                return -float('inf')
 
             d = f; v = t
             while v != s:
