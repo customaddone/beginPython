@@ -31,7 +31,7 @@ dy = [0, 1, 0, -1]
 # 強連結成分分解(SCC): グラフGに対するSCCを行う
 # 入力: <N>: 頂点サイズ, <E>: 順方向の有向グラフ
 # 出力: (<成分数>, <各頂点の成分の番号>)
-sys.setrecursionlimit(1000000000)
+sys.setrecursionlimit(300000)
 
 def scc(N, E):
     # 逆方向のグラフ
@@ -76,17 +76,20 @@ def scc(N, E):
 
     return label, group
 
-# ALPC G-SCC
 N, M = getNM()
-edge = [[] for _ in range(N)]
+edges = [[] for i in range(N)]
 for _ in range(M):
-    a, b = getNM() # 今回は0-index
-    edge[a].append(b)
+    a, b = getNM()
+    edges[a - 1].append(b - 1)
+# 多重辺がある
+for i in range(N):
+    edges[i] = list(set(edges[i]))
 
-cnt, topo = scc(N, edge)
-print(cnt)
-ans = [[] for i in range(cnt)]
-for v in range(N):
-    ans[topo[v]].append(v)
-for a in ans:
-    print(len(a), *a)
+_, group = scc(N, edges)
+cnt = [0] * N
+for i in range(N):
+    cnt[group[i]] += 1
+ans = 0
+for i in range(N):
+    ans += cnt[i] * (cnt[i] - 1) // 2
+print(ans)
