@@ -1,90 +1,116 @@
-from collections import defaultdict, deque, Counter
-from heapq import heapify, heappop, heappush
-import math
-from copy import deepcopy
-from itertools import combinations, permutations, product
-from bisect import bisect_left, bisect_right
-
+from collections import Counter, deque
 import sys
-def input():
-    return sys.stdin.readline().rstrip()
-def getN():
-    return int(input())
-def getNM():
-    return map(int, input().split())
-def getList():
-    return list(map(int, input().split()))
-def getArray(intn):
-    return [int(input()) for i in range(intn)]
+def input(): return sys.stdin.readline().rstrip()
+sys.setrecursionlimit(10**8)
 
-mod = 10 ** 9 + 7
-MOD = 998244353
-INF = float('inf')
-eps = 10 ** (-10)
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
+N,M = map(int,input().split())
+G = [dict() for i in range(N)]
+RG = [dict() for i in range(N)]
+for i in range(M):
+    a,b = map(int,input().split())
+    #a -= 1; b -= 1
+    G[a][b] = 1
+    RG[b][a] = 1
 
-#############
-# Main Code #
-#############
+def SCC(G, RG): # O(V+E)
+    N = len(G)
+    euler = []
+    table = [None]*N
+    visited = [False]*N
+    def dfs(s): # 前処理
+        visited[s] = True
+        for t in G[s]:
+            if not visited[t]:
+                dfs(t)
+        euler.append(s) # 一番奥から順番を振る
 
-# 強連結成分分解(SCC): グラフGに対するSCCを行う
-# 入力: <N>: 頂点サイズ, <E>: 順方向の有向グラフ
-# 出力: (<成分数>, <各頂点の成分の番号>)
+    """
+    def EulerTour(G,start): # 有向グラフ上のEulerTour
+        stack = [start]
+        visited[start] = True
+        while stack:
+            u = stack.pop()
+            if u >= 0:
+                stack.append(~u)
+                for v in G[u]:
+                    if visited[v]:
+                        continue
+                    visited[v] = True
+                    stack.append(v)
+            else:
+                u = ~u
+                euler.append(u)
+    """
+    """
+    def rdfs(start, label):
+        stack = [start]
+        visited[start] = True
+        table[start] = label
+        while stack:
+            u = stack.pop()
+            for v in RG[u]:
+                if visited[v]:
+                    continue
+                visited[v] = True
+                table[v] = label
+                stack.append(v)
+    """
+    def rdfs(s, name): # 強連結成分を求める
+        table[s] = name # sのグループはname(int)
+        visited[s] = 1
+        for t in RG[s]: # Gの辺を全て逆転させてある
+            if not visited[t]: # 逆転させてもなお到達可能なら同じグループ
+                rdfs(t, name)
 
-def scc(N, E):
-    # 逆方向のグラフ
-    E_rev = [[] for i in range(N)]
-    for u in range(N):
-        for v in E[u]:
-            E_rev[v].append(u)
 
-    # orderを作る　深い頂点からorderにappendされる
-    order = []
-    used = [0] * N
-    def dfs(u):
-        used[u] = 1
-        for v in E[u]:
-            if not used[v]:
-                dfs(v)
-        order.append(u)
-
-    # 上で作ったorderを元に有向グラフの末尾から逆行する
-    # もしサイクルがあれば行き先がある
-    group = [0] * N
-    def r_dfs(u, col):
-        group[u] = col
-        used[u] = 1
-        for v in E_rev[u]:
-            if not used[v]:
-                r_dfs(v, col)
-    # order作成
     for i in range(N):
-        if not used[i]:
+        if not visited[i]:
+            #EulerTour(G, i)
             dfs(i)
 
-    # 初期化
-    used = [0] * N
+    visited = [False]*N
     label = 0
-    # 有向グラフの末尾候補から探索していく
-    # ラベルの番号の昇順がトポロジカルな順序
-    for i in order[::-1]:
-        if not used[i]:
-            r_dfs(i, label)
+    for s in reversed(euler):
+        if not visited[s]:
+            rdfs(s, label)
             label += 1
 
-    return label, group
+    # 縮約後のDAGを構築
+    n = label
+    DAG = [dict() for i in range(n)]
+    equivs = [[] for i in range(n)] # equivs[i]:DAG上のノードiに属するG上のノードたち
+    for u in range(N):
+        lu = table[u]
+        equivs[lu].append(u)
+        for v in G[u]:
+            lv = table[v]
+            if lu == lv:
+                continue
+            DAG[lu][lv] = 1
+    return DAG, equivs # DAG:List[Dict[int,int]], equivs:List[List[int]]
 
-N, M = getNM()
-edge = [[] for _ in range(N)]
-for _ in range(M):
-    a, b = getNM() # 今回は0-index
-    edge[a].append(b)
 
-cnt, topo = scc(N, edge)
-print(cnt)
-ans = [[] for i in range(cnt)]
-for v in range(N):
-    ans[topo[v]].append(v)
-for a in ans:
-    print(len(a), *a)
+
+DAG, equivs = SCC(G,RG)
+
+n = len(DAG)
+indegree = [0]*n # 各頂点の入次数
+for i in range(n):
+    for j in DAG[i]:
+        indegree[j] += 1
+
+# トポロジカルソート:O(V+E)
+topo_sorted = []
+q = deque([i for i in range(n) if indegree[i]==0]) # 入次数が0の頂点たち
+while q:
+    u = q.popleft()
+    topo_sorted.append(u)
+    for v in DAG[u]:
+        indegree[v] -= 1
+        if indegree[v] == 0:
+            q.append(v)
+print(n)
+for i in topo_sorted:
+    ans = [len(equivs[i])]+equivs[i]
+    print(*ans)
+    
