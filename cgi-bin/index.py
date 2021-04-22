@@ -56,7 +56,7 @@ def SCC(G, RG): # O(V+E)
                 stack.append(v)
     """
     def rdfs(s, name): # 強連結成分を求める
-        table[s] = name # sのグループはname(int)
+        Gtable[s] = name # sのグループはname(int)
         visited[s] = 1
         for t in RG[s]: # Gの辺を全て逆転させてある
             if not visited[t]: # 逆転させてもなお到達可能なら同じグループ
@@ -113,4 +113,3 @@ print(n)
 for i in topo_sorted:
     ans = [len(equivs[i])]+equivs[i]
     print(*ans)
-    
