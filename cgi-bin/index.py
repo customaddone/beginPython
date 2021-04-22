@@ -28,21 +28,63 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N = getN()
-N *= 2
-A = getList()
-# dp[j][j + i]: [j, j + i)の区間を全て消すための最小費用
-dp = [[float('inf')] * (N + 1) for i in range(N + 1)]
+# 強連結成分分解(SCC): グラフGに対するSCCを行う
+# 入力: <N>: 頂点サイズ, <E>: 順方向の有向グラフ
+# 出力: (<成分数>, <各頂点の成分の番号>)
 
-for i in range(0, N + 1, 2): # 区間の幅
-    for j in range(N - i + 1): # 左端(j)の場所
-        if i == 0:
-            dp[j][j + i] = 0
-            continue
-        # 端の二つ(j, j + i - 1)を消すコスト + [j + 1, j + i - 1)を消すコスト（計算済み）
-        dp[j][j + i] = abs(A[j + i - 1] - A[j]) + dp[j + 1][j + i - 1]
-        # 区間を2つに分割して最小値を探す操作
-        for k in range(j, j + i, 2):
-            dp[j][j + i] = min(dp[j][j + i], dp[j][k] + dp[k][j + i])
+def scc(N, E):
+    # 逆方向のグラフ
+    E_rev = [[] for i in range(N)]
+    for u in range(N):
+        for v in E[u]:
+            E_rev[v].append(u)
 
-print(dp[0][N])
+    # orderを作る　深い頂点からorderにappendされる
+    order = []
+    used = [0] * N
+    def dfs(u):
+        used[u] = 1
+        for v in E[u]:
+            if not used[v]:
+                dfs(v)
+        order.append(u)
+
+    # 上で作ったorderを元に有向グラフの末尾から逆行する
+    # もしサイクルがあれば行き先がある
+    group = [0] * N
+    def r_dfs(u, col):
+        group[u] = col
+        used[u] = 1
+        for v in E_rev[u]:
+            if not used[v]:
+                r_dfs(v, col)
+    # order作成
+    for i in range(N):
+        if not used[i]:
+            dfs(i)
+
+    # 初期化
+    used = [0] * N
+    label = 0
+    # 有向グラフの末尾候補から探索していく
+    # ラベルの番号の昇順がトポロジカルな順序
+    for i in order[::-1]:
+        if not used[i]:
+            r_dfs(i, label)
+            label += 1
+
+    return label, group
+
+N, M = getNM()
+edge = [[] for _ in range(N)]
+for _ in range(M):
+    a, b = getNM() # 今回は0-index
+    edge[a].append(b)
+
+cnt, topo = scc(N, edge)
+print(cnt)
+ans = [[] for i in range(cnt)]
+for v in range(N):
+    ans[topo[v]].append(v)
+for a in ans:
+    print(len(a), *a)
