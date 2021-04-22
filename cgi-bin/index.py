@@ -1,3 +1,6 @@
+import sys
+sys.setrecursionlimit(10 ** 7)
+
 def SCC(v, e):
     def DFS(x):
         visited[x] = 1
