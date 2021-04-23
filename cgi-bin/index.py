@@ -23,73 +23,77 @@ INF = float('inf')
 eps = 10 ** (-10)
 dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
+sys.setrecursionlimit(300000)
 
 #############
 # Main Code #
 #############
 
-# 強連結成分分解(SCC): グラフGに対するSCCを行う
-# 入力: <N>: 頂点サイズ, <E>: 順方向の有向グラフ
-# 出力: (<成分数>, <各頂点の成分の番号>)
-sys.setrecursionlimit(300000)
+"""
+何文字現れるか
+dfsするか
+数字-文字列の場合　compound
+木を作成してみる
+2(2u2lt4d)3(rb)pa =
+2 * (2u2lt4d) + 3 * (rb) + p + a
+括弧の中が子要素
+S <= 1000 なので
+直接の親要素はどれだろう
+"""
 
-def scc(N, E):
-    # 逆方向のグラフ
-    E_rev = [[] for i in range(N)]
-    for u in range(N):
-        for v in E[u]:
-            E_rev[v].append(u)
+S = input()
+N = len(S)
+l = []
+ran = [[-1, N, 1]]
+i_st = ''
 
-    # orderを作る　深い頂点からorderにappendされる
-    order = []
-    used = [0] * N
-    def dfs(u):
-        used[u] = 1
-        for v in E[u]:
-            if not used[v]:
-                dfs(v)
-        order.append(u)
-
-    # 上で作ったorderを元に有向グラフの末尾から逆行する
-    # もしサイクルがあれば行き先がある
-    group = [0] * N
-    def r_dfs(u, col):
-        group[u] = col
-        used[u] = 1
-        for v in E_rev[u]:
-            if not used[v]:
-                r_dfs(v, col)
-    # order作成
-    for i in range(N):
-        if not used[i]:
-            dfs(i)
-
-    # 初期化
-    used = [0] * N
-    label = 0
-    # 有向グラフの末尾候補から探索していく
-    # ラベルの番号の昇順がトポロジカルな順序
-    for i in order[::-1]:
-        if not used[i]:
-            r_dfs(i, label)
-            label += 1
-
-    return label, group
-
-N, M = getNM()
-edges = [[] for i in range(N)]
-for _ in range(M):
-    a, b = getNM()
-    edges[a - 1].append(b - 1)
-# 多重辺がある
 for i in range(N):
-    edges[i] = list(set(edges[i]))
+    if S[i] in '0123456789':
+        i_st += S[i]
+    else:
+        if len(i_st):
+            val = int(i_st)
+        else:
+            val = 1
+        i_st = ''
+        if S[i] == '(':
+            l.append([i, val])
+        elif S[i] == ')':
+            sta, val = l.pop()
+            ran.append([sta, i, val])
+        else:
+            ran.append([i, i, val])
 
-_, group = scc(N, edges)
-cnt = [0] * N
-for i in range(N):
-    cnt[group[i]] += 1
-ans = 0
-for i in range(N):
-    ans += cnt[i] * (cnt[i] - 1) // 2
-print(ans)
+ran.sort()
+n = len(ran)
+parent = [-1] * n
+for i in range(n):
+    par = -1
+    leg = float('inf')
+    for j in range(n):
+        if ran[j][0] < ran[i][0] <= ran[i][1] < ran[j][1] and ran[j][1] - ran[j][0] < leg:
+            par = j
+            leg = ran[j][1] - ran[j][0]
+    parent[i] = par
+
+E = [[] for i in range(n)]
+for i in range(1, n):
+    E[parent[i]].append(i)
+
+def dfs(u):
+    table = [0] * 26
+    # 文字一つ
+    if ran[u][0] == ran[u][1]:
+        table[ord(S[ran[u][0]]) - ord('a')] += 1
+        return table
+
+    for v in E[u]:
+        ene = dfs(v)
+        for i in range(26):
+            table[i] += ene[i] * ran[v][2]
+
+    return table
+
+ans = dfs(0)
+for i in range(26):
+    print(chr(i + ord('a')), ans[i])
