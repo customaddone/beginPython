@@ -250,3 +250,21 @@ while que:
         else:
             color[v] = 1
         que.append(v)
+
+# dfsによる連結成分分解　木でなくてもいい
+# groupを書き込む
+ignore = [0] * N
+group = [[] for i in range(N)]
+
+def dfs(u, g):
+    ignore[u] = 1
+    group[g].append(u)
+    for v in E[u]:
+        if not ignore[v]:
+            dfs(v, g)
+
+g = -1
+for u in range(N):
+    if not ignore[u]:
+        g += 1
+        dfs(u, g)

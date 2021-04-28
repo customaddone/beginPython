@@ -64,6 +64,7 @@ class BIT:
             self.bit[x] += w
             x += x & -x
 
+    # [0, a)の合計
     def get(self, a):
         ret, x = 0, a - 1
         while(x > 0):
@@ -71,9 +72,11 @@ class BIT:
             x -= x & -x
         return ret
 
+    # [l, r)の合計
     def cum(self, l, r):
         return self.get(r) - self.get(l)
 
+    # 合計がw以下になる最大の箇所を調べる
     def lowerbound(self,w):
         if w <= 0:
             return 0
