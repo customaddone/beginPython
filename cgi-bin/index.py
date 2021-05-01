@@ -299,7 +299,7 @@ for _ in range(N):
 print(sum(prev) % mod)
 
 # PAST5 M-棒の出荷
-# True値を区間[l, r)にたす
+# True値を区間[l, r)に足すs
 
 N, L = getNM()
 A = [0] + getList()
