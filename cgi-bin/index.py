@@ -29,247 +29,147 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC025 C - 双子と○×ゲーム
+#####segfunc#####
+def segfunc(x, y):
+    return max(x, y)
+#################
+
+#####ide_ele#####
+ide_ele = 0
+#################
+
+class LazySegmentTree:
+    """
+    init(init_val, ide_ele): 配列init_valで初期化 O(N)
+    update(l, r, x): 区間[l, r)をxに更新 O(logN)
+    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
+    """
+    def __init__(self, init_val, segfunc, ide_ele):
+        """
+        init_val: 配列の初期値
+        segfunc: 区間にしたい操作
+        ide_ele: 単位元
+        num: n以上の最小の2のべき乗
+        data: 値配列(1-index)
+        lazy: 遅延配列(1-index)
+        """
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.data = [ide_ele] * 2 * self.num
+        self.lazy = [None] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.data[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
+
+    def gindex(self, l, r):
+            """
+            伝搬する対象の区間を求める
+            lm: 伝搬する必要のある最大の左閉区間
+            rm: 伝搬する必要のある最大の右開区間
+            """
+            l += self.num
+            r += self.num
+            lm = l >> (l & -l).bit_length()
+            rm = r >> (r & -r).bit_length()
+
+            while r > l:
+                if l <= lm:
+                    yield l
+                if r <= rm:
+                    yield r
+                r >>= 1
+                l >>= 1
+            while l:
+                yield l
+                l >>= 1
+
+    def propagates(self, *ids):
+        """
+        遅延伝搬処理
+        ids: 伝搬する対象の区間
+        """
+        for i in reversed(ids):
+            v = self.lazy[i]
+            if v is None:
+                continue
+            self.lazy[2 * i] = v
+            self.lazy[2 * i + 1] = v
+            self.data[2 * i] = v
+            self.data[2 * i + 1] = v
+            self.lazy[i] = None
+
+    def update(self, l, r, x):
+        """
+        区間[l, r)の値をxに更新
+        l, r: index(0-index)
+        x: update value
+        """
+        *ids, = self.gindex(l, r)
+        self.propagates(*ids)
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                self.lazy[l] = x
+                self.data[l] = x
+                l += 1
+            if r & 1:
+                self.lazy[r - 1] = x
+                self.data[r - 1] = x
+            r >>= 1
+            l >>= 1
+        for i in ids:
+            self.data[i] = self.segfunc(self.data[2 * i], self.data[2 * i + 1])
+
+
+    def query(self, l, r):
+        """
+        [l, r)のsegfuncしたものを得る
+        l: index(0-index)
+        r: index(0-index)
+        """
+        *ids, = self.gindex(l, r)
+        self.propagates(*ids)
+
+        res = self.ide_ele
+
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.data[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.data[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
 
 """
-ここにマスを置くと...?
-もっともreturnが高いものを選択する
-c % 2 == 0なら直大番、c % 2 == 1なら青木番
+セグメントツリー？
+区間[l, r)について頂上はどこか
+Wの上限は小さいので
 
-ゲーム木の問題は両プレイヤーが
-「ここに置くと最大returnが得られる選択肢」
-を貪欲に選択する
-ここに置くとどれだけリターンが得られるかはdfsにより探索する
+各クエリについて区間[l, r)を更新する？N^2になる
+この区間内の高さはいくらになるか　どうやって保持する？
+
+  11
+ 2222 とかの場合どうやって判定？　逆から積むのもOK
+
+DAGの最長距離
 """
 
-B = [getList() for i in range(2)]
-C = [getList() for i in range(3)]
-
-ans = sum([sum(b) for b in B]) + sum([sum(c) for c in C])
-# 判定用func
-def cnt(t):
-    res = 0
-    # b
-    for i in range(2):
-        for j in range(3):
-            if t[i][j] == t[i + 1][j]:
-                res += B[i][j]
-            else:
-                res -= B[i][j]
-    # c
-    for i in range(3):
-        for j in range(2):
-            if t[i][j] == t[i][j + 1]:
-                res += C[i][j]
-            else:
-                res -= C[i][j]
-
-    return res
-
-T = [[-1] * 3 for i in range(3)]
-def dfs(c):
-    if c == 9:
-        return cnt(T)
-
-    # 直大番はもっとも値が大きい箇所、青木番はもっとも値が小さい箇所を選ぶ
-    res = float('inf') * ((-1) ** (c % 2 == 0))
-
-    # 全探索する
-    for i in range(3):
-        for j in range(3):
-            if T[i][j] == -1:
-                T[i][j] = (c % 2 == 0) # 行きがけ
-                if c % 2 == 0: # 直大turnなら
-                    res = max(res, dfs(c + 1))
-                else: # 青木turnなら
-                    res = min(res, dfs(c + 1))
-                T[i][j] = -1 # 帰りがけ
-
-    return res
-
-# 合計ポイントがansあり、プレイヤー1 - プレイヤー2 = diffの時
-# プレイヤー１: (ans + diff) // 2
-# プレイヤー２: (ans - diff) // 2
-diff = dfs(0)
-print((ans + diff) // 2)
-print((ans - diff) // 2)
-
-# Indeedなう（予選A）D - パズル
-
-"""
-最小回数を求めよ
-3 3
-1 0 2
-4 5 3
-7 8 6 なら
-
-1 2 0
-4 5 3
-7 8 6
-
-1 2 3
-4 5 0
-7 8 6
-
-1 2 3
-4 5 6
-7 8 0 で3回
-
-全ての数字が所定の場所にいる
-回数無視でまずはどうすれば行けるか
-任意の回数行えるなら、各数字は好きな場所に行ける
-
-1 3
-2 0 の場合
-
-1 0
-2 3
-
-0 1
-2 3
-
-2 1
-0 3
-
-2 1
-3 0
-
-3 2 1がぐるぐる回るだけだから永遠に無理
-最小操作数が24回以内なので絶対に成功するケースのみ出る
-
-全探索4 * 24　無理
-戻る必要はないので3 ** 24
-多分全探索なんだろう
-一つの行動で最大1合わせることができる
-枝刈りする
-
-ngはマンハッタン距離で持つ
-"""
-
-H, W = getNM()
-C = [getList() for i in range(H)]
-
-def manh(point):
-    ny = (point - 1) // W
-    nx = (point - 1) % W
-    return ny, nx
-
-ng = 0
-sta = [0, 0]
-for i in range(H):
-    for j in range(W):
-        if C[i][j] == 0:
-            sta = [i, j]
-            continue
-        ny, nx = manh(C[i][j])
-        ng += abs(ny - i) + abs(nx - j)
-
-dy = [1, 0, -1, 0]
-dx = [0, 1, 0, -1]
-
-memo = {}
-ans = float('inf')
-
-def dfs(turn, array, y, x, direct, ng):
-    global ans
-    if str(array) in memo and memo[str(array)] <= turn:
-        return
-
-    if ng == 0:
-        ans = min(ans, turn)
-        return
-
-    if turn > 24 - ng or ans <= turn:
-        return
-
-    for i in range(4):
-        if i == (direct + 2) % 4:
-            continue
-        ny = y + dy[i]
-        nx = x + dx[i]
-        if 0 <= ny < H and 0 <= nx < W:
-            new_array = deepcopy(array)
-            new_ng = ng
-            # 0と入れ替える数字について
-            my, mx = manh(array[ny][nx])
-            new_ng -= (abs(my - ny) + abs(mx - nx))
-            new_ng += (abs(my - y) + abs(mx - x))
-
-            new_array[ny][nx] = array[y][x] # 0
-            new_array[y][x] = array[ny][nx]
-            dfs(turn + 1, new_array, ny, nx, i, new_ng)
-
-    memo[str(array)] = turn
-
-dfs(0, C, sta[0], sta[1], float('inf'), ng)
-print(ans)
-
-# ABC195 E - Lucky 7 Battle
-
-"""
-7の倍数　法則性なし 10とは互いに素なのでmod算をする
-Siか0かをぶち込む　ここにゲーム性
-7の倍数であれば高橋くんの勝ち
-5 modは5
-50: 5 * 10 % 7 = 1
-500: 1 * 10 % 7 = 3
-
-現在の数字: 0
-これを *= 10してmod 7するか+=Si and *= 10してmod 7するか
-一番最後の人が有利そう
-ゲーム木みたいなやつ　逆からやっていく
-0 ~ 9のdp
-最後の人に0で回ってくると勝利
-[[[0, 3], [3, 6], [6, 2], [2, 5], [5, 1], [1, 4], [4, 0]],
- [[0, 5], [3, 1], [6, 4], [2, 0], [5, 3], [1, 6], [4, 2]]]
-高橋くんは2つ目に0 or 3で回ってくると勝利
-勝利するように誘導したい
-青木くんは0を受け取ると0のまま or 3で回せる
-
-[[[0, 1], [3, 4], [6, 0], [2, 3], [5, 6], [1, 2], [4, 5]],
- [[0, 2], [3, 5], [6, 1], [2, 4], [5, 0], [1, 3], [4, 6]],
- [[0, 3], [3, 6], [6, 2], [2, 5], [5, 1], [1, 4], [4, 0]],
- [[0, 4], [3, 0], [6, 3], [2, 6], [5, 2], [1, 5], [4, 1]],
- [[0, 5], [3, 1], [6, 4], [2, 0], [5, 3], [1, 6], [4, 2]]]
-
-5番目では0 or 3が来ると勝利　そうさせないよう
-最後の人がどちらか
-"""
-
-N = getN()
-S = list(input())
-X = list(input())
-
-# dp[i][j][0]: 0を追加する場合
-# dp[i][j][1]: Siを追加する場合
-dp = [[[0, 0] for _ in range(7)] for i in range(N)]
-for i in range(N):
-    for j in range(7):
-        dp[i][j][0] = j * 10 % 7
-        dp[i][j][1] = (j * 10 + int(S[i])) % 7
-
-end = [0] * 7
-end[0] = 1
-dp.append(end)
-
-for i in range(N - 1, -1, -1):
-    # 青木
-    if X[i] == 'A':
-        for j in range(7):
-            # 行先があれば
-            if dp[i + 1][dp[i][j][0]] == 0 or dp[i + 1][dp[i][j][1]] == 0:
-                dp[i][j] = 0 # lose
-            else:
-                dp[i][j] = 1 # win
-    # 高橋
-    else:
-        for j in range(7):
-            if dp[i + 1][dp[i][j][0]] == 0 and dp[i + 1][dp[i][j][1]] == 0:
-                dp[i][j] = 0 # lose
-            else:
-                dp[i][j] = 1 # win
-
-if dp[0][0] == 1:
-    print('Takahashi')
-else:
-    print('Aoki')
+N, M = getNM()
+seg = LazySegmentTree([1] * 500001, segfunc, ide_ele)
+for _ in range(M):
+    l, r = getNM()
+    l -= 1
+    r -= 1
+    res = seg.query(l, r + 1)
+    print(res)
+    seg.update(l, r + 1, res + 1)
