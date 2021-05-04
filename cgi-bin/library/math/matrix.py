@@ -130,6 +130,11 @@ def array_cnt(ar1, ar2):
         for j in range(w):
             cnt = 0
             for x, y in zip(row[i], col[j][::-1]): # 計算は逆になる
+                # (整数) +, *
+                # (整数) ^, &
+                # (整数) max, +
+                # (行列) +, *
+                # は半環の性質をもつため行列累乗できる
                 cnt ^= x & y # ここを変更
             res[i][j] = cnt
     return res

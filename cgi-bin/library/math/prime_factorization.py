@@ -56,6 +56,9 @@ def prime_factorize(n):
 print(prime_factorize(12))
 
 # エラストテネスの篩
+# 調和級数(1 + 1/2 + 1/3 + 1/4...)は発散すること、log(1 + x) < xであること、素数同士の差が1以上であること
+# を使えば素数の逆数和(1 + 1/2 + 1/3 + 1/5...)は調和級数の対数より大きいので発散することを証明できる
+# 計算量はNloglogN
 prime = [2]
 max = 12
 limit = int(math.sqrt(max))

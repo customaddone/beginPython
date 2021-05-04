@@ -160,3 +160,33 @@ for i in range(N - 1):
     ans = max(ans, res[i] + i)
 
 print(ans)
+
+# 二次元ダイクストラ
+E = [[[] for i in range(C)] for i in range(R)]
+for i in range(R):
+    for j in range(C):
+        if j < C - 1:
+            E[i][j].append([i, j + 1, A[i][j]])
+        if j > 0:
+            E[i][j].append([i, j - 1, A[i][j - 1]])
+        if i < R - 1:
+            E[i][j].append([i + 1, j, B[i][j]])
+
+def dijkstra(h, w, start):
+    dist = [[float('inf')] * w for i in range(h)]
+    pos = [(0, start[0], start[1])]
+    heapify(pos)
+    dist[start[0]][start[1]] = 0
+
+    while len(pos):
+        cost, y, x = heappop(pos)
+
+        if dist[y][x] < cost:
+            continue
+        # エッジは探索のたびに生成していく
+        for ny, nx, c in E[y][x]:
+            if dist[ny][nx] > dist[y][x] + c:
+                dist[ny][nx] = dist[y][x] + c
+                heappush(pos, (dist[y][x] + c, ny, nx))
+
+    return dist
