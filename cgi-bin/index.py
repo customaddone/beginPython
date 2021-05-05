@@ -3,7 +3,7 @@ from heapq import heapify, heappop, heappush
 import math
 from copy import deepcopy
 from itertools import combinations, permutations, product, combinations_with_replacement
-
+from bisect import bisect_left, bisect_right
 
 import sys
 def input():
@@ -29,385 +29,282 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# ABC027 C - 倍々ゲーム
-# ２人が最善を尽くす時、どちらが勝つか
-# パターン1:ある状態になるように収束させれば必ず勝つ
-# パターン2:ある場所を目指せば必ず勝つようになる
-# パターン3:最初の配置のためどんな方法を取っても必ず勝つ
+# ABC025 C - 双子と○×ゲーム
 
-# まずは全通り試してみる　その中で勝ちが偏っている部分がある
+"""
+ここにマスを置くと...?
+もっともreturnが高いものを選択する
+c % 2 == 0なら直大番、c % 2 == 1なら青木番
 
-# 普通にゲーム木を考える
-# N = 10の場合
-# 自分のとこに11で回ってきたら勝利する(相手がNを超えてしまったため)
-# [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1]
-# 10で回ってきたら次20か21になり自分は敗北する 6 ~ 9も同様
-# [-1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 1]
-# つまりiについてi * 2, i * 2 + 1どちらの遷移も1の場合自分は敗北する
-# 連続する0のボーダーは一つ前の1のボーダーをkと置くと(k + 1) // 2
+ゲーム木の問題は両プレイヤーが
+「ここに置くと最大returnが得られる選択肢」
+を貪欲に選択する
+ここに置くとどれだけリターンが得られるかはdfsにより探索する
+"""
 
-# 敗北するマスを埋める場合は遷移先全てが前のボーダーにかかるように
-# 勝利するマスを埋める場合は遷移先が前のボーダーにギリギリかするように
+B = [getList() for i in range(2)]
+C = [getList() for i in range(3)]
+
+ans = sum([sum(b) for b in B]) + sum([sum(c) for c in C])
+# 判定用func
+def cnt(t):
+    res = 0
+    # b
+    for i in range(2):
+        for j in range(3):
+            if t[i][j] == t[i + 1][j]:
+                res += B[i][j]
+            else:
+                res -= B[i][j]
+    # c
+    for i in range(3):
+        for j in range(2):
+            if t[i][j] == t[i][j + 1]:
+                res += C[i][j]
+            else:
+                res -= C[i][j]
+
+    return res
+
+T = [[-1] * 3 for i in range(3)]
+def dfs(c):
+    if c == 9:
+        return cnt(T)
+
+    # 直大番はもっとも値が大きい箇所、青木番はもっとも値が小さい箇所を選ぶ
+    res = float('inf') * ((-1) ** (c % 2 == 0))
+
+    # 全探索する
+    for i in range(3):
+        for j in range(3):
+            if T[i][j] == -1:
+                T[i][j] = (c % 2 == 0) # 行きがけ
+                if c % 2 == 0: # 直大turnなら
+                    res = max(res, dfs(c + 1))
+                else: # 青木turnなら
+                    res = min(res, dfs(c + 1))
+                T[i][j] = -1 # 帰りがけ
+
+    return res
+
+# 合計ポイントがansあり、プレイヤー1 - プレイヤー2 = diffの時
+# プレイヤー１: (ans + diff) // 2
+# プレイヤー２: (ans - diff) // 2
+diff = dfs(0)
+print((ans + diff) // 2)
+print((ans - diff) // 2)
+
+# Indeedなう（予選A）D - パズル
+
+"""
+最小回数を求めよ
+3 3
+1 0 2
+4 5 3
+7 8 6 なら
+
+1 2 0
+4 5 3
+7 8 6
+
+1 2 3
+4 5 0
+7 8 6
+
+1 2 3
+4 5 6
+7 8 0 で3回
+
+全ての数字が所定の場所にいる
+回数無視でまずはどうすれば行けるか
+任意の回数行えるなら、各数字は好きな場所に行ける
+
+1 3
+2 0 の場合
+
+1 0
+2 3
+
+0 1
+2 3
+
+2 1
+0 3
+
+2 1
+3 0
+
+3 2 1がぐるぐる回るだけだから永遠に無理
+最小操作数が24回以内なので絶対に成功するケースのみ出る
+
+全探索4 * 24　無理
+戻る必要はないので3 ** 24
+多分全探索なんだろう
+一つの行動で最大1合わせることができる
+枝刈りする
+
+ngはマンハッタン距離で持つ
+"""
+
+H, W = getNM()
+C = [getList() for i in range(H)]
+
+def manh(point):
+    ny = (point - 1) // W
+    nx = (point - 1) % W
+    return ny, nx
+
+ng = 0
+sta = [0, 0]
+for i in range(H):
+    for j in range(W):
+        if C[i][j] == 0:
+            sta = [i, j]
+            continue
+        ny, nx = manh(C[i][j])
+        ng += abs(ny - i) + abs(nx - j)
+
+dy = [1, 0, -1, 0]
+dx = [0, 1, 0, -1]
+
+memo = {}
+ans = float('inf')
+
+def dfs(turn, array, y, x, direct, ng):
+    global ans
+    if str(array) in memo and memo[str(array)] <= turn:
+        return
+
+    if ng == 0:
+        ans = min(ans, turn)
+        return
+
+    if turn > 24 - ng or ans <= turn:
+        return
+
+    for i in range(4):
+        if i == (direct + 2) % 4:
+            continue
+        ny = y + dy[i]
+        nx = x + dx[i]
+        if 0 <= ny < H and 0 <= nx < W:
+            new_array = deepcopy(array)
+            new_ng = ng
+            # 0と入れ替える数字について
+            my, mx = manh(array[ny][nx])
+            new_ng -= (abs(my - ny) + abs(mx - nx))
+            new_ng += (abs(my - y) + abs(mx - x))
+
+            new_array[ny][nx] = array[y][x] # 0
+            new_array[y][x] = array[ny][nx]
+            dfs(turn + 1, new_array, ny, nx, i, new_ng)
+
+    memo[str(array)] = turn
+
+dfs(0, C, sta[0], sta[1], float('inf'), ng)
+print(ans)
+
+# ABC195 E - Lucky 7 Battle
+
+"""
+7の倍数　法則性なし 10とは互いに素なのでmod算をする
+Siか0かをぶち込む　ここにゲーム性
+7の倍数であれば高橋くんの勝ち
+5 modは5
+50: 5 * 10 % 7 = 1
+500: 1 * 10 % 7 = 3
+
+現在の数字: 0
+これを *= 10してmod 7するか+=Si and *= 10してmod 7するか
+一番最後の人が有利そう
+ゲーム木みたいなやつ　逆からやっていく
+0 ~ 9のdp
+最後の人に0で回ってくると勝利
+[[[0, 3], [3, 6], [6, 2], [2, 5], [5, 1], [1, 4], [4, 0]],
+ [[0, 5], [3, 1], [6, 4], [2, 0], [5, 3], [1, 6], [4, 2]]]
+高橋くんは2つ目に0 or 3で回ってくると勝利
+勝利するように誘導したい
+青木くんは0を受け取ると0のまま or 3で回せる
+
+[[[0, 1], [3, 4], [6, 0], [2, 3], [5, 6], [1, 2], [4, 5]],
+ [[0, 2], [3, 5], [6, 1], [2, 4], [5, 0], [1, 3], [4, 6]],
+ [[0, 3], [3, 6], [6, 2], [2, 5], [5, 1], [1, 4], [4, 0]],
+ [[0, 4], [3, 0], [6, 3], [2, 6], [5, 2], [1, 5], [4, 1]],
+ [[0, 5], [3, 1], [6, 4], [2, 0], [5, 3], [1, 6], [4, 2]]]
+
+5番目では0 or 3が来ると勝利　そうさせないよう
+最後の人がどちらか
+"""
 
 N = getN()
-N += 1
-rev = 1 # 1(ここに到達すると勝ち)のボーダー
-while N > 1:
-    if rev > 0: # 次0のボーダーを決める
-        N = (N + 1) // 2
-    else:
-        N = N // 2
-    rev *= -1
+S = list(input())
+X = list(input())
 
-if rev > 0:
+# dp[i][j][0]: 0を追加する場合
+# dp[i][j][1]: Siを追加する場合
+dp = [[[0, 0] for _ in range(7)] for i in range(N)]
+for i in range(N):
+    for j in range(7):
+        dp[i][j][0] = j * 10 % 7
+        dp[i][j][1] = (j * 10 + int(S[i])) % 7
+
+end = [0] * 7
+end[0] = 1
+dp.append(end)
+
+for i in range(N - 1, -1, -1):
+    # 青木
+    if X[i] == 'A':
+        for j in range(7):
+            # 行先があれば
+            if dp[i + 1][dp[i][j][0]] == 0 or dp[i + 1][dp[i][j][1]] == 0:
+                dp[i][j] = 0 # lose
+            else:
+                dp[i][j] = 1 # win
+    # 高橋
+    else:
+        for j in range(7):
+            if dp[i + 1][dp[i][j][0]] == 0 and dp[i + 1][dp[i][j][1]] == 0:
+                dp[i][j] = 0 # lose
+            else:
+                dp[i][j] = 1 # win
+
+if dp[0][0] == 1:
     print('Takahashi')
 else:
     print('Aoki')
 
-# ABC048 D - An Ordinary Game
-# 最終的にどのような形で終わるか
-S = input()
-if (S[0] != S[-1]) ^ (len(S) % 2):
-    print('Second')
-else:
-    print('First')
+# ARC085 D - ABS
 
-# ABC059 D - Alice&Brown
-# まずは全通り試してみる
-
-# 最終形をイメージする →
-# 1 0 操作出来ない　終わり
-# 1 1 操作出来ない　終わり
-# 逆に2 0 や 3 0 なら操作できる
-# 2以上開く、０か１開くを繰り返す
-X, Y = getNM()
-X = int(X)
-Y = int(Y)
-
-if (X - Y) ** 2 > 1:
-    print("Alice")
-else:
-    print("Brown")
-
-# AGC033 LRUD Game
-
-"""
-制約よりゲーム木とも違う
-つまりnim
-スタート地点にコマが置いてある　これを２人で動かす
-S[i]の方向に動かす、もしくは動かさない
-盤上から落ちるか残るか
-逆から見てみると
-
-最適行動　とは？
-中央に寄るように、もしくは遠ざかるように？
-
-全ての行動をシミュレートして偏りを探す
-RとLの数の差、UとDの数の差によって勝敗がわかる
-
-高橋くんが如何なる行為をしても青木くんは盤上に残すことができる
-青木くんが如何なる行為をしても高橋くんは盤上から落とすことができる
-
-高橋くんは駒の振れ幅を大きくする
-青木くんは駒の振れ幅を小さくする
-基本高橋くん有利？
-
-2人は相手の行動を先読みできるか
-あとで相手がRを大量に持っている　→　できるだけ左にずらす
-最後のL or Rの処理のあと、コマが残っている
-相手の最悪の行動に対応できるか
-高橋と青木のLRUDの差で考える
-LL
-  RRRの場合
-
-２人が最適な行動をするとは
-相手が最悪の行動をしてくるということ
-コマが一番左にいても絶対に落とせる
-L, R, U, Dのそれぞれが独立に
-R, L, D, Uと対戦できる
-"""
-
-H, W, N = getNM() # H:縦 W:横
-start = getList()
-S = input()
-T = input()
-
-LRUD_range = [start[1], start[1], start[0], start[0]]
-
-for i in range(N):
-    # 高橋のターン
-    if S[i] == 'L': # 高橋のL対青木のR
-        LRUD_range[0] -= 1
-    elif S[i] == 'R':
-        LRUD_range[1] += 1
-    elif S[i] == 'U':
-        LRUD_range[2] -= 1
-    else:
-        LRUD_range[3] += 1
-
-    if LRUD_range[0] < 1 or W < LRUD_range[1] or LRUD_range[2] < 1 or H < LRUD_range[3]:
-        print('NO')
-        exit()
-
-    # 青木のターン
-    if T[i] == 'L': # 高橋のR対青木のL ただしleftできるのは1まで
-        LRUD_range[1] = max(1, LRUD_range[1] - 1)
-    elif T[i] == 'R':
-        LRUD_range[0] = min(W, LRUD_range[0] + 1)
-    elif T[i] == 'U':
-        LRUD_range[3] = max(1, LRUD_range[3] - 1)
-    else:
-        LRUD_range[2] = min(H, LRUD_range[2] + 1)
-
-print('YES')
-
-# AGC033 C - Removing Coins
-# 木の直径 + nim
-
-"""
-最適行動する
-ある形に収束する
-
-相手の手がどうであれ
-全ての通りを試してみる
-
-木の問題であり、nimの問題である
-
-一つ頂点を選び、コインを取る
-その後他のコインを吸い寄せる
-ある点iを選択する
-iから各コインへの距離が1小さくなる
-
-各コインへの最短距離の最大値が1になると負け
-木なのでコインが２つ隣り合うだけになったら負け
-コインの木の直径が2で回ってきたら負け
-コインの木はちぎれることはない
-
-コインの木の直径を2にする
-
-1 - 2 - 3 - 4 - 5のパスグラフを考える
-1を選ぶと木の直径は1 - 2 - 3 - 4で4になる
-そのあと2を選ぶと2 - 3になり直径2で勝ち
-端っこを取ると木の直径が1減る
-端以外を取ると木の直径が2減る
-
-1 - 2 - 3 - 4 - 5
-firが1取る 1 - 2 - 3 - 4 → secが2取る 2 - 3
-firが2取る 2 - 3 - 4 → secが4取る 3 - 4
-
-1 - 2 - 3 - 4 - 5 - 6
-fir 1取る 1 - 2 - 3 - 4 - 5 firの勝ち
-
-相手に直径5になるように回す　
-firは6か7で回ってきたら勝ち　8で回ってきたら
-
-2 + 3 * iで回ってきたら負け 2, 5, 8...
-2 * (3 * i) + 1 端を選ぶ
-2 * (3 * i) + 2 真ん中を選ぶ
-
-直径を取るパスの端じゃない点か関係ない点を取ると-2される
-N = 1なら自動的に勝ち
-"""
-
-N = getN()
-Q = [getList() for i in range(N - 1)]
-
-G = [[] for i in range(N)]
-for i in range(N - 1):
-    s, t = Q[i]
-    G[s - 1].append(t - 1)
-    G[t - 1].append(s - 1)
-
-# 木の直径を求める
-def bfs(s):
-    dist = [-1] * N
-    que = deque([s])
-    dist[s] = 1
-
-    while que:
-        u = que.popleft()
-        for i in G[u]:
-            if dist[i] >= 0:
-                continue
-            dist[i] = dist[u] + 1
-            que.append(i)
-    d = max(dist)
-    # 全部並べて一番値がでかいやつ
-    return dist.index(d), d
-
-# 0から最も遠い点uを求める
-u, _ = bfs(0)
-# uから最も遠い点vとその距離を求める（つまり直径）
-v, d = bfs(u)
-
-# 2 + 3 * iで回ってきたら負け
-if (d - 2) % 3 == 0:
-    print('Second')
-else:
-    print('First')
-
-# 全国統一プログラミング王 予選　C - Different Strokes
-
-"""
-一つの数字を最大化できないか
-結局青木さんの点数は高橋くんが選ばなかったもののBの総和になる
-つまり高橋くんがi個目を選ぶとAi獲得するだけでなくBi特することになる
-逆に青木さんがj個目を選ぶとBi獲得するだけでなくAi高橋くんを損させられる
-高橋くん、青木さんはAi + Biが大きい順に取っていく
-"""
-
-N = getN()
-dish = []
-for i in range(N):
-    a, b = getNM()
-    dish.append([a, b, a + b])
-
-dish.sort(key = lambda i:i[2])
-
-ans = 0
-while True:
-    if dish: # 高橋くん
-        a, b, total = dish.pop()
-        ans += a
-    else:
-        break
-
-    if dish: # 青木さん
-        a, b, total = dish.pop()
-        ans -= b
-    else:
-        break
-
-print(ans)
-
-# EDPC K - Stones
-
-"""
-nimする
-K個から石を取る
-Ai個（何回も選んでもいい）取る
-N <= 100 小さい
-(石の数) < min(A)となるようにすればいい
-相手に上記の条件になるようにさせない　
-2 4
-2 3 なら 1になるようにする　もしくは相手が1になるようにさせない
-K = 0なら
-0: 先手が勝つ
-1: 後手が勝つ
-
-0 1 2 3 4 5
-1 1 0 0 0
-基本先行有利
-自分が勝利するルートがあるか　なければ
-自分が勝利するルートが一つでもあれば　の発想
-"""
-
-N, K = getNM()
+N, Z, W = getNM()
 A = getList()
+memo = [{}, {}]
 
-# 0: 先手が勝つ
-# 1: 後手が勝つ
-dp = [1] * (K + 1)
+# 現在の番、最後に取られたindex
+def dfs(t, ind):
+    global Z, W
+    if ind == N - 1:
+        return abs(Z - W)
 
-for i in range(1, K + 1):
-    for j in range(N):
-        if i - A[j] >= 0 and dp[i - A[j]] == 1:
-            dp[i] = 0
-            break
+    if ind in memo[t]:
+        return memo[t][ind]
+
+    if t == 0:
+        n_z = Z
+        res = -float('inf')
+        for i in range(ind + 1, N):
+            Z = A[i]
+            res = max(res, dfs(1, i))
+            Z = n_z
     else:
-        dp[i] = 1
+        n_w = W
+        res = float('inf')
+        for i in range(ind + 1, N):
+            W = A[i]
+            res = min(res, dfs(0, i))
+            W = n_w
 
-if not dp[-1]:
-    print('First')
-else:
-    print('Second')
+    memo[t][ind] = res
+    return res
 
-# ARC112 C - DFS Game
-
-"""
-最終的にコインは全てなくなる
-移動する場合はコインの回収ができないのでやらない方がいい？
-高橋くんと青木くんは同じ戦略
-
-部分木の偶奇によって変わりそう
-相手がコインをとった場合は自分は移動するしかない
-
-コインの乗った箇所に乗られるとそこから葉まで全てかっさらわれる
-そこから戻る
-当然そこから根までは何もない
-奇数個戻るとターンが入れ替わる
-
-その途中で枝があればまたそこからスタートする
-どの枝を選ぶかは任意
-任意で選ぶ場所に戦略性
-
-一回葉まで行ったら下の部分木から処理される
-戦略通りいけば部分木についてどのようだったかが一意に定まりそう
-小さい部分木で考える
-
-部分木の根に移動した状態でターンがスタートすれば
-部分木のコインを全て刈った状態でターンが回ってくるのはだれ？
-逆転するかそのまんまか　コインの枚数は
-
-子がない場合は
-
-親要素から子に移動した
-手番は逆転している方がいい
-必ず手番が入れ替わるものを選ぶ
-
-手番が入れ替わるものは小さい順に回収される
-
-dfsを行う
-保持する情報は
-fore/rev 親頂点から本頂点に移動した場合、親頂点に戻った場合に手順が入れ代わってるかどうか
-val: 親頂点から本頂点に移動した場合、自分はいくら獲得できるか
-
-子頂点の情報を元にresを作成する
-f/r: ()子頂点のrの数 + 1) % 2 == 0ならf 1ならr
-val: (+でforeのもの) + (rの大きい方から奇数個目) - (rの大きい方から偶数個目) + (-でforeのもの) * (-1 ** (len(r) == 0))
-(-でforeのもの)はrの長さが偶数であればこちらが引き受ける
-"""
-
-N = getN()
-P = getList()
-E = [[] for i in range(N)]
-for i in range(N - 1):
-    E[P[i] - 1].append(i + 1)
-
-# turn: 0なら順番そのまま 1なら逆転
-def dfs(u):
-    turn = 0
-    # point計算用　移動した先のコインは必ず取られるのでまず-1
-    point = -1
-    rev = []
-    fore_minus = 0
-    for v in E[u]:
-        t, val = dfs(v)
-        turn += t
-        # 順向きなら
-        if t == 0:
-            # +の値なら
-            if val >= 0:
-                point += val
-            else:
-                fore_minus += val
-        # 逆向きになるなら
-        else:
-            rev.append(val)
-    # 計算
-    rev.sort(reverse = True)
-    # revを大きい方から交互にとっていく
-    rev = [rev[i] if i % 2 == 0 else -rev[i] for i in range(len(rev))]
-    point += sum(rev)
-    # -でforeのものはその時の手番の人が全てとる
-    if len(rev) % 2 == 0:
-        point += fore_minus
-    else:
-        point -= fore_minus
-
-    return (turn + 1) % 2, point
-
-# 頂点0に移動する人、つまり青木くんのプラマイが出てくる
-t, p = dfs(0)
-
-print((N - p) // 2)
+print(dfs(0, -1))

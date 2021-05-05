@@ -141,6 +141,7 @@ from collections import *
 print(sum(v * (v - 1) // 2 for v in Counter(mod).values()))
 
 # F - Knapsack for All Segments
+# mod Pの計算
 
 N, P = getNM()
 C = input()[::-1]
@@ -211,6 +212,7 @@ print((ans * pow(deno, -1, mod)) % mod)
 print((ans * pow(deno, mod - 2, mod)) % mod)
 
 # M-SOLUTION プロコン　C - Best-of-(2n-1)
+# 分子分母が巨大な場合
 
 lim = 10 ** 6 + 1
 fact = [1, 1]
@@ -260,3 +262,28 @@ for i in range(N):
 # 分母の逆元の計算はこうやる
 deno = (pow(A + B, 2 * N, mod)) % mod
 print((ans * pow(deno, mod - 2, mod)) % mod)
+
+# エクサウィザーズ2019 E - Black or White
+# 冪乗の逆元を求める
+
+B, W = getNM()
+b_dep, w_dep = 0, 0
+b_sto, w_sto = 0, 0
+
+### 前処置部分 #############################
+bi = [1] * (10 ** 6) # 冪乗のmod
+bi_pow = [1] * (10 ** 6) # 冪乗の逆元のmod
+rev = pow(2, mod - 2, mod)
+for i in range(1, 10 ** 6):
+    bi[i] = (bi[i - 1] * 2) % mod
+    bi_pow[i] = (bi_pow[i - 1] * rev) % mod # 2^0, 2^1, 2^2...の逆元を前計算
+###########################################
+
+for i in range(B + W):
+    b_dep = (cmb(i, B) + b_sto) % mod
+    b_sto = (b_sto + b_dep) % mod
+    w_dep = (cmb(i, W) + w_sto) % mod
+    w_sto = (w_sto + w_dep) % mod
+
+    # 冪乗の逆元のmodをこのように使える
+    print(((bi[i] + w_dep - b_dep) * bi_pow[i + 1]) % mod)
