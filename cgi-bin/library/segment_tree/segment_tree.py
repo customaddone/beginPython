@@ -97,6 +97,51 @@ class SegTree:
 N, M = getNM()
 seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele) # セグ木立てる
 
+# codeforces round716 D - Cut and Stick
+# こういうモノイドも乗る
+
+#####segfunc#####
+# 範囲内の過半数を占める要素がありそうならその可能性を返すセグ木
+# [1, 2, 3, 3]
+# [1, 2]について過半数を占める要素なし (-1, 0)
+# [3, 3]について過半数を占める要素は3
+# (-1, 0)について、3の数は多かったとしても半分
+# (1, 1)について, 3の数は多かったとしても半分 - 1
+def segfunc(x, y):
+    if x[0] == y[0]:
+        return x[0], x[1] + y[1]
+    elif x[1] > y[1]:
+        return x[0], x[1] - y[1]
+    elif x[1] < y[1]:
+        return y[0], y[1] - x[1]
+    else:
+        return -1, 0
+#################
+
+#####ide_ele#####
+ide_ele = (-1, 0)
+#################
+
+N, M = getNM()
+A = getList()
+L = [[] for i in range(N + 1)]
+for i in range(N):
+    L[A[i]].append(i)
+
+# 使い方
+A = [(a, 1) for a in A]
+seg = SegTree(A, segfunc, ide_ele)
+
+for _ in range(M):
+    l, r = getNM()
+    l -= 1
+    v, c = seg.query(l, r)
+    if c == 0:
+        print(1)
+    else:
+        m = bisect_left(L[v], r) - bisect_left(L[v], l)
+        print(max(m * 2 + l - r, 1))
+
 # 二分探索セグ木
 
 class SegmentTree():
