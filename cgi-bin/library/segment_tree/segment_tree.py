@@ -98,7 +98,7 @@ N, M = getNM()
 seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele) # セグ木立てる
 
 # codeforces round716 D - Cut and Stick
-# こういうモノイドも乗る
+# こういうモノイドも乗る　結合法則を満たし、単位元があるのでこれもモノイド
 
 #####segfunc#####
 # 範囲内の過半数を占める要素がありそうならその可能性を返すセグ木
