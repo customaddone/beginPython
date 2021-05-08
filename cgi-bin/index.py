@@ -19,7 +19,7 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-
+sys.setrecursionlimit(1000000)
 INF = float('inf')
 eps = 10 ** (-10)
 dx = [1, 0, -1, 0]
@@ -28,7 +28,6 @@ dy = [0, 1, 0, -1]
 #############
 # Main Code #
 #############
-
 class LCA(object):
     def __init__(self, G, root=0):
         self.G = G
@@ -37,10 +36,10 @@ class LCA(object):
         self.logn = (self.n - 1).bit_length()
         self.depth = [-1 if i != root else 0 for i in range(self.n)]
         self.parent = [[-1] * self.n for _ in range(self.logn)]
-        self.dfs()
+        self.bfs()
         self.doubling()
 
-    def dfs(self):
+    def bfs(self):
         que = [self.root]
         while que:
             u = que.pop()
@@ -73,6 +72,9 @@ class LCA(object):
                 u, v = pu, pv
         return self.parent[0][u]
 
+    def distance(self, u, v):
+        return lca.depth[u] + lca.depth[v] - 2 * lca.depth[lca.get(u, v)]
+
 """
 与えられた頂点を全て連結にするには？
 小さい例から考える
@@ -87,7 +89,12 @@ Kj = 3なら もう一つできる まず2つでLCA 残りの1つは2つとLCA�
 近い距離のもの同士で順に繋いでいく　前後のどちらかが一番近いもの
 DAGできるか
 
-depthで揃える
+高さiまでに統合していく
+トポロジカルソートするか
+LCAが最小になりそうな2点を探す
+一個前と一つ後とのlcaを見比べる
+
+右隣よりdepthが深いと統合していい
 """
 
 N = getN()
@@ -97,52 +104,47 @@ for i in range(N - 1):
     E[a - 1].append(b - 1)
     E[b - 1].append(a - 1)
 
+# dfs帰りがけ順
 l = []
 def dfs(u, p):
     for v in E[u]:
         if v != p:
             dfs(v, u)
     l.append(u)
-
 dfs(0, -1)
+l = {l[i]: i for i in range(N)} # 浅い順に並べる
 
 Q = getN()
 lca = LCA(E)
 
 for _ in range(Q):
-    k, *v = getList()
-    v = set([i - 1 for i in v])
-    prev = deque([i for i in l if i in v])
-    # 頂点を1/2ずつにまとめ上げる
+    k, *v_l = getList()
+    # vをsort
+    v_l = [[l[v - 1], v - 1] for v in v_l]
+    v_l.sort(reverse = True)
+    p = [v[1] for v in v_l]
+
+    bef = []
+    aft = [v[1] for v in v_l]
     cnt = 0
-    while len(prev) > 1:
-        s1, s2 = prev.popleft(), prev.popleft()
-        now = lca.get(s1,  s2)
-        cnt += lca.depth[s1] + lca.depth[s2] - 2 * lca.depth[now]
-        next = deque()
-        while prev:
-            o1 = lca.get(now, prev[0])
-            if len(prev) > 1:
-                o2 = lca.get(prev[0], prev[1])
+    while len(aft) > 1:
+        now = aft.pop()
+        if not bef:
+            bef.append(now)
+        else:
+            # 前と統合
+            while bef and lca.depth[lca.get(bef[-1], now)] >= lca.depth[lca.get(now, aft[-1])]:
+                cnt += lca.distance(bef[-1], now)
+                now = lca.get(bef[-1], now)
+                bef.pop() # pに統合
+            # 統合ダメ
             else:
-                o2 = 0
+                bef.append(aft.pop())
+        print(bef, aft, cnt)
 
-            # 統合
-            if lca.depth[o1] >= lca.depth[o2]:
-                cnt += lca.depth[now] + lca.depth[prev[0]] - 2 * lca.depth[o1]
-                prev.popleft()
-                now = o1
-            # 新規 前のはストックしとく
-            else:
-                next.append(now)
-                cnt += lca.depth[prev[0]] + lca.depth[prev[1]] - 2 * lca.depth[o2]
-                prev.popleft()
-                prev.popleft()
-                now = o2
-        # 最後に残っている頂点
-        if not (len(next) > 0 and next[-1] == now):
-            next.append(now)
-
-        prev = next
+    now = aft[0]
+    while bef:
+        cnt += lca.distance(bef[-1], now)
+        now = lca.get(bef.pop(), now)
 
     print(cnt)
