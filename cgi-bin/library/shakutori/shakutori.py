@@ -157,6 +157,31 @@ for r in range(N):
     print(l, r)
     dict[A[r]] += 1
 
+# K種類の要素のみを含んだ区間の最長は？
+N, K = 10, 2
+A = [1, 2, 3, 4, 4, 3, 2, 1, 2, 3]
+d = {}
+
+ans = 0
+l = 0
+for r in range(N):
+    # rの要素を足す
+    if A[r] in d:
+        d[A[r]] += 1
+    else:
+        d[A[r]] = 1
+
+    while len(d) > K:
+        # 末尾をどんどん除いていく
+        d[A[l]] -= 1
+        if not d[A[l]]:
+            del d[A[l]]
+        l += 1
+
+    ans = max(ans, r - l + 1)
+
+print(ans)
+
 N = 4
 A = [2, 5, 4, 6]
 
