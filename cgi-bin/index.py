@@ -1,33 +1,4 @@
-from collections import defaultdict, deque, Counter
-from heapq import heapify, heappop, heappush
-import math
-from copy import deepcopy
-from itertools import combinations, permutations, product, combinations_with_replacement
-from bisect import bisect_left, bisect_right
-
 import sys
-def input():
-    return sys.stdin.readline().rstrip()
-def getN():
-    return int(input())
-def getNM():
-    return map(int, input().split())
-def getList():
-    return list(map(int, input().split()))
-def getArray(intn):
-    return [int(input()) for i in range(intn)]
-
-mod = 10 ** 9 + 7
-MOD = 998244353
-sys.setrecursionlimit(1000000)
-INF = float('inf')
-eps = 10 ** (-10)
-dx = [1, 0, -1, 0]
-dy = [0, 1, 0, -1]
-
-#############
-# Main Code #
-#############
 
 class LCA(object):
     def __init__(self, G, root=0):
@@ -118,40 +89,20 @@ class LCA(object):
 
         return res
 
-# 使い方 ABC014 閉路
-n = getN()
-G = [[] for _ in range(n)]
-for x, y in [getNM() for i in range(n - 1)]:
-    G[x - 1] += [y - 1]
-    G[y - 1] += [x - 1]
-
-lca = LCA(G)
-q = getN()
-ans = []
-for a, b in [getNM() for i in range(q)]:
-    # 根からのaの深さ + 根からのbの深さ - 2 * ダブった部分
-    # lca.get(a - 1, b - 1):aとbのlca
-    ans += [lca.depth[a - 1] + lca.depth[b - 1] - 2 * lca.depth[lca.get(a - 1, b - 1)] + 1]
-
-print(*ans, sep='\n')
-
-# 典型90問 035 - Preserve Connectivity
-
-N = getN()
+N = int(input())
 E = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = getNM()
+for _ in range(N - 1):
+    a, b = map(int, input().split())
     E[a - 1].append(b - 1)
     E[b - 1].append(a - 1)
 
-Q = getN()
 lca = LCA(E)
-# dfsの行きがけ順
 lca.dfs(0, -1)
+Q = int(input())
 
 for _ in range(Q):
-    k, *v_l = getList()
+    k, *v = list(map(int, input().split()))
     cnt = 0
-    for a, b, _ in lca.unite(v_l):
+    for a, b, _ in lca.unite(v):
         cnt += lca.distance(a, b)
     print(cnt)
