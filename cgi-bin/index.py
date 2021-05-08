@@ -28,6 +28,7 @@ dy = [0, 1, 0, -1]
 #############
 # Main Code #
 #############
+
 class LCA(object):
     def __init__(self, G, root=0):
         self.G = G
@@ -36,6 +37,10 @@ class LCA(object):
         self.logn = (self.n - 1).bit_length()
         self.depth = [-1 if i != root else 0 for i in range(self.n)]
         self.parent = [[-1] * self.n for _ in range(self.logn)]
+        self.go = [] # 行きがけ
+        # self.go_dict = {}
+        self.back = [] # 帰りがけ
+        self.back_dict = {}
         self.bfs()
         self.doubling()
 
@@ -48,6 +53,15 @@ class LCA(object):
                     self.depth[v] = self.depth[u] + 1
                     self.parent[0][v] = u
                     que += [v]
+
+    def dfs(self, u, p):
+        # self.go_dict[u] = len(self.go)
+        self.go.append(u)
+        for v in E[u]:
+            if v != p:
+                self.dfs(v, u)
+        self.back_dict[u] = len(self.back)
+        self.back.append(u)
 
     def doubling(self):
         for i in range(1, self.logn):
@@ -75,27 +89,53 @@ class LCA(object):
     def distance(self, u, v):
         return lca.depth[u] + lca.depth[v] - 2 * lca.depth[lca.get(u, v)]
 
-"""
-与えられた頂点を全て連結にするには？
-小さい例から考える
-N, Q <= 5000　なら目的の点の中から適当なのを1つ選んで流す O(N^2)
-Kj = 2なら 2頂点のパス長を求める LCAでできる
-Kj = 3なら もう一つできる まず2つでLCA 残りの1つは2つとLCAした内の近い方
+    # dfsの帰りがけ順の列があれば深さが深い順に各頂点をマージする方法を教えてくれる
+    # [[マージ元1, マージ元2, マージ先],...]
+    def unite(self, ar):
+        # dfsの行きがけ順にソート
+        v_l = [[self.back_dict[v - 1], v - 1] for v in ar]
+        v_l.sort(reverse = True)
+        bef = []
+        aft = [v[1] for v in v_l] # popできるよう逆にする
+        res = []
 
-連結にする頂点の個数は200000以下なのだから 1頂点につきLCA一回で求められれば
-左から順にLCAすればいい　左?
-どのように並べるか？　左とは？ dfsで順番が求まるはず
+        while len(aft) > 1:
+            now = aft.pop()
+            while bef and lca.depth[lca.get(bef[-1], now)] >= lca.depth[lca.get(now, aft[-1])]:
+                res.append([bef[-1], now]) # 記録1 マージ元
+                now = lca.get(bef.pop(), now) # nowとbef[-1]を統合して新しい点を作成
+                res[-1].append(now) # 記録2 マージ先
 
-近い距離のもの同士で順に繋いでいく　前後のどちらかが一番近いもの
-DAGできるか
+            # 一旦保留
+            bef.append(now)
 
-高さiまでに統合していく
-トポロジカルソートするか
-LCAが最小になりそうな2点を探す
-一個前と一つ後とのlcaを見比べる
+        # 残った奴をマージしていく
+        now = aft[0]
+        while bef:
+            res.append([bef[-1], now])
+            now = lca.get(bef.pop(), now) # nowとbef[-1]を統合して新しい点を作成
+            res[-1].append(now)
 
-右隣よりdepthが深いと統合していい
-"""
+        return res
+
+# 使い方 ABC014 閉路
+n = getN()
+G = [[] for _ in range(n)]
+for x, y in [getNM() for i in range(n - 1)]:
+    G[x - 1] += [y - 1]
+    G[y - 1] += [x - 1]
+
+lca = LCA(G)
+q = getN()
+ans = []
+for a, b in [getNM() for i in range(q)]:
+    # 根からのaの深さ + 根からのbの深さ - 2 * ダブった部分
+    # lca.get(a - 1, b - 1):aとbのlca
+    ans += [lca.depth[a - 1] + lca.depth[b - 1] - 2 * lca.depth[lca.get(a - 1, b - 1)] + 1]
+
+print(*ans, sep='\n')
+
+# 典型90問 035 - Preserve Connectivity
 
 N = getN()
 E = [[] for i in range(N)]
@@ -104,47 +144,14 @@ for i in range(N - 1):
     E[a - 1].append(b - 1)
     E[b - 1].append(a - 1)
 
-# dfs帰りがけ順
-l = []
-def dfs(u, p):
-    for v in E[u]:
-        if v != p:
-            dfs(v, u)
-    l.append(u)
-dfs(0, -1)
-l = {l[i]: i for i in range(N)} # 浅い順に並べる
-
 Q = getN()
 lca = LCA(E)
+# dfsの行きがけ順
+lca.dfs(0, -1)
 
 for _ in range(Q):
     k, *v_l = getList()
-    # vをsort
-    v_l = [[l[v - 1], v - 1] for v in v_l]
-    v_l.sort(reverse = True)
-    p = [v[1] for v in v_l]
-
-    bef = []
-    aft = [v[1] for v in v_l]
     cnt = 0
-    while len(aft) > 1:
-        now = aft.pop()
-        if not bef:
-            bef.append(now)
-        else:
-            # 前と統合
-            while bef and lca.depth[lca.get(bef[-1], now)] >= lca.depth[lca.get(now, aft[-1])]:
-                cnt += lca.distance(bef[-1], now)
-                now = lca.get(bef[-1], now)
-                bef.pop() # pに統合
-            # 統合ダメ
-            else:
-                bef.append(aft.pop())
-        print(bef, aft, cnt)
-
-    now = aft[0]
-    while bef:
-        cnt += lca.distance(bef[-1], now)
-        now = lca.get(bef.pop(), now)
-
+    for a, b, _ in lca.unite(v_l):
+        cnt += lca.distance(a, b)
     print(cnt)
