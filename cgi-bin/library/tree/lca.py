@@ -51,6 +51,8 @@ mod = 10 ** 9 + 7
 # Main Code #
 #############
 
+import sys
+sys.setrecursionlimit(1000000)
 class LCA(object):
     def __init__(self, G, root=0):
         self.G = G
@@ -77,6 +79,7 @@ class LCA(object):
                     que += [v]
 
     def dfs(self, u, p):
+
         # self.go_dict[u] = len(self.go)
         self.go.append(u)
         for v in E[u]:
@@ -109,14 +112,10 @@ class LCA(object):
         return self.parent[0][u]
 
     def distance(self, u, v):
-        return lca.depth[u] + lca.depth[v] - 2 * lca.depth[lca.get(u, v)]
+        return self.depth[u] + self.depth[v] - 2 * self.depth[self.get(u, v)]
 
     # dfsの帰りがけ順の列があれば深さが深い順に各頂点をマージする方法を教えてくれる
     # [[マージ元1, マージ元2, マージ先],...]
-    # dfsの並び順　3 5 0 1 2...について
-    # 3 5をマージするか5 0をマージするか
-    # 3 5のlcaより5 0のlcaの方が浅い場合は確定で3 5をマージしていい
-    # 3 5のlcaより5 0のlcaの方が深い場合はもしかしたら0 1の方が更に深いかもしれないので保留
     def unite(self, ar):
         # dfsの行きがけ順にソート
         v_l = [[self.back_dict[v - 1], v - 1] for v in ar]
@@ -127,9 +126,9 @@ class LCA(object):
 
         while len(aft) > 1:
             now = aft.pop()
-            while bef and lca.depth[lca.get(bef[-1], now)] >= lca.depth[lca.get(now, aft[-1])]:
+            while bef and self.depth[lca.get(bef[-1], now)] >= self.depth[self.get(now, aft[-1])]:
                 res.append([bef[-1], now]) # 記録1 マージ元
-                now = lca.get(bef.pop(), now) # nowとbef[-1]を統合して新しい点を作成
+                now = self.get(bef.pop(), now) # nowとbef[-1]を統合して新しい点を作成
                 res[-1].append(now) # 記録2 マージ先
 
             # 一旦保留
@@ -139,7 +138,7 @@ class LCA(object):
         now = aft[0]
         while bef:
             res.append([bef[-1], now])
-            now = lca.get(bef.pop(), now) # nowとbef[-1]を統合して新しい点を作成
+            now = self.get(bef.pop(), now) # nowとbef[-1]を統合して新しい点を作成
             res[-1].append(now)
 
         return res
