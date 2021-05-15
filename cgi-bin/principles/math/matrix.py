@@ -29,19 +29,31 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-# 期待値
-
+# 半環
 """
-期待値の求め方
-E[i] = Σ ((iに遷移する可能性のある状態jについて、E[j]) + 1) * (j → iの遷移の確率)
-逆もできる
-E[i]: ゴールの状態からの期待値
-E[i] = Σ ((iから遷移する可能性のある状態jについて、E[j]) + 1) * (i → jの遷移の確率)
-iに繋がるどこかの道を塞ぐ場合
-塞いだ道の期待値への寄与分 - 塞いだことによる他の道の増分 を考える
-ABC144 F - Fork in the Road
-
-期待値の線型性
-確率aで条件を満たす操作がある
-条件を満たすのにかかる操作の期待値は 1/aになる
+半環の条件を満たす代数系については行列累乗ができる
+1:（整数,+, *)
+2:（整数, xor, and）
+3:（整数, max, +）
+4:（行列, +, *）
 """
+
+def array_cnt(ar1, ar2):
+    h = len(ar1)
+    w = len(ar2[0])
+    row = ar1
+    col = []
+    for j in range(w):
+        opt = []
+        for i in range(len(ar2)):
+            opt.append(ar2[i][j])
+        col.append(opt)
+
+    res = [[[0, 0] for i in range(w)] for i in range(h)]
+    for i in range(h):
+        for j in range(w):
+            cnt = 0
+            for x, y in zip(row[i], col[j][::-1]): # 計算は逆になる
+                cnt ^= x & y # ここを変更
+            res[i][j] = cnt
+    return res

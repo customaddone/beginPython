@@ -29,6 +29,22 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+def solv_quadratic_equation(a, b, c):
+    """ 2次方程式を解く  """
+    D = (b ** 2 - 4 * a * c) ** (1 / 2)
+    x_1 = (-b + D) / (2 * a)
+    x_2 = (-b - D) / (2 * a)
+
+    return x_1, x_2
+
+def is_integer_num(n):
+    if isinstance(n, int):
+        return n
+    if isinstance(n, float):
+        if n.is_integer():
+            return int(n)
+    return False
+
 # 積分したい
 
 # 正の整数x, yについて、y <= n / x を満たす点(x,y)の個数（積分）を返したい
