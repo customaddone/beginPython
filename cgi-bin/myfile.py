@@ -32,24 +32,43 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-S = 'aabbcc'
-s_n = len(S)
-K = 'abc'
-k_n = len(K)
+L = []
+bi = [[0] * 70 for i in range(N - 1)]
+for i in range(N - 1):
+    u, v, w = getNM()
+    L.append([u - 1, v - 1])
+    for j in range(70):
+        bi[i][j] = w % 2
+        w //= 2
+    E[u - 1].append(v - 1)
+    E[v - 1].append(u - 1)
 
-# dp[i][j]: Sのi文字目までで部分文字列(Kのj文字目まで)を取り出せる通りの数
-prev = [0] * (k_n + 1)
-prev[0] = 1
+size = [0] * N
+par = [0] * N
+def dfs(u, p):
+    res = 1
+    par[u] = p
+    for v in E[u]:
+        if v != p:
+            res += dfs(v, u)
 
-for i in range(s_n):
-    # S[i]を選択しない
-    # 前の状態から変化なしなのでそのまま引き継ぐ
-    next = prev
-    for j in range(k_n):
-        # S[i]を選択する 状態数が増える
-        if S[i] == K[j]:
-            next[j + 1] += prev[j]
+    size[u] = res
+    return res
 
-    prev = next
+dfs(0, -1)
+for i in range(N - 1):
+    u, p = L[i]
+    # 逆なら 前に子要素uが来るように
+    if par[p] == u:
+        L[i][0] = p
+        L[i][1] = u
 
-print(prev[-1])
+po = [1]
+for i in range(70):
+    po.append((po[-1] * 2) % mod)
+
+# 各辺について探索
+ans = 0
+for u, _ in L:
+    way = size[u] * (N - size[u])
+    print(u, _, way)

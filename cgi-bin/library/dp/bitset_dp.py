@@ -110,8 +110,10 @@ class Bitset():
     def all_add(self, x):
         if x >= 0:
             self.n = (self.n << x)
+            # self.n = (self.n << x) | (self.n >> x)
         else:
             self.n = (self.n >> -x)
+            # self.n = (self.n >> -x) | (self.n << -x)
 
     # 全ての値に足す、足さないをする
     def all_add2(self, x):
