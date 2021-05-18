@@ -1,9 +1,5 @@
 from collections import defaultdict, deque, Counter
 from heapq import heapify, heappop, heappush
-import math
-from copy import deepcopy
-from itertools import combinations, permutations, product, combinations_with_replacement
-from bisect import bisect_left, bisect_right
 
 import sys
 def input():
@@ -19,81 +15,371 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-sys.setrecursionlimit(1000000)
 INF = float('inf')
 eps = 10 ** (-10)
-dx = [1, 0, -1, 0]
 dy = [0, 1, 0, -1]
+dx = [1, 0, -1, 0]
 
 #############
 # Main Code #
 #############
 
-# ABC195 F. Coprime Present
+# ARC005 C - 器物損壊！高橋君
+
+H, W = getNM()
+maze = [list(input()) for i in range(H)]
+
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == 's':
+            si = [i, j]
+            maze[i][j] = '.'
+        elif maze[i][j] == 'g':
+            gi = [i, j]
+            maze[i][j] = '.'
+
+pos = deque([[si[0], si[1]]])
+dist = [[-1] * W for j in range(H)]
+dist[si[0]][si[1]] = 0
+
+# 0-1bfs
+while pos:
+    y, x = pos.popleft()
+    for i in range(4):
+        ny = y + dy[i]
+        nx = x + dx[i]
+        if 0 <= ny < H and 0 <= nx < W and dist[ny][nx] == -1:
+            if maze[ny][nx] == '.':
+                dist[ny][nx] = dist[y][x]
+                pos.appendleft([ny, nx])
+            else:
+                dist[ny][nx] = dist[y][x] + 1
+                pos.append([ny, nx])
+
+if dist[gi[0]][gi[1]] <= 2:
+    print('YES')
+else:
+    print('NO')
+
+# ABC007 幅優先探索
+r, c = map(int, input().split())
+sy, sx = map(int, input().split())
+gx, gy = map(int, input().split())
+sy -= 1
+sx -= 1
+gx -= 1
+gy -= 1
+
+maze = []
+ans = float('inf')
+
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
+
+pos = deque([[sx, sy, 0]])
+dp = [[-1] * (c + 1) for i in range(r + 1)]
+dp[sx][sy] = 0
+
+for i in range(r):
+    c = input()
+    maze.append(list(c))
+
+while len(pos) > 0:
+    x, y, depth = pos.popleft()
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        if maze[nx][ny] == "." and dp[nx][ny] == -1:
+            pos.append([nx, ny, depth + 1])
+            dp[nx][ny] = dp[x][y] + 1
+print(dp[gx][gy])
+
+# ABC176 D - Wizard in Maze
+H, W = getNM()
+Ch, Cw = getNM()
+Dh, Dw = getNM()
+maze = [input() for i in range(H)]
+Ch -= 1
+Cw -= 1
+Dh -= 1
+Dw -= 1
+
+# ワープを最低で何回使うか
+# 上下左右2つ向こうまでの範囲内でワープできる
+# 隣接する'.'が領域
+
+dx = [1, 0, -1, 0]
+dy = [0, 1, 0, -1]
+
+pos = deque([[Ch, Cw]])
+dp = [[-1] * W for i in range(H)]
+dp[Ch][Cw] = 0
+
+while len(pos) > 0:
+    y, x = pos.popleft()
+    for i in range(4):
+        nx = x + dx[i]
+        ny = y + dy[i]
+        # 歩いて移動
+        if 0 <= nx < W and 0 <= ny < H and maze[ny][nx] == "." and (dp[ny][nx] == -1 or dp[y][x] < dp[ny][nx]):
+            # 0-1 bfs
+            # 先頭に置く
+            pos.appendleft([ny, nx])
+            dp[ny][nx] = dp[y][x]
+    # ワープ
+    for i in range(-2, 3):
+        for j in range(-2, 3):
+            wy = y + i
+            wx = x + j
+            # 歩いて移動不可能でないと使わない
+            if 0 <= wx < W and 0 <= wy < H and maze[wy][wx] == "." and dp[wy][wx] == -1:
+                pos.append([wy, wx])
+                dp[wy][wx] = dp[y][x] + 1
+
+print(dp[Dh][Dw])
+
+# AGC033 A - Darker and Darker
 
 """
-A以上B以下　幅は72以下
-A, Bがでかい
-連続する数　ここポイント
-連続する数は互いに素
-
-Q:どの数とどの数をペアにしてはいけないか
-偶数は一緒にしてはいけない　偶数のどれか1つ or 全くない
-奇数はどんな感じ
-3の倍数の場合は6つ前、6つ後ろと一緒になってはいけない
-5の倍数は10こ前、10こ後ろと一緒になってはいけない...
-2の倍数が入る通り、3の倍数が入る通り...をdp
-bit dpすれば
-2 4
-0b1 2は3の倍数
-0b10 3は3の倍数
-0b1 4は2の倍数
+一番近い#までの距離
+100万マスあるので一回の探索で済むように
+黒マスの周囲４マスを探索
+用が済めばポイ　同じマスについて探索する必要はない
+これで計算量は4 * H * W
 """
 
-A, B = getNM()
-# 72までに素数が20個あります
-prime = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
-N = [i for i in range(A, B + 1)]
-L = len(N)
+H, W = getNM()
+maze = [list(input()) for i in range(H)]
+prev = []
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == '#':
+            prev.append((i, j))
 
-# 各数字をbit棒に変換する
-for i in range(L):
-    # なんの約数かをbit形式で記録
-    opt = 0
-    for j in range(20):
-        if N[i] % prime[j] == 0:
-            opt += (1 << j)
-    N[i] = opt
+dx = [0, 1, 0, -1]
+dy = [1, 0, -1, 0]
 
-prev = [0] * (1 << 20)
-prev[0] = 1 # 空集合が1
-for i in range(L):
-    next = [0] * (1 << 20)
-    # 配るdpで
-    for bit in range(1 << 20):
-        next[bit] += prev[bit] # 何も足さない場合
-        if not bit & N[i]: # 共通の約数がなければ
-            next[bit | N[i]] += prev[bit]
+flag = True
+ans = 0
+while flag:
+    flag = False
+    next = []
+    while prev:
+        y, x = prev.pop()
+        for i in range(4):
+            ny = y + dy[i]
+            nx = x + dx[i]
+            if 0 <= ny < H and 0 <= nx < W and maze[ny][nx] == '.':
+                flag = True
+                maze[ny][nx] = '#'
+                next.append((ny, nx))
     prev = next
+    if flag:
+        ans += 1
 
-print(sum(prev))
+print(ans)
 
-# 典型90 042 - Multiple of 9（★4）
-# 配るのは0から、累積するのは2から
+# AGC043 A - Range Flip Find Route
 
-K = getN()
-if K % 9 != 0:
-    print(0)
-    exit()
+"""
+白いとこだけ踏んでゴールを目指す
+スタートやゴールが黒いこともある
 
-dp = [0] * (K + 2)
-dp[0] = 1
-dp[1] = 1
-for i in range(K + 1):
-    if i > 1:
-        dp[i] += dp[i - 1]
-    dp[i] %= mod
-    dp[i + 1] += dp[i]
-    dp[min(i + 10, K + 1)] -= dp[i]
+操作をすると選択した長方形空間内の白黒が反転する
+最小で何回操作するか
+効率の良い操作方法を考える
 
-print(dp[-2])
+黒い部分を白くすることだけを考える？
+白だけ踏んでいけるとは？
+二回反転させれば元どおり
+
+白から黒に、黒から白に侵入するときだけ += 1する？
+"""
+
+H, W = getNM()
+maze = [list(input()) for i in range(H)]
+dp = [[float('inf')] * W for i in range(H)]
+dp[0][0] = 0
+if maze[0][0] == "#":
+    dp[0][0] = 1
+
+dy = [0, 1]
+dx = [1, 0]
+
+pos = deque([[0, 0]])
+
+# 0 - 1bfs?
+while pos:
+    y, x = pos.popleft()
+    for i in range(2):
+        ny = y + dy[i]
+        nx = x + dx[i]
+        if 0 <= ny < H and 0 <= nx < W: # 領域内
+            # 同じ色の場合
+            if maze[y][x] == maze[ny][nx] and dp[ny][nx] > dp[y][x]:
+                pos.appendleft([ny, nx])
+                dp[ny][nx] = dp[y][x]
+            # 違う色の場合
+            if maze[y][x] != maze[ny][nx]:
+                # 入るときだけでいい
+                if maze[y][x] == "." and dp[ny][nx] > dp[y][x] + 1:
+                    pos.append([ny, nx])
+                    dp[ny][nx] = dp[y][x] + 1
+                elif maze[y][x] == "#" and dp[ny][nx] > dp[y][x]:
+                    pos.appendleft([ny, nx])
+                    dp[ny][nx] = dp[y][x]
+
+print(dp[H - 1][W - 1])
+
+# AGC014 C - Closed Rooms
+
+"""
+H行W列
+K回まで移動できる　K個の部屋を解放する
+端っこの'.'を目指す　またダイクストラか
+
+黒を移動できると考えてもいい
+全探索する
+端っこの部屋についての最短距離を求める
+0-1bfsか
+
+最初の１回は['.']の部分だけ移動できる
+次からは['.'] + ['#']を移動できる
+
+端っこまで黒何個消しで行けるか
+単純な距離　と
+黒を何個消すか　を求める
+
+1回目白マス行けるとこまで移動する　
+あとは自由に航行できる（前回のでKマス部屋を開いて今回Kマス進むため）
+
+ほぼほぼ'#'は関係がない
+posの中身を途中で書き換える問題
+"""
+
+H, W, K = getNM()
+maze = [list(input()) for i in range(H)]
+
+start = [-1, -1]
+# スタート位置特定
+for i in range(H):
+    for j in range(W):
+        if maze[i][j] == 'S':
+            start = [i, j]
+            break
+    else:
+        continue
+    break
+
+dy = [1, 0, -1, 0]
+dx = [0, 1, 0, -1]
+
+dis = [[-1] * W for i in range(H)]
+dis[start[0]][start[1]] = 0
+
+# 最初の１回 白マス内だけをK回まで移動する
+# これらで移動したものは全てK回移動でカウントする
+pos = deque([[start[0], start[1], 0]])
+alta = [[start[0], start[1], K]]
+while len(pos) > 0:
+    y, x, d = pos.popleft()
+    if d == K:
+        continue
+    for i in range(4):
+        ny = y + dy[i]
+        nx = x + dx[i]
+        if 0 <= ny < H and 0 <= nx < W and dis[ny][nx] == -1 and maze[ny][nx] == ".":
+            dis[ny][nx] = d + 1
+            alta.append([ny, nx, K])
+            pos.append([ny, nx, d + 1])
+
+ans = float('inf')
+# あとはそのまま直進して壁にぶつかるだけ
+for y, x, d in alta:
+    up = y
+    down = (H - 1) - y
+    left = x
+    right = (W - 1) - x
+    opt = ((min(up, down, left, right) + K - 1) // K) + 1
+
+    ans = min(ans, opt)
+
+print(ans)
+
+# パ研合宿2020　第2日「パ研杯2020」 B - Walking
+
+"""
+2 3
+EEE
+SSS
+
+Eなら右
+Sなら下　端にいくと終了
+
+maze[0][0] ~ maze[H][W]までいけるか
+maze[H][W]の文字をEにする
+
+最小の交換
+0-1 bfs
+0: 右(E)
+1: 下(S)
+"""
+
+H, W = getNM()
+maze = [list(input()) for i in range(H)]
+dp = [[-1] * (W + 1) for i in range(H + 1)]
+dp[0][0] = 0
+
+q = deque([[0, 0]])
+
+while q:
+    y, x = q.popleft()
+    for i in range(2):
+        ny = y + dy[i]
+        nx = x + dx[i]
+        # 細工する
+        if 0 <= y < H and 0 <= x < W and dp[ny][nx] == -1:
+            # E and 下　or S and 右
+            if (maze[y][x] == 'E') ^ (i == 0):
+                dp[ny][nx] = dp[y][x] + 1 # 変更
+                q.append([ny, nx])
+            # 正しい方向の場合
+            else:
+                dp[ny][nx] = dp[y][x]
+                q.appendleft([ny, nx])
+
+print(dp[H - 1][W])
+
+# 典型90 043 - Maze Challenge with Lack of Sleep（★4）
+
+H, W = getNM()
+S = getList()
+G = getList()
+maze = [list(input()) for i in range(H)]
+
+S[0] -= 1
+S[1] -= 1
+G[0] -= 1
+G[1] -= 1
+
+q = deque([[-1, S[0], S[1], -1]])
+dp = [[float('inf')] * W for i in range(H)]
+dp[S[0]][S[1]] = -1
+while q:
+    d, y, x, dir = q.popleft()
+    for i in range(4):
+        ny = y + dy[i]
+        nx = x + dx[i]
+        if 0 <= ny < H and 0 <= nx < W and maze[ny][nx] == '.':
+            if dir == i:
+                # ここ > ではなく >= (距離d, dir == 0と距離d, dir == 1は価値が違う)
+                if dp[ny][nx] >= d:
+                    dp[ny][nx] = d
+                    q.appendleft([d, ny, nx, i])
+            # 方向を変える場合最初のワンステップを+1する
+            else:
+                if dp[ny][nx] >= d + 1:
+                    dp[ny][nx] = d + 1
+                    q.append([d + 1, ny, nx, i])
+
+print(dp[G[0]][G[1]])
