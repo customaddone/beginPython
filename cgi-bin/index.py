@@ -70,12 +70,12 @@ l = set()
 
 for i in range(n_k):
     l.add(K[i])
-left = 36 - len(l)
+left = 0
 
 prev = [-1] * 37
 prev[0] = 0
 
-for i in range(n_s):
+for i in range(n_s - 1, -1, -1):
     next = [0] * 37
     # 探索するかしないか
     flag = False
@@ -100,9 +100,8 @@ for i in range(n_s):
                     next[k] += (prev[j] + 1 + 2 * (k - j)) / left
 
     if not flag:
-        left -= 1
-        l.add(S[i])
+        left += 1
+        (S[i])
 
+    print(prev, next)
     prev = [i if i > 0 else -1 for i in next]
-
-print(sum(prev))
