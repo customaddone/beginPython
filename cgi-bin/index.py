@@ -54,6 +54,12 @@ j文字わからない場合の期待値は求められる
 
 完全にわかっているもの、何文字見えているか
 現在まで文字sが確定で見えていて、さらにj文字わかっている
+j: すでにわかってるもので対応 left - j: また探す
+
+確定　にあった　j, leftは変化しない
+未確定　にあった jが一個減る leftが一個減る
+なかった jを探索する　増える
+leftは今回　確定ではないものであれば減る
 """
 
 S = input()
@@ -66,11 +72,37 @@ for i in range(n_k):
     l.add(K[i])
 left = 36 - len(l)
 
-prev = [0] * 36
+prev = [-1] * 37
+prev[0] = 0
 
-for i in range(1, n_s + 1):
-    next = [0] * 36
-    for j in range(36):
-        if S[i] in l:
-            left[j] += (prev[j] + 1)
+for i in range(n_s):
+    next = [0] * 37
+    # 探索するかしないか
+    flag = False
+    if S[i] in l:
+        flag = True
+
+    for j in range(left + 1):
+        if prev[j] < 0:
+            continue
+        # 確定
+        if flag:
+            next[j] += (prev[j] + 1)
+        # 確定ではない
         else:
+            # 遷移先 left通りある
+            for k in range(left):
+                # 未確定の中にあった j個
+                if k < j:
+                    next[j - 1] += (prev[j] + 1) / left
+                # なかった left - j個
+                else:
+                    next[k] += (prev[j] + 1 + 2 * (k - j)) / left
+
+    if not flag:
+        left -= 1
+        l.add(S[i])
+
+    prev = [i if i > 0 else -1 for i in next]
+
+print(sum(prev))
