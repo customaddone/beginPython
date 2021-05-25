@@ -29,21 +29,39 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
+# codeforces round722 C - Parsa's Humongous Tree
+
 """
-各集合について
-(maxy - miny + 1) * (maxx - minx + 1) の領域内の点の数をかぞえあげる
-最大N
-全ての部分集合は2^N個あるが、長方形の領域がダブル場合がある
-
-もしx座標だけでいいのなら
-[1, 2, 3, 4] 両端を決める その内部にある点があるかないか
-
-各頂点が何回含まれるかを見る
-自身がついているなら必ず含まれる
-自身がついてない場合は？
-
-上下左右のみを2^Nしたやつ　- 右上のみ - 右下のみ...がいらないやつ
+point v has two integer l, r
+全ての辺について両端の点の絶対値を求める
+これを最大化したい
+普通に全探索するか　頂点0から始めてOKか
+dfsでもしてみるか　l, rのどちらか一方
+0をlにした時、rにした時
+絶対値はリニアーになっている
+ジグザグに走っていけばいいが
 """
 
-N = getN()
-P = [getList() for i in range(N)]
+T = getN()
+for _ in range(T):
+    N = getN()
+    ran = [getList() for i in range(N)]
+    E = [[] for i in range(N)]
+    for i in range(N - 1):
+        a, b = getNM()
+        E[a - 1].append(b - 1)
+        E[b - 1].append(a - 1)
+
+    def dfs(u, p):
+        lef = 0
+        rig = 0
+        for v in E[u]:
+            if v != p:
+                c_l, c_r = dfs(v, u)
+                lef += max(abs(ran[u][0] - ran[v][0]) + c_l, abs(ran[u][0] - ran[v][1]) + c_r)
+                rig += max(abs(ran[u][1] - ran[v][0]) + c_l, abs(ran[u][1] - ran[u][1]) + c_r)
+
+        return lef, rig
+
+    ans = dfs(0, -1)
+    print(max(ans))
