@@ -506,3 +506,55 @@ def half_knap(items, const):
         ans = max(ans, v + R[-1][0])
 
     return ans
+
+N, K, P = 40, 20, 100
+I = [1, 3, 1, 3, 4, 1, 3, 5, 5, 3, 3, 4, 1, 5, 4, 4, 3, 1, 3, 4, 1, 3, 2, 4, 4, 1, 5, 2, 5, 3, 1, 3, 3, 3, 5, 5, 5, 2, 3, 5]
+
+# マージ型
+# 個数がcount個でlim以下のものがいくつあるか
+def half_knap2(items, count, lim):
+    def merge(A, X): # merge A and A + X
+        B = []
+        i = 0
+        for k, v in A:
+            while A[i][1] + X < v:
+                B.append([A[i][0] + 1, A[i][1] + X])
+                i += 1
+            B.append([k, v])
+        # 残ったものを吐き出す
+        while i < len(A):
+            B.append([A[i][0] + 1, A[i][1] + X])
+            i += 1
+        return B
+
+    L = [[0, 0]]
+    R = [[0, 0]]
+    for item in items[:20]:
+        L = merge(L, item)
+    for item in items[20:]:
+        R = merge(R, item)
+
+    l_l = [[] for i in range(21)]
+    for k, v in L:
+        l_l[k].append(v)
+    r_l = [[] for i in range(21)]
+    for k, v in R:
+        r_l[k].append(v)
+
+    ans = 0
+    for i in range(21):
+        for j in range(21):
+            if i + j != count:
+                continue
+            g_l = l_l[i]
+            g_r = r_l[j]
+            index = len(g_r)
+
+            for l in g_l:
+                while index and l + g_r[index - 1] > lim:
+                    index -= 1
+                ans += index
+
+    return ans
+
+print(half_knap2(I, K, P))

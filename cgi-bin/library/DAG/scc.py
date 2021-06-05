@@ -94,3 +94,53 @@ for v in range(N):
     ans[topo[v]].append(v)
 for a in ans:
     print(len(a), *a)
+
+# ARC111 D - Orientation
+N, M = getNM()
+E = [getList() for i in range(M)]
+C = getList()
+
+G = [[] for _ in range(N)]
+ans = [0] * M
+
+for i in range(M):
+    a, b = E[i]
+    a -= 1
+    b -= 1
+    if C[a] < C[b]:
+        ans[i] = '<-'
+    elif C[a] > C[b]:
+        ans[i] = '->'
+    # = の時のみサイクル　これでdfs木を作る
+    else:
+        G[a].append([i, b])
+        G[b].append([i, a])
+
+ignore = [0] * N
+
+### 強連結なサイクルはdfs木で作ろう ###
+
+def dfs(u, p):
+    for i, v in G[u]:
+        # 記録してないなら
+        if ans[i] == 0:
+            a, b = E[i]
+            a -= 1
+            b -= 1
+            if u == a:
+                ans[i] = '->'
+            else:
+                ans[i] = '<-'
+            if ignore[v] == 0:
+                ignore[v] = 1
+                dfs(v, u)
+
+###################################
+
+for i in range(N):
+    if ignore[i] == 0:
+        ignore[i] = 1
+        dfs(i, -1)
+
+for a in ans:
+    print(a)

@@ -19,7 +19,7 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-
+sys.setrecursionlimit(1000000)
 INF = float('inf')
 eps = 10 ** (-10)
 dy = [0, 1, 0, -1]
@@ -29,377 +29,379 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# ARC021 B - Your Numbers are XORed...
+# CODE FESTIVAL 2016 Final D. Pair Cards
 
 """
-2 010 + 4 100 = 6 110
-3 0011 + 12 1100 = 15 1111
-
-元のA:{A1, A2...}を知りたい
-Bi = Ai xor Ai+1
-Bi+1 = Ai+1 xor Ai+2
-Bi xor Bi+1 = Ai xor Ai+1 xor Ai+1 xor Ai+2
-B1 xor B2 xor...Bn-1 = Ai xor An ?
-Bn = An xor A1
-
-B1 xor B2 xor...Bn = A1 xor A1 = 0 ?
-該当する数列が存在するならこれは成立つ
-B1 ^ A1 = A2
-B2 ^ A2 = B2 ^ (B1 ^ A1) = A3
-"""
-
-L = getN()
-B = getArray(L)
-
-now = B[0]
-for i in range(1, L):
-    now ^= B[i]
-
-if not now:
-    # A1は辞書順最小なので0に
-    a = 0
-    for i in range(L):
-        print(a)
-        a ^= B[i]
-else:
-    print(-1)
-
-# ABC098 D - Xor Sum 2
-# 連続する区間の長さを答える　尺取り
-
-N = getN()
-A = getList()
-
-l, ans, xo, total = 0, 0, 0, 0
-
-for r in range(N):
-    xo ^= A[r]
-    total += A[r]
-
-    # xo == totalになるまでA[l]で引き続ける
-    while xo < total:
-        xo ^= A[l]
-        total -= A[l]
-        l += 1
-
-    ans += r - l + 1
-
-print(ans)
-
-# 第五回ドワンゴからの挑戦状 B - Sum AND Subarrays
-
-"""
-N <= 1000
-連続部分列は全て取り出せる
-どうやってK個を選ぶか
-
-optを達成できるか
-bit数が大きい方が絶対正義
-とにかく大きいbitを立てる
-"""
-
-N, K = getNM()
-A = getList()
-
-l = []
-for i in range(N):
-    now = 0
-    for j in range(i, N):
-        now += A[j]
-        l.append(now)
-
-flag = 0 # フラグを強化していく
-
-# フラグiが建っているものを集める
-for i in range(60, -1, -1):
-    opt = flag | (1 << i)
-    cnt = 0
-    for j in range(len(l)):
-        if l[j] & opt == opt:
-            cnt += 1
-    if cnt >= K:
-        flag |= (1 << i)
-
-print(flag)
-
-
-# ABC117 D - XXOR
-"""
-K以下
-Kを使えば最強でない？
-7 ^ 1 = 6 7 ^ 6 = 1 7 ^ 3 = 4となり弱い
-i桁目についていくつフラグが立つか
-Kが1ならA内の0の数だけ
-Kが0ならA内の1の数だけ
-
-とにかく大きいフラグを建てたい
-
-1: 001
-6: 110
-3: 011
-
-2 ** 2桁目について 0のが多いので立てる
-2 ** 1桁目について 1のが多いので立てない
-・フラグは強化していく方針　なるべく大きいフラグを立てる
-・なるべくフラグは建てない　cnt > N // 2の時
-"""
-
-N, K = getNM()
-A = getList()
-
-flag = 0
-ans = 0
-for bi in range(62, -1, -1): # bitは最大60ぐらいやればいい
-    cnt = 0
-    for i in range(N):
-        cnt += (not A[i] & (1 << bi))
-    if cnt > N // 2 and flag + 2 ** bi <= K: # フラグを立てる
-        flag += 2 ** bi
-        ans += (cnt * 2 ** bi)
-    else:
-        ans += ((N - cnt) * 2 ** bi)
-
-print(ans)
-
-# ABC121 D - XOR World
-A, B = getNM()
-# bit1桁目のフラグの個数
-# 周期は2 ** 1
-# 0と1が交互に
-# bit2桁目のフラグの個数
-# 周期は2 ** 2
-flags1 = [0] * 61
-flags2 = [0] * 61
-# 1 ~ nまでに各桁のフラグが何本立つか計算する関数
-def bitflag(n, flaglist):
-    if n > 0:
-        for i in range(1, 61):
-            split = 2 ** i
-            flag1 = (n // split) * (split // 2)
-            flag2 = max(n % split + 1 - (split // 2), 0)
-            flaglist[i] += flag1 + flag2
-# 1 ~ A - 1について（Aは範囲に入っているため）
-bitflag(A - 1, flags1)
-bitflag(B, flags2)
-for i in range(61):
-    flags2[i] -= flags1[i]
-ans = 0
-# 奇数ならフラグが立つ
-for i in range(61):
-    if flags2[i] % 2 != 0:
-        ans += 2 ** (i - 1)
-print(ans)
-
-# ABC147 D - Xor Sum 4
-
-N = getN()
-A = getList()
-# Aの各数字の（２進数における）各桁ごとに分解して排他的論理和を求める
-# 例
-# 3
-# 1 2 3 →
-# 1, 10, 11
-# 2 ** 0の桁について(1 ^ 2) 1 ^ 0 = 1,(1 ^ 3) 1 ^ 1 = 0,(2 ^ 3) 0 ^ 1 = 1
-# 2 ** 1の桁について 0(1の2 ** 1の桁は0) ^ 1 = 1, 0 ^ 1 = 1, 1 ^ 1 = 0
-# 各桁について2 ** iの桁が1の数字の選び方 * 2 ** iの桁が0の数字の選び方 * 2 ** iを
-# 足し合わせる
-lista = [[0, 0] for i in range(61)]
-# bitの各桁が１か０かをlistaに収納
-def splitbit(n):
-    for i in range(61):
-        if n & (1 << i):
-            lista[i][1] += 1
-        else:
-            lista[i][0] += 1
-for i in A:
-    splitbit(i)
-ans = 0
-for i in range(61):
-    ans += ((lista[i][0] * lista[i][1]) * (2 ** i)) % mod
-print(ans % mod)
-
-# ARC021 B - Your Numbers are XORed...
-L = getN()
-B = getArray(L)
-B_xor = B[0]
-for i in range(1, L - 1):
-    B_xor ^= B[i]
-
-# B_xor ^ a1(aの最後) ^ a1 == Bの最後なら成立
-# この時aがどんな値であろうと条件が成立する
-if B_xor == B[-1]:
-    now = 0
-    print(now)
-    # a2 = B1 ^ a1
-    # a3 = B2 ^ a2
-    for j in range(L - 1):
-        now = B[j] ^ now
-        print(now)
-else:
-    print(-1)
-
-# Tenka1 Programmer Contest D - IntegerotS
-
-"""
-Aのbitの総和がK以下になるように整数を集める
-ナップサック問題っぽいがAもBもおおきい
-貪欲に行く
-Kを超えた場合でも、他のでフラグを消せればいい
-
-まず全部足し、フラグを抜いていく？
-dpっぽいが2 ** 30の30を使う？
-フラグの数が奇数か偶数か
-
-bitwise or どちらかのビットが1なら1、そうでなければ0
-一度立てたフラグは消えない
-
-Kの各bitについて
-フラグを立てるか立てないか
-0 のbitlengthは0
-1 のbitlengthは1 (右から1番目に最初のフラグが立っている)
-2 のbitlengthは2
-3 のbitlengthは2
-
-[0, 0, 8, 4, 0, 0, 0,
-むやみにフラグを立てないように
-
-K = 101にどう従っていくか
-1本目を1にするなら それ以降の条件にも従ってもらう
-
-Kと比べた時に何本目まで従っているか
-K = 101
-a = 10の場合左から2番目が従えてない
-[[3, 3, 1], [4, 4, -1], [2, 5, 1]]
-
-別に30回回していい
-一本目のKについて
-立てるなら
-Kにフラグが立ってなかったら
-立ててはいけない
-
-K以下の値の2進数換算は
-Kのi番目の1のフラグを1 → 0にし、それ以下を自由にしたもの　である
-フラグの数が多い方がいいので
-整数を集めてできる数をXとすると
-K = 11010の場合は
-X = 01111, 10111, 11001 を見ていけばいい
-足してXになる数を求めればいい
-
-K以下の〜について
-最も有利な条件を並べてそれぞれで計算
-"""
-
-N, K = getNM()
-que = [getList() for i in range(N)]
-
-ans = 0
-# 足すとKのフラグになる
-opt = 0
-for a, b in que:
-    if K | a == K:
-        opt += b
-ans = max(ans, opt)
-
-# 足すとXのフラグになる
-for i in range(31, 0, -1):
-    opt = 0
-    if K & (1 << i): # フラグが立っていれば
-        X = (K ^ (1 << i)) | ((2 ** i) - 1) # 1 << iのフラグを消す + それ以下を全て1に
-        for a, b in que:
-            if X | a == X: # フラグの本数が変わらなければ
-                opt += b
-
-        ans = max(ans, opt)
-
-print(ans)
-
-# ZONE F - 出会いと別れ
-
-"""
-ワープゲートを作る
-Nは2の冪乗　0 ~ N - 1 完全二分木
-AはN以下　a ^ bがどれかに引っかかるとNG
-
-4 1
-3 の場合
-1 ^ 2 = 3であるため作れない
-
-0, 1... についてペアの結び方が必ず一つはある
-他の全てと結ぶとどのようなxor ができるだろう
-
-0: 1 ~ N - 1そのまま
-1: 0(0), 11(10), 10(11), 101(100),
-結べる限りどんどん繋いでいく 各O(1)で
-
-N^2解は
-0と結べるものを結ぶ　結んだものについてさらに結べるものと結んでいく
-0と結べるもの　がO(1)でパッと出れば
-ある共通の属性を持つものは結べるものが似てくるのでは
-
-ヒープキュー とか使うかも
-小さい方か大きい方から順にやるか
-
-0とN - 1は重要
-Aiがない惑星は0と繋げるし、N - Ai - 1にない惑星はN - 1と繋げる
-0 1 2 3 4 5 6 7
-7 6 5 4 3 2 1 0 どちらか一方がなければ繋げる
-
-頂点を出すごとにリストAに操作を加えて
-小さい順から順番に？
-必ず相手がいる状態に
-
-あれば繋げる
-
-逆にないAiで結べるペアは？
-
-1個しか結べない　が半分以上あればout
-残ってるものを探索する
-
-全域木になる条件： 0とiが繋がるか
-Aじゃないやつの集合をaとすると
-0 ^ a1: 0とa1が繋がる
-0 ^ (a1 ^ a2): 0と(a1 ^ a2)が繋がる
-つまり a内の要素をxorして1 ~ N - 1まで全ての数字を作れるなら
-0からいくつかの数字を経由してiに繋げる
-逆に数字を作れないなら0からiへのルートはない
-
-a内の数字を使って全ての要素を作れるか
-2 ** nの位置にフラグがあればそこをつけたり消したりできる
-最高次が2**nのものを探す
-なくても上の次数2つを相殺させればrankが一つ下のを作れるから
+個数の最大値を求める
+ペア
+最も条件がきついものからペアにしていく
+条件　どちらか
+同じ整数
+Mの倍数になる
+Mが奇数の場合と偶数の場合
+奇数の場合
+mod mが
+0: 自身と
+i: m - iと
+偶数の場合
+0, m // 2: 自身と
+i: m - iと
+効率のいい組み合わせ
+きつい順から
+min(len(i), len(m - i))になるが差分については同じ数同士をペアにできる
+同じ数がグループにある数はその同じ数と結ぶことができるし、m - iのグループの数と結ぶことも
+できる　条件は緩い
+そうではない条件が厳しいものを優先して結ぶ
 """
 
 N, M = getNM()
-ok = [1] * N
-for A in getList():
-    ok[A] = False
-base = [] # 元の数字
-elim = [] # 消す用
+X = getList()
 
-# Aiではないもの小さい順に全て試す
-for x in range(1, N):
-    if not ok[x]:
+modulo = [[] for i in range(M)]
+for x in X:
+    modulo[x % M].append(x)
+
+ans = (len(modulo[0]) // 2) + (len(modulo[M // 2]) // 2) * (M % 2 == 0)
+half = M // 2 if M % 2 == 0 else (M // 2) + 1
+
+for i in range(1, half):
+    pair1 = 0
+    dict1 = defaultdict(int)
+    for j in modulo[i]: # 同じ数
+        if dict1[j] == 1:
+            dict1[j] -= 1
+            pair1 += 1
+        else:
+            dict1[j] += 1
+
+    pair2 = 0
+    dict2 = defaultdict(int)
+    for j in modulo[M - i]:
+        if dict2[j] == 1:
+            dict2[j] -= 1
+            pair2 += 1
+        else:
+            dict2[j] += 1
+
+    if len(modulo[i]) > len(modulo[M - i]): # pair1を使う
+        ans += len(modulo[M - i])
+        diff = abs(len(modulo[i]) - len(modulo[M - i])) // 2
+        ans += min(diff, pair1)
+    else:
+        ans += len(modulo[i])
+        diff = abs(len(modulo[i]) - len(modulo[M - i])) // 2
+        ans += min(diff, pair2)
+
+print(ans)
+
+# AGC040 B - Two Contests
+
+"""
+数え切れないほどたくさんの人がコンテストに参加する
+N問の問題がある
+区間[L, R]の人は正解する　この区間は広いのでセグ木使えない
+数学問か？
+
+N問をいずれかのコンテストで出す　どちらのコンテストも１問以上出す
+できるだけダブりを出す
+最大の値を出す　二分探索か
+貪欲っぽい
+[[1, 4], [2, 5], [4, 7], [5, 8]] の時
+[1, 4], [2, 5] と [4, 7], [5, 8]に分ける
+[1, 4]を選択する場合、スタートが5以上になるものは選ばない
+最初の一つを選ぶと上限が決まる
+片方のグループは上限を見て、もう片方は下限を見る？
+
+場合によっては片方にいらないものを押し付けることも
+多分貪欲
+区間スケジューリングはダブらないようにやった
+[[4, 17], [3, 18], [2, 19], [1, 20]]
+二分探索がしたい　だめです
+上限と下限が独立ではない
+
+１つのコンテストのmaxが一番広い幅を選んだ時
+[1, 20] これに加算していってもう一つのコンテストを緩和していく
+
+Liの最大値をとるindexをp, Riの最小値をとるindexをq
+片方にいらないものを押し付ける
+pとqが同じグループ もう片方は最大の幅を取るもの
+pとqが違うグループ
+lを昇順に並べて先頭からi個目までをqの方に
+それ以外をqの方に置く
+"""
+
+N = getN()
+Q = [getList() for i in range(N)]
+Q.sort(reverse = True, key = lambda i:i[1])
+Q.sort()
+
+max_l = N - 1 # ソートしているので最初から出ている
+min_r = 0
+for i in range(N): # min_rのインデックスを探す
+    if Q[i][1] <= Q[min_r][1]:
+        min_r = i
+
+# same(max_l, min_r)
+dmax = 0
+for i in range(N):
+    if i == max_l or i == min_r: # 飛ばす
         continue
-    y = x
-    for b in elim:
-        # 小さい数字を使ってフラグを消していく
-        # 立っているフラグが消えるならy ^ bが選ばれる
-        y = min(y, y ^ b)
-    # 最上位のフラグが残ってるなら xをbaseとして利用できる
-    if y:
-        base.append(x)
-        elim.append(y)
+    # 最大の幅を取るものを探す
+    if Q[i][1] - Q[i][0] > Q[dmax][1] - Q[dmax][0]:
+        dmax = i
+d1 = max(0, Q[min_r][1] - Q[max_l][0] + 1) # pとqが同じグループにある方の楽しさ
+d2 = max(0, Q[dmax][1] - Q[dmax][0] + 1)
+ans = d1 + d2
 
-def lg(x):
-    return x.bit_length() - 1
+# !same(max_l, min_r)
+# 最小のrを取る地点から順に
+# それ以前はmin_rの幅より広くなるので無視して良い
+min_r_list = [Q[i][1] for i in range(N)]
+for i in range(N - 2, -1, -1):
+    min_r_list[i] = min(min_r_list[i], min_r_list[i + 1])
 
-if len(base) != lg(N):
-    exit(print(-1))
+q_group = [float('inf'), Q[min_r][1]]
+p_group = [Q[max_l][0], 0]
+# 最初が一番q_groupの幅が広い
+for i in range(min_r, max_l):
+    left, right = Q[i]
 
-# 0から順に繋いでいく
-xor = 0
-for x in range(1, N):
-    print(xor, end=' ')
-    # base[i]: 2 ** iを担当するx
-    xor ^= base[lg(x & -x)] # x & -x: xの一番下のフラグ
-    print(xor)
+    q_group = [left, Q[min_r][1]] # i番目まで
+    p_group = [Q[max_l][0], min_r_list[i + 1]] # i + 1番目以降
+    d1 = max(0, p_group[1] - p_group[0] + 1)
+    d2 = max(0, q_group[1] - q_group[0] + 1)
+    ans = max(ans, d1 + d2)
+
+print(ans)
+
+# ABC093 D - Worst Case
+
+"""
+たくさんの人がコンテストに参加している
+２回のコンテストに参加した
+参加者のスコアは２つのコンテストの順位の掛け合わせ
+高橋くんは１回目:A 2回目:Bだった
+高橋くんよりスコアの小さい参加者（ランクが上）の最大値を求めよ
+
+二分探索したいが
+√Aであるかも
+条件を満たすのは？
+無駄にならないペアの作り方は貪欲でやった
+該当する人の順位をa, bとすると
+a < A or b < Bである必要が
+a < A and b < Bにするのは明らか無駄
+
+1  4
+   3
+   2
+   1
+
+b < B
+b = 1の時、ペアにできるのはb = 2, 3
+b = 2の時、ない
+
+10, 5の時
+aの候補[1, 2, 3, 4, 5, 6, 7, 8, 9]
+bの候補[1, 2, 3, 4]
+
+a = 1の時 b = 6 ~ 49
+a = 2の時 b = 6 ~ 24
+a = 3の時 b = 6 ~ 16
+a = 4の時 b = 6 ~ 12
+a = 5の時 b = 6 ~ 9
+a = 6の時 b = 6 ~ 8 8をとる
+a = 7の時 b = 6 ~ 7 7をとる
+a = 8の時 b = 6 6をとる
+
+b = 1の時 a = 11 ~ 49
+b = 2の時 a = 11 ~ 24
+b = 3の時 a = 11 ~ 16
+b = 4の時 a = 11 ~ 12
+
+キツイ順からペアにしていく
+全部ペアが作れるので12通り
+ただしA <= 10 ** 9
+せめて√A
+明らかに探索しなくていいものがある
+cntしていくか？　鳩の巣原理
+a = 8 b = 6 ok cnt += 1
+a = 7 b = 6, 7 ok cnt += 1 ダメなら+= 1しない
+aの数が減ってbの範囲が拡張される（されない場合もある）
+ダメならcnt += 1しない
+ずっと拡張されない場合がある　その場合は飛ばせるのでは
+aの数が√A * Bを越えると商が1刻みになる
+A = 10 B = 5の場合
+a = 1 ~ 7　お気に入りの大きい数
+a = 8 a = 7で7を選んだのであとは6しかない
+
+b = 1 ~ 4　お気に入りの大きい数字
+A = 1, B = 4の時
+√3 = 1.7... b = 1の時は選べる
+b = 2の時 bでa = 3を選んだ
+
+すでに最大マッチングができていた場合を考える
+対称性よりa, bの最大値は同じ値
+aの候補
+1, 2, 3... xからAを除いたもの
+bの候補
+1, 2, 3... xからBを除いたもの
+をaの最大値とbの最大値とでマッチングさせる
+a * bの最大値は中央らへんにある
+a, bのどちらかがx // 2, x - (x // 2)をとる
+"""
+
+Q = getN()
+query = [getList() for i in range(Q)]
+
+def kth(m, k):
+    if m >= k:
+        return m + 1
+    else:
+        return m
+
+def wantmax(m, A, B): #mコとった時の最大値計算(真ん中らへんを探索)
+    ret = 0
+    for i in range(-10, 10): # 適当に探索
+        now = m // 2 + i
+        if 0 < now <= m:
+            ret = max(ret , kth(now, A) * kth(m - now + 1, B))
+
+    return ret
+
+for A, B in query:
+
+    ok = 0
+    ng = A * B
+
+    while  ng - ok > 1:
+        m = (ok + ng) // 2
+        ret = wantmax(m, A, B)
+
+        if ret >= A * B:
+            ng = m
+        else:
+            ok = m
+
+    print(ok)
+
+# ARC046 C - 合コン大作戦
+# Cが小さい方が条件は厳しいし、Dが大きい方が条件は厳しいので
+
+"""
+maxflowは無理　貪欲でいくしか
+選択肢の少ない方から
+A: income B: want
+C: income D: want
+
+もしBとCだけなら？
+Bの小さい順から処理する or Bの大きい順から処理する
+b以上の最も小さいcとペアにする
+B.sort()
+C.sort(reverse = True)
+
+for b in B:
+    while C and C[-1][0] < b:
+        C.pop()
+    C.pop() # b <= c
+    ans += 1
+
+AとDの要素を考慮すると？
+aとdの条件について満たさない場合がある
+b1は後ろ全てについてB, Cの条件を満たす
+しかしAとDについて条件を満たさない
+上位互換を探す
+[A, B]と[A+1, B]
+[A, B]と[A, B-1]を比べる
+[A, B]と[A+1, B]
+選んでもらう可能性のある女性の数が増える
+[A, B]と[A, B-1]
+男性側の選択肢が増える
+
+Aの小さい順にソート
+後ろの人ほど相手側の女性の選択肢が増える
+2 4 [[6, 2], [5, 3]]
+3 5 [[6, 2], [5, 3]]
+4 5 [[6, 2], [5, 3]]
+
+cが厳しい（小さい順）に処理する
+bを増やしていくごとに脱落する女性が出てくる
+脱落する女性は以前の男性と結ばれる
+男3人とも[6, 2], [5, 3]の女性と結べる
+次の周回で落ちたやつは以前の男としか結べない　できるだけ選びたい
+脱落するたびに以前の男から男を選ぶ　以前の男は整理しておく
+10 [-7, -2, -4]
+5 [-7, -2, -4]
+3 [-7, -2, -4]
+1 [-7, -2, -4] この10, 5, 3...はここでしか使えない
+後々のことを考えると条件を満たす最小のものを引っ張る必要がある
+BITしていいですか
+"""
+
+N, M = getNM()
+men = [getList() for i in range(N)] + [[float('inf'), float('inf')]]
+women = [getList() for i in range(M)]
+
+men.sort(key = lambda i:i[1])
+women.sort(reverse = True)
+
+# bitを立てる aとdの値は先読みさせとく
+ar1 = [i[0] for i in men]
+ar2 = [i[1] for i in women]
+array = list(set(sorted(ar1 + ar2)))
+bit = BST(len(array), array)
+
+ans = 0
+for a, b in men:
+    # ここで脱落する女を選ぶ
+    gone_women = []
+    while women and women[-1][0] < b:
+        c, d = women.pop()
+        gone_women.append(d)
+    # ここで男を選ぶ d <= aになるように
+    # 条件が厳しいもの（dが大きい順)に結んでいく
+    gone_women.sort(reverse = True)
+    for g in gone_women:
+        opt = bit.up_min(g)
+        if opt == float('inf'):
+            continue
+        # ペアにできるなら
+        bit.erase(opt)
+        ans += 1
+
+    # 男収納
+    bit.add(a)
+
+print(ans)
+
+# codeforces round 723 C2. Potions (Hard Version)
+# 貪欲にやっていき、都度過去のものと現在のものを交換していく
+
+N = getN()
+A = getList()
+neg = []
+now = 0
+ans = 0
+
+for i in range(N):
+    # neg
+    if A[i] < 0:
+        if now + A[i]>=0:
+            now += A[i]
+            heappush(neg, A[i])
+            ans += 1
+
+        # though now + A[i] < 0,
+        # you may be able to replace smallest added potion ever before into new one.
+        elif neg:
+            short = heappop(neg)
+            if short < A[i]:
+                now += (A[i] - short)
+            heappush(neg, max(A[i], short))
+
+    # non-negative
+    # you should simply drink this potion
+    else:
+        ans += 1
+        now += A[i]
+
+print(ans)
