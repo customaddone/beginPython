@@ -32,43 +32,8 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-L = []
-bi = [[0] * 70 for i in range(N - 1)]
-for i in range(N - 1):
-    u, v, w = getNM()
-    L.append([u - 1, v - 1])
-    for j in range(70):
-        bi[i][j] = w % 2
-        w //= 2
-    E[u - 1].append(v - 1)
-    E[v - 1].append(u - 1)
-
-size = [0] * N
-par = [0] * N
-def dfs(u, p):
-    res = 1
-    par[u] = p
-    for v in E[u]:
-        if v != p:
-            res += dfs(v, u)
-
-    size[u] = res
-    return res
-
-dfs(0, -1)
-for i in range(N - 1):
-    u, p = L[i]
-    # 逆なら 前に子要素uが来るように
-    if par[p] == u:
-        L[i][0] = p
-        L[i][1] = u
-
-po = [1]
-for i in range(70):
-    po.append((po[-1] * 2) % mod)
-
-# 各辺について探索
-ans = 0
-for u, _ in L:
-    way = size[u] * (N - size[u])
-    print(u, _, way)
+"""
+ダイクストラっぽい
+tが増えると渋滞が緩和される
+"""
+N, M = getNM()
