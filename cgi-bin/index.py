@@ -29,71 +29,105 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# ここの設定を変えて使う
-#####segfunc#####
-def segfunc(x, y):
-    return max(x, y)
-#################
 
-#####ide_ele#####
-ide_ele = 0
-#################
+def scc(N, E):
+    # 逆方向のグラフ
+    E_rev = [[] for i in range(N)]
+    for u in range(N):
+        for v in E[u]:
+            E_rev[v].append(u)
 
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+    # orderを作る　深い頂点からorderにappendされる
+    order = []
+    used = [0] * N
+    def dfs(u):
+        used[u] = 1
+        for v in E[u]:
+            if not used[v]:
+                dfs(v)
+        order.append(u)
 
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
+    # 上で作ったorderを元に有向グラフの末尾から逆行する
+    # もしサイクルがあれば行き先がある
+    group = [0] * N
+    def r_dfs(u, col):
+        group[u] = col
+        used[u] = 1
+        for v in E_rev[u]:
+            if not used[v]:
+                r_dfs(v, col)
+    # order作成
+    for i in range(N):
+        if not used[i]:
+            dfs(i)
 
-    def query(self, l, r):
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+    # 初期化
+    used = [0] * N
+    label = 0
+    # 有向グラフの末尾候補から探索していく
+    # ラベルの番号の昇順がトポロジカルな順序
+    for i in order[::-1]:
+        if not used[i]:
+            r_dfs(i, label)
+            label += 1
 
+    # label: グループの個数
+    # group: 頂点iのグループの番号
+    return label, group
+
+# 典型90 062 - Paint All（★6）
+# N個全てのアイテムを使う　つまりどの順番でアイテムを使うか
+# ボールiが白いままであれば、Aj = i or Bj = iなアイテムIjを使える
+# つまりアイテムiを使うのはこうしたアイテムより後である方がいい
+# 最後のボールは必ずAi = i or Bi = iである必要がある
+
+# グラフ問題にできる
+# これをAi = i or Bi = iのアイテムから流していって全て巡れるか
+# 適当にやるとO(N^2)かかる
+# なので上流から流した方がいい　上流？
+# →SCCしてトポソするとDAGになるのでやる
+
+# 強連結トポソ
 N = getN()
-A = getList()
+E = [set() for i in range(N)]
+P = []
+for i in range(N):
+    a, b = getNM()
+    P.append([a - 1, b - 1])
+    E[a - 1].add(i)
+    E[b - 1].add(i)
+E = [list(i) for i in E]
 
-# O(NlogN)
-def lis_len(ar):
-    n = len(ar)
-    seg = SegTree([0] * (n + 1), segfunc, ide_ele)
-    res = [0] * n
-    for i in range(n):
-        # j < i and A[j] < A[i]となるA[j]の最大値 + 1
-        val = seg.query(0, ar[i])
-        res[i] = val + 1
-        seg.update(ar[i], max(seg.query(ar[i], ar[i] + 1), val + 1))
-    return res
+# トポソ
+cnt, topo = scc(N, E)
+order = [[] for i in range(cnt)]
+for i in range(N):
+    order[topo[i]].append(i)
 
-opt_a = lis_len(A) # 前からlisした時
-opt_b = lis_len(A[::-1])[::-1] # 後ろからlisしたとき
+# あとはトポソした通りに流す
+ignore = [0] * N
+ans = []
+for o in order:
+    for i in o:
+        # そもそもスタート地点じゃない or もう見た
+        if (i != P[i][0] and i != P[i][1]) or ignore[i] == 1:
+            continue
+        # iは未探索なので
+        q = deque([i])
+        ignore[i] = 1
+        ans.append(i)
 
-ans = 0
-for a, b in zip(opt_a, opt_b):
-    ans = max(ans, a + b - 1)
+        while q:
+            u = q.popleft()
+            for v in E[u]:
+                if ignore[v] == 0:
+                    # 未探索なら
+                    ignore[v] = 1
+                    ans.append(v)
+                    q.append(v)
 
-print(ans)
+if len(ans) == N:
+    for a in ans[::-1]:
+        print(a + 1)
+else:
+    print(-1)

@@ -78,6 +78,8 @@ def scc(N, E):
             r_dfs(i, label)
             label += 1
 
+    # label: グループの個数
+    # group: 頂点iのグループの番号
     return label, group
 
 # ALPC G-SCC

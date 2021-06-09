@@ -86,18 +86,21 @@ for i in A[1:]:
         L[index - 1] = i
 print(len(L))
 
-# 最大値を求値するセグ木を使い、配列ar上の全ての点について[0, i]の単調増加部分列の長さを求める
+# 配列ar上の全ての点について[0, i]の単調増加部分列の長さを求める
 # O(NlogN)
 # ar = [1, 5, 2, 3, 4]
 # lis_len(ar) = [1, 2, 2, 3, 4]
 # lis_len(A[::-1])[::-1] = [1, 2, 1, 1, 1] # 後ろからlisしたとき
 def lis_len(ar):
     n = len(ar)
-    seg = SegTree([0] * (n + 1), segfunc, ide_ele)
+    l = []
     res = [0] * n
     for i in range(n):
-        # j < i and A[j] < A[i]となるA[j]の最大値 + 1
-        val = seg.query(0, ar[i])
-        res[i] = val + 1
-        seg.update(ar[i], max(seg.query(ar[i], ar[i] + 1), val + 1))
+        index = bisect_left(l, ar[i])
+        res[i] = index + 1
+        if index == len(l):
+            l.append(ar[i])
+        else:
+            l[index] = ar[i]
+
     return res
