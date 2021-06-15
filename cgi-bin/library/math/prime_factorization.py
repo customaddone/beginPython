@@ -72,6 +72,40 @@ prime = prime + data
 # [2, 3, 5, 7, 9, 11]
 print(prime)
 
+#### エラストテネスの篩 + 素因数分解で素因数分解がさらに早くなる ###
+# 32000までの素数は3432個ぐらいしかないので10 ** 9ぐらいであれば10 ** 5回はいける
+prime = [2]
+max = 32000 # √10 ** 9
+limit = int(math.sqrt(max))
+data = [i + 1 for i in range(2, max, 2)]
+
+while limit > data[0]:
+    prime.append(data[0])
+    data = [j for j in data if j % data[0] != 0]
+prime = prime + data
+
+# 素因数分解
+def prime_factorize(n):
+    divisors = []
+    temp = n
+    for i in prime:
+        if i > int(math.sqrt(n)):
+            break
+        if temp % i == 0:
+            cnt = 0
+            while temp % i == 0:
+                cnt += 1
+                temp //= i
+            divisors.append([i, cnt])
+    if temp != 1:
+        divisors.append([temp, 1])
+    if divisors == []:
+        divisors.append([n, 1])
+
+    return divisors
+
+#######################################################
+
 # 調和級数
 # ABC170 D - Not Divisible
 # A内の全てが素数ならエラストテネスにO(N ** 2)かかる
