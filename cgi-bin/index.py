@@ -29,87 +29,138 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# ARC068 E - Snuke Line
+# 第二回日本最強プログラマー学生選手権 F - Max Matrix
+# 差分をとって数えあげ
 
 """
-約数により単調減少していきそう
-愚直にやると
-各Mにつき倍数のとこに置いていく MlogM
-各MにつきNでいくつ取れるかを見る NM
+2列の配列をいじいじする
+N * M個について、max値の合計は？
 
-二分探索とかしたいが
-各おみあげについてMが幾つの時に獲得できるか　セグメントツリーでできるか
-この区間に幾つの因数が入っているか
-l, rが全区間　これがM個ある時対応できない
-個数だけを見ていく方針で　包除原理とか
+0 0
+0 0
+各gridの持つ値は
+0 0
+0 0
 
-素数のところだけを数えることはできる　合成数のはどうする？
+10 0
+ 0 0
 
-一定間隔dで移動する時
-土産の幅がdより大きい場合は一回以上訪れる
-土産の幅がd以下の場合は最大でも1回だけ訪れる
+20 0
+ 0 0
 
-dより大きい幅の場合は単純に計算できる
-dより大きい幅について
-各点でいくつ土産の種類があるかを数え、dの倍数について数える
-最大でも1回だけ訪れる土産しかないのでダブることはない
+10 0
+20 0
 
-ダブらないように数えるのがミソ
-
-N, M = getNM()
-P = [getList() for i in range(N)]
-P.sort(reverse = True)
-
-for m in range(1, M + 1):
-    p = [i for i in P if i[1] - i[0] + 1 <= m]
-    l = [0] * (M + 1)
-    q = []
-    ans = N - len(p) # 一回以上訪れる
-    # 各倍数について調べる
-    for i in range(m, M + 1, m):
-        while p and p[-1][0] <= i:
-            heappush(q, p.pop()[1])
-        while q and q[0] < i:
-            heappop(q)
-        ans += len(q)
-    print(ans)
-
-これで答えが出るがこのままだとTLE
-pに集計されるPの要素の数はだんだんと増えていく
-mについて調べる
-区間の長さがmのものを取り出し、区間[l, r]に区間加算
-mの倍数について調べる
+10 0
+40 0
+[1][0]の値が増える
+20 * (自分より小さなAの値のかず) - 現在の値　だけ増える
+AはBにoverallするものとする
+Aは元の数より大きい~自分以下の数の個数について
+Bは元の数以上の~自分未満の数の個数について
+マイナスは
+A: Bの元の値以上~次の値未満の値について
+B: Aの元の値より大きな~次の値以下の
 """
 
-N, M = getNM()
-P = []
-for _ in range(N):
-    l, r = getNM()
-    P.append([l, r, r - l + 1])
-P.sort(key = lambda i:i[2], reverse = True)
+N, M, Q = getList()
+que = [getList() for i in range(Q)]
+# 座圧
+code = sorted(list(set([0] + [i[2] for i in que])))
+code = {code[i]: i + 1 for i in range(len(code))}
 
-#### 区間加算bit ################################
-bit1 = BIT(M)
-bit2 = BIT(M)
-# [l, r)にxを加算する
-def range_add(l, r, x):
-    bit1.add(l, x)
-    bit1.add(r, -x)
-    bit2.add(l, (-1) * x * (l - 1))
-    bit2.add(r, x * (r - 1))
-# [1 ~ a)までの値を集計する
-def range_get(a):
-    return bit2.get(a) + (a - 1) * bit1.get(a)
-################################################
+A = [0] * (N + 1)
+B = [0] * (M + 1)
+a_cnt, b_cnt = BIT(len(code)), BIT(len(code))
+a_sum, b_sum = BIT(len(code)), BIT(len(code))
+# 初期設定
+a_cnt.add(code[0], N)
+b_cnt.add(code[0], M)
 
-# 1-indexにしてある
-for m in range(1, M + 1):
-    # 区間の長さがmより小さいものについて取り出す
-    while P and P[-1][2] <= m:
-        l, r, _ = P.pop()
-        range_add(l, r + 1, 1) # [l, r + 1)について区間加算
-    ans = len(P)
-    # 各倍数について土産の数を調べる　互いにダブらない
-    for i in range(m, M + 1, m):
-        ans += range_get(i + 1) - range_get(i)
+ans = 0
+for t, x, y in que:
+    # a_cntが増える b_cntを見る
+    if t == 1:
+        # 変更前
+        bef_ind = code[A[x]]
+        a_cnt.add(bef_ind, -1)
+        a_sum.add(bef_ind, -A[x])
+        bef_p = A[x] * b_cnt.get(bef_ind + 1)
+        # 変更
+        A[x] = y
+        aft_ind = code[A[x]]
+        a_cnt.add(aft_ind, 1)
+        a_sum.add(aft_ind, A[x])
+        aft_p = A[x] * b_cnt.get(aft_ind + 1)
+        # ふえる処理
+        ans += aft_p - bef_p
+        # へる処理
+        ans -= b_sum.get(aft_ind + 1) - b_sum.get(bef_ind + 1)
+    else:
+        # 変更前
+        bef_ind = code[B[x]]
+        b_cnt.add(bef_ind, -1)
+        b_sum.add(bef_ind, -B[x])
+        bef_p = B[x] * a_cnt.get(bef_ind)
+        # 変更
+        B[x] = y
+        aft_ind = code[B[x]]
+        b_cnt.add(aft_ind, 1)
+        b_sum.add(aft_ind, B[x])
+        aft_p = B[x] * a_cnt.get(aft_ind)
+        # ふえる処理
+        ans += aft_p - bef_p
+        # 減る処理
+        ans -= a_sum.get(aft_ind) - a_sum.get(bef_ind)
     print(ans)
+
+# DigitalArts プログラミングコンテスト2012 C - Chokutter
+
+"""
+クエリを先読みしそう
+関係があるのは自分とその子要素だけ
+
+つぶやくたびに自身とフォロー先のつぶやきが1増える
+これを高速に計算　二分探索とかしたい
+
+その人がk以上呟いてるか
+それ以後全てのツイートに反応する
+
+クエリの数に限りがあるのでクエリ基準で二分探索で数えあげすればいい
+区間和は尺取りまたは二分探索を考える
+"""
+
+N, M, K = getNM()
+tw = [[] for i in range(N + 1)]
+q = []
+d = defaultdict(list)
+cnt = [0] * (N + 1)
+
+for i in range(M):
+    s = list(input().split())
+    if s[0] == 't':
+        tw[int(s[1])].append(i)
+        cnt[int(s[1])] += 1
+    else:
+        n1, n2 = int(s[1]), int(s[2])
+        if n1 > n2:
+            n1, n2 = n2, n1
+        if s[0] == 'f':
+            d[(n1, n2)].append(i)
+        else:
+            d[(n1, n2)].append(i) # すでにフォロー関係にあるのはフォローできないので
+
+# n1とn2の関係について調べる
+for (n1, n2), l in d.items():
+    l.append(inf)
+    # 奇数個目がスタート、偶数個目がゴール
+    for i in range(0, len(l), 2):
+        if l[i] == inf:
+            continue
+        # n1の発言により増えるn2の分
+        cnt[n2] += bisect_left(tw[n1], l[i + 1]) - bisect_left(tw[n1], l[i])
+        # n2の発言により増えるn1の分
+        cnt[n1] += bisect_left(tw[n2], l[i + 1]) - bisect_left(tw[n2], l[i])
+
+cnt.sort(reverse = True)
+print(cnt[K - 1])
