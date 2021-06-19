@@ -197,3 +197,35 @@ for i in range(N):
     # 1 7 1 3 10
     # inf 9 1 1 10
     # print(index, diff, lim, ok, ng)
+
+# 区間加算bit
+# ARC068 E - Snuke Line
+N, M = 3, 3
+P = [[1, 2, 2], [2, 3, 2], [3, 3, 1]]
+P.sort(key = lambda i:i[2], reverse = True)
+
+#### 区間加算bit ################################
+bit1 = BIT(M)
+bit2 = BIT(M)
+# [l, r)にxを加算する
+def range_add(l, r, x):
+    bit1.add(l, x)
+    bit1.add(r, -x)
+    bit2.add(l, (-1) * x * (l - 1))
+    bit2.add(r, x * (r - 1))
+# [1 ~ a)までの値を集計する
+def range_get(a):
+    return bit2.get(a) + (a - 1) * bit1.get(a)
+################################################
+
+# 1-indexにしてある
+for m in range(1, M + 1):
+    # 区間の長さがmより小さいものについて取り出す
+    while P and P[-1][2] <= m:
+        l, r, _ = P.pop()
+        range_add(l, r + 1, 1) # [l, r + 1)について区間加算
+    ans = len(P)
+    # 各倍数について土産の数を調べる　互いにダブらない
+    for i in range(m, M + 1, m):
+        ans += range_get(i + 1) - range_get(i)
+    print(ans)
