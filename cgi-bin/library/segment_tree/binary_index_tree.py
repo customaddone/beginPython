@@ -76,7 +76,7 @@ class BIT:
     def cum(self, l, r):
         return self.get(r) - self.get(l)
 
-    # 合計がw以下になる最大の箇所を調べる
+    # 最も近くにあるフラグの立っている場所を探す
     def lowerbound(self,w):
         if w <= 0:
             return 0

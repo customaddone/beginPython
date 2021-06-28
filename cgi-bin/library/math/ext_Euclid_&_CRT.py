@@ -113,6 +113,8 @@ cがgcd(a, b)で割り切れる
 一つ解を求めたら代入して = 0の形にする　一般項が求められる
 """
 
+# ABC186 E - Throne
+
 T = getN()
 for _ in range(T):
     N, S, K = getNM()
@@ -122,3 +124,65 @@ for _ in range(T):
         print(-1)
     else:
         print(ans[1][3] % abs(ans[1][2]))
+
+# 中国剰余定理
+# x = b1 (mod m1)
+# x = b2 (mod m2)
+# を両方満たす整数xが0 ~ m1 * m2内にただ一つ存在する
+# そのようなxを求める
+# 例 x = 0 (mod 2)
+# 　 x = -1 (mod 11)
+# の場合答えは10
+
+# 計算量logN
+def CRT(b1, m1, b2, m2):
+    # 拡張ユークリッド
+    def extGcd(a, b):
+        if a == 0:
+            return b, 0, 1
+        g, y, x = extGcd(b % a, a)
+        return g, x - (b // a) * y, y
+
+    d, p, q = extGcd(m1, m2)
+    if (b2 - b1) % d != 0:
+        return 0, -1
+    m = m1 * (m2 // d) # 最小公倍数
+    tmp = (b2 - b1) // d * p % (m2 // d)
+    r = (b1 + m1 * tmp) % m
+    return r, m
+
+# (1 + 2 +...+k) = aN
+# k(k + 1) = 2aN　になる最小のkを求めたい
+# N = 11なら22, 44, 66,...110 = 10 * (10 + 1) k = 10が答え
+
+# kとk + 1は互いに素なので(同じ因数xを持つなら、間がxの倍数分空いてないといけないので)
+# 2Nを素因数分解する時、各素因子はKとK+1に振り分けられる
+# 2つに振り分けた結果AとBができる（AB = 2N) A,Bに足らない因子はaで調整できる
+# これがそれぞれk, k + 1になればいい
+# つまりk = A * (aの因子)、k + 1 = B * (aの因子)
+
+# K = 0 (mod A), K = -1 (mod B)となる最小のkを求めればいい
+# 2Nの約数について全探索
+
+def make_divisors(n):
+    divisors = []
+    for i in range(1, int(pow(n, 0.5)) + 1):
+        if n % i == 0:
+            divisors.append(i)
+            if i != n // i:
+                divisors.append(n // i)
+    divisors.sort()
+    return divisors
+
+# ACLC B - Sum is Multiple
+# CRTする
+
+n = getN()
+div = make_divisors(2 * n)
+res = float('inf')
+for x in div:
+    y = 2 * n // x
+    k = CRT(0, x, -1, y)
+    if k[0] != 0:
+        res = min(res, k[0])
+print(res)

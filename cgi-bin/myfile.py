@@ -32,16 +32,8 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-"""
-数学問題っぽい
-dpっぽいが
-
-合計でN+MCN通りある
-全てのiにおいてwがb+K以下
-dpでO(N^2)
-
-現在wとbの差がk
-wはbよりちょっと多くていいが　逆に満たさないのは
-iまでで白をw個、黒をb個並べる
-"""
-N, M, K = getNM()
+for i in range(1, N + 1):
+    psu = [0] + [a % i for a in A]
+    for j in range(1, N + 1):
+        psu[j] = (psu[j] + psu[j - 1]) % i
+    print(psu)
