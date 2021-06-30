@@ -76,6 +76,7 @@ def extGcd(a, b):
     return g, x - (b // a) * y, y
 
 # ax + by = cとなる(x, y)の一般項を求めてくれる
+# (x, y) = (-b2 * t + x, -a2 * t + y) tは任意の整数
 def form_ext(a1, b1, c):
     def extGcd(a, b):
         if a == 0:
