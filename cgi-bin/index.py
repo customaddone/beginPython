@@ -31,248 +31,68 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# 包除原理
-N = 100
-M = 3
-A = [2, 3, 8]
-A.sort(reverse = True)
-minus = [0] * (N + 1)
-
-ans = 0
-# (A & B & C)の個数について調べる
-# → A & Bの個数を計算したものから (A & B & C)の個数を引く
-for bit in range((1 << M) - 1, 0, -1):
-    prim = 1
-    for j in range(M):
-        if bit & (1 << j):
-            prim = prim // math.gcd(prim, A[j]) * A[j] # lcmの計算
-    mi = N // prim
-    for i in range(prim, N, prim):
-        mi -= minus[i]
-    if minus[prim] == 0:
-        minus[prim] = mi
-    ans += mi
-print(ans)
-
-# ABC162 E - Sum of gcd of Tuples (Hard)
-N,K = getNM()
-ans = 0
-rec = [0] * (K + 1)
-
 """
-集合A, B, Cについて
-A ⊆ B　かつ B ⊆ Cとすると
-集合が小さい順から数えて行って
-Bを数える時にB -= A
-Cを数える時にC -= Aすればダブらない
-"""
+エッジの本数が多い√M頂点については別に監視する
 
-for X in range(K, 0, -1):
-    rec[X] = pow(K // X, N, mod)
-    for i in range(2, K // X + 1):
-        rec[X] -= rec[i * X] % mod
-    ans += (X * rec[X]) % mod
-print(ans % mod)
+まずそれ以外の頂点について考える
+読み取る場合は隣接する頂点の色について調べる
 
-# ABC152 F - Tree and Constraints
+特殊頂点について
+隣接頂点をすべて読むことは不可能
+何色になっているかは実際に自身が何色になってるかだけ見る
 
-"""
-Nが非常に小さい
-木の問題
-Mの制約的にbitでもいける
-小さい例から考えてみよう
-M個の制約を全て満たすもの
-3
-1 2
-2 3
-1
-1 3
-
-bit dpか
-u ~ vのパスを真っ白にするにはどこが白ならいいか
-5
-1 2
-3 2
-3 4
-5 3
-3
-1 3
-2 4
-2 5 の時
-
-1 ~ 3: [0, 1, 2]
-2 ~ 4: [1, 2, 3]
-2 ~ 5: [1, 2, 4]
-1 ~ 3のパスが条件を満たす = 0, 1, 2のどれかが黒
-0, 1, 2が白なら1 ~ 3は条件を満たさない
-
-これをbitする bit dpだろ
-M個のうちどれか一つでも違反するものがあれば
-1 ~ 3に違反: 4, 5free 00011, [00010], [00001], [00000]
-2 ~ 4に違反: 1, 5free 10001, [10000], 00001, [00000]
-2 ~ 5に違反: 1, 4free 10010, 10000, 00010, 00000
-2 ~ 4かつ2 ~ 5 10000, 00000
-ダブったのは捨てる
-
-集合{A1, A2...}で作る部分集合は過去の要素による部分集合とダブってないか
-奇数段の集合でできてるところは引く
-偶数段の集合でできてるところは足す
-"""
-
-N = getN()
-dist = [[] for i in range(N)]
-dist_id = {}
-cnt = 0
-for i in range(N - 1):
-    a, b = getNM()
-    dist_id[(min(a - 1, b - 1), max(a - 1, b - 1))] = cnt
-    dist[a - 1].append(b - 1)
-    dist[b - 1].append(a - 1)
-    cnt += 1
-
-M = getN()
-Q = [getList() for i in range(M)]
-
-def router(n, sta, end):
-    pos = deque([sta])
-    ignore = [0] * n
-    path = [0] * n
-    path[sta] = -1
-
-    while pos[0] != end:
-        u = pos.popleft()
-        ignore[u] = 1
-
-        for i in dist[u]:
-            if ignore[i] != 1:
-                path[i] = u
-                pos.append(i)
-
-    route = deque([end])
-    while True:
-        next = path[route[0]]
-        route.appendleft(next)
-        if route[0] == sta:
-            break
-
-    path = []
-    for i in range(len(route) - 1):
-        a = route[i]
-        b = route[i + 1]
-        if b < a:
-            a, b = b, a
-        path.append(dist_id[(a, b)])
-    return path
-
-opt = []
-origin = set()
-for i in range(cnt):
-    origin.add(i)
-
-for u, v in Q:
-    opt.append(origin ^ set(sorted(router(N, u - 1, v - 1))))
-
-# ABC162 E - Sum of gcd of Tuples (Hard)と違うところ
-# 集合Aがどの集合内に含まれるかすぐにわからないこと((2 ** M) ** 2かかる)
-
-# パスの本数はN - 1本
-S = [[] for i in range(M)]
-ans = 0
-for o in opt:
-    res = 2 ** len(o) # 初期値
-    # ダブった分を消していく
-    for i in range(M - 1, -1, -1):
-        for j in S[i]:
-            # 奇数回重なるところについては引く
-            if i % 2 == 0: # 引く
-                res -= 2 ** len(j & o)
-            # 偶数回重なるところは足す
-            else: # 足す
-                res += 2 ** len(j & o)
-            S[i + 1].append(j & o)
-
-    S[0].append(o)
-    ans += res
-
-print(2 ** (N - 1) - ans)
-
-# ABC172E NEQ
-
-"""
-モンモール数？
-個数を求めなさい
-N = Mの場合
-A:(M = Nの順列), B:(M = Nの順列)
-N! * N!
-すべて満たすもの = 全ての通り - 1個以上満たさないもの
-どこか一箇所以上でAi = Biになる
-どこか二箇所以上でAi = Biになる...
-
-N箇所全てでAi = Biになる: N!通り　A固定で考えると1通り
-N-1箇所以上でAi = Biになる: nCn-1箇所選ぶ　そこは同じ
-あとは自由: 1!通り
-N-2箇所以上: nCn-2箇所選ぶ　そこは同じ
-あとは自由: 2!通り
-
-一箇所以上: nC1 * (n-1)!通り: 1回ダブる
-二箇所以上: nC2 * (n-2)!通り: 2回ダブる
-
-N-1箇所以上: 1!通り: N-1回ダブる
-N箇所以上: 0!通り: N回ダブる
-L = [0] * 5
-for i in permutations([i for i in range(4)]):
-    cnt = 0
-    for j in range(4):
-        if i[j] == j:
-            cnt += 1
-    L[cnt] += 1
-print(L)
-
-[9, 8, 6, 0, 1]
-[44, 45, 20, 10, 0, 1]
-
-s個のAi,Biが一致しているA, Bの組みの個数は
-mPs(一致しているもの) * m-sPn-s ** 2(A, Bについてあとは自由)
-これがnCs個ある
-Ai = Biとなっているiの個数はs個以上
-
-ans = 0個以上一致しているもの　0個だけでいいんだけど
-ans -= 1個以上一致しているもの
-少なくともA1, A2が一致している集合は少なくともA1が一致している集合に含まれ、
-少なくともA2, A3が一致している集合は少なくともA2が一致している集合に含まれるが、
-少なくともA1, A2が一致している集合は少なくともA3が一致している集合には含まれない
-小グループがnCs個あり、さらにその中で分かれていると考えれば
+つまり
+特殊頂点
+それ以外の頂点からの書き込み + スプレッダーからの書き込み
+が書き込まれる
+それ以外の頂点
+周囲の頂点の色を見る　一番最後にクエリがあったとこの色が自身の色
+書き込みがされないので周囲を見る
 """
 
 N, M = getNM()
-ans = 0
-for i in range(N + 1):
-    ans += (-1) ** (i % 2 == 1) * cmb(N, i) * factorial(M, i) * (factorial(M - i, N - i) ** 2)
-print(ans % mod)
+G = [getListGraph() for i in range(M)]
+E = [[] for i in range(N)]
+for a, b in G:
+    E[a].append(b)
+    E[b].append(a)
 
-# 今日の典型90 80日目
+# 特殊頂点は最高√M個
+spec = set([i for i in range(N) if len(E[i]) >= math.sqrt(N) + 1])
+s_E = [[] for i in range(N)]
+for a, b in G:
+    # 子要素がspecであれば追加
+    if b in spec:
+        s_E[a].append(b)
+    if a in spec:
+        s_E[b].append(a)
 
-# 条件
-# 逆に論理積が0になる条件を求める
-# not Ai: Aiにフラグが立っている全ての桁について、xでフラグが立っていない
-# 全体: 全体 - (あるAiについてnot Aiである)
-# 全体 - A1 u A2 u A3... を求める
+Q = getN()
+last = [-1] * N
+color = [1] * N # 最後のクエリがあったときの色を見る
+spec_c = [1] * N # spec頂点について現在の色
+for i in range(Q):
+    x, c = getNM()
+    x -= 1
+    # 現在の頂点がspecなら自身の現在の色（書き込まれてる）を見る
+    if x in spec:
+        print(spec_c[x])
+    # それ以外　頂点数が少ないのですべて探索できる
+    else:
+        opt = x
+        l = last[x] # 自身も候補
+        # 最後にクエリがあった箇所を探す
+        for v in E[x]:
+            if last[v] > l:
+                opt = v
+                l = last[v]
+        # 最後にクエリがあった場所の色が現在の自身の色
+        print(color[opt])
 
-# 包除原理: {a: a ∈ ℘(A)}について a1 & a2 &... anがすべてわかっているなら
-# A1 u A2 u A3...がわかる
-# aのサイズが偶数の時 +, 奇数の時 -という風にカウントしていく
-# A1 u A2 u A3...が知りたい & a1 & a2 &... anが簡単にわかる時に使う
+    # 書き込み last, color, spec_cに書き込み
+    last[x] = i
+    color[x] = spec_c[x] = c
 
-N, D = getNM()
-A = getList()
-
-ans = 0
-for bit in range(1 << N):
-    opt, dir = 0, 1
-    for i in range(N):
-        if bit & (1 << i):
-            dir *= -1
-            opt |= A[i]
-    ans += dir * 2 ** (D - bin(opt).count('1'))
-
-print(ans)
+    # 隣接するspec_cの書き込み
+    for v in s_E[x]:
+        spec_c[v] = color[x]
