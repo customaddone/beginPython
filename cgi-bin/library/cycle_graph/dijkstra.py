@@ -62,13 +62,13 @@ def dij(start, edges):
 
     # pqの先頭がgoal行きのものなら最短距離を返す
     while len(pq) > 0:
-        d, now = heapq.heappop(pq)
+        d, now = heappop(pq)
         if (d > dist[now]):
             continue
         for i in edges[now]:
             if dist[i[0]] > dist[now] + i[1]:
                 dist[i[0]] = dist[now] + i[1]
-                heapq.heappush(pq, (dist[i[0]], i[0]))
+                heappush(pq, (dist[i[0]], i[0]))
     return dist
 
 # 最短経路へのパス付きダイクストラ
@@ -90,6 +90,25 @@ def dij(start, edges):
                 heappush(pq, (dist[i[0]], i[0]))
 
     return dist, parent
+
+# 最短経路の本数
+def counter(sta, E, d):
+    pos = deque([sta])
+    ignore = [0] * N
+    cnt = [0] * N
+    cnt[sta] = 1
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        if ignore[u] == 0:
+            ignore[u] = 1
+            # d[i] == d[u] + 1を満たすuの子ノード全てに
+            # 「スタートからuまでの通りの数」をプラス（他のルートからも来る）
+            for i in E[u]:
+                if d[i[0]] == d[u] + i[1]:
+                    cnt[i[0]] += cnt[u]
+                    pos.append(i[0])
+    return cnt
 
 # ABC132 E - Hopscotch Addict
 # mod?付きダイクストラ
