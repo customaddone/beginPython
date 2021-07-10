@@ -157,7 +157,7 @@ for r in range(N):
     print(l, r)
     dict[A[r]] += 1
 
-# K種類の要素のみを含んだ区間の最長は？
+# K種類以内の要素のみを含んだ区間の最長は？
 N, K = 10, 2
 A = [1, 2, 3, 4, 4, 3, 2, 1, 2, 3]
 d = {}
@@ -179,6 +179,44 @@ for r in range(N):
         l += 1
 
     ans = max(ans, r - l + 1)
+
+print(ans)
+
+# 要素をlim種類含む連続部分列を求める
+N = 7
+S = 'xxoooxx'
+
+# 種類数の登録　すべての要素を含む連続部分列の最小について、に拡張
+d = {}
+for i in range(N):
+    d[S[i]] = 0
+lim = len(d) # すべての要素数 dの中にこの数だけ入っていればいい
+#####################################################
+
+lim = 2 # 要素数がlim個の連続部分列が欲しい
+d = {}
+
+l = 0
+ans = 0
+# rを1つずつ刻んでいく
+for r in range(N):
+    if S[r] in d:
+        d[S[r]] += 1
+    else:
+        d[S[r]] = 1
+
+    # lim種類未満であれば何もしない
+    if len(d) < lim:
+        continue
+
+    # 現在lim種類以上あれば削る
+    while len(d) > lim or d[S[l]] > 1:
+        d[S[l]] -= 1
+        if not d[S[l]]:
+            del d[S[l]]
+        l += 1
+
+    ans += l + 1
 
 print(ans)
 

@@ -151,28 +151,80 @@ class BST:
         ind = self.lowerbound(x)
         return self.rev[ind]
 
-# 使い方
-# 例: ARC033 C - データ構造
-Q = getN()
-# ①まずクエリ先読みで使用する値をBSTに読み込ませる
-read = []
-que = []
-for i in range(Q):
-    t, x = getNM()
-    if t == 1:
-        read.append(x)
-    que.append([t, x])
-bit = BST(len(read), sorted(read))
+# 座圧BIT
+class Comp_BIT:
+    def __init__(self, N, array):
+        self.N = N
+        self.bit = [0] * (N + 1)
+        self.b = 1 << N.bit_length() - 1
+        # 座圧 1-indexで
+        s = set(array)
+        s = sorted(list(s))
+        self.alter = {}
+        self.rev = {}
+        for i in range(len(s)):
+            self.alter[s[i]] = i + 1
+            self.rev[i + 1] = s[i]
 
+    def add(self, a, w):
+        x = self.alter[a]
+        while(x <= self.N):
+            self.bit[x] += w
+            x += x & -x
+
+    # [0, a)の合計
+    def get(self, a):
+        ret, x = 0, self.alter[a] - 1
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
+
+    # [0, a]（閉区間）の合計
+    def get_rig(self, a):
+        ret, x = 0, self.alter[a]
+        while(x > 0):
+            ret += self.bit[x]
+            x -= x & -x
+        return ret
+
+    # [l, r)の合計
+    def cum(self, l, r):
+        return self.get(r) - self.get(l)
+
+    # 最も近くにあるフラグの立っている場所を探す
+    def lowerbound(self, w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return self.rev[x + 1]
+
+# ARC033 C - データ構造
+# 座圧BIT
+Q = getN()
+que = [getList() for i in range(Q)]
+
+# データに入れる数字を抽出する
+A = []
 for t, x in que:
     if t == 1:
-        # ②addで値を1つ追加、eraseで消去
-        bit.add(x)
+        A.append(x)
+
+bit = Comp_BIT(Q + 1, A)
+for t, x in que:
+    if t == 1:
+        bit.add(x, 1)
     else:
-        # ③queryで小さい方からx番目の値を返す
-        res = bit.query(x)
-        print(res)
-        bit.erase(res)
+        # 小さい方からx番目の数字を探す
+        opt = bit.lowerbound(x)
+        print(opt)
+        bit.add(opt, -1)
 
 N = 2
 K = [[1, 1, 10], [1, 3, 10]]
