@@ -151,7 +151,7 @@ class BST:
         ind = self.lowerbound(x)
         return self.rev[ind]
 
-# 座圧BIT
+# 座圧BIT 0-indexで使える
 class Comp_BIT:
     def __init__(self, N, array):
         self.N = N
@@ -226,29 +226,54 @@ for t, x in que:
         print(opt)
         bit.add(opt, -1)
 
-N = 2
-K = [[1, 1, 10], [1, 3, 10]]
-for i in range(N):
-    k, l, r = getList()
-    # l - rは反転させている
-    heappush(K, [r - l, k, l, r])
+# 転倒数がK以下の連続部分列 + 通常のBITを使う方法(0-indexになる)
 
-bit = BIT(N) # 最寄りの空いている場所を探す
-for i in range(N):
-    bit.add(i + 1, 1)
+"""
+[0, a)までの転倒数　求められる
+[1, a)の転倒数は？
+0番目の数字について、a)までの数字の中で自分より小さい数字の個数を引く
+bit = BIT(N + 1)
+cnt = 0
+for i in range(1, N + 1):
+    cnt += i - 1 - bit.get(A[i] + 1)
+    bit.add(A[i], 1)
+    print(cnt)
+
+左位置をずらしていく
+区間[l, r]の転倒数 =
+Σr=0 r - l - 区間内の自身より左にある自身以下の数(i - l - bit.get_rig(A[i])) =
+Σl=0 区間内の自身より右にある自身未満の数(bit.get(A[l]))
+
+BITについて
+転倒数がK以下の連続部分列については尺取り法でやることが可能
+lを動かす都度A[l]を消去していく
+"""
+
+N, K = getNM()
+A = getList()
+
+bit = Comp_BIT(N + 1, A)
+bit_cnt = Comp_BIT(N + 2, [i for i in range(N + 2)]) # 通常のBIT
+bit_cnt.add(0, 1) # 0-indexで使う
+
+inv = 0 # 転倒数
+l = 0 # 左端（最大）
 
 for i in range(N):
-    diff, lim, ok, ng = heappop(K)
-    # bit.get(lim + 1)になる点、つまりlim + 1地点よりフラグが1小さくなる地点を探す
-    flag = bit.get(lim + 1)
-    if flag:
-        index = bit.lowerbound(flag)
-        bit.add(index, -1)
-    else:
-        index = float('inf')
-    # 1 7 1 3 10
-    # inf 9 1 1 10
-    # print(index, diff, lim, ok, ng)
+    # 今まで置いた数 - 自身より左にある自身以下の数
+    inv += i - l - bit.get_rig(A[i])
+    bit.add(A[i], 1)
+    # invがK以下になるまでlをずらす　尺取り法
+    # 自身より右にある自身より小さい数を引く
+    while inv > K:
+        inv -= bit.get(A[l])
+        bit.add(A[l], -1)
+        l += 1
+    # [l, i + 1)の値をi + 1に登録
+    bit_cnt.add(i + 1, bit_cnt.cum(l, i + 1) % mod)
+
+# bit_cntのi + 1の値を求める
+print(bit_cnt.cum(i + 1, i + 2) % mod)
 
 # 区間加算bit
 # ARC068 E - Snuke Line

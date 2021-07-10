@@ -31,7 +31,7 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# 座圧BIT
+# 座圧BIT 0-indexで使える
 class Comp_BIT:
     def __init__(self, N, array):
         self.N = N
@@ -95,14 +95,36 @@ for i in range(1, N + 1):
     cnt += i - 1 - bit.get(A[i] + 1)
     bit.add(A[i], 1)
     print(cnt)
+
+左位置をずらしていく
+自身より右にある自分より小さい数が減る
+
+BITについて
+転倒数がK以下の連続部分列については尺取り法でやることが可能
 """
 
 N, K = getNM()
 A = getList()
 
 bit = Comp_BIT(N + 1, A)
-cnt = 0
+bit_cnt = Comp_BIT(N + 2, [i for i in range(N + 2)]) # 通常のBIT
+bit_cnt.add(0, 1) # 0-indexで使う
+
+inv = 0 # 転倒数
+l = 0 # 左端（最大）
+
 for i in range(N):
-    cnt += i - bit.get_rig(A[i])
+    # 今まで置いた数 - 自身より左にある自身以下の数
+    inv += i - l - bit.get_rig(A[i])
     bit.add(A[i], 1)
-    print(cnt)
+    # invがK以下になるまでlをずらす
+    # 自身より右にある自身より小さい数を引く
+    while inv > K:
+        inv -= bit.get(A[l])
+        bit.add(A[l], -1)
+        l += 1
+    # [l, i + 1)の値をi + 1に登録
+    bit_cnt.add(i + 1, bit_cnt.cum(l, i + 1) % mod)
+
+# bit_cntのi + 1の値を求める
+print(bit_cnt.cum(i + 1, i + 2) % mod)
