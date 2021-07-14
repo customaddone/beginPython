@@ -170,3 +170,59 @@ def array_cnt(ar1, ar2, m):
             res[i][j] = cnt
             res[i][j] %= m
     return res
+
+# rank数を求める
+# ZONeコン F-出会いと別れ
+
+"""
+Aに含まれないものの集合をBとする
+a xor b になるようなab間に辺を張った時にN頂点は連結になるか？
+
+連結になる = 任意の点からいくつか通って他の任意の場所に行けるか
+つまり0から始めて0 ~ N - 1のどこにでも行ける
+a xor b = Bとなるなら a xor B = bとなり
+0 xor B1 = (0 ~ N - 1のどれか)になる　これを繰り返すと
+0から任意の場所に行けるということに　N個の線型独立したbit棒があればいい
+
+集合B内でxorを繰り返して任意の数字を作るには、N個の線型独立したベクトルがあればいい
+"""
+
+N, M = getNM()
+A = set(getList())
+B = [i for i in range(1, N) if not i in A]
+
+# Bの値をbit表記にした時の線形独立な要素を求める
+def rank(array):
+    base = [] # 元の数字
+    elim = [] # 消す用
+
+    # Bの小さい順に全て試す
+    for x in array:
+        y = x
+        for b in elim:
+            # 小さい数字を使ってフラグを消していく
+            # 立っているフラグが消えるならy ^ bが選ばれる
+            y = min(y, y ^ b)
+        # 最上位のフラグが残ってるなら xをbaseとして利用できる
+        if y:
+            base.append(x)
+            elim.append(y)
+
+    return base
+
+base = rank(B)
+
+def lg(x):
+    return x.bit_length() - 1
+
+# 線型独立したベクトルの本数がNのbitlength(rank)に満たない場合
+if len(base) != lg(N):
+    exit(print(-1))
+
+# 0から順に繋いでいく　飛ぶ順に
+xor = 0
+for x in range(1, N):
+    print(xor, end=' ')
+    # base[i]: 2 ** iを担当するx
+    xor ^= base[lg(x & -x)] # x & -x: xの一番下のフラグ # lg(x & -x): そのインデックス
+    print(xor)
