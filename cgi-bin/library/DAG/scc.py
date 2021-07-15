@@ -82,6 +82,74 @@ def scc(N, E):
     # group: 頂点iのグループの番号
     return label, group
 
+# dfs未使用ver
+def scc(E):
+    n = len(E)
+    # rev_Eを作成
+    r_E = [[] for i in range(n)]
+    for u in range(n):
+        for v in E[u]:
+            r_E[v].append(u)
+    # トポロジカルソート
+    fin = [-1] * n
+    topo = []
+    for u in range(n):
+        if fin[u] != -1:
+            continue
+        stack = [u]
+        while stack:
+            u = stack[-1]
+            if fin[u] == -1:
+                fin[u] = 0
+                for v in E[u]:
+                    if fin[v] != -1:
+                        continue
+                    stack.append(v)
+            else:
+                stack.pop()
+                if fin[u] == 0:
+                    fin[u] = 1
+                    topo.append(u)
+    # 逆辺でdfs
+    res = []
+    while topo:
+        u = topo.pop()
+        if fin[u] != 1:
+            continue
+        fin[u] = 2
+        cur = [u]
+        i = 0
+        while i < len(cur):
+            u = cur[i]
+            for v in r_E[u]:
+                if fin[v] == 2:
+                    continue
+                fin[v] = 2
+                cur.append(v)
+            i += 1
+        res.append(cur)
+
+    g_n = len(res)
+    n_e = [[] for i in range(g_n)]
+    roop = [0] * g_n
+    index = [0] * n
+    for u in range(g_n):
+        for v in res[u]:
+            index[v] = u
+    for u in range(N):
+        for v in E[u]:
+            if index[u] != index[v]:
+                n_e[index[u]].append(index[v])
+            else:
+                roop[index[u]] = 1
+
+    # g_n: グループの個数
+    # res: グループに属する頂点は何
+    # index: 頂点iはどこに属するか
+    # n_e: グループ同士のエッジ
+    # roop: ループするか
+    return g_n, res, index, n_e, roop
+
 # ALPC G-SCC
 N, M = getNM()
 edge = [[] for _ in range(N)]
