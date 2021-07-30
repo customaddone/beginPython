@@ -90,6 +90,7 @@ def scc(E):
     for u in range(n):
         for v in E[u]:
             r_E[v].append(u)
+
     # トポロジカルソート
     fin = [-1] * n
     topo = []

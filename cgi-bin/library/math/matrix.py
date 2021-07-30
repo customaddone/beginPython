@@ -171,6 +171,19 @@ def array_cnt(ar1, ar2, m):
             res[i][j] %= m
     return res
 
+# 二次元配列の回転
+# [x', y'] = [[cosθ, -sinθ], [sinθ, cosθ]][x, y]より
+# θ = 90なら
+# x' = -y, y' = x
+def rotate(ar):
+    h, w = len(ar), len(ar[0])
+    res = [[0] * h for i in range(w)]
+    for i in range(h):
+        for j in range(w):
+            # 上下逆 & 転置
+            res[j][h - i - 1] = ar[i][j]
+    return res
+
 # rank数を求める
 # ZONeコン F-出会いと別れ
 
