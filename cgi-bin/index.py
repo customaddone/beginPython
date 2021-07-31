@@ -31,46 +31,27 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# 3 2 2 1 5
-#     2　を消すと
-# 3 2 1 5
-# 最小回数を探す
-# O(n^2)でやれ dpできる
-# 前から単調増加でk個指定する
-# それが目標達成できるように
-# dpだろう　ここまで進んだ時にいくつクリアしているか
-# セグ木使ってもいい
-# 消す
-# 消さずに指定する　消さず指定しない
+# codeforces round735
+# B-Cobb
 
-# n回消しで行けるか
-# ? 2 3 ? 5　みたいな感じで　まず連続するn個を探す
-# 次にどこについて　なんでもいい　にするか
+# orなので...
+# Kが小さいので
+# f(i, j) = i * J - K * (Ai | Aj)についてそれぞれの項での最大最小を考える
+# i * jの最大値はN(N - 1)
+# k * (Ai | Aj)の最大値は2KNなので...
+# i * jに比べK * (Ai | Aj)は随分小さい→i * j基準で考える
 
 T = getN()
 for _ in range(T):
     N, K = getNM()
     A = [0] + getList()
-
-    # 現在までにj個消した時の最大適合
-    prev = [0] * (N + 1)
-
-    # i個目まで進んだ
-    for i in range(1, N + 1):
-        next = [0] * (N + 1)
-        # 前回までにi個まで消した
-        for j in range(i):
-            # i個目を削除する場合
-            next[j + 1] = max(next[j + 1], prev[j])
-            # 削除しない場合　適合するかチェック
-            # 今回のはi - j個目　これがA[i]と一致するかチェック
-            next[j] = max(next[j], prev[j] + ((i - j) == A[i]))
-
-        prev = next
-
-    for i in range(N + 1):
-        if prev[i] >= K:
-            print(i)
-            break
-    else:
-        print(-1)
+    ans = -float('inf')
+    for i in range(N, 1, -1):
+        # k * (Ai | Aj)の最大は2kn
+        # 上位だけ調べればいい
+        for j in range(i - 1, 0, -1):
+            # K * (Ai | Aj)の最大値は K * 2 * N
+            if N * (N - 1) - i * j > 2 * K * N:
+                break
+            ans = max(ans, j * i - K * (A[i] | A[j]))
+    print(ans)
