@@ -31,144 +31,228 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# ABC178 E - Dist Max
-# マンハッタン距離の最大値を答える
-# ２点のマンハッタン距離はx - y同士、x + y同士のうちどちらか大きい方
+N, K = 7, 6
+S = [4, 3, 1, 1, 2, 10, 2]
 
-N = getN()
-que = [getList() for i in range(N)]
+# 左を伸ばしていく
+# その部分列に含まれる全ての要素の値の積は「K以下」である。
+# lはrをオーバーすることもある
 
-minus = []
-plus = []
-for x, y in que:
-    minus.append(x - y)
-    plus.append(x + y)
-minus.sort()
-plus.sort()
-m = minus[-1] - minus[0]
-p = plus[-1] - plus[0]
-print(max(abs(m), abs(p)))
+if 0 in S:
+    print(N)
+    exit()
+else:
+    l, ans, total = 0, 0, 1
+    for r in range(N):
+        total *= S[r]
+        while total > K and l <= r:
+            total //= S[l]
+            l += 1
+        ans = max(ans, r - l + 1)
+print(ans)
 
-# ABC127 Cell distance
-# マンハッタン距離はxとyとに分けて考えられる
+# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
+N, K = 4, 10
+A = [6, 1, 2, 7]
 
-"""
-全ての通りは nmCk
-平均値の考え方　
-つまりO(N + M)の足し合わせみたいな
-ダブった奴は割ったり引いたりすればいい
+left = 0
+total = 0
+ans = 0
 
-2 2 2なら
-4 * 3 // 2! = 6通り　順列分あとでわる
-nCr通りある
-この中でマスiとjが同時に出現する確率は　一定のはず
-iとjが同時に出現するのはn-2Ck-2通り
-iとjの選び方 nC2通り
-コストiになるペアがいくつあるか
-iとjのコスト * n-2Ck-2 をnC2通りやる
-nC2通りのうちいくつがコストi
-H - a * W - b コストa + b
-コストのとり方は最大でもN + M - 2数え上げ
+for right in range(0, N):
+    total += A[right]
+    while total >= K:
+        ans += N - right
+        total -= A[left]
+        left += 1
+print(ans)
 
-マンハッタン距離は上下と左右別々に求められる
+N = 10
+S = 15
+A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
+right = 0
+total = 0
+ans = 0
+# S以上を求める場合にはこの形で
+for left in range(N):
+    while right < N and total < S:
+        total += A[right]
+        right += 1
+    if total < S:
+        break
+    if left == right:
+        right += 1
+    total -= A[left]
 
-こういう問題でコストiを何回足したらいいかを考えるのは鉄則
-コストの規則性が分かりづらい　分けて考える
-コストiを何回足したらいいかは難しそう　マスiについてのコストの総和を求めればいい
+# 要素の種類についての問題
+# 全ての要素を含む区間の最短は？
+# [0, 2), [0, 3), [3, 5)
+P = 5
+A = [1, 8, 8, 8, 1]
+dict = {}
+for i in A:
+    dict[i] = 0
+# 要素の種類数
+V = len(dict.items())
 
-(1, 1)について
-横方向のマンハッタン距離
-距離1: 1 * H個
-距離2: 1 * H個...
-距離W - 1: 1 * H個
-つまり(1, 1)についてコストの合計はW(W - 1) // 2 * H * (n-2Ck-2)
-これを(1, 1) ~ (H, 1)までH回やる
+# 事象の数をカウント
+cnt = 0
+right = 0
+# １つ目から全ての事象をカバーするまでrightを進める
+while right < P:
+    if dict[A[right]] == 0:
+        cnt += 1
+    dict[A[right]] += 1
 
-(1, 2)について
-距離1: 1 * H個
-距離2: 1 * H個...
-距離W - 2: 1 * H個
-(1, 2)についてコストの合計は(W - 1)(W - 2) // 2 * H * (n-2Ck-2)
-これを(1, 2) ~ (H, 2)までH回やる
+    if cnt == len(dict.items()):
+        break
 
-これを縦方向のマンハッタン距離でもやる
+    right += 1
+    print(l, r)
 
-巨大数のcmbをどうやる？
-n-2Ck-2
-"""
+l = 0
+# 右を一つ進めて左をできる限り進める
+for r in range(right + 1, P):
+    # 新しく一つ加える
+    dict[A[r]] += 1
+    while True:
+        # もし要素が一つしか無かったら削れない
+        if dict[A[l]] == 1:
+            break
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
 
-lim = 10 ** 6 + 1
-fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
+# 各要素にダブりがない区間の最長
+# [0, 2), [2, 5)...
+N = 6
+A = [1, 2, 2, 3, 4, 4]
 
-for i in range(2, lim + 1):
-    fact.append((fact[-1] * i) % mod)
-    inv.append((-inv[mod % i] * (mod // i)) % mod)
-    # 累計
-    factinv.append((factinv[-1] * inv[-1]) % mod)
+dict = defaultdict(int)
+l = 0
+for r in range(N):
+    while dict[A[r]] == 1:
+        dict[A[l]] -= 1
+        l += 1
+    print(l, r)
+    dict[A[r]] += 1
 
-def cmb(n, r):
-    if (r < 0) or (n < r):
-        return 0
-    r = min(r, n - r)
-    return fact[n] * factinv[r] * factinv[n - r] % mod
-
-N, M, K = getNM()
+# K種類以内の要素のみを含んだ区間の最長は？
+N, K = 10, 2
+A = [1, 2, 3, 4, 4, 3, 2, 1, 2, 3]
+d = {}
 
 ans = 0
-for i in range(M - 1, 0, -1):
-    ans += i * (i + 1) * (N ** 2) // 2
-    ans %= mod
+l = 0
+for r in range(N):
+    # rの要素を足す
+    if A[r] in d:
+        d[A[r]] += 1
+    else:
+        d[A[r]] = 1
 
-for i in range(N - 1, 0, -1):
-    ans += i * (i + 1) * (M ** 2) // 2
-    ans %= mod
+    while len(d) > K:
+        # 末尾をどんどん除いていく
+        d[A[l]] -= 1
+        if not d[A[l]]:
+            del d[A[l]]
+        l += 1
 
-print(ans * cmb(N * M - 2, K - 2) % mod)
+    ans = max(ans, r - l + 1)
 
-#　Edu codeforces 111
-# C. Manhattan Subarrays
+print(ans)
 
-# マンハッタン距離は45度回転
-# マンハッタン距離がd(p, r) = d(p, q) + d(q, r)になってはいけない
-# aのうち連続部分列を探せ
+# 要素をlim種類含む連続部分列を求める
+N = 7
+S = 'xxoooxx'
 
-# 尺取り法な気がする 部分列は小さい方がいいので
-# 新たに追加する要素を本当に含めても良いか
-# 任意の２点を選ぶ？　TLE
-# これをO(1)で判断できるように　いくつかのやばい点を通過できれば
+# 種類数の登録　すべての要素を含む連続部分列の最小について、に拡張
+d = {}
+for i in range(N):
+    d[S[i]] = 0
+lim = len(d) # すべての要素数 dの中にこの数だけ入っていればいい
+#####################################################
 
-# d(p, r) = d(p, q) + d(q, r)とは?
-# (0, 1), (0, 2), (0, 3)ならout
-# 点a, bが与えられる この２点が作る長方形内に入ってはいけない
-# 点cが点a, bのなす長方形内に入ってない
+lim = 2 # 要素数がlim個の連続部分列が欲しい
+d = {}
 
-# ２点が与えられるとO(1)で判断できる
-# 点を増やすごとにこの条件は増えていく
-# 最高4点までかも
+l = 0
+ans = 0
+# rを1つずつ刻んでいく
+for r in range(N):
+    if S[r] in d:
+        d[S[r]] += 1
+    else:
+        d[S[r]] = 1
+
+    # lim種類未満であれば何もしない
+    if len(d) < lim:
+        continue
+
+    # 現在lim種類以上あれば削る
+    while len(d) > lim or d[S[l]] > 1:
+        d[S[l]] -= 1
+        if not d[S[l]]:
+            del d[S[l]]
+        l += 1
+
+    ans += l + 1
+
+print(ans)
+
+N = 4
+A = [2, 5, 4, 6]
+
+l, ans, xo, total = 0, 0, 0, 0
+
+for r in range(N):
+    xo ^= A[r]
+    total += A[r]
+
+    # xo == totalになるまでA[l]で引き続ける
+    while xo < total:
+        xo ^= A[l]
+        total -= A[l]
+        l += 1
+
+    ans += r - l + 1
+
+print(ans)
+
+
+N, K = 10, 4
+A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
+
+right, ans = 0, 0
+for left in range(N):
+    # 単調増加するとこまでもしくは長さKになるまで
+    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
+        right += 1
+    # もし長さKまで伸ばせたらans += 1
+    if right - left == K - 1:
+        ans += 1
+    # 前に進めないならright += 1
+    if left == right and right < N:
+        right += 1
+print(ans)
+
+# codeforces 736
+# D. Integers Have Friends
+# セグ木 + 尺取り
 
 T = getN()
 for _ in range(T):
     N = getN()
-    A = getList()
-
-    def check(ar):
-        if len(ar) < 3:
-            return True
-        n = len(ar)
-        flag = True
-        for i in range(n):
-            for j in range(i + 1, n):
-                for k in range(j + 1, n):
-                    # i ~ k長方形内にjがあればout
-                    if min(ar[i], ar[k]) <= ar[j] <= max(ar[i], ar[k]):
-                        flag = False
-        return flag
+    psu = getList()
+    A = [abs(psu[i] - psu[i + 1]) for i in range(N - 1)]
+    seg = SegTree(A, segfunc, ide_ele)
+    if N == 1:
+        print(1)
+        continue
 
     l, ans = 0, 0
-    for r in range(N):
-        while not check(A[l:r + 1]):
+    for r in range(N - 1):
+        while seg.query(l, r + 1) == 1:
             l += 1
-        ans += (r - l + 1)
+        ans = max(ans, r - l + 2)
     print(ans)
