@@ -31,210 +31,333 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-N, K = 7, 6
-S = [4, 3, 1, 1, 2, 10, 2]
+#####segfunc#####
+def segfunc(x, y):
+    return min(x, y)
+#################
+#####ide_ele#####
+ide_ele = float('inf')
+#################
+class SegTree:
+    def __init__(self, init_val, segfunc, ide_ele):
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+    def update(self, k, x):
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
+    def query(self, l, r):
+        res = self.ide_ele
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
+N, M = getNM()
+seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
+L = [getList() for i in range(N)]
+L.sort()
+seg.update(0, 0)
+# [0, 1, 2, 3, 4, 5]
+# seg.query(0, 2): [0, 1]の最小値
+# seg.query(2, 2 + 1): [2]の最小値
+# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
+for l, r, c in L:
+    opt = seg.query(l, r)
+    vs = seg.query(r, r + 1)
+    seg.update(r, min(vs, opt + c))
+print(seg.query(M, M + 1))
 
-# 左を伸ばしていく
-# その部分列に含まれる全ての要素の値の積は「K以下」である。
-# lはrをオーバーすることもある
+#####segfunc#####
+def segfunc(x, y):
+    return x * y
+#################
+#####ide_ele#####
+ide_ele = 1
+#################
+class SegTree:
+    """
+    init(init_val, ide_ele): 配列init_valで初期化 O(N)
+    update(k, x): k番目の値をxに更新 O(logN)
+    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
+    """
+    def __init__(self, init_val, segfunc, ide_ele):
+        """
+        init_val: 配列の初期値
+        segfunc: 区間にしたい操作
+        ide_ele: 単位元
+        n: 要素数
+        num: n以上の最小の2のべき乗
+        tree: セグメント木(1-index)
+        """
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+    def update(self, k, x):
+        """
+        k番目の値をxに更新
+        k: index(0-index)
+        x: update value
+        """
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
+    def query(self, l, r):
+        """
+        [l, r)のsegfuncしたものを得る
+        l: index(0-index)
+        r: index(0-index)
+        """
+        res = self.ide_ele
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
 
-if 0 in S:
-    print(N)
-    exit()
-else:
-    l, ans, total = 0, 0, 1
-    for r in range(N):
-        total *= S[r]
-        while total > K and l <= r:
-            total //= S[l]
-            l += 1
-        ans = max(ans, r - l + 1)
-print(ans)
-
-# (条件) 連続部分列に含まれる全ての要素の値の和は、「K以上」である。
-N, K = 4, 10
-A = [6, 1, 2, 7]
-
-left = 0
-total = 0
-ans = 0
-
-for right in range(0, N):
-    total += A[right]
-    while total >= K:
-        ans += N - right
-        total -= A[left]
-        left += 1
-print(ans)
-
-N = 10
-S = 15
-A = [5, 1, 3, 5, 10, 7, 4, 9, 2, 8]
-right = 0
-total = 0
-ans = 0
-# S以上を求める場合にはこの形で
-for left in range(N):
-    while right < N and total < S:
-        total += A[right]
-        right += 1
-    if total < S:
-        break
-    if left == right:
-        right += 1
-    total -= A[left]
-
-# 要素の種類についての問題
-# 全ての要素を含む区間の最短は？
-# [0, 2), [0, 3), [3, 5)
-P = 5
-A = [1, 8, 8, 8, 1]
-dict = {}
-for i in A:
-    dict[i] = 0
-# 要素の種類数
-V = len(dict.items())
-
-# 事象の数をカウント
-cnt = 0
-right = 0
-# １つ目から全ての事象をカバーするまでrightを進める
-while right < P:
-    if dict[A[right]] == 0:
-        cnt += 1
-    dict[A[right]] += 1
-
-    if cnt == len(dict.items()):
-        break
-
-    right += 1
-    print(l, r)
-
-l = 0
-# 右を一つ進めて左をできる限り進める
-for r in range(right + 1, P):
-    # 新しく一つ加える
-    dict[A[r]] += 1
-    while True:
-        # もし要素が一つしか無かったら削れない
-        if dict[A[l]] == 1:
-            break
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
-
-# 各要素にダブりがない区間の最長
-# [0, 2), [2, 5)...
-N = 6
-A = [1, 2, 2, 3, 4, 4]
-
-dict = defaultdict(int)
-l = 0
-for r in range(N):
-    while dict[A[r]] == 1:
-        dict[A[l]] -= 1
-        l += 1
-    print(l, r)
-    dict[A[r]] += 1
-
-# K種類以内の要素のみを含んだ区間の最長は？
-N, K = 10, 2
-A = [1, 2, 3, 4, 4, 3, 2, 1, 2, 3]
-d = {}
-
-ans = 0
-l = 0
-for r in range(N):
-    # rの要素を足す
-    if A[r] in d:
-        d[A[r]] += 1
-    else:
-        d[A[r]] = 1
-
-    while len(d) > K:
-        # 末尾をどんどん除いていく
-        d[A[l]] -= 1
-        if not d[A[l]]:
-            del d[A[l]]
-        l += 1
-
-    ans = max(ans, r - l + 1)
-
-print(ans)
-
-# 要素をlim種類含む連続部分列を求める
+#ABC157 E - Simple String Queries
 N = 7
-S = 'xxoooxx'
-
-# 種類数の登録　すべての要素を含む連続部分列の最小について、に拡張
-d = {}
+s = 'abcdbbd'
+Q = 6
+query = [
+[2, 3, 6],
+[1, 5, 'z'],
+[2, 1, 1],
+[1, 4, 'a'],
+[1, 7, 'd'],
+[2, 1, 7]
+]
+S = []
+for i in s:
+    # 面倒なので文字を数値化
+	S.append(ord(i) - ord("a"))
+seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
+# 入力
 for i in range(N):
-    d[S[i]] = 0
-lim = len(d) # すべての要素数 dの中にこの数だけ入っていればいい
-#####################################################
-
-lim = 2 # 要素数がlim個の連続部分列が欲しい
-d = {}
-
-l = 0
-ans = 0
-# rを1つずつ刻んでいく
-for r in range(N):
-    if S[r] in d:
-        d[S[r]] += 1
+	seg[S[i]].update(i, 0)
+for i in range(Q):
+    a, b, c = query[i]
+    if int(a) == 1:
+        b = int(b) - 1
+        # Sのb番目にある文字をupdate
+        seg[S[b]].update(b, 1)
+        t = ord(c) - ord("a")
+        seg[t].update(b, 0)
+        S[b] = t
     else:
-        d[S[r]] = 1
+        b = int(b) - 1
+        c = int(c)
+        cnt = 0
+        for se in seg:
+            # 1 * 1 * 0 * 1 *...
+            # 区間内に一つでも0があれば0
+            if se.query(b, c) == 0:
+                cnt += 1
+        print(cnt)
 
-    # lim種類未満であれば何もしない
-    if len(d) < lim:
+
+def segfunc(x, y):
+    return min(x, y)
+
+ide_ele = float('inf')
+
+class SegTree:
+    def __init__(self, init_val, segfunc, ide_ele):
+        n = len(init_val)
+        self.segfunc = segfunc
+        self.ide_ele = ide_ele
+        self.num = 1 << (n - 1).bit_length()
+        self.tree = [ide_ele] * 2 * self.num
+        # 配列の値を葉にセット
+        for i in range(n):
+            self.tree[self.num + i] = init_val[i]
+        # 構築していく
+        for i in range(self.num - 1, 0, -1):
+            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+
+    def update(self, k, x):
+        k += self.num
+        self.tree[k] = x
+        while k > 1:
+            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
+            k >>= 1
+
+    def query(self, l, r):
+        res = self.ide_ele
+
+        l += self.num
+        r += self.num
+        while l < r:
+            if l & 1:
+                res = self.segfunc(res, self.tree[l])
+                l += 1
+            if r & 1:
+                res = self.segfunc(res, self.tree[r - 1])
+            l >>= 1
+            r >>= 1
+        return res
+
+# ABC146 F - Sugoroku
+# 最短手数k回でクリアできるとすると、
+# 1 ~ M　の内１つをk回選んで合計をNにする
+N, M = getNM()
+S = input()
+trap = set()
+for i in range(len(S)):
+    if S[i] == '1':
+        trap.add(i)
+
+# これABC011 123引き算と同じでは
+
+# 案1 dpを使う
+# dp[i]: iマスに止まる時の最短手順
+# dp[i]の時 dp[i + 1] ~ dp[i + M]についてmin(dp[i] + 1, dp[i + j])を見ていく
+# 決まったらdpを前から見ていき最短手順がdp[i] - 1になるものを探す（辞書順）
+# → M <= 10 ** 5より多分無理
+
+# セグ木使えばいける？
+# dp[i] = dp[i - M] ~ dp[i - 1]の最小値 + 1
+# dp[i - M] ~ dp[i - 1]の最小値はlogNで求められるので全体でNlogN
+
+dp = [float('inf')] * (N + 1)
+dp[0] = 0
+seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
+seg.update(0, 0)
+
+# dp[i]をレコード
+for i in range(1, N + 1):
+    # もしドボンマスなら飛ばす（float('inf')のまま）
+    if i in trap:
         continue
+    # dp[i - M] ~ dp[i - 1]の最小値をサーチ
+    min_t = seg.query(max(0, i - M), i)
+    seg.update(i, min_t + 1)
+    dp[i] = min_t + 1
 
-    # 現在lim種類以上あれば削る
-    while len(d) > lim or d[S[l]] > 1:
-        d[S[l]] -= 1
-        if not d[S[l]]:
-            del d[S[l]]
-        l += 1
+# goalに到達できないなら
+if dp[-1] == float('inf'):
+    print(-1)
+    exit()
 
-    ans += l + 1
+# 何回の試行で到達できるかをグルーピング
+dis = [[] for i in range(dp[-1] + 1)]
+for i in range(len(dp)):
+    if dp[i] == float('inf'):
+        continue
+    dis[dp[i]].append(i)
 
-print(ans)
+# ゴールから巻き戻っていく
+now = dp[-1]
+now_index = N
+ans = []
+# 辞書順で1 4 4 < 3 3 3なので
+# 一番前にできるだけ小さい数が来るようにする
+for i in range(now, 0, -1):
+    # dp[i] - 1回で到達できる
+    # 現在地点からMマス以内
+    # で最も現在地点から遠いところが１つ前のマス
+    index = bisect_left(dis[i - 1], now_index - M)
+    # サイコロの目を決める
+    ans.append(now_index - dis[i - 1][index])
+    # 現在地点更新
+    now_index = dis[i - 1][index]
 
-N = 4
-A = [2, 5, 4, 6]
+for i in ans[::-1]:
+    print(i)
 
-l, ans, xo, total = 0, 0, 0, 0
+# ARC026 C - 蛍光灯
+# 範囲全体を照らすのに必要な最小値
+N, M = getNM()
+seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
+L = [getList() for i in range(N)]
+L.sort()
+seg.update(0, 0)
 
-for r in range(N):
-    xo ^= A[r]
-    total += A[r]
+# [0, 1, 2, 3, 4, 5]
+# seg.query(0, 2): [0, 1]の最小値
+# seg.query(2, 2 + 1): [2]の最小値
+# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
+for l, r, c in L:
+    opt = seg.query(l, r)
+    vs = seg.query(r, r + 1)
+    seg.update(r, min(vs, opt + c))
+print(seg.query(M, M + 1))
 
-    # xo == totalになるまでA[l]で引き続ける
-    while xo < total:
-        xo ^= A[l]
-        total -= A[l]
-        l += 1
+# codeforces round731 F. Array Stabilization (GCD version)
 
-    ans += r - l + 1
+#####segfunc#####
+def segfunc(x, y):
+    return math.gcd(x, y)
+#################
 
-print(ans)
+# gcdの逆元は0
+#####ide_ele#####
+ide_ele = 0
+#################
 
+# gcdする
+# gcd(a1, a2), gcd(a2, a3)... 輪っかになっている
 
-N, K = 10, 4
-A = [100, 300, 600, 700, 800, 400, 500, 800, 900, 900]
+# だんだんgcdが1とかにならされて行くのでは？
+# 操作回数の最小を求める
+# 連続部分列Kについていずれの列でもgcdが等しくなる
+# gcdはモノイドだぞ セグ木使えば
 
-right, ans = 0, 0
-for left in range(N):
-    # 単調増加するとこまでもしくは長さKになるまで
-    while right < N - 1 and A[right] < A[right + 1] and right - left < K - 1:
-        right += 1
-    # もし長さKまで伸ばせたらans += 1
-    if right - left == K - 1:
-        ans += 1
-    # 前に進めないならright += 1
-    if left == right and right < N:
-        right += 1
-print(ans)
+T = getN()
+for _ in range(T):
+    N = getN()
+    A = getList()
+    A += A
+
+    def f(x):
+        seg = SegTree(A, segfunc, ide_ele) # セグ木立てる
+        res = [seg.query(i, i + x) for i in range(N)]
+        return all([res[i] == res[0] for i in range(N)])
+
+    ok = N + 1
+    ng = 0
+
+    while abs(ok - ng) > 1:
+        mid = (ok + ng) // 2
+        if f(mid):
+            ok = mid
+        else:
+            ng = mid
+
+    print(ok - 1)
 
 # codeforces 736
 # D. Integers Have Friends
