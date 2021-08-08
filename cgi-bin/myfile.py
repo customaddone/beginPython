@@ -31,21 +31,26 @@ dy = [0, 1, 0, -1]
 #############
 # Main Code #
 #############
+N = getN()
+E = [[] for i in range(N)]
+for _ in range(N - 1):
+    a, b = getNM()
+    E[a - 1].append(b - 1)
+    E[b - 1].append(a - 1)
 
-"""
-[0, a)までの転倒数　求められる
-[1, a)の転倒数は？
-0番目の数字について、a)までの数字の中で自分より小さい数字の個数を引く
-bit = BIT(N + 1)
-cnt = 0
-for i in range(1, N + 1):
-    cnt += i - 1 - bit.get(A[i] + 1)
-    bit.add(A[i], 1)
-    print(cnt)
-"""
+for i in range(N):
+    E[i].sort(reverse = True)
 
-N, K = getNM()
-A = getList()
+ignore = [0] * N
+ignore[0] = 1
+def dfs(u):
+    print(u, E)
+    global ignore
+    while E[u]:
+        v = E[u].pop()
+        # まだ
+        if ignore[v] == 0:
+            ignore[v] = 1
+            dfs(v)
 
-bit = Comp_BIT(N + 1, A)
-print(bit.alter, bit.rev)
+dfs(0)
