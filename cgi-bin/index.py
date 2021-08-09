@@ -31,126 +31,109 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# ABC195 F. Coprime Present
-
+# indeedなう　D - 高橋くんと数列
 """
-A以上B以下　幅は72以下
-A, Bがでかい
-連続する数　ここポイント
-連続する数は互いに素
-
-Q:どの数とどの数をペアにしてはいけないか
-偶数は一緒にしてはいけない　偶数のどれか1つ or 全くない
-奇数はどんな感じ
-3の倍数の場合は6つ前、6つ後ろと一緒になってはいけない
-5の倍数は10こ前、10こ後ろと一緒になってはいけない...
-2の倍数が入る通り、3の倍数が入る通り...をdp
-bit dpすれば
-2 4
-0b1 2は3の倍数
-0b10 3は3の倍数
-0b1 4は2の倍数
+その数を一つでも含む連続部分列を返す
+各iにつきO(1)で
+含まないものを引こう
 """
 
-A, B = getNM()
-# 72までに素数が20個あります
-prime = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
-N = [i for i in range(A, B + 1)]
-L = len(N)
+N, C = getNM()
+A = getList()
 
-# 各数字をbit棒に変換する
-for i in range(L):
-    # なんの約数かをbit形式で記録
-    opt = 0
-    for j in range(20):
-        if N[i] % prime[j] == 0:
-            opt += (1 << j)
-    N[i] = opt
+# 数字A[i]の最後の場所
+p = [-1] * (C + 1)
+ans = [0] * (C + 1)
 
-prev = [0] * (1 << 20)
-prev[0] = 1 # 空集合が1
-for i in range(L):
-    next = [0] * (1 << 20)
-    # 配るdpで
-    for bit in range(1 << 20):
-        next[bit] += prev[bit] # 何も足さない場合
-        if not bit & N[i]: # 共通の約数がなければ
-            next[bit | N[i]] += prev[bit]
-    prev = next
+for i in range(N):
+    # 片方で前回以降の分だけ、片方で最後まで
+    # lを固定してrをl+1 ~ Nにすればダブらない
+    # さらに前回の場所 + 1 ~ をlにもできる
+    ans[A[i]] += (i - p[A[i]]) * (N - i)
+    p[A[i]] = i
 
-print(sum(prev))
+for i in ans[1:]:
+    print(i)
 
-# 典型90 042 - Multiple of 9（★4）
-# 配るのは0から、累積するのは2から
+# D - AtCoder Express 2
+# bitの別解
 
-K = getN()
-if K % 9 != 0:
-    print(0)
-    exit()
+"""
+クエリソートしてみる
 
-dp = [0] * (K + 2)
-dp[0] = 1
-dp[1] = 1
-for i in range(K + 1):
-    if i > 1:
-        dp[i] += dp[i - 1]
-    dp[i] %= mod
-    dp[i + 1] += dp[i]
-    dp[min(i + 10, K + 1)] -= dp[i]
+qを置いてみてその間の個数を調べてみる
+右から探索する pの降順に
+bitで求まる
 
-print(dp[-2])
+pがある
+lがp以上になるものについてそのrをbitに置く
+bit.cum(p, q + 1)
+"""
 
-# codeforces round667
-# F. Subsequences of Length Two
+N, M, Q = getNM()
+R = [getList() for i in range(M)]
+que = []
+for i in range(Q):
+    p, q = getNM()
+    que.append([p, q, i])
+R.sort()
+que.sort()
+ans = [0] * Q
 
-# 耳dpの要領　tが文字数2なので
-# t1, t2にそれぞれ何個振り分けるか
-# 今までi個変換してこれより前にあるt1の個数がj個
+bit = BIT(N)
 
-N, K = getNM()
-S = list(input())
-T = input()
-t1, t2 = T[0], T[1]
-if t1 == t2:
-    for i in range(N - 1, -1, -1):
-        if K and S[i] != t1:
-            S[i] = t1
-            K -= 1
-    ans = 0
-    cnt = 0
-    for i in range(N):
-        if S[i] == t1:
-            ans += cnt
-            cnt += 1
-    print(ans)
-    exit()
+for p in range(N, 0, -1):
+    while R and p <= R[-1][0]:
+        l, r = R.pop()
+        bit.add(r, 1)
+    while que and p <= que[-1][0]:
+        ql, qr, index = que.pop()
+        ans[index] = bit.cum(ql, qr + 1)
 
-# 今までi個変換してこれより前にあるt1の個数がj個の時の連続部分列の個数
-prev = [[-float('inf')] * (N + 1) for i in range(K + 1)]
-prev[0][0] = 0
-for n in range(N):
-    next = [[-float('inf')] * (N + 1) for i in range(K + 1)]
-    # 現在までに変換している個数
-    for i in range(K + 1):
-        # ここより前にあるt1の個数
-        for j in range(N):
-            # 変換しない
-            next[i][j] = max(next[i][j], prev[i][j])
-            # その文字がt1だった
-            if S[n] == t1:
-                next[i][j + 1] = max(next[i][j + 1], prev[i][j])
-            # その文字がt2だった
-            if S[n] == t2:
-                # これより前のt1の個数だけカウント数が増える
-                next[i][j] = max(next[i][j], prev[i][j] + j)
+for a in ans:
+    print(a)
 
-            # 変換する
-            if i < K:
-                # t1に変換
-                next[i + 1][j + 1] = max(next[i + 1][j + 1], prev[i][j])
-                # t2に変換
-                next[i + 1][j] = max(next[i + 1][j], prev[i][j] + j)
+# ARC026 C - 蛍光灯
 
-    prev = next
+N, M = getNM()
+seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
+L = [getList() for i in range(N)]
+L.sort()
+seg.update(0, 0)
 
-print(max(prev[-1]))
+# [0, 1, 2, 3, 4, 5]
+# seg.query(0, 2): [0, 1]の最小値
+# seg.query(2, 2 + 1): [2]の最小値
+# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
+for l, r, c in L:
+    opt = seg.query(l, r)
+    vs = seg.query(r, r + 1)
+    seg.update(r, min(vs, opt + c))
+print(seg.query(M, M + 1))
+
+# D: Shortest Path on a Line
+# セグ木もありだがheapqueで最小値を保持もできる
+
+N, M = getNM()
+R = [getList() for i in range(M)]
+R.sort(reverse = True)
+
+ans = [float('inf')] * (N + 1)
+ans[1] = 0
+q = [[0, 1], [float('inf'), float('inf')]]
+
+for i in range(1, N + 1):
+    # 範囲外のものを取り除く
+    while q and q[0][1] < i:
+        heappop(q)
+    # 記録
+    ans[i] = q[0][0]
+    # 追加
+    while R and R[-1][0] <= i:
+        _, r, c = R.pop()
+        heappush(q, [ans[i] + c, r])
+
+if ans[-1] == float('inf'):
+    print(-1)
+else:
+    print(ans[-1])
