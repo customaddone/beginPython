@@ -268,3 +268,23 @@ for u in range(N):
     if not ignore[u]:
         g += 1
         dfs(u, g)
+
+# オイラーツアー
+N = getN()
+E = [[] for i in range(N)]
+for _ in range(N - 1):
+    a, b = getNM()
+    E[a - 1].append(b - 1)
+    E[b - 1].append(a - 1)
+
+for i in range(N):
+    E[i].sort()
+
+ans = []
+def dfs(u, p):
+    ans.append(u)
+    for v in E[u]:
+        if v != p:
+            dfs(v, u)
+            ans.append(u)
+dfs(0, -1)
