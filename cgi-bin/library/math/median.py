@@ -31,6 +31,8 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
+# 集合の中央値を求める　各操作につきlogN
+# multiset使わずにできるように
 class Median():
     from heapq import heappop, heappush
     def __init__(self):
@@ -65,18 +67,3 @@ class Median():
     # 中央値以下の数字、中央値以上の数字の個数と合計
     def val_sum(self):
         return len(self.MIN), len(self.MAX), self.mi_sum, self.ma_sum
-
-Q = getN()
-a = [getList() for i in range(Q)]
-# (n + 1) // 2個目を見る
-cnt, add = 0, 0
-que = Median()
-for q in a:
-    if q[0] == 1:
-        cnt += 1
-        add += q[2]
-        que.add(q[1])
-    else:
-        med = que.val()
-        nu, no, su_u, su_o = que.val_sum()
-        print(med, nu * med - su_u + su_o - no * med + add)
