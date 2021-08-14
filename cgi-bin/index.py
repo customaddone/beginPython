@@ -31,52 +31,27 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-class Median():
-    from heapq import heappop, heappush
-    def __init__(self):
-        self.MIN, self.MAX = [], []
-        self.total = 0
-        self.mi_sum, self.ma_sum = 0, 0
+"""
+N個のボールを入れる
+maxflowしたいが
+limitは更新されるか
+"""
 
-    def add(self, x):
-        self.total += 1
-        # 足りない場合
-        if len(self.MIN) < (self.total + 1) // 2:
-            heappush(self.MIN, -x) # 小さい方に
-            self.mi_sum += x
-        else:
-            heappush(self.MAX, x) # 大きい方に
-            self.ma_sum += x
-        # 常にMINの最大値 < MAXの最小値になるように保つ
-        if self.MAX and -self.MIN[0] > self.MAX[0]:
-            over = -heappop(self.MIN)
-            self.mi_sum -= over
-            under = heappop(self.MAX)
-            self.ma_sum -= under
-            heappush(self.MIN, -under)
-            self.mi_sum += under
-            heappush(self.MAX, over)
-            self.ma_sum += over
-
-    # 中央値が出てくる
-    def val(self):
-        return -self.MIN[0]
-
-    # 中央値以下の数字、中央値以上の数字の個数と合計
-    def val_sum(self):
-        return len(self.MIN), len(self.MAX), self.mi_sum, self.ma_sum
-
-Q = getN()
-a = [getList() for i in range(Q)]
-# (n + 1) // 2個目を見る
-cnt, add = 0, 0
-que = Median()
-for q in a:
-    if q[0] == 1:
-        cnt += 1
-        add += q[2]
-        que.add(q[1])
-    else:
-        med = que.val()
-        nu, no, su_u, su_o = que.val_sum()
-        print(med, nu * med - su_u + su_o - no * med + add)
+from heapq import *
+for _ in range(int(input())):
+	n = int(input())
+	lr = [list(map(int, input().split())) for i in range(n)]
+	lr.sort()
+	lr.append((10 ** 18, 10 ** 18))
+	cur = -(10 ** 18)
+	Q = []
+	heapify(Q)
+	ans = "Yes"
+	for i in range(n + 1):
+		while Q and cur < lr[i][0]:
+			g = heappop(Q)
+			if cur > g: ans = "No"; break
+			cur += 1
+		cur = lr[i][0]
+		heappush(Q, lr[i][1])
+	print(ans)

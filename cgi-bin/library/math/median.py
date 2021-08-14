@@ -51,19 +51,15 @@ class Median():
             self.ma_sum += x
         # 常にMINの最大値 < MAXの最小値になるように保つ
         if self.MAX and -self.MIN[0] > self.MAX[0]:
-            over = -heappop(self.MIN)
-            self.mi_sum -= over
-            under = heappop(self.MAX)
-            self.ma_sum -= under
-            heappush(self.MIN, -under)
-            self.mi_sum += under
-            heappush(self.MAX, over)
-            self.ma_sum += over
+            self.mi_sum += (self.MAX[0] - (-self.MIN[0]))
+            self.ma_sum += (-self.MIN[0] - self.MAX[0])
+            heappush(self.MIN, -heappop(self.MAX))
+            heappush(self.MAX, -heappop(self.MIN))
 
     # 中央値が出てくる
     def val(self):
         return -self.MIN[0]
 
-    # 中央値以下の数字、中央値以上の数字の個数と合計
+    # 中央値以下の数、中央値以上の数の個数と合計
     def val_sum(self):
         return len(self.MIN), len(self.MAX), self.mi_sum, self.ma_sum
