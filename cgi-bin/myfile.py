@@ -31,26 +31,19 @@ dy = [0, 1, 0, -1]
 #############
 # Main Code #
 #############
-N = getN()
-E = [[] for i in range(N)]
-for _ in range(N - 1):
-    a, b = getNM()
-    E[a - 1].append(b - 1)
-    E[b - 1].append(a - 1)
-
-for i in range(N):
-    E[i].sort(reverse = True)
-
-ignore = [0] * N
-ignore[0] = 1
-def dfs(u):
-    print(u, E)
-    global ignore
-    while E[u]:
-        v = E[u].pop()
-        # まだ
-        if ignore[v] == 0:
-            ignore[v] = 1
-            dfs(v)
-
-dfs(0)
+for i in range(1, N):
+    next = deepcopy(prev)
+    # ここ起点
+    next[1 << S[i]][S[i]] += 1
+    # 次はS[i] 今まで使ってないなら採用できる
+    for bit in range(1 << N):
+        # 今現在
+        for p in range(10):
+            # 今まで使ってない or 現在のものと同じ
+            if (not bit & (1 << S[i])) or p == S[i]:
+                next[bit | (1 << S[i])][S[i]] += prev[bit][p]
+                next[bit | (1 << S[i])][S[i]] %= MOD
+    prev = next
+    for bit in range(1 << 10):
+        if sum(prev[bit]) > 0:
+            print(i, bin(bit), prev[bit])

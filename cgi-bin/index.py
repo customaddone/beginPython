@@ -31,200 +31,294 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# AGC019 B - Reverse and Compare
+# ABC144 F - Fork in the Road
 
 """
-何通りあるか　comboかdp
-nC2を選んで i == jは意味ない
-1 2 aatt
-1 3 taat
-1 4 ttaa
-2 3 atat
-2 4 atta
-3 4 aatt
-無駄な動きはない？
-全通り選んでダブったのを引くか、前からdpか、comboか
+塞いだあと高橋くんがどこかで詰まったらだめ
+辺を一つ消す　判定するをN回繰り返す
+dpする？
+dp[i][j]: 頂点iにj回の移動で到達する確率
 
-ataaの場合
-2 3 aata
-1 4 aata 同じ
-a, s1, s2...sn, aの場合
-a ~ aとs1 ~ s2は同じ
-ペアが１つあれば１つダブりが生まれる
-文字が同じ場所を探す
-abracadabraの場合
-2 10 と 1 11は同じだし、
-2 3 と 1 4も同じ
+# dp[i][j]: 頂点iにj回の移動で到達する確率
+dp = [[0] * (N + 1) for i in range(N)]
+dp[0][0] = 1
+
+# 頂点
+for i in range(N):
+    # j回の移動で
+    for j in range(i + 1):
+        for v in E[i]:
+            dp[v][j + 1] += dp[i][j] / len(E[i])
+print(dp)
+
+一回の判定でO(M)ぐらいかかる
+エッジにウェートをかけると？
+エッジを見るだけでなんとかなるように
+dpの全てについて調べる必要はないんでは
+P[s] * (1 / M)の大きさが最も大きいものが一番Nの期待値への寄与度が大きい
 """
 
-A = input()
-N = len(A)
-l = [0] * 26
+N, M = getNM()
+dist = [[] for i in range(N)]
+for i in range(M):
+    s, t = getNM()
+    dist[s - 1].append(t - 1)
+for i in range(N):
+    dist[i].sort()
+
+# トポロジカルソートにすればs < tの条件がなくても使える
+def calc(edges):
+    # 確率を計算
+    P = [0] * N
+    P[0] = 1
+    for u in range(N):
+        for v in edges[u]:
+            P[v] += P[u] / len(edges[u])
+
+    # 期待値を計算　ゴールから逆向きで期待値を求める
+    # あと何回進めばゴールまで行けるか
+    E = [0] * N
+    for u in range(N - 1, -1, -1):
+        for v in edges[u]:
+            # この(E[v] + 1)が大きくなるものを削ればいい
+            E[u] += (E[v] + 1) / len(edges[u])
+
+    return P, E
+
+P, E = calc(dist)
+ans = E[0]
+diff = 0
+
+for u in range(N):
+    for v in dist[u]:
+        if len(dist[u]) > 1:
+            # u ~ vの辺を削ると(E[v] + 1) / len(dist[u])の分だけ軽くなるが
+            # 残った分が len(dist[u]) / (len(dist[u]) - 1)でかけられる
+            ban = (E[v] + 1) / len(dist[u]) # これが消える予定
+            new = (E[u] - ban) * len(dist[u]) / (len(dist[u]) - 1)
+            diff = max(diff, (E[u] - new) * P[u])
+
+print(ans - diff)
+
+# M-SOLUTION プロコン　C - Best-of-(2n-1)
+
+"""
+数学問題でーす
+どちらかが累計でN回勝てば良い　遷移を考える N^2解から考える
+高橋くんが1回勝って終わる確率
+答えは整数 / 整数になるらしい
+
+高橋くんがN回勝って終わる時
+青木くんはN - 1回以下の任意の整数回勝って終わっている
+青木くんが勝つ確率をb回で固定して足し合わせ
+引き分けは無限回あって良い
+青木くんがN回勝って終わるのは逆になる
+２つは独立事象か？
+
+N+b+cCc * N+bCb * (A / 100)^N * (B / 100)^b * (C / 100)^c
+
+期待値を計算
+dp[1][0] = A / 100 * (dp[0][0] + 1) + C / 100 * (dp[1][0] + 1)
+dp[i][j] = A / 100 * (dp[i - 1][j] + 1) + B / 100 * (dp[i][j - 1] + 1) + C / 100 * (dp[i][j])
+(100 - C)dp[i][j] = A * (dp[i - 1][j] + 1) + B * (dp[i][j - 1] + 1)
+
+合計でN回勝つ期待値でdpとるか
+dp[i]: どちらかがN回勝って終わっている
+i+1だと？
+
+一発では無理
+ans += 期待値 / 確率を全ての場合で求めるやり方
+
+確率の求め方
+高橋くんがa回、青木くんがb回出すとすれば
+a+bCa * (A / A + B)^a * (B / A + B)^b
+a+bCa * A^a * B^b * (A + B)^a+b
+高橋くんがN回、青木くんが0回、1回...その逆を求めるなら
+
+高橋くんがN-1回、青木くんがi回勝ち、さらに高橋くんが勝てば良い
+
+高橋くんがN回、青木くんがi回勝つのにかかる期待値
+マスを一つ移動するのにかかる期待値は？
+C = 0なら自明にa + bになる
+100 * (N + i) / 100 - C
+100 / 100 - Cは空回り分
+
+A == B == 0はない
+"""
+
+# 逆元事前処理ver
+# nが小さい場合に
+lim = 10 ** 6 + 1
+fact = [1, 1]
+factinv = [1, 1]
+inv = [0, 1]
+
+for i in range(2, lim + 1):
+    fact.append((fact[-1] * i) % mod)
+    inv.append((-inv[mod % i] * (mod // i)) % mod)
+    # 累計
+    factinv.append((factinv[-1] * inv[-1]) % mod)
+
+def cmb(n, r):
+    if (r < 0) or (n < r):
+        return 0
+    r = min(r, n - r)
+    return fact[n] * factinv[r] * factinv[n - r] % mod
+
+N, A, B, C = getNM()
+a_pow = [1] * (10 ** 6 + 1)
+b_pow = [1] * (10 ** 6 + 1)
+for i in range(1, 10 ** 6 + 1):
+    a_pow[i] = (a_pow[i - 1] * A) % mod
+    b_pow[i] = (b_pow[i - 1] * B) % mod
+
+ans = 0
+# 高橋くんがN-1回、青木くんが0 ~ N - 1回勝ったあと、高橋くんが勝つ
 
 for i in range(N):
-    l[ord(A[i]) - ord('a')] += 1
+    # 分子はpowして良い
+    prob = ((cmb(N + i - 1, i) * a_pow[N - 1] * b_pow[i]) * A) % mod
+    # 分母は(A + B) ** (2 * N - 1)に揃える
+    prob *= pow(A + B, N - i - 1, mod)
+    prob %= mod
+    # deno = (A + B) ** (2 * N - 1)
 
-ans = (N * (N - 1) // 2) + 1
-for i in range(26):
-    ans -= l[i] * (l[i] - 1) // 2
-print(ans)
+    # 期待値　分子部分
+    exp = 100 * (N + i)
+    # 分母はA + B
+    ans += prob * exp
+    ans %= mod
 
-
-# 第5回PAST J
-"""
-a:a
-b:ab
-2:ababab
-c:abababc
-1:abababcabababc
-文字列はまとめる
-指数関数的に増える
-ハンバーガーと同じか？
-2, 6, 7, 14 全体の長さがわかる
-
-a
-aaaaaaaaaa
-aaaaaaaaaa + aaaaaaaaaaを9回
-10 ** 15超えた時点でストップ
-[ab] * 1
-[ab] * 3
-ab * 3, c * 1
-ab * 3, c * 1, ab * 3, c * 1
-14 // 2 = 7
-
-7で引けるだけ引く
-X = 6なら
-X = 8なら
-
-[1, 2, 6, 7, 14]
-0になったら最初に出てくる文字
-
-６文字目まで出力した
-"""
-
-S = input()
-N = len(S)
-X = getN() - 1
-
-C = [0] * (N + 1)
-p = 0
-
+# 青木くんサイド
 for i in range(N):
-    if S[i] <= '9':
-        C[i + 1] = C[i] * (int(S[i]) + 1)
-    else:
-        C[i + 1] = C[i] + 1
-    if C[i + 1] > X:
-        p = i
-        break
+    prob = ((cmb(N + i - 1, i) * a_pow[i] * b_pow[N - 1]) * B) % mod
+    prob *= pow(A + B, N - i - 1, mod)
+    prob %= mod
 
-for i in range(p, -1, -1):
-    if S[i] <= '9':
-        X %= C[i]
-    else:
-        if X == C[i]:
-            print(S[i])
-            break
+    exp = 100 * (N + i)
+    ans += prob * exp
+    ans %= mod
 
-# ARC081E Don't Be a Subsequence
+# 最後に確率計算(A + B) ** (2 * N - 1)、期待値(A + B)
+# 計((A + B) ** (2 * N))で割ることにする
+# 分母の逆元の計算はこうやる
+deno = (pow(A + B, 2 * N, mod)) % mod
+print((ans * pow(deno, mod - 2, mod)) % mod)
+
+# ARC106 D-power
 
 """
-まず最短で何文字か
-部分文字列（連続しなくていい）
-後ろから順番にdpしていっては
+掛け算をする
+N(N - 1) // 2個全てを計算するのは無理
+天才式変換をしよう
+(a + b)^3 = a^3 + 3a^2b + 3ab^2 + b^3
+a1, a2...が出る回数はそれぞれ(N - 1)回
+a^3, b^3部分のsumはすぐでる
+あらゆるa^2bのsumを求めたい
+1^2 * 2^1 + 1^1 * 2^2
+1^2 * 3^1 + 1^1 * 3^2
+2^2 * 3^1 + 2^1 * 3^2
+1^1の相手は2^2, 3^2
+一般化すると
+k乗する場合
+0-indexでの第i項目、第k - i項目のことを考える
+kCiをあとでかける
+ai^iの相手は(任意のaj^k-i)
+ai^k-iの相手は(任意のaj^i)
+これのsumは
+1 0 1
+2 0 2 真ん中が抜ける
+3 0 3
+3 1 2
+[[1, 1, 1], [1, 2, 3], [1, 4, 9], [1, 8, 27]]
+[3, 6, 14, 36]
+ここで72
+1^0の相手は36 - 1 = 35
+2^0の相手は36 - 8 = 28
+3^0の相手は36 - 27 = 9 これらは3C0でかける
+ここで144
+1^1の相手は2^2 + 3^2 = 14 - 1^2 = 13
+2^1の相手は14 - 4 = 10
+3^1の相手は14 - 9 = 5 これらは3C1でかける　合計216
 
-全種類入ってればアウト
-i番目以降の種類数を数える
-atcoderregularcontest
-最初の地点から飛ぶ
-[[1, 13], [], [3, 15], [5], [6, 9, 19]...]
-aについて見ると1に飛べる
-bについて見ると飛ぶとこはない　答えはb
-末尾sのものでdp取れるが
-最小で何文字かはわかる
-次に辞書順最小を求める
-aから飛んでみる　カウントが減ってればOK
+まとめたいが
+su_p[i] * su_p[x - i] - (p_l[i][n] * p_l[x - i][n]の合計)
+(p_l[i][n] * p_l[x - i][n]の合計)はsu_p[x]で一定
+kCi * (su_p[i] * su_p[x - i] - su_p[x])
 
-まず最短文字数を求める　そのあと辞書順最小のものを探す
+0-indexでの第i項目、第k - i項目のことを考えると
+a^i * b^k-iは合計でN(N - 1)//2個ある
+a^k-i * b^iも合計でN(N - 1)//2個ある
+その合計は(各Aをi乗した値の合計) * (各Aをk-i乗した値の合計) - (各Aについて^i * ^k-i = k乗した値の合計)
+これらに係数kCiをかける
 """
 
-S = [-1] + ord_chr(list(input()), 0)
-N = len(S)
-l = [[] for i in range(26)]
+N, K = getNM()
+A = getList()
 
-for i in range(1, N):
-    l[S[i]].append(i)
-
-# スタート地点から最小で何文字飛ぶのか
-dp = [0] * N
-for i in range(N - 1, -1, -1):
-    cnt = float('inf')
-    for j in range(26):
-        # 一番小さい回数で飛べるとこを探す
-        index = bisect_right(l[j], i)
-        if index == len(l[j]):
-            cnt = 0
+p_l = [[0] * N for i in range(K + 1)]
+for i in range(K + 1):
+    for j in range(N):
+        if i == 0:
+            p_l[i][j] = 1
         else:
-            cnt = min(cnt, dp[l[j][index]])
-    dp[i] = cnt + 1
+            p_l[i][j] = (p_l[i - 1][j] * A[j]) % mod
 
-ans = ''
-now = 0
-cnt = dp[0]
+su_p = [sum(p_l[i]) % mod for i in range(K + 1)]
 
-# cnt文字復元
-# 一番早い飛べるとこ（カウントが減るとこ）に飛ぶ
-while cnt:
-    for j in range(26):
-        index = bisect_right(l[j], now)
-        if index == len(l[j]): # ゴール
-            ans += chr(j + ord('a'))
-            cnt -= 1
-            break
-        if dp[l[j][index]] == cnt - 1:
-            now = l[j][index]
-            ans += chr(j + ord('a'))
-            cnt -= 1
-            break
+for x in range(1, K + 1):
+    ans = 0
+    for i in range(x + 1):
+        ans += cmb(x, i) * (su_p[i] * su_p[x - i] - su_p[x])
+        ans %= mod
+    print((ans * pow(2, mod - 2, mod)) % mod)
 
-print(ans)
+# ABC215 G - Colorful Candies 2 
 
-# codeforces round739
-# Polycarp and String Transformation
-# 文字列の長さで二分探索
+"""
+期待値: 全ての通りについて考える
+この色が選ばれる通りの数について足し合わせ　→　この色が選ばれない通りの数の引き合わせも考えられる
+一つも選ばれない場合の数を考える
+全ての場合がnCk通りで、その全てについて
 
-T = getN()
-for _ in range(T):
-    S = input()
-    N = len(S)
-    d = {}
-    add = [] # 操作順
-    for i in range(N - 1, -1, -1):
-        if not S[i] in d:
-            d[S[i]] = 1
-            add.append(S[i])
+補集合を考える　期待値はこれが選ばれると += 1と考える
+この色が選ばれない通りの数　を考える
+これ以外のやつで構成する
 
-    add = list(reversed(add))
-    # 長さの判定
-    def f(x):
-        s = S[:x]
-        t = ''
-        # 文字列を作る
-        for i in range(len(add)):
-            t += s
-            s = s.replace(add[i], '')
-        return len(t), t
+for k in range(1, N + 1):
+    deno = cmb(N, k)
+    nume = (deno * len(d)) % mod
+    # ここの計算が多い！
+    for _, v in d.items():
+        nume -= cmb(N - v, k)
 
-    ok = 0
-    ng = N + 1
-    while abs(ng - ok) > 1:
-        mid = (ok + ng) // 2
-        if f(mid)[0] > N:
-            ng = mid
-        else:
-            ok = mid
+    nume %= mod
+    deno = pow(deno, mod - 2, mod)
+    print((nume * deno) % mod)
 
-    if f(ok)[1] == S:
-        print(S[:ok], ''.join(add))
-    else:
-        print(-1)
+cmb(N - v, k)で引くところをうまく計算する
+kは1つずつ増えていくので...
+"""
+
+N = getN()
+A = getList()
+d = defaultdict(int)
+for a in A:
+    d[a] += 1
+# 数字がi個ある数字が何個あるか
+c = defaultdict(int)
+for _, v in d.items():
+    c[v] += 1
+
+# nCk
+for k in range(1, N + 1):
+    deno = cmb(N, k)
+    nume = (deno * len(d)) % mod # 全ての通りで全ての色を選べると仮定
+    diff = []
+    # n個ある数字がv種類ある
+    for n, v in c.items():
+        nume -= cmb(N - n, k) * v
+
+    nume %= mod
+    deno = pow(deno, mod - 2, mod)
+    print((nume * deno) % mod)
