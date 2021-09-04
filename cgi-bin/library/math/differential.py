@@ -57,21 +57,8 @@ def is_integer_num(n):
 # xが2をとる時、yが2をとる
 # (x[i] - x[i - 1]) * yの総和が積分になる
 def integral(n):
-    # n/xを微分すると-n/x^2になる
-    # -n/x^2 <= 1: i <= √n である間は一つのyにつき対応するxは1もしくは複数ある
-    res_x = deque([])
-    res_y = deque([])
-    limit = math.sqrt(n) # f(x)' = 1になるxを求める
-    now = n
-    for i in range(1, int(limit) + 1):
-        res_x.appendleft(n // i)
-        res_y.appendleft(i)
-
-    # i > √nになる部分については一つのyにつき対応するxは0か1なので
-    # 今度はxに対応するyを求める
-    for i in range(res_x[0] - 1, 0, -1):
-        res_x.appendleft(i)
-        res_y.appendleft(n // i)
-    return list(res_x), list(res_y)
-
+    limit = int(math.sqrt(n))
+    res1 = [i for i in range(1, limit + 1)] + [n // i for i in range((n // limit) - 1, 0, -1)]
+    return res1, res1[::-1]
+    
 print(integral(10))

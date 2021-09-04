@@ -288,3 +288,41 @@ def dfs(u, p):
             dfs(v, u)
             ans.append(u)
 dfs(0, -1)
+
+# bfsでも一回頂点から流す→葉から探索でdfsができる
+# codeforces round 693 G. Moving to the Capital
+T = getN()
+for _ in range(T):
+    _ = input()
+    N, M = getNM()
+    dis1 = [float('inf')] * N
+    dis1[0] = 0
+    E = [[] for i in range(N)]
+    for _ in range(M):
+        u, v = getNM()
+        E[u - 1].append(v - 1)
+
+    # 距離の計測
+    q = deque([0])
+    # トポソ順
+    order = []
+    while q:
+        u = q.popleft()
+        order.append(u)
+        for v in E[u]:
+            if dis1[v] > dis1[u] + 1:
+                dis1[v] = dis1[u] + 1
+                q.append(v)
+
+    dis2 = [float('inf')] * N
+    # 葉から探索
+    while order:
+        u = order.pop()
+        for v in E[u]:
+            # 逆行
+            if dis1[v] <= dis1[u]:
+                dis2[u] = min(dis2[u], dis1[v])
+            else:
+                dis2[u] = min(dis2[u], dis2[v])
+
+    print(*[min(dis1[i], dis2[i]) for i in range(N)])

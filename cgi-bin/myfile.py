@@ -31,19 +31,17 @@ dy = [0, 1, 0, -1]
 #############
 # Main Code #
 #############
-for i in range(1, N):
-    next = deepcopy(prev)
-    # ここ起点
-    next[1 << S[i]][S[i]] += 1
-    # 次はS[i] 今まで使ってないなら採用できる
-    for bit in range(1 << N):
-        # 今現在
-        for p in range(10):
-            # 今まで使ってない or 現在のものと同じ
-            if (not bit & (1 << S[i])) or p == S[i]:
-                next[bit | (1 << S[i])][S[i]] += prev[bit][p]
-                next[bit | (1 << S[i])][S[i]] %= MOD
-    prev = next
-    for bit in range(1 << 10):
-        if sum(prev[bit]) > 0:
-            print(i, bin(bit), prev[bit])
+"""
+2N個のボール　1~Nまで二色ずつ
+M本の筒にそれぞれボールが入っている
+一番上が一番左のやつ　あんま自由度なさそう　言い換えの問題
+ペアは一つしかない dequeで管理　貪欲に？
+colorが2つ以上あるものを消す　なくなったら-1 全てが-1になったら終了
+"""
+
+N = getN()
+A = getList()
+B = getList()
+
+P = [[A[i], B[i]] for i in range(N)]
+P.sort(reverse = True)
