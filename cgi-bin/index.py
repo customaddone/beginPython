@@ -21,7 +21,7 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-sys.setrecursionlimit(1000000)
+# sys.setrecursionlimit(1000000)
 inf = float('inf')
 eps = 10 ** (-10)
 dy = [0, 1, 0, -1]
@@ -31,83 +31,41 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-#####segfunc#####
-def segfunc(x, y):
-    return min(x, y)
-#################
+def make_divisors(n):
+    divisors = []
+    for i in range(1, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            divisors.append(i)
+            if i != n // i:
+                divisors.append(n // i)
+    return sorted(divisors)
 
-#####ide_ele#####
-ide_ele = float('inf')
-#################
+# k回回しても同じになるネックレスの集め方
+# 最大のネックレスを作ろう
+# abcabcabcなら3-beautifull, 6-beau, 9-beau...
+# 同じm個の塊をt個並べるとn * m beauになる
+# つまりk-beauにするにはkの約数i個の塊をいくつか作ればいい
+# [1, 1, 5, 6, 7]
+# a * 3, b * 6, c * 6
+# aaabb は5個の塊
 
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
+T = getN()
+for _ in range(T):
+    N, M = getNM()
+    S = input()
+    d = defaultdict(int)
+    for s in S:
+        d[s] += 1
+    d = sorted(d.values())
+    now, ans = float('inf'), 0
+    divisors = make_divisors(M)
 
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-
-    def query(self, l, r):
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-
-# 区間を3つに分ける
-# max(区間1) = min(区間2) = max(区間3
-# 真ん中から求めて行った方が楽そう
-# 小さい順に置いていく　真ん中の区間はそれしか選んではいけない　全ての連続部分和は探索できない
-
-# 左から順に求めると？　中、右をlogNで求められるか　max(left)の値だけ置いていく　それしか選べない
-# 中の右端からいくつ選べるかはわかる　max(right)が同じになるやつと接続できれば
-# ma_lの値は単調増加
-# xがある地点とx以上がある領域(だんだん増えていく)を抑えないといけない
-# 尺取り法をする
-# iが進むma_lが増える　中ブロックの範囲が狭まる
-# 範囲内のxがあるポイントとma_r[j] = xのポイントを探す
-
-N = getN()
-A = getList()
-ma_l = deepcopy(A)
-ma_r = deepcopy(A)
-for i in range(1, N):
-    ma_l[i] = max(ma_l[i], ma_l[i - 1])
-    ma_r[-i-1] = max(ma_r[-i-1], ma_r[-i])
-seg = SegTree(A, segfunc, ide_ele)
-
-# ma_l[i]以下の領域
-for i in range(N - 1):
-    # 領域は存在しない
-    if ma_l[i] > A[i + 1]:
-        continue
-    # セグ木で二分探索 x以上の領域が続く範囲を探索
-    ok, ng = i + 1, N
-    while abs(ng - ok) > 1:
-        mid = (ok + ng) // 2
-        if seg.query(i + 1, mid + 1) >= ma_l[i]:
-            ok = mid
-        else:
-            ng = mid
-    print(i + 1, ok, ng)
+    # t-time repeat
+    for t in range(1, max(d) + 1):
+        # the max m-size of blocks
+        opt = sum([d[i] // t for i in range(len(d))])
+        # make div-size blocks
+        for div in divisors:
+            if opt >= div:
+                ans = max(ans, div * t)
+    print(ans)
