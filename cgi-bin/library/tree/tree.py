@@ -326,3 +326,46 @@ for _ in range(T):
                 dis2[u] = min(dis2[u], dis2[v])
 
     print(*[min(dis1[i], dis2[i]) for i in range(N)])
+
+# Educational Codeforces Round 112 (Rated for Div. 2)
+# D. Say No to Palindromes
+# 完全二分木のトーナメントの作り方　逆にしていく
+# bi(試合数) = 2 ** K - 1
+# ind(試合のコード) = bi - (試合のindex)
+# dp = [0] * (bi + 1)
+# indの子要素（前の試合）はind * 2とind * 2 + 1
+
+K = getN()
+S = list(input())
+bi = 2 ** K - 1
+dp = [0] * (bi + 1)
+
+def rec(mat, result):
+    ind = bi - mat# reverse
+    S[bi - ind] = result # rewrite
+    while ind >= 1:
+        # first game
+        if ind > bi // 2:
+            if S[bi - ind] == '0' or S[bi - ind] == '1':
+                dp[ind] = 1
+            else:
+                dp[ind] = 2
+        # second, third...
+        else:
+            if S[bi - ind] == '0':
+                dp[ind] = dp[ind * 2 + 1]
+            elif S[bi - ind] == '1':
+                dp[ind] = dp[ind * 2]
+            else:
+                dp[ind] = dp[ind * 2 + 1] + dp[ind * 2]
+
+        ind //= 2
+
+for i in range(bi):
+    rec(i, S[i])
+
+Q = getN()
+for _ in range(Q):
+    m, r = input().split()
+    rec(int(m) - 1, r)
+    print(dp[1])
