@@ -31,17 +31,25 @@ dy = [0, 1, 0, -1]
 #############
 # Main Code #
 #############
-"""
-2N個のボール　1~Nまで二色ずつ
-M本の筒にそれぞれボールが入っている
-一番上が一番左のやつ　あんま自由度なさそう　言い換えの問題
-ペアは一つしかない dequeで管理　貪欲に？
-colorが2つ以上あるものを消す　なくなったら-1 全てが-1になったら終了
-"""
+def rotate(ar):
+    h, w = len(ar), len(ar[0])
+    res = [[0] * h for i in range(w)]
+    for i in range(h):
+        for j in range(w):
+            # 上下逆 & 転置
+            res[j][h - i - 1] = ar[i][j]
+    return res
 
 N = getN()
-A = getList()
-B = getList()
+S = [list(input()) for i in range(N)]
+T = [list(input()) for i in range(N)]
 
-P = [[A[i], B[i]] for i in range(N)]
-P.sort(reverse = True)
+# 上下左右にNマスずつ写す
+
+"""
+for s in S:
+    print(s)
+"""
+
+for i in range(-N, N + 1, 1):
+    for j in range(-N, N + 1, 1)

@@ -55,7 +55,7 @@ mod = 10 ** 9 + 7
 # ソートができ、その種類が複数ある場合はどれか1つが出る
 N = 8
 
-ab = [
+dist = [
 [1, 6],
 [2, 5],
 [3, 1],
@@ -67,13 +67,36 @@ ab = [
 [7, 8]
 ]
 
+# 1-index
 def topological(n, dist):
     in_cnt = defaultdict(int)
     outs = defaultdict(list)
 
-    for a, b in ab:
+    for a, b in dist:
         in_cnt[b - 1] += 1
         outs[a - 1].append(b - 1)
+
+    res = []
+    queue = deque([i for i in range(n) if in_cnt[i] == 0])
+
+    while len(queue) != 0:
+        v = queue.popleft()
+        res.append(v)
+        for v2 in outs[v]:
+            in_cnt[v2] -= 1
+            if in_cnt[v2] == 0:
+                queue.append(v2)
+
+    return res
+
+# 0-index
+def topological(n, dist):
+    in_cnt = defaultdict(int)
+    outs = defaultdict(list)
+
+    for a, b in dist:
+        in_cnt[b] += 1
+        outs[a].append(b)
 
     res = []
     queue = deque([i for i in range(n) if in_cnt[i] == 0])
