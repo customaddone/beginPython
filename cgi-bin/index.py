@@ -21,7 +21,7 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-sys.setrecursionlimit(1000000)
+# sys.setrecursionlimit(1000000)
 inf = float('inf')
 eps = 10 ** (-10)
 dy = [0, 1, 0, -1]
@@ -31,41 +31,144 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
+# codeforces 431 D. Rooter's Song
+
 """
-2nの長さの棒がある　n個のペアに分ける
-前からdpしてみる？
-現在のポイントから適当な場所に繋いだ場合にその内側と外側で何種類できるか
-2i個目の頂点から繋げる頂点は必ず奇数個目の頂点になる
-長さが2iの時の繋ぎ方の個数は一定
-inside条件とsame条件がある same条件の場合求めるのが簡単
-same条件を満たしたものをencloseしてもいい
-same条件はiの約数の数だけ
+antsみたいだが　それぞれどこに止まるか
+スタートは同じでもまつ時間が違う
+N^2解法ならわかる　ぶつかる度に取り替え
 
-inside条件をする
-何重かencloseしていい
-sameが1, sameが2...
-連続するi個をとるとsameがiのグループを作れる　combination
-same1のみでやると？
-encloseは外側にのみ
+0秒時点の場所を抑える　45度下、上にあればぶつかる
+つまりx + yが同じであればぶつかる
+同じものならyが小さい順に入れ替わる
+x + yが同じもの同士でグループを作る　順番に場所を決める
+2
+1
+v1 と入れ替わり、3が抜ける（元々のv1の位置になる）
+以下
+1
+v1
+v2 2が抜ける　の繰り返し
+# horの一番上のやつから決めていく
+# horの後ろからvの小さい順にはめていく 余る
+old: h3, h2, h1, v1, v2, v3, v4
+new: v1, v2, v3, v4, h3, h2, h1
 
-内側と外側で考える
-長さiの内側の作り方、i-1の作り方...　これは約数の個数　外側を
-外側左右に1個ずつ置く
-外側なし　iの約数の個数だけ
-外側あり　内側のsize一つにつき外側の結び方が1つある
+old: h3, h2, h1, v1, v2
+new: v1, v2, h3, h2, h1
+horの逆向き + verの順むき
+verの順むき + horの逆向き
+
+平面走査　45度斜めはx + y
+"""
+
+N, W, H = getNM()
+Ver, Hor = defaultdict(list), defaultdict(list)
+goal = {}
+ans = [(0, 0)] * N
+
+for i in range(N):
+    g, p, t = getNM()
+    # vertical
+    if g == 1:
+        Ver[p - t].append([p, i])
+        goal[i] = (p, H)
+    else:
+        Hor[p - t].append([p, i])
+        goal[i] = (W, p)
+
+K = set(Ver.keys()) | set(Hor.keys())
+for k in K:
+    v, h = sorted(Ver[k]), sorted(Hor[k])
+    old = h[::-1] + v
+    new = v + h[::-1]
+    for i in range(len(old)):
+        ans[old[i][1]] = goal[new[i][1]]
+
+for a in ans:
+    print(*a)
+
+# M-SOLUTION F-Air Safety
+
+"""
+衝突する？ Nは大きい O(N)で
+飛行機2機の場合を考えると
+同じ座標に来るとは？
+同じ方向ならぶつからない
+反対方向でもぶつからない
+お互いの位置によりぶつからない方向が決まる
+二点でできる四角形が正方形ならさらに方向が悪ければぶつかる
+plane1がU方向の時、上方にありLかRならぶつかる
+平面走査しよう
+上方向と下方向に平面走査
+
+U, Dの組み合わせはあとで処理する
+現在保持しているUの飛行機についてそれぞれ判定
+マンハッタン距離を考える
 """
 
 N = getN()
-same = [0] * (N + 1)
-for i in range(1, N + 1):
-    for j in range(i, N + 1, i):
-        same[j] += 1
-dp = [0] * (N + 1)
-acc = [0] * (N + 1)
+P = [list(input().split()) for i in range(N)]
+P.sort(key = lambda i:i[1])
+for i in range(N):
+    P[i][0] = int(P[i][0])
+    P[i][1] = int(P[i][1])
 
-for i in range(1, N + 1):
-    dp[i] = same[i] + acc[i - 1]
-    dp[i] %= MOD
-    acc[i] = dp[i] + acc[i - 1]
-    acc[i] %= MOD
-print(dp[N])
+ans = float('inf')
+# 下から走査する
+u_d = sorted([i for i in P if i[2] == 'D' or i[2] == 'U'], key = lambda i:i[1])
+up_place = {}
+for x, y, dir in u_d:
+    if dir == 'U':
+        # yの位置は更新していく
+        up_place[x] = y
+    if dir == 'D':
+        if x in up_place:
+            ans = min(ans, (y - up_place[x]) * 5)
+
+# 左から走査する
+u_r = sorted([i for i in P if i[2] == 'R' or i[2] == 'L'])
+right_place = {}
+for x, y, dir in u_r:
+    if dir == 'R':
+        right_place[y] = x
+    if dir == 'L':
+        if y in right_place:
+            ans = min(ans, (x - right_place[y]) * 5)
+
+up = sorted([i for i in P if i[2] != 'D'], key = lambda i:i[1])
+down = sorted([i for i in P if i[2] != 'U'], reverse = True, key = lambda i:i[1])
+
+# 上向きに走査
+posi = {} # 傾きが正のマンハッタン距離x-y left方向の飛行機がいればout
+nega = {} # 傾きが負のマンハッタン距離x+y right方向の飛行機がいればout
+for x, y, dir in up:
+    if dir == 'U':
+        # 更新していく
+        posi[x - y] = y
+        nega[x + y] = y
+    if dir == 'L':
+        if x - y in posi:
+            ans = min(ans, (y - posi[x - y]) * 10)
+    if dir == 'R':
+        if x + y in nega:
+            ans = min(ans, (y - nega[x + y]) * 10)
+
+# 下向き走査
+posi = {} # 傾きが正のマンハッタン距離x-y right方向の飛行機がいればout
+nega = {} # 傾きが負のマンハッタン距離x+y left方向の飛行機がいればout
+for x, y, dir in down:
+    if dir == 'D':
+        posi[x - y] = y
+        nega[x + y] = y
+    if dir == 'L':
+        if x + y in nega:
+            ans = min(ans, (nega[x + y] - y) * 10)
+    if dir == 'R':
+        if x - y in posi:
+            ans = min(ans, (posi[x - y] - y) * 10)
+
+if ans == float('inf'):
+    print('SAFE')
+else:
+    print(ans)
