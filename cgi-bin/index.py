@@ -31,144 +31,168 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# codeforces 431 D. Rooter's Song
+# ABC195 F. Coprime Present
 
 """
-antsみたいだが　それぞれどこに止まるか
-スタートは同じでもまつ時間が違う
-N^2解法ならわかる　ぶつかる度に取り替え
+A以上B以下　幅は72以下
+A, Bがでかい
+連続する数　ここポイント
+連続する数は互いに素
 
-0秒時点の場所を抑える　45度下、上にあればぶつかる
-つまりx + yが同じであればぶつかる
-同じものならyが小さい順に入れ替わる
-x + yが同じもの同士でグループを作る　順番に場所を決める
-2
-1
-v1 と入れ替わり、3が抜ける（元々のv1の位置になる）
-以下
-1
-v1
-v2 2が抜ける　の繰り返し
-# horの一番上のやつから決めていく
-# horの後ろからvの小さい順にはめていく 余る
-old: h3, h2, h1, v1, v2, v3, v4
-new: v1, v2, v3, v4, h3, h2, h1
-
-old: h3, h2, h1, v1, v2
-new: v1, v2, h3, h2, h1
-horの逆向き + verの順むき
-verの順むき + horの逆向き
-
-平面走査　45度斜めはx + y
+Q:どの数とどの数をペアにしてはいけないか
+偶数は一緒にしてはいけない　偶数のどれか1つ or 全くない
+奇数はどんな感じ
+3の倍数の場合は6つ前、6つ後ろと一緒になってはいけない
+5の倍数は10こ前、10こ後ろと一緒になってはいけない...
+2の倍数が入る通り、3の倍数が入る通り...をdp
+bit dpすれば
+2 4
+0b1 2は3の倍数
+0b10 3は3の倍数
+0b1 4は2の倍数
 """
 
-N, W, H = getNM()
-Ver, Hor = defaultdict(list), defaultdict(list)
-goal = {}
-ans = [(0, 0)] * N
+A, B = getNM()
+# 72までに素数が20個あります
+prime = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
+N = [i for i in range(A, B + 1)]
+L = len(N)
 
-for i in range(N):
-    g, p, t = getNM()
-    # vertical
-    if g == 1:
-        Ver[p - t].append([p, i])
-        goal[i] = (p, H)
-    else:
-        Hor[p - t].append([p, i])
-        goal[i] = (W, p)
+# 各数字をbit棒に変換する
+for i in range(L):
+    # なんの約数かをbit形式で記録
+    opt = 0
+    for j in range(20):
+        if N[i] % prime[j] == 0:
+            opt += (1 << j)
+    N[i] = opt
 
-K = set(Ver.keys()) | set(Hor.keys())
-for k in K:
-    v, h = sorted(Ver[k]), sorted(Hor[k])
-    old = h[::-1] + v
-    new = v + h[::-1]
-    for i in range(len(old)):
-        ans[old[i][1]] = goal[new[i][1]]
+prev = [0] * (1 << 20)
+prev[0] = 1 # 空集合が1
+for i in range(L):
+    next = [0] * (1 << 20)
+    # 配るdpで
+    for bit in range(1 << 20):
+        next[bit] += prev[bit] # 何も足さない場合
+        if not bit & N[i]: # 共通の約数がなければ
+            next[bit | N[i]] += prev[bit]
+    prev = next
 
-for a in ans:
-    print(*a)
+print(sum(prev))
 
-# M-SOLUTION F-Air Safety
+# 典型90 042 - Multiple of 9（★4）
+# 配るのは0から、累積するのは2から
 
-"""
-衝突する？ Nは大きい O(N)で
-飛行機2機の場合を考えると
-同じ座標に来るとは？
-同じ方向ならぶつからない
-反対方向でもぶつからない
-お互いの位置によりぶつからない方向が決まる
-二点でできる四角形が正方形ならさらに方向が悪ければぶつかる
-plane1がU方向の時、上方にありLかRならぶつかる
-平面走査しよう
-上方向と下方向に平面走査
+K = getN()
+if K % 9 != 0:
+    print(0)
+    exit()
 
-U, Dの組み合わせはあとで処理する
-現在保持しているUの飛行機についてそれぞれ判定
-マンハッタン距離を考える
-"""
+dp = [0] * (K + 2)
+dp[0] = 1
+dp[1] = 1
+for i in range(K + 1):
+    if i > 1:
+        dp[i] += dp[i - 1]
+    dp[i] %= mod
+    dp[i + 1] += dp[i]
+    dp[min(i + 10, K + 1)] -= dp[i]
 
-N = getN()
-P = [list(input().split()) for i in range(N)]
-P.sort(key = lambda i:i[1])
-for i in range(N):
-    P[i][0] = int(P[i][0])
-    P[i][1] = int(P[i][1])
+print(dp[-2])
 
-ans = float('inf')
-# 下から走査する
-u_d = sorted([i for i in P if i[2] == 'D' or i[2] == 'U'], key = lambda i:i[1])
-up_place = {}
-for x, y, dir in u_d:
-    if dir == 'U':
-        # yの位置は更新していく
-        up_place[x] = y
-    if dir == 'D':
-        if x in up_place:
-            ans = min(ans, (y - up_place[x]) * 5)
+# codeforces round667
+# F. Subsequences of Length Two
 
-# 左から走査する
-u_r = sorted([i for i in P if i[2] == 'R' or i[2] == 'L'])
-right_place = {}
-for x, y, dir in u_r:
-    if dir == 'R':
-        right_place[y] = x
-    if dir == 'L':
-        if y in right_place:
-            ans = min(ans, (x - right_place[y]) * 5)
+# 耳dpの要領　tが文字数2なので
+# t1, t2にそれぞれ何個振り分けるか
+# 今までi個変換してこれより前にあるt1の個数がj個
 
-up = sorted([i for i in P if i[2] != 'D'], key = lambda i:i[1])
-down = sorted([i for i in P if i[2] != 'U'], reverse = True, key = lambda i:i[1])
-
-# 上向きに走査
-posi = {} # 傾きが正のマンハッタン距離x-y left方向の飛行機がいればout
-nega = {} # 傾きが負のマンハッタン距離x+y right方向の飛行機がいればout
-for x, y, dir in up:
-    if dir == 'U':
-        # 更新していく
-        posi[x - y] = y
-        nega[x + y] = y
-    if dir == 'L':
-        if x - y in posi:
-            ans = min(ans, (y - posi[x - y]) * 10)
-    if dir == 'R':
-        if x + y in nega:
-            ans = min(ans, (y - nega[x + y]) * 10)
-
-# 下向き走査
-posi = {} # 傾きが正のマンハッタン距離x-y right方向の飛行機がいればout
-nega = {} # 傾きが負のマンハッタン距離x+y left方向の飛行機がいればout
-for x, y, dir in down:
-    if dir == 'D':
-        posi[x - y] = y
-        nega[x + y] = y
-    if dir == 'L':
-        if x + y in nega:
-            ans = min(ans, (nega[x + y] - y) * 10)
-    if dir == 'R':
-        if x - y in posi:
-            ans = min(ans, (posi[x - y] - y) * 10)
-
-if ans == float('inf'):
-    print('SAFE')
-else:
+N, K = getNM()
+S = list(input())
+T = input()
+t1, t2 = T[0], T[1]
+if t1 == t2:
+    for i in range(N - 1, -1, -1):
+        if K and S[i] != t1:
+            S[i] = t1
+            K -= 1
+    ans = 0
+    cnt = 0
+    for i in range(N):
+        if S[i] == t1:
+            ans += cnt
+            cnt += 1
     print(ans)
+    exit()
+
+# 今までi個変換してこれより前にあるt1の個数がj個の時の連続部分列の個数
+prev = [[-float('inf')] * (N + 1) for i in range(K + 1)]
+prev[0][0] = 0
+for n in range(N):
+    next = [[-float('inf')] * (N + 1) for i in range(K + 1)]
+    # 現在までに変換している個数
+    for i in range(K + 1):
+        # ここより前にあるt1の個数
+        for j in range(N):
+            # 変換しない
+            next[i][j] = max(next[i][j], prev[i][j])
+            # その文字がt1だった
+            if S[n] == t1:
+                next[i][j + 1] = max(next[i][j + 1], prev[i][j])
+            # その文字がt2だった
+            if S[n] == t2:
+                # これより前のt1の個数だけカウント数が増える
+                next[i][j] = max(next[i][j], prev[i][j] + j)
+
+            # 変換する
+            if i < K:
+                # t1に変換
+                next[i + 1][j + 1] = max(next[i + 1][j + 1], prev[i][j])
+                # t2に変換
+                next[i + 1][j] = max(next[i + 1][j], prev[i][j] + j)
+
+    prev = next
+
+print(max(prev[-1]))
+
+# edufo #1 E. Chocolate Bar
+
+"""
+O(NM)ぐらいで考えよう 50回やる
+面積Kのチョコが欲しい　切り方
+
+端っこを使うと？　N, Mのうち短い方を切るといい
+kが小さい　最高50
+縦 + 横、　縦 + 縦 + 横
+cutして減らすのもある
+"""
+
+dp = [[[0 for k in range (51)] for j in range (31)] for i in range (31)]
+
+def calc (n, m, k) :
+    #print(n,m,k)
+    if (dp[n][m][k] != 0) or (n*m == k) or (k == 0) :
+        return dp[n][m][k]
+
+    ans = 10**9
+
+    for i in range (1,n//2 + 1) :
+        for j in range (k+1) :
+            #print(i,j,'a')
+            if (i*m >= (k-j)) and ((n-i)*m >= j) :
+                ans = min(ans, m*m + calc(i,m,k-j) + calc(n-i,m,j))
+
+    for i in range (1,m//2 + 1) :
+        for j in range (k+1) :
+            #print(i,j,'b')
+            if (i*n >= (k-j)) and ((m-i)*n >= j) :
+                ans = min(ans, n*n + calc(n,i,k-j) + calc(n,m-i,j))
+
+    dp[n][m][k] = ans
+
+    return ans
+
+for _ in range (getN()):
+    N, M, K = getNM()
+
+    print(calc(N, M, K))
