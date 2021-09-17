@@ -31,245 +31,148 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# ABC195 F. Coprime Present
+# 日立製作所 社会システム事業部 プログラミングコンテスト2020
+# C-ThREE
 
 """
-A以上B以下　幅は72以下
-A, Bがでかい
-連続する数　ここポイント
-連続する数は互いに素
+構築問題？　都合のいいものから
+距離が3離れてるものはすぐわかる？
+2なら　子ノードの子ノードのうち自分以外の要素
+3の倍数を使えば簡単　これはN / 3個使える
+mod 0, mod1, mod2, mod1, mod0...という風に分配していけばいい
+すぐに枯渇しそう
+3の倍数以外で作ってみる
+1, 2, 1, 2...って感じで置いていく
+枯渇するけど倍数3を使えばいい
 
-Q:どの数とどの数をペアにしてはいけないか
-偶数は一緒にしてはいけない　偶数のどれか1つ or 全くない
-奇数はどんな感じ
-3の倍数の場合は6つ前、6つ後ろと一緒になってはいけない
-5の倍数は10こ前、10こ後ろと一緒になってはいけない...
-2の倍数が入る通り、3の倍数が入る通り...をdp
-bit dpすれば
-2 4
-0b1 2は3の倍数
-0b10 3は3の倍数
-0b1 4は2の倍数
+葉から順に赤、黒...と塗っていき
+赤にmod1, 黒にmod2の数を入れる
+なければmod 0の値を入れる
+
+もう2つとも枯渇するパターン
+
+赤黒木のバランスを元に場合分け
+距離が３の頂点だけではなく、距離が奇数のものについても条件を達成できる
 """
 
-A, B = getNM()
-# 72までに素数が20個あります
-prime = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
-N = [i for i in range(A, B + 1)]
-L = len(N)
+N = getN()
+E = [[] for i in range(N)]
+for i in range(N - 1):
+    a, b = getNM()
+    E[a - 1].append(b - 1)
+    E[b - 1].append(a - 1)
 
-# 各数字をbit棒に変換する
-for i in range(L):
-    # なんの約数かをbit形式で記録
-    opt = 0
-    for j in range(20):
-        if N[i] % prime[j] == 0:
-            opt += (1 << j)
-    N[i] = opt
-
-prev = [0] * (1 << 20)
-prev[0] = 1 # 空集合が1
-for i in range(L):
-    next = [0] * (1 << 20)
-    # 配るdpで
-    for bit in range(1 << 20):
-        next[bit] += prev[bit] # 何も足さない場合
-        if not bit & N[i]: # 共通の約数がなければ
-            next[bit | N[i]] += prev[bit]
-    prev = next
-
-print(sum(prev))
-
-# 典型90 042 - Multiple of 9（★4）
-# 配るのは0から、累積するのは2から
-
-K = getN()
-if K % 9 != 0:
-    print(0)
-    exit()
-
-dp = [0] * (K + 2)
-dp[0] = 1
-dp[1] = 1
-for i in range(K + 1):
-    if i > 1:
-        dp[i] += dp[i - 1]
-    dp[i] %= mod
-    dp[i + 1] += dp[i]
-    dp[min(i + 10, K + 1)] -= dp[i]
-
-print(dp[-2])
-
-# codeforces round667
-# F. Subsequences of Length Two
-
-# 耳dpの要領　tが文字数2なので
-# t1, t2にそれぞれ何個振り分けるか
-# 今までi個変換してこれより前にあるt1の個数がj個
-
-N, K = getNM()
-S = list(input())
-T = input()
-t1, t2 = T[0], T[1]
-if t1 == t2:
-    for i in range(N - 1, -1, -1):
-        if K and S[i] != t1:
-            S[i] = t1
-            K -= 1
-    ans = 0
-    cnt = 0
-    for i in range(N):
-        if S[i] == t1:
-            ans += cnt
-            cnt += 1
-    print(ans)
-    exit()
-
-# 今までi個変換してこれより前にあるt1の個数がj個の時の連続部分列の個数
-prev = [[-float('inf')] * (N + 1) for i in range(K + 1)]
-prev[0][0] = 0
-for n in range(N):
-    next = [[-float('inf')] * (N + 1) for i in range(K + 1)]
-    # 現在までに変換している個数
-    for i in range(K + 1):
-        # ここより前にあるt1の個数
-        for j in range(N):
-            # 変換しない
-            next[i][j] = max(next[i][j], prev[i][j])
-            # その文字がt1だった
-            if S[n] == t1:
-                next[i][j + 1] = max(next[i][j + 1], prev[i][j])
-            # その文字がt2だった
-            if S[n] == t2:
-                # これより前のt1の個数だけカウント数が増える
-                next[i][j] = max(next[i][j], prev[i][j] + j)
-
-            # 変換する
-            if i < K:
-                # t1に変換
-                next[i + 1][j + 1] = max(next[i + 1][j + 1], prev[i][j])
-                # t2に変換
-                next[i + 1][j] = max(next[i + 1][j], prev[i][j] + j)
-
-    prev = next
-
-print(max(prev[-1]))
-
-# edufo #1 E. Chocolate Bar
-
-"""
-O(NM)ぐらいで考えよう 50回やる
-面積Kのチョコが欲しい　切り方
-
-端っこを使うと？　N, Mのうち短い方を切るといい
-kが小さい　最高50
-縦 + 横、　縦 + 縦 + 横
-cutして減らすのもある
-"""
-
-dp = [[[0 for k in range (51)] for j in range (31)] for i in range (31)]
-
-def calc (n, m, k) :
-    #print(n,m,k)
-    if (dp[n][m][k] != 0) or (n*m == k) or (k == 0) :
-        return dp[n][m][k]
-
-    ans = 10**9
-
-    for i in range (1,n//2 + 1) :
-        for j in range (k+1) :
-            #print(i,j,'a')
-            if (i*m >= (k-j)) and ((n-i)*m >= j) :
-                ans = min(ans, m*m + calc(i,m,k-j) + calc(n-i,m,j))
-
-    for i in range (1,m//2 + 1) :
-        for j in range (k+1) :
-            #print(i,j,'b')
-            if (i*n >= (k-j)) and ((m-i)*n >= j) :
-                ans = min(ans, n*n + calc(n,i,k-j) + calc(n,m-i,j))
-
-    dp[n][m][k] = ans
-
-    return ans
-
-for _ in range (getN()):
-    N, M, K = getNM()
-
-    print(calc(N, M, K))
-
-# edufo73 D. Make The Fence Great Again
-# 状態を減らす系dp
-# 前と後ろしか関係ないのだから状態は3つずつでいい
-
-"""
-コスト1回で1伸ばせる　隣接するやつとの差をつけろ
-O(N^2)のdpなら...
-隣のやつが過度に伸ばされててもあんまり...
-1伸ばすか、伸ばさないか
-伸ばしても精々2伸ばすだけ
-"""
-
-T = getN()
-for _ in range(T):
-    N = getN()
-    F = [getList() for i in range(N)]
-    last = -1
-    # 伸ばさない時と伸ばした時と
-    prev = [0, inf, inf]
-
-    for i in range(N):
-        next = [inf, inf, inf]
-        for j in range(3):
-            for k in range(3):
-                if last + j != F[i][0] + k:
-                    next[k] = min(next[k], prev[j] + F[i][1] * k)
-
-        prev = next
-        last = F[i][0]
-
-    print(min(prev))
-
-# codeforces #544 E. K Balanced Teams
-
-"""
-チームをK個呼びたい
-強さの差が5以内でないといけない
-kが多ければ多いほど楽　近い数同士を含む
-ソートして　現在Kチームまで作った時、
-前からi個目まで進んだ時、kチームを作る　
-その時のtargetの値は出来るだけ大きい値　jointしやすいように
-二分探索も欲しいな j人ぶち込む場合それは可能か？
-k個の区間の中にj人入れることは可能か？
-
-端っこを一つ決めると何個入るかは自動的に決まる
-skipをi回した時の1からの距離の最小
-"""
-
-N, K = getNM()
-A = getList()
-A.sort()
-
-r = 0
-E = [0] * N
+s = 0
 for i in range(N):
-    while r < N and A[r] <= A[i] + 5:
-        r += 1
-    E[i] = r
-
-# i回スキップした時のエッジの本数
-dp = [[inf] * (N + 1) for i in range(N + 1)]
-dp[0][0] = 0
-for i in range(N):
-    for j in range(N + 1):
-        # スキップしない　配るdp
-        dp[E[i]][j] = min(dp[E[i]][j], dp[i][j] + 1)
-        # スキップする
-        if j < N:
-            dp[i + 1][j + 1] = min(dp[i + 1][j + 1], dp[i][j])
-
-ans = 0
-# skipが少ない方から順に
-for j in range(N + 1):
-    if dp[N][j] <= K:
-        print(N - j)
+    if len(E[i]) == 1:
+        s = i
         break
+
+one, two, thr = [], [], []
+for i in range(1, N + 1):
+    if i % 3 == 1:
+        one.append(i)
+    elif i % 3 == 2:
+        two.append(i)
+    else:
+        thr.append(i)
+
+ans = [-1] * N
+color = [-1] * N
+color[s] = 1
+que = deque([s]) # 赤スタート
+
+while que:
+    u = que.popleft()
+    for v in E[u]:
+        if color[v] != -1:
+            continue
+        # 親のmodが1なら2を入れる
+        if color[u] == 1:
+            color[v] = 2
+        else:
+            color[v] = 1
+        que.append(v)
+
+# 1が極端に少ない場合
+if color.count(1) <= len(thr):
+    for i in range(N):
+        if color[i] == 1:
+            ans[i] = thr.pop()
+    left = one + two + thr
+    for i in range(N):
+        if ans[i] == -1:
+            ans[i] = left.pop()
+    print(*ans)
+
+elif color.count(2) <= len(thr):
+    for i in range(N):
+        if color[i] == 2:
+            ans[i] = thr.pop()
+    left = one + two + thr
+    for i in range(N):
+        if ans[i] == -1:
+            ans[i] = left.pop()
+    print(*ans)
+
+# バランスがいい場合
+else:
+    for i in range(N):
+        if color[i] == 1:
+            if one:
+                ans[i] = one.pop()
+            else:
+                ans[i] = thr.pop()
+        else:
+            if two:
+                ans[i] = two.pop()
+            else:
+                ans[i] = thr.pop()
+    print(*ans)
+
+# codeforces #555 D. N Problems During K Days
+
+"""
+足してN
+次のやつはx + 1以上2 * x未満
+となるK個の数字の列はあるか
+
+ここまで進んだ時の数字のrangeは？
+最小は1, 2, 3, 4...
+最大は1, 2, 4, 8... 微修正すればいけそう
+bitの問題か？
+
+A[i]を一つ上げると合計がk - i上がる　上げるだけ上げたい
+スタートはなんでもいい
+最初からN % Kで底上げする
+
+iから後ろを1ずつ上げるとK - iずつ上がる
+これを使って2^K - 1以下全ての数をカバーできる
+"""
+
+N, K = getNM()
+ans = []
+A = [i + 1 for i in range(K)]
+N -= K * (K + 1) // 2
+if N < 0:
+    print('NO')
+    exit()
+
+# 底上げ
+for i in range(K):
+    A[i] += N // K
+N -= (N // K) * K
+
+for i in range(1, K):
+    # x + 1から更に上げる分
+    # N // (K - i) 増やしたい分
+    # A[i - 1] - 1 上げる上限
+    ran = min(N // (K - i), A[i - 1] - 1)
+    N -= ran * (K - i)
+    A[i] = A[i - 1] + 1 + ran
+
+if N % K == 0:
+    print('YES')
+    print(*A)
+else:
+    print('NO')
