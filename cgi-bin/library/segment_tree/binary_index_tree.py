@@ -192,7 +192,7 @@ class Comp_BIT:
     def cum(self, l, r):
         return self.get(r) - self.get(l)
 
-    # 最も近くにあるフラグの立っている場所を探す
+    # 小さい方からx番目の数字を探す
     def lowerbound(self, w):
         if w <= 0:
             return 0

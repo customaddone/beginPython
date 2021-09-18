@@ -31,148 +31,98 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# 日立製作所 社会システム事業部 プログラミングコンテスト2020
-# C-ThREE
+# edufo 109 C - Robot Collisions
 
 """
-構築問題？　都合のいいものから
-距離が3離れてるものはすぐわかる？
-2なら　子ノードの子ノードのうち自分以外の要素
-3の倍数を使えば簡単　これはN / 3個使える
-mod 0, mod1, mod2, mod1, mod0...という風に分配していけばいい
-すぐに枯渇しそう
-3の倍数以外で作ってみる
-1, 2, 1, 2...って感じで置いていく
-枯渇するけど倍数3を使えばいい
+スピード1で右か左かに移動
+整数上で出会わなければ何も起こらない
 
-葉から順に赤、黒...と塗っていき
-赤にmod1, 黒にmod2の数を入れる
-なければmod 0の値を入れる
+まずロボット2つで考える
+ロボット2つの差が偶数で、互いに近づくなら消滅する
+差が偶数であればいずれぶつかる
+なので場所の偶奇でグループ分け
 
-もう2つとも枯渇するパターン
+グループ内だと全てのロボットは互いにぶつかりあう　ロボットが奇数個だと1つ残るが
+ペアを組んで行ってどのペアが一番衝突が早いか　それを取り除く
+・互いに向かい合う
+・互いに背を向ける
+・同じ方向
 
-赤黒木のバランスを元に場合分け
-距離が３の頂点だけではなく、距離が奇数のものについても条件を達成できる
+互いに向かい合う　一番近いのと一番最初にぶつかる　距離 // 2
+互いに背を向ける　一番遠いのと一番最初にぶつかる　(2N - 距離) // 2
+同じ方向　端までの距離が短い方 + 距離 // 2　= 端までの距離の平均
+
+互いに背を向ける　が一番遅い
+・互いに向かい合う R と L
+・同じ方向 R同士L同士
+の2つをまず考える
+同じ方向　の一番距離が短いのはすぐわかる　一番右にある2つと一番左にある2つ
+互いに向かい合う　はO(N)かければ何とか... Rについて一番近いLを探す
+互いに独立となる消し方を考える　順番は関係内容な
+それぞれのRについて互いに向かい合う　の最小値を求めておく　heapに入れる
+最小のものから取り出す　それがRR,LLより小さければ消す
+RRが小さい, LLが小さい　は消して記録しておく
+RRが消えている　探索は行わない
+LLが消えている　
+
+まず・互いに向かい合う R と Lから消えていく
 """
 
-N = getN()
-E = [[] for i in range(N)]
-for i in range(N - 1):
-    a, b = getNM()
-    E[a - 1].append(b - 1)
-    E[b - 1].append(a - 1)
-
-s = 0
-for i in range(N):
-    if len(E[i]) == 1:
-        s = i
-        break
-
-one, two, thr = [], [], []
-for i in range(1, N + 1):
-    if i % 3 == 1:
-        one.append(i)
-    elif i % 3 == 2:
-        two.append(i)
-    else:
-        thr.append(i)
-
-ans = [-1] * N
-color = [-1] * N
-color[s] = 1
-que = deque([s]) # 赤スタート
-
-while que:
-    u = que.popleft()
-    for v in E[u]:
-        if color[v] != -1:
-            continue
-        # 親のmodが1なら2を入れる
-        if color[u] == 1:
-            color[v] = 2
-        else:
-            color[v] = 1
-        que.append(v)
-
-# 1が極端に少ない場合
-if color.count(1) <= len(thr):
+T = getN()
+for _ in range(T):
+    N, M = getNM()
+    odd_r, even_r = [], []
+    odd_l, even_l = [], []
+    R = []
+    P = getList()
+    D = input().split()
     for i in range(N):
-        if color[i] == 1:
-            ans[i] = thr.pop()
-    left = one + two + thr
-    for i in range(N):
-        if ans[i] == -1:
-            ans[i] = left.pop()
-    print(*ans)
+        R.append([P[i], D[i], i])
 
-elif color.count(2) <= len(thr):
-    for i in range(N):
-        if color[i] == 2:
-            ans[i] = thr.pop()
-    left = one + two + thr
-    for i in range(N):
-        if ans[i] == -1:
-            ans[i] = left.pop()
-    print(*ans)
-
-# バランスがいい場合
-else:
-    for i in range(N):
-        if color[i] == 1:
-            if one:
-                ans[i] = one.pop()
+    for p, d, ind in R:
+        if p % 2 == 0:
+            if d == 'R':
+                even_r.append([p, ind, 0])
             else:
-                ans[i] = thr.pop()
+                even_l.append([p, ind, 1])
         else:
-            if two:
-                ans[i] = two.pop()
+            if d == 'R':
+                odd_r.append([p, ind, 0])
             else:
-                ans[i] = thr.pop()
+                odd_l.append([p, ind, 1])
+
+    ans = [-1] * N
+    def calc(R, L):
+        all = sorted(R + L)
+        r_o, l_o = [], deque([])
+        for p, ind, d in all:
+            # right
+            if d == 0:
+                r_o.append([p, ind])
+            else:
+                if r_o:
+                    p_e, ind_e = r_o.pop()
+                    ans[ind] = ans[ind_e] = abs(p - p_e) // 2
+                else:
+                    l_o.append([p, ind])
+
+        # 同じ向き
+        while len(r_o) > 1:
+            p1, i1 = r_o.pop()
+            p2, i2 = r_o.pop()
+            ans[i1] = ans[i2] = M - (p1 + p2) // 2
+
+        while len(l_o) > 1:
+            p1, i1 = l_o.popleft()
+            p2, i2 = l_o.popleft()
+            ans[i1] = ans[i2] = (p1 + p2) // 2
+
+        # 背を向け
+        if r_o and l_o:
+            p1, i1 = r_o.pop()
+            p2, i2 = l_o.popleft()
+            ans[i1] = ans[i2] = M - abs(p1 - p2) // 2
+
+    calc(even_r, even_l)
+    calc(odd_r, odd_l)
     print(*ans)
-
-# codeforces #555 D. N Problems During K Days
-
-"""
-足してN
-次のやつはx + 1以上2 * x未満
-となるK個の数字の列はあるか
-
-ここまで進んだ時の数字のrangeは？
-最小は1, 2, 3, 4...
-最大は1, 2, 4, 8... 微修正すればいけそう
-bitの問題か？
-
-A[i]を一つ上げると合計がk - i上がる　上げるだけ上げたい
-スタートはなんでもいい
-最初からN % Kで底上げする
-
-iから後ろを1ずつ上げるとK - iずつ上がる
-これを使って2^K - 1以下全ての数をカバーできる
-"""
-
-N, K = getNM()
-ans = []
-A = [i + 1 for i in range(K)]
-N -= K * (K + 1) // 2
-if N < 0:
-    print('NO')
-    exit()
-
-# 底上げ
-for i in range(K):
-    A[i] += N // K
-N -= (N // K) * K
-
-for i in range(1, K):
-    # x + 1から更に上げる分
-    # N // (K - i) 増やしたい分
-    # A[i - 1] - 1 上げる上限
-    ran = min(N // (K - i), A[i - 1] - 1)
-    N -= ran * (K - i)
-    A[i] = A[i - 1] + 1 + ran
-
-if N % K == 0:
-    print('YES')
-    print(*A)
-else:
-    print('NO')
