@@ -6,6 +6,7 @@ from itertools import combinations, permutations, product, combinations_with_rep
 from bisect import bisect_left, bisect_right
 
 import sys
+f = open(filename, encoding='CP932')
 def input():
     return sys.stdin.readline().rstrip()
 def getN():
@@ -66,6 +67,10 @@ RRが消えている　探索は行わない
 LLが消えている　
 
 まず・互いに向かい合う R と Lから消えていく
+互いに向かい合う　一番近いのと一番最初にぶつかる　距離 // 2
+互いに背を向ける　一番遠いのと一番最初にぶつかる　(2N - 距離) // 2
+同じ方向　端までの距離が短い方 + 距離 // 2　= 端までの距離の平均
+1 < 3 < 2の順になる
 """
 
 T = getN()
