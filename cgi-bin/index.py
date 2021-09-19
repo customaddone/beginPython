@@ -6,7 +6,6 @@ from itertools import combinations, permutations, product, combinations_with_rep
 from bisect import bisect_left, bisect_right
 
 import sys
-
 def input():
     return sys.stdin.readline().rstrip()
 def getN():
@@ -22,7 +21,7 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-# sys.setrecursionlimit(1000000)
+sys.setrecursionlimit(1000000)
 inf = float('inf')
 eps = 10 ** (-10)
 dy = [0, 1, 0, -1]
@@ -32,78 +31,276 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# ABC153 F - Silver Fox vs Monster
+# https://qiita.com/Morifolium/items/6c8f0a188af2f9620db2
+N = 8
 
-# 遅延セグは使わない
-# 二分探索したい
-# imosする
-# どこに爆弾を投下するか
-# 効率のいい方法
-# 現在地点に爆弾を投下してモンスターを倒すまで
-# -D ~ Dまで = 前に2 * Dの範囲に効くと
-# bisect_right
+ab = [
+[1, 6],
+[2, 5],
+[3, 1],
+[3, 2],
+[4, 1],
+[4, 6],
+[5, 1],
+[6, 7],
+[7, 8]
+]
+"""
+for _ in range(N + M - 1):
+    ab.append(tuple(map(int, input().split())))
+"""
 
-N, D, A = getNM()
-# 座標Xにいる 体力はH
-mons = [getList() for i in range(N)]
-mons.sort()
-X = []
-H = []
-for x, h in mons:
-    X.append(x)
-    H.append(h)
+def topological(n, dist):
+    in_cnt = defaultdict(int)
+    outs = defaultdict(list)
 
-# 累積ダメージ
-cnt = 0
-r = 0
-imos = [0] * (N + 1)
-for i in range(N):
-    # 爆風範囲
-    while r < N and X[i] + 2 * D >= X[r]:
-        r += 1
-    if i > 0:
-        imos[i] += imos[i - 1]
-    # ここで爆弾を投下する回数
-    hp = max(H[i] - imos[i], 0)
-    t = (hp + A - 1) // A # 爆風のぶんを削る
-    cnt += t
-    # imos
-    imos[i] += t * A
-    imos[r] -= t * A
+    for a, b in ab:
+        in_cnt[b - 1] += 1
+        outs[a - 1].append(b - 1)
 
-print(cnt)
+    res = []
+    queue = deque([i for i in range(n) if in_cnt[i] == 0])
 
-# edufo #102 D. Program
+    while len(queue) != 0:
+        v = queue.popleft()
+        res.append(v)
+        for v2 in outs[v]:
+            in_cnt[v2] -= 1
+            if in_cnt[v2] == 0:
+                queue.append(v2)
+
+    return res
+
+# [2, 3, 1, 4, 0, 5, 6, 7]
+# queryに閉路ができる道を追加するとバグってlen = 8未満の配列を返す
+print(topological(N, ab))
+
+# ABC041 D - 徒競走
+# トポロジカルソートの種類の数
+N, M = 3, 2
+query = [
+[2, 1],
+[2, 3]
+]
+
+X = [0] * N
+for i in range(M):
+    x, y = query[i]
+    # xにある矢印を集計
+    X[x - 1] |= 1 << (y - 1)
+
+DP = [0] * (1 << N)
+DP[0] = 1
+
+# jの左に置くものとしてどのような組み合わせがあるか
+for bit in range(1, 1 << N):
+    for j in range(N):
+        # j番目が含まれる場合において
+        if bit & (1 << j):
+            if not (X[j] & (bit ^ (1 << j))):
+                # 上のbitまで運送してってdp[-1]で集計
+                DP[bit] += DP[bit ^ (1 << j)]
+print(DP)
+
+# 全国統一プログラミング王決定戦予選 D - Restore the Tree
 
 """
-l~r間のinstructionを実行して値が何種類出るか
-値は連続するので最大値と最小値を求めればいい
-imosするだけでは...
-[0, -1, 0, -1, -2, -1, -2, -3, -2]
-I[r] - I[l - 1]するとどれだけ変化したかがわかる
-これを全区間でやって最大値、最小値をだす
+元のN頂点N - 1辺の根付き有向辺グラフ + 新たにM本の有向辺
+元の木は一意に定まることが示せる。
 
-選ばれた区間は除外して
-つまり前と後ろからimosする　区間の最大値、最小値は保持しておく
+邪魔なM本を消せ
+木にするためには
+ループを消す
+B側に根以外の各頂点がN - 1個あるようにすればいい
+他には？
+適当に辺を選んでいくが、最終的に連結である必要がある
+
+6 3
+2 1
+2 3
+4 1
+4 2
+6 1
+2 6
+4 6
+6 5の場合
+
+1: [2, 1], [4, 1], [6, 1]
+2: [4, 2]
+3: [6, 3]
+4: [] 親になるものがすぐわかることもある
+5: [6, 5]
+6: [2, 6], [4, 6]
+
+切り離しても連結のママのものは？
+MのA,Bについて、Bは元の根付き木に置けるAの子孫である
+親方向へは伸びない
+なのでトポソする
+"""
+
+N, M = getNM()
+dist = [getList() for i in range(N + M - 1)]
+edges = [[] for i in range(N)] # 親要素の候補
+for a, b in dist:
+    edges[b - 1].append(a - 1)
+
+# トポソする
+# 順番が求まる
+res = topological(N, dist)
+
+ans = [-1] * N
+ans[res[0]] = 0
+depth = [-1] * N
+depth[res[0]] = 0
+
+# 追加のM辺はショートカットになるので
+# 元の根付き木は辺のうち深さが最も深くなるもの
+
+for i in res[1:]: # 二番手以降について調べる
+    parent = 0
+    dep_opt = 0
+    for j in edges[i]: # iの各親について深さを調べる
+        if depth[j] + 1 > dep_opt: # 更新できるなら
+            parent = j
+            dep_opt = depth[j] + 1
+    ans[i] = parent + 1
+    depth[i] = dep_opt
+
+for i in ans:
+    print(i)
+
+# 0-index
+def topological(n, dist):
+    in_cnt = defaultdict(int)
+    outs = defaultdict(list)
+
+    for a, b in dist:
+        in_cnt[b] += 1
+        outs[a].append(b)
+
+    res = []
+    queue = deque([i for i in range(n) if in_cnt[i] == 0])
+
+    while len(queue) != 0:
+        v = queue.popleft()
+        res.append(v)
+        for v2 in outs[v]:
+            in_cnt[v2] -= 1
+            if in_cnt[v2] == 0:
+                queue.append(v2)
+
+    return res
+
+# codeforces # 656
+# E-Directing Edges
+
+# 連結かどうかはわからない
+# 無効辺については全て方向を決める
+# ループがないようにしたい
+# 有効辺については確定している　
+# DAGになるということ
+# 最善のやり方がある　それでもできなければNO
+# トポロジカルになっているということ　これより後の頂点の方向に結ぶ
+# まとめてやる　入次数が0のものから
+# 無効辺は有効辺 * 2にする？
+
+# トポソする　無効辺はどうする
+# トポソ頂点→トポソ頂点、トポソ頂点→無頂点、無頂点→無頂点
+# トポソして方向決めてもう一回トポソする
+
+T = getN()
+for _ in range(T):
+    N, M = getNM()
+
+    und = [[] for i in range(N)]
+    dir = []
+    in_cnt = defaultdict(int)
+    outs = defaultdict(list)
+    ans = {}
+
+    # divide undirected and directed path
+    for i in range(M):
+        t, a, b = getNM()
+        # undirected
+        if t == 0:
+            und[a - 1].append([i, b - 1])
+            und[b - 1].append([i, a - 1])
+        # directed
+        else:
+            ans[i] = (a, b)
+            dir.append([a - 1, b - 1])
+
+    # if directed-only graph is acyclic, can see all vertices
+    order = topological(N, dir)
+    # determine the directions of undirected edges
+    for u in order:
+        for ind, v in und[u]:
+            # used or not?
+            if not ind in ans:
+                dir.append([u, v])
+                ans[ind] = (u + 1, v + 1)
+
+    # whether if the resulting graph is directed and acyclic
+    if len(topological(N, dir)) < N:
+        print('NO')
+    else:
+        print('YES')
+        for k, v in sorted(ans.items()):
+            print(*v)
+
+# codeforces #743 C. Book
+# 前から読み続けた場合
+# 入次数管理とheapqueを使ってトポソする
+# 現在探索しているのより前にある頂点はnextに、後にあるのはprevにappend
+
+"""
+この章を理解するためには他の章を理解しないといけない　トポロジカル？
+前から何回も読む　何回で全て理解できるか
+ループがあれば永遠に理解できない
+
+トポソして前からdp
+まず入次数0のものを全て取り除く
+そして入次数を引く
+また0になったものを取り除く...
+引いて0になったものを押さえておく
+最初読めなくてもループの途中でも読めるようになる
+順番は守ろう
 """
 
 T = getN()
 for _ in range(T):
-    N, Q = getNM()
-    # 累積和
-    Ins = [0] + [1 if s == '+' else -1 for s in list(input())]
-    for i in range(1, N + 1):
-        Ins[i] += Ins[i - 1]
+    N = getN()
+    E = [[] for i in range(N)]
+    cnt = [0] * N
 
-    # ラムダ式でseg木を立てられる
-    seg_min = SegTree(Ins, lambda x, y: min(x, y), inf)
-    seg_max = SegTree(Ins, lambda x, y: max(x, y), -inf)
-    for _ in range(Q):
-        l, r = getNM()
-        mi, ma = seg_min.query(0, l), seg_max.query(0, l)
-        if r < N:
-            # 中間の区間で増えた分を差し引く
-            mi = min(mi, seg_min.query(r + 1, N + 1) - (Ins[r] - Ins[l - 1]))
-            ma = max(ma, seg_max.query(r + 1, N + 1) - (Ins[r] - Ins[l - 1]))
+    for v in range(N):
+        k = getList()
+        cnt[v] = k[0]
+        for u in k[1:]:
+            E[u - 1].append(v)
 
-        print(ma - mi + 1)
+    prev = [i for i in range(N) if cnt[i] == 0]
+    heapify(prev)
+
+    ans, ignore = 0, 0
+    while prev:
+        next = []
+        ans += 1
+        while prev:
+            u = heappop(prev)
+            ignore += 1
+            for v in E[u]:
+                cnt[v] -= 1
+                if cnt[v] == 0:
+                    # 探索したのより前にあれば次回
+                    if v < u:
+                        heappush(next, v)
+                    else:
+                        heappush(prev, v)
+
+        prev = next
+
+    if ignore == N:
+        print(ans)
+    else:
+        print(-1)
