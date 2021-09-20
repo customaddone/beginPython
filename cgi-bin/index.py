@@ -31,300 +31,85 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# パ研合宿2020　第1日「SpeedRun」
-# 同じgcdを持つ区間は結合しても同じまま
-
 """
-K個に切り分ける
-それぞれの部分の総和のgcdが大きいほどいい
-最大公約数はいくつになるか
-二分探索したいが dpもしたい
-
-300C150とかは無理
-
-K = 1から考える
-答えはAの総和
-
-A が最大300しかない
-エッジを貼る
-k回辺を移動して0 ~ Nにいけるか
-
-調和級数
+O(N^{0.75}) solution
 """
 
-N = getN()
-A = [0] + getList()
-su = sum(A)
-for i in range(1, N + 1):
-    A[i] += A[i - 1]
 
-ans = [0] * (N + 1)
-for i in range(su + 1, 0, -1):
-    # これを通過すると必ず条件を満たす区間を作れる
-    if su % i != 0:
-        continue
+from functools import lru_cache
 
-    cnt = 0
-    last = 0
-    for j in range(1, N + 1):
-        if (A[j] - A[last]) % i == 0:
-            last = j
-            cnt += 1
+@lru_cache(None)
+def f(L, R):
+    """
+    L < x, y <= R であって、gcd(x,y) == 1 となるものを数える。
+    """
 
-    # cnt以下の区間は結合することで簡単に作れる
-    for a in range(cnt + 1):
-        ans[a] = max(ans[a], i)
+    res = (R - L)**2
+    """
+    ここから、 d = gcd(x,y) >= 2 となるものを引いていく。
+    これは、 l = L // d, r = R // d として、f(L//d, R//d) 通りである。
+    (l, r) が O(sqrt(L+R)) 通りしかないことから、f(L, R) はより小さな場合の
+    f(l, r) を O(sqrt(L+R)) 件使って計算できる。
+    """
+    def find_nxt_d(d):
+        """
+        いまの (l, r) = (L//d, R//d) よりも大きな (l, r) が出てくる次の d を求める
+        """
+        d1 = L // (L // d + 1)
+        d2 = R // (R // d + 1)
+        return max(d1, d2)
 
-for a in ans[1:]:
-    print(a)
-
-# Chokudai SpeedRun 002 J - GCD β
-
-"""
-N <= 50000 これはなに？
-NlogNまでならいける
-最大公約数を最大にするには　同じ倍数でまとめればいい
-ただしAiは大きい
-どちらの数字を使うか
-targetを選択するか
-全部因数分解して候補を探る Aiがでかいので間に合わない
-まずAi, Bi 10 ** 5個が候補としてある
-1個下の奴とのgcdで結ぶ　エッジは高々20万本
-AiスタートとBiスタートがある
-残っているものとgcdする
-Aiがでかいので...
-A0, B0の約数しか候補にならない
-"""
-
-def make_divisors(n):
-    divisors = []
-    for i in range(1, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            divisors.append(i)
-            # √nで無い数についてもう一個プラス
-            if i != n // i:
-                divisors.append(n // i)
-    return sorted(divisors)
-
-N = getN()
-A, B = [], []
-for i in range(N):
-    a, b = getNM()
-    A.append(a)
-    B.append(b)
-
-ans = set()
-opt_l = make_divisors(A[0]) + make_divisors(B[0])
-
-for opt in opt_l:
-    for i in range(N):
-        if (A[i] % opt != 0) and (B[i] % opt != 0):
-            break
-    else:
-        ans.add(opt)
-
-ans = sorted(list(ans))
-print(ans[-1])
-
-# ABC136 Max GCD
-
-"""
-0回以上K回以下行う
-Aの全ての要素を割り切る: 操作後をAの全てがansの倍数になる
-二分探索したい　単調性はあるのか
-K = 無限の時
-8 20
-0 28
--A 28 + A 結局最初のAの値に拘束される
-0 28で28が最大か
-K = 無限の場合の最大値はsum(A)
-どれだけこれに近づけるか
-sum(A)の倍数にしか到達できない　倍数の数は大体logN にぶたんしなくても十分早い
-K回操作することでtargetの倍数に揃えられるか
-4 5
-10 1 2 22　の時
-35に揃えられるか
--10, -1, -2, +13 無理
-7に揃えられるか
--3, -1, -2, -1 total: -7, abs: 7
-前からtotal // 7個を反転させる　反転させた場合現在のabsから7 - 2abs(Ai)増える
-それぞれの要素についてプラスするかマイナスするか
-プラスするものとマイナスするものはイーブンでないといけない
-"""
-
-N, K = getNM()
-A = getList()
-su = sum(A)
-
-for p in make_divisors(su)[::-1]:
-    ar = sorted([a % p for a in A], reverse = True)
-    total = sum(ar) # total値は反転させるごとに7ずつ減っていく
-    ab = total # abは反転させるごとにa * 2 - pずつ減る ならaの大きい順に反転させた方がお得
-
-    for i in range(N):
-        if total == 0:
-            break
-        total -= p
-        ab -= ar[i] * 2 - p
-    if ab <= K * 2:
-        print(p)
-        exit()
-
-# codeforces round691
-# C - Row GCD
-
-# commmon divisor
-# Ai + nのgcdについて　1 ~ Mまで
-# 最悪セグ木でなんとか
-
-# 求めるdがあったとすると　現在の時点でもmodが全て同じでないといけない
-# 候補は各数字同士の差分のgcdの約数　因数ごとにやれば
-# A[0] + B[i]とgのgcdを取ればいい
-
-# A[0] + B[i]とgが共通してもつ因数をmとすると
-# g = nmと表せる
-# A[0] + B[i]よりknm大きいA[1] + B[i]も当然mを約数にもつ
-
-N, M = getNM()
-A = getList()
-B = getList()
-
-target = A[0]
-if N > 1:
-    A = [abs(A[i] - A[i - 1]) for i in range(N - 1)]
-    g = A[0]
-    for i in range(2, N - 1):
-        g = math.gcd(g, A[i])
-else:
-    g = 0
-
-print(*[math.gcd(target + B[i], g) for i in range(M)])
-
-# edufo 89 D - Two Divisors
-# 約数同士の足し算について
-
-"""
-2以上の数を2つ
-約数の中から探そう
-aiはギリギリエラストテネスはできる　全てについて約数列挙はできない
-√N = 3000ぐらい
-列挙する個数を減らすかそもそも約数列挙しないか
-素数はやらなくていい 存在しない証明が難しいか
-d1とd2は共通因数を持っていたらだめ　互いに素でないといけない
-因数についてどちらかにだけ置く　
-最大因数を足すか？
-
-a1が偶数の場合は？ 偶数 + 奇数にしないと
-2^k + 他の全ての因数の積 = 奇数になる　これは合成数か？
-これは合成数になりうるが、奇数の因数はない！！
-つまり逆にない条件を考える　素数
-2^kがない or 他の全ての因数の積がない
-他の全ての因数の積がない場合はどうあがいても偶数 + 偶数になるのでダメ
-例えば105(3 * 5 * 7)について　3 + 5 = 2 * (3 + 5 の平均　これは偶数　これをさらに２で割ると3は下回る)
-奇数の因数が２つあればいい
-3200以下の素数の個数は452個　これを回せば
-
-ない条件　2の累乗 or 奇数の因数が1種類しかない
-他は2^k + 奇数の因数の積でok
-結局のところ最小の因数 + それ以外の積　をすればいい
-因数が２つあればいい
-"""
-
-# osa_k法
-max = 10 ** 7 + 7
-ar = [i for i in range(max)]
-# 最大の約数を拾う
-for i in range(2, max):
-    if ar[i] == i:
-        for j in range(i * i, max, i):
-            ar[j] = i
-
-N = getN()
-A = getList()
-ans1, ans2 = [], []
-
-for a in A:
-    z = ar[a]
-    # zの累乗ではないか
-    while a % z == 0:
-        a //= z
-    # 累乗だった
-    if a == 1:
-        ans1.append(-1)
-        ans2.append(-1)
-    # 因数が2種類以上あった
-    else:
-        ans1.append(z)
-        ans2.append(a)
-
-print(*ans1)
-print(*ans2)
-
-# ARC126 C - Maximize GCD
-# 平方分割するようなお気持ち
-
-"""
-gcd の最大　nの倍数に揃える
-l = A[i] // nとして
-min(l, n - l)の総和を求める
-1 0
-2 2
-3 2
-4 4
-5 4
-6 8
-7 12
-8 16
-9 11
-単調性はなさげ？　何回かやったらいい
-Aの最大値以降は単調性ありn - A[i] まずf(max(A))で判定を行う
-調べる必要があるのはn <= max(A)なるnについて　これらを制限内で計算できれば
-全てのnについて求める必要があるか？　包除原理とかも考える
-nの倍数であれば0になる
-素数なら計算は簡単
-
-全てがnの倍数になるように
-あまりさえ合えばあとは単調増加
-
-(k - 1)x < Ai <= kx
-kが何個必要か
-k = 1, 2...ごとにまとめて
-n = 5の場合
-2 * n - (3 + 4)
-3 * n - 9
-...
-
-f(maxA)を超える場合は
-"""
-
-N, K = getNM()
-A = getList()
-ma = max(A)
-
-imos = [0] * (ma * 2 + 2)
-cnt = [0] * (ma * 2 + 2)
-for i in range(N):
-    imos[A[i]] += A[i]
-    cnt[A[i]] += 1
-for i in range(1, ma * 2 + 2):
-    imos[i] += imos[i - 1]
-    cnt[i] += cnt[i - 1]
-
-def calc(x):
-    res = 0
-    for j in range(x, ma * 2 + 1, x):
-        # 各数字につき　kx - A[i]をする
-        # 個数 * k * x
-        # j = k * xとする
-        res += (cnt[j] - cnt[j - x]) * j - (imos[j] - imos[j - x])
+    d = max(L, R)
+    while d > 1:
+        nxt_d = find_nxt_d(d)
+        res -= (d - nxt_d) * f(L // d, R // d)
+        d = nxt_d
     return res
 
-ans = 0, 0
-for n in range(1, ma + 1):
-    if calc(n) <= K:
-        ans = n
+def g(L, R):
+    """
+    L < x, y <= R であって、x | y となるものを数える。
+    x = d ごとに数える。
+    これは、 l = L // d, r = R // d として、r - l 通りであるから、f と同様に計算できる。
+    """
+    def find_nxt_d(d):
+        """
+        いまの (l, r) = (L//d, R//d) よりも大きな (l, r) が出てくる次の d を求める
+        """
+        d1 = L // (L // d + 1)
+        d2 = R // (R // d + 1)
+        return max(d1, d2)
 
-# さらに伸ばせる
-if calc(ma) <= K:
-    ans += (K - calc(ma)) // N
-print(ans)
+    res = 0
+    d = max(L, R)
+    while d:
+        nxt_d = find_nxt_d(d)
+        # (nxt_d, d] の中で (L, R] との交わりの大きさ
+        cnt = max(0, min(d, R) - max(nxt_d, L))
+        res += cnt * (R // d - L // d)
+        d = nxt_d
+    return res
+
+def main(L, R):
+    """
+    半開区間　(L, R] として持つ。
+    dx in (L, R] iff x in (L//d, R//d] と簡潔に書ける利点がある。
+    """
+    L -= 1
+    """
+    g == 1, g == x, g == y という 3 条件で包除
+    """
+    ___ = (R - L)**2
+    o__ = f(L, R)
+    _o_ = g(L, R)
+    __o = g(L, R)
+    oo_ = R - L if L < 1 <= R else 0
+    o_o = R - L if L < 1 <= R else 0
+    _oo = R - L
+    ooo = 1 if L < 1 <= R else 0
+    return ___ - o__ - _o_ - __o + oo_ + o_o + _oo - ooo
+
+# main(3, 7), main(4,10), main(1, 10**6)
+
+L, R = map(int, input().split())
+print(main(L, R))
