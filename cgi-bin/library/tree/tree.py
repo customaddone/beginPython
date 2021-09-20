@@ -369,3 +369,26 @@ for _ in range(Q):
     m, r = input().split()
     rec(int(m) - 1, r)
     print(dp[1])
+
+# bfs探索した木の復元　もっとも高さが低いもの
+
+N = getN()
+A = [i - 1 for i in getList()]
+res = 1
+E = [[] for i in range(N)] # 1-indexで返す
+prev, next, rev = [0], [], 0 # 前の段の要素の数, 現在の段の要素の数、と現在の段の反転数
+for i in range(1, N):
+    # 反転している　prevの個数 - 1までは許される
+    if A[i - 1] > A[i]:
+        # これ以上は持てないので段を変える
+        if rev + 1 == len(prev):
+            res += 1
+            prev = next # これは1以上
+            rev = 0
+            next = []
+        else:
+            rev += 1
+
+    # 置く
+    next.append(A[i])
+    E[prev[rev]].append(A[i])
