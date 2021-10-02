@@ -93,7 +93,7 @@ def form_ext(a1, b1, c):
     a2 = a1 // g
     b2 = b1 // g
 
-    return 1, [-b2, x, -a2, y]
+    return 1, [b2, x, -a2, y]
 
 """
 一次不定方程式ax + by = cの整数解を求める
