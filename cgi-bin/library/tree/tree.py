@@ -392,3 +392,30 @@ for i in range(1, N):
     # 置く
     next.append(A[i])
     E[prev[rev]].append(A[i])
+
+# 葉から探索していく
+T = getN()
+for _ in range(T):
+    _ = input()
+    N, K = getNM()
+    E = [[] for i in range(N)]
+    for i in range(N - 1):
+        u, v = getNM()
+        E[u - 1].append(v - 1)
+        E[v - 1].append(u - 1)
+
+    depth = [1] * N
+    # 葉
+    q = deque([i for i in range(N) if len(E[i]) == 1])
+    # 子要素の数
+    order = [len(E[i]) for i in range(N)]
+
+    while q:
+        u = q.popleft()
+        for v in E[u]:
+            order[v] -= 1
+            if order[v] == 1:
+                q.append(v)
+                depth[v] = depth[u] + 1
+
+    print(sum([(d > K) for d in depth]))
