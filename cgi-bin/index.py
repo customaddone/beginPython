@@ -32,214 +32,58 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-# CODE FESTIVAL 2017 qual B C - 3 Steps
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
+
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        d, now = heappop(pq)
+        if (d > dist[now]):
+            continue
+        for i in edges[now]:
+            if dist[i[0]] > dist[now] + i[1]:
+                dist[i[0]] = dist[now] + i[1]
+                heappush(pq, (dist[i[0]], i[0]))
+    return dist
 
 """
-N頂点の連結な無向グラフがある　M辺既にある(M >= N - 1)
-N <= 10 ** 5
-一応M <= 10 ** 5なのでダイクストラ使える
-辺を追加していく
-頂点uから距離3ある（最短距離でなくてもいい）vを取り、直通の辺をプラス
-最大でいくつ
-
-辺を追加する度に他の頂点の選択肢は増えるはずだから
-parentから3 = childから2]
-uのchildでない頂点vに線を引く　そこから
-u - vに線を引くと
-uのchild - vのchildにも線を引ける
-つまりuのchildとvのchildは同じグループであり、互いに線を引ける
-
-M本の辺について順に探索していくか
-結局グループは２つにしかならないのでは
-頂点1から見た距離
-頂点uのchildのどれかと頂点vのchildのどれかに線があれば繋げる
-
-一本ずつ引いていくと最悪N ** 2になる
-UnionFindか
-1とiはufか
-u - vに線を引くと
-uのchild - vのchildにも線を引ける
-
-周４の輪ができる
-距離３、５、７...の辺はあるか
-距離１の場合は既に線がある
-奇数長のパスはあるか
-
-二部グラフでなければ偶奇関係なく好きな回数で好きな場所に行ける
+どのタイミングで出発すればいいか
+混雑度は線形
+拡張ダイクストラでやる
+何秒か待って出発する
+ダメならtを進めればいい
+時刻Tが一定なので...
+現在の時刻で通過できる場合と出来ない場合を考える
+現在通過出来ない場合は次t = Di + T - Kの時に通過できる
 """
 
-N, M = getNM()
-Q = [getList() for i in range(M)]
-
-# 1 - indexで
-def bipartite(N, M, edges):
-    g = defaultdict(list)
-    for a, b in edges:
-        g[a - 1].append(b - 1)
-        g[b - 1].append(a - 1)
-
-    color = [0] * (N + 1)
-    dq = deque([(0, 1)])
-
-    while dq:
-        v, c = dq.popleft()
-        color[v] = c
-        c *= -1
-        for nv in g[v]: # 頂点vの各childを調べる
-            if color[nv] == 0: # もし未探索なら
-                dq.append((nv, c))
-            if color[nv] == -c: # もしcolor[nv]がvの色を反転させたものでなければ
-                dq = []
-                return False, color
-
-    return True, color
-
-res =  bipartite(N, M, Q)
-if res[0]:
-    nb = res[1].count(1)
-    nw = res[1].count(-1)
-    print(nb * nw - M)
-else:
-    print(N * (N - 1) // 2 - M)
-
-# ARC099 E - Independence
-# 補グラフ　エッジの反転を考える
-# iとjは同じグループにならない　を繰り返す
-
-"""
-N <= 700 探索できるか
-貪欲しかないが
-N個の都市、M個の道
-２つのグループにする
-
-まず分けることは可能かどうか　
-最低でも道はi(i + 1) / 2ないといけない
-鳩の巣原理使う？
-グループ1の大きさ:a
-グループ2の大きさ:b とすると
-求める答えはM - a(a+1)/2 - b(b+1)/2
-なるべくaとbがイーブンになるようにしたいね
-
-分けることは可能かどうか
-グループaに都市iを加えることはできるか
-N <= 700しかないのか
-前にエッジが飛ぶようにする
-各頂点は頂点0と同じか違うかしかない
-aとbがイーブンになるように
-[[], [0], [0], [2], [2, 3]]
-頂点1は0とグループ可能
-頂点3は2とグループ可能
-頂点4は2, 3とグループ可能
-N ** 2までは十分可能なので
-0と同じにするか違うにするか
-
-単純な方法だと2 ** Nこれを減らす
-自明に違うグループに属するものは
-二部グラフについて考える
-
-ないもの（グループにできない）をエッジにする
-二部グラフ　残ったやつで二部グラフ
-"""
-
-N, M = getNM()
-E = [[i for i in range(N)] for j in range(N)]
+N, M, T, K = getNM()
+E = [[] for i in range(N)]
 for i in range(M):
-    a, b = getNM()
-    E[b - 1].remove(a - 1)
-    E[a - 1].remove(b - 1)
-for i in range(N):
-    E[i].remove(i)
+    a, b, c, d = getNM()
+    E[a - 1].append([b - 1, c, d])
+    E[b - 1].append([a - 1, c, d])
 
-ign = [1] * N
-flag = True
-l = []
+def dij(start, edges):
+    dist = [float('inf') for i in range(N)]
+    dist[start] = 0
+    pq = [(0, start)]
 
-# 二部グラフ判定
-for i in range(N):
-    if ign[i] == 0:
-        continue
-    ign[i] = 0
-    color = [0] * N
-    color[i] = 1
-    q = deque([i])
-    while q:
-        u = q.popleft()
-        for v in E[u]:
-            if color[v] == 0:
-                color[v] = color[u] * (-1)
-                ign[v] = 0
-                q.append(v)
-            elif color[v] != color[u] * (-1):
-                flag = False
-                break
+    # pqの先頭がgoal行きのものなら最短距離を返す
+    while len(pq) > 0:
+        now, u = heappop(pq)
+        if (now > dist[u]):
+            continue
+        for v, c, d in edges[u]:
+            dep = dist[u] # 現在時刻を記録
+            # 現在時刻で通過できない場合は出発時刻をを上書き
+            if d - abs(T - now) >= K:
+                dep = d + T - K
+            if dist[v] > dep + c:
+                dist[v] = dep + c
+                heappush(pq, (dist[v], v))
+    return dist
 
-    l.append([color.count(1), color.count(-1)])
-
-if not flag:
-    print(-1)
-    exit()
-
-# 部分和
-prev = [0] * 701
-prev[0] = 1
-for i in range(len(l)):
-    next = [0] * 701
-    for j in range(701):
-        if j - l[i][0] >= 0:
-            next[j] += prev[j - l[i][0]]
-        if j - l[i][1] >= 0:
-            next[j] += prev[j - l[i][1]]
-    prev = next
-
-ans = float('inf')
-for i in range(701):
-    if prev[i]:
-        o = N - i
-        ans = min(ans, i * (i - 1) // 2 + o * (o - 1) // 2)
-print(ans)
-
-# cf747 D. The Number of Imposters
-# 二部グラフの場合は有向辺は無向辺にしていい
-
-T = getN()
-for _ in range(T):
-    N, M = getNM()
-    E = [[] for i in range(N)]
-    for _ in range(M):
-        a, b, s = input().split()
-        # わざわざ無向グラフにする
-        E[int(a) - 1].append([int(b) - 1, (s != 'crewmate')])
-        E[int(b) - 1].append([int(a) - 1, (s != 'crewmate')])
-
-    color = [-1] * N
-
-    # 森ができるので、それを二分グラフに
-    def bipata(start):
-        color[start] = 0
-        q = deque([start])
-        cnt = [1, 0] # 最初の頂点一つ
-
-        while q:
-            u = q.popleft()
-            for v, c in E[u]:
-                # 未探索なら色ぬり
-                if color[v] == -1:
-                    color[v] = color[u] ^ c
-                    cnt[color[u] ^ c] += 1
-                    q.append(v)
-                # 探索済みなら判定
-                else:
-                    if color[v] != color[u] ^ c:
-                        cnt = [-inf, -inf]
-
-        return cnt
-
-    ans = 0
-    for i in range(N):
-        if color[i] == -1:
-            ans += max(bipata(i))
-
-    if ans == -inf:
-        print(-1)
-    else:
-        print(ans)
+print(dij(0, E))
