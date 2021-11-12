@@ -22,9 +22,9 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-# sys.setrecursionlimit(1000000)
+sys.setrecursionlimit(10000000)
 inf = float('inf')
-eps = 10 ** (-10)
+eps = 10 ** (-15)
 dy = [0, 1, 0, -1]
 dx = [1, 0, -1, 0]
 
@@ -32,399 +32,240 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-#####segfunc#####
-def segfunc(x, y):
-    return min(x, y)
-#################
-#####ide_ele#####
-ide_ele = float('inf')
-#################
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-    def query(self, l, r):
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+# ARC068 E - Snuke Line
+
+"""
+約数により単調減少していきそう
+愚直にやると
+各Mにつき倍数のとこに置いていく MlogM
+各MにつきNでいくつ取れるかを見る NM
+
+二分探索とかしたいが
+各おみあげについてMが幾つの時に獲得できるか　セグメントツリーでできるか
+この区間に幾つの因数が入っているか
+l, rが全区間　これがM個ある時対応できない
+個数だけを見ていく方針で　包除原理とか
+
+素数のところだけを数えることはできる　合成数のはどうする？
+
+一定間隔dで移動する時
+土産の幅がdより大きい場合は一回以上訪れる
+土産の幅がd以下の場合は最大でも1回だけ訪れる
+
+dより大きい幅の場合は単純に計算できる
+dより大きい幅について
+各点でいくつ土産の種類があるかを数え、dの倍数について数える
+最大でも1回だけ訪れる土産しかないのでダブることはない
+
+ダブらないように数えるのがミソ
+
 N, M = getNM()
-seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
-L = [getList() for i in range(N)]
-L.sort()
-seg.update(0, 0)
-# [0, 1, 2, 3, 4, 5]
-# seg.query(0, 2): [0, 1]の最小値
-# seg.query(2, 2 + 1): [2]の最小値
-# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
-for l, r, c in L:
-    opt = seg.query(l, r)
-    vs = seg.query(r, r + 1)
-    seg.update(r, min(vs, opt + c))
-print(seg.query(M, M + 1))
+P = [getList() for i in range(N)]
+P.sort(reverse = True)
 
-#####segfunc#####
-def segfunc(x, y):
-    return x * y
-#################
-#####ide_ele#####
-ide_ele = 1
-#################
-class SegTree:
-    """
-    init(init_val, ide_ele): 配列init_valで初期化 O(N)
-    update(k, x): k番目の値をxに更新 O(logN)
-    query(l, r): 区間[l, r)をsegfuncしたものを返す O(logN)
-    """
-    def __init__(self, init_val, segfunc, ide_ele):
-        """
-        init_val: 配列の初期値
-        segfunc: 区間にしたい操作
-        ide_ele: 単位元
-        n: 要素数
-        num: n以上の最小の2のべき乗
-        tree: セグメント木(1-index)
-        """
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-    def update(self, k, x):
-        """
-        k番目の値をxに更新
-        k: index(0-index)
-        x: update value
-        """
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-    def query(self, l, r):
-        """
-        [l, r)のsegfuncしたものを得る
-        l: index(0-index)
-        r: index(0-index)
-        """
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+for m in range(1, M + 1):
+    p = [i for i in P if i[1] - i[0] + 1 <= m]
+    l = [0] * (M + 1)
+    q = []
+    ans = N - len(p) # 一回以上訪れる
+    # 各倍数について調べる
+    for i in range(m, M + 1, m):
+        while p and p[-1][0] <= i:
+            heappush(q, p.pop()[1])
+        while q and q[0] < i:
+            heappop(q)
+        ans += len(q)
+    print(ans)
 
-#ABC157 E - Simple String Queries
-N = 7
-s = 'abcdbbd'
-Q = 6
-query = [
-[2, 3, 6],
-[1, 5, 'z'],
-[2, 1, 1],
-[1, 4, 'a'],
-[1, 7, 'd'],
-[2, 1, 7]
-]
-S = []
-for i in s:
-    # 面倒なので文字を数値化
-	S.append(ord(i) - ord("a"))
-seg = [SegTree([1] * N, segfunc, ide_ele) for _ in range(26)]
-# 入力
+これで答えが出るがこのままだとTLE
+pに集計されるPの要素の数はだんだんと増えていく
+mについて調べる
+区間の長さがmのものを取り出し、区間[l, r]に区間加算
+mの倍数について調べる
+"""
+
+N, M = getNM()
+P = []
+for _ in range(N):
+    l, r = getNM()
+    P.append([l, r, r - l + 1])
+P.sort(key = lambda i:i[2], reverse = True)
+
+#### 区間加算bit ################################
+bit1 = BIT(M)
+bit2 = BIT(M)
+# [l, r)にxを加算する
+def range_add(l, r, x):
+    bit1.add(l, x)
+    bit1.add(r, -x)
+    bit2.add(l, (-1) * x * (l - 1))
+    bit2.add(r, x * (r - 1))
+# [1 ~ a)までの値を集計する
+def range_get(a):
+    return bit2.get(a) + (a - 1) * bit1.get(a)
+################################################
+
+# 1-indexにしてある
+for m in range(1, M + 1):
+    # 区間の長さがmより小さいものについて取り出す
+    while P and P[-1][2] <= m:
+        l, r, _ = P.pop()
+        range_add(l, r + 1, 1) # [l, r + 1)について区間加算
+    ans = len(P)
+    # 各倍数について土産の数を調べる　互いにダブらない
+    for i in range(m, M + 1, m):
+        ans += range_get(i + 1) - range_get(i)
+    print(ans)
+
+# codeforces # 635 D-MEX maximizing
+# １個ずつ足していく場合のAの中の最小値とその最小値の場所を探す
+
+"""
+yi % x + n * xの範囲で自由に数を決めれる　mexの最大を目指せ
+まずmodした時に0 ~ x - 1まで揃うか　揃わなければそこが穴
+セグ木　は使う？
+一番小さい穴はどこか
+そこに数字があるかないかでBITを組む
+揃ったら消す
+"""
+
+N, X = getNM()
+cnt = [0] * (X + 1) # カウント数
+layer = 0
+bit = BIT(X) # 0かそれ以外か
+
 for i in range(N):
-	seg[S[i]].update(i, 0)
-for i in range(Q):
-    a, b, c = query[i]
-    if int(a) == 1:
-        b = int(b) - 1
-        # Sのb番目にある文字をupdate
-        seg[S[b]].update(b, 1)
-        t = ord(c) - ord("a")
-        seg[t].update(b, 0)
-        S[b] = t
-    else:
-        b = int(b) - 1
-        c = int(c)
-        cnt = 0
-        for se in seg:
-            # 1 * 1 * 0 * 1 *...
-            # 区間内に一つでも0があれば0
-            if se.query(b, c) == 0:
-                cnt += 1
-        print(cnt)
+    y = (getN() % X) + 1 # 1-index
+    cnt[y] += 1
+    # 数字を置いた場所に1を立てる
+    if bit.cum(y, y + 1) == 0:
+        bit.add(y, 1)
+    # 揃ったので消す
+    if bit.get(X + 1) == X:
+        layer += 1 # あとで *= Xする
+        # cntの全てから1を引く
+        for i in range(1, X + 1):
+            cnt[i] -= 1
+            # もし1→0になったなら
+            if cnt[i] == 0:
+                bit.add(i, -1)
 
-
-def segfunc(x, y):
-    return min(x, y)
-
-ide_ele = float('inf')
-
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-
-    def query(self, l, r):
-        res = self.ide_ele
-
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
-
-# ABC146 F - Sugoroku
-# 最短手数k回でクリアできるとすると、
-# 1 ~ M　の内１つをk回選んで合計をNにする
-N, M = getNM()
-S = input()
-trap = set()
-for i in range(len(S)):
-    if S[i] == '1':
-        trap.add(i)
-
-# これABC011 123引き算と同じでは
-
-# 案1 dpを使う
-# dp[i]: iマスに止まる時の最短手順
-# dp[i]の時 dp[i + 1] ~ dp[i + M]についてmin(dp[i] + 1, dp[i + j])を見ていく
-# 決まったらdpを前から見ていき最短手順がdp[i] - 1になるものを探す（辞書順）
-# → M <= 10 ** 5より多分無理
-
-# セグ木使えばいける？
-# dp[i] = dp[i - M] ~ dp[i - 1]の最小値 + 1
-# dp[i - M] ~ dp[i - 1]の最小値はlogNで求められるので全体でNlogN
-
-dp = [float('inf')] * (N + 1)
-dp[0] = 0
-seg = SegTree([float('inf')] * (N + 1), segfunc, ide_ele)
-seg.update(0, 0)
-
-# dp[i]をレコード
-for i in range(1, N + 1):
-    # もしドボンマスなら飛ばす（float('inf')のまま）
-    if i in trap:
-        continue
-    # dp[i - M] ~ dp[i - 1]の最小値をサーチ
-    min_t = seg.query(max(0, i - M), i)
-    seg.update(i, min_t + 1)
-    dp[i] = min_t + 1
-
-# goalに到達できないなら
-if dp[-1] == float('inf'):
-    print(-1)
-    exit()
-
-# 何回の試行で到達できるかをグルーピング
-dis = [[] for i in range(dp[-1] + 1)]
-for i in range(len(dp)):
-    if dp[i] == float('inf'):
-        continue
-    dis[dp[i]].append(i)
-
-# ゴールから巻き戻っていく
-now = dp[-1]
-now_index = N
-ans = []
-# 辞書順で1 4 4 < 3 3 3なので
-# 一番前にできるだけ小さい数が来るようにする
-for i in range(now, 0, -1):
-    # dp[i] - 1回で到達できる
-    # 現在地点からMマス以内
-    # で最も現在地点から遠いところが１つ前のマス
-    index = bisect_left(dis[i - 1], now_index - M)
-    # サイコロの目を決める
-    ans.append(now_index - dis[i - 1][index])
-    # 現在地点更新
-    now_index = dis[i - 1][index]
-
-for i in ans[::-1]:
-    print(i)
-
-# ARC026 C - 蛍光灯
-# 範囲全体を照らすのに必要な最小値
-N, M = getNM()
-seg = SegTree([float('inf')] * (M + 1), segfunc, ide_ele)
-L = [getList() for i in range(N)]
-L.sort()
-seg.update(0, 0)
-
-# [0, 1, 2, 3, 4, 5]
-# seg.query(0, 2): [0, 1]の最小値
-# seg.query(2, 2 + 1): [2]の最小値
-# seg.update(2, min(vs, opt + c)): 2をmin(vs, opt + c)に更新
-for l, r, c in L:
-    opt = seg.query(l, r)
-    vs = seg.query(r, r + 1)
-    seg.update(r, min(vs, opt + c))
-print(seg.query(M, M + 1))
-
-# codeforces round731 F. Array Stabilization (GCD version)
-
-#####segfunc#####
-def segfunc(x, y):
-    return math.gcd(x, y)
-#################
-
-# gcdの逆元は0
-#####ide_ele#####
-ide_ele = 0
-#################
-
-# gcdする
-# gcd(a1, a2), gcd(a2, a3)... 輪っかになっている
-
-# だんだんgcdが1とかにならされて行くのでは？
-# 操作回数の最小を求める
-# 連続部分列Kについていずれの列でもgcdが等しくなる
-# gcdはモノイドだぞ セグ木使えば
-
-T = getN()
-for _ in range(T):
-    N = getN()
-    A = getList()
-    A += A
-
-    def f(x):
-        seg = SegTree(A, segfunc, ide_ele) # セグ木立てる
-        res = [seg.query(i, i + x) for i in range(N)]
-        return all([res[i] == res[0] for i in range(N)])
-
-    ok = N + 1
-    ng = 0
-
-    while abs(ok - ng) > 1:
+    # 一番小さい穴を探す
+    ok, ng = 0, X + 1
+    while abs(ng - ok) > 1:
         mid = (ok + ng) // 2
-        if f(mid):
+        # これ以前の全ての場所にフラグが立っているか
+        if bit.get(mid + 1) == mid:
             ok = mid
         else:
             ng = mid
 
-    print(ok - 1)
+    print(layer * X + ok)
 
-# codeforces 736
-# D. Integers Have Friends
-# セグ木 + 尺取り
-
-T = getN()
-for _ in range(T):
-    N = getN()
-    psu = getList()
-    A = [abs(psu[i] - psu[i + 1]) for i in range(N - 1)]
-    seg = SegTree(A, segfunc, ide_ele)
-    if N == 1:
-        print(1)
-        continue
-
-    l, ans = 0, 0
-    for r in range(N - 1):
-        while seg.query(l, r + 1) == 1:
-            l += 1
-        ans = max(ans, r - l + 2)
-    print(ans)
-
-# PG battle2019 みんみんみん
-# xi < x, yi < y, zi < zなる点があるかどうか
+# edufo E. String Reversal
+# distinctでない場合の転倒数の求め方
 
 """
-2つで考えると
-まずはxでソートする
-yの最小値を記録しておく　自身より小さいものがあるか
-前のいくつかについての最小値を求める
+SをS#に変換するための最小スワップ回数
+distinctでない場合の転倒数
 
-２つの場合　最小値しか保持しなくていい　それぞれのyの値についてzの最小値を保持しておけば
-セグ木で区間の最小値を計算できるので...
+['i', 'c', 'p', 'c', 's', 'g', 'u', 'r', 'u']
+['u', 'r', 'u', 'g', 's', 'c', 'p', 'c', 'i']
+一番近い値を持ってくる
+swapは実際に行うとTLE
+移動させるたびに元の位置にフラグを立てる
+
+いつもは大きい値から順に
+・自身の左にあるフラグ（自身より左にある自身より大きい数）を数える
+・フラグを置く
+をしていた
+結局のとこiはi番目に置くことが確定しているのなら、小さい数字から順に
+・最初の位置 + 追い抜かれた回数（自身より右にある自身より小さい数）- i
+をしても良い
+
+左にある自身より大きい数の総和 = 右にある自身より小さい数の総和
+なのでdistinctでない場合左から順に
+・一番左にあるS[i]の要素を取る
+・最初の位置 + 追い抜かれた回数（自身より右にある自身より小さい数）- i
+・フラグを立てる
+をする
 """
 
 N = getN()
-P = []
-code_y = set()
-code_y.add(-inf)
+S = [ord(s) - 97 for s in list(input())]
+psuedo = S[::-1]
+
+l = [deque([]) for i in range(26)]
 for i in range(N):
-    # yだけ圧縮する
-    x, y, z = getNM()
-    code_y.add(y)
-    P.append([x, y, z, i])
+    l[S[i]].append(i + 1) # BIT用に1-indexに
 
-# 座圧
-alt = {}
-code_y = sorted(list(code_y))
-for i in range(len(code_y)):
-    alt[code_y[i]] = i
+bit = BIT(N)
+ans = 0
+for i in range(N):
+    # 一番近いものを取ってくる
+    # その文字は現在　追い抜けれた回数 = 自分より右にあるこれまでに置いたもの
+    # の数だけシフトしている
+    # これをi番目に置く
+    # ans += u + bit.cum(u, N + 1) - (i + 1)
+    u = l[psuedo[i]].popleft()
+    # print(u, bit.cum(u, N + 1), (i + 1), u + bit.cum(u, N + 1) - (i + 1))
+    ans += u + bit.cum(u, N + 1) - (i + 1)
+    bit.add(u, 1)
 
-P.sort(reverse = True)
-seg = SegTree([ide_ele] * (len(code_y) + 1), segfunc, ide_ele)
+print(ans)
 
-ans = ['No'] * N
-while P:
-    now = P[-1][0]
-    l = [] # あとで置く
-    while P and P[-1][0] <= now:
-        _, y, z, index = P.pop()
-        if z > seg.query(0, alt[y]): # x未満 y未満の点についてのzの最小値
-            ans[index] = 'Yes'
-        l.append([y, z])
-    for y, z in l:
-        # 更新
-        if seg.query(alt[y], alt[y] + 1) > z:
-            seg.update(alt[y], z)
+# ゆきこ　No.1734 Decreasing Elements
+# 間隔には限りが
+
+"""
+Ajはもちろん自身を引いて0になる
+右にある自分より大きいものから引く
+何回目で自身が消えているか　スキップする回数を引く
+左から順に　自身より小さい数があればそれを引く
+自身が消えているか　のみ見る
+例えば1 1 1 2 2 2 6 の6は消えない　gcdの問題？
+
+[0, 1, 2, 3, 4, 5, 6, 7, 8...]とする
+4がくる
+[0, 1, 2, 3, 0, 1, 2, 3, 4...]
+3がくる
+[0 ,1, 2, 0, 0, 1, 2, 0, 1...]
+
+現在の0の場所を起点に次の0との間隔がKより大きいものについて新しく0を立てる
+最初(次の場所との間隔10**6, 0)
+4がくる(inf, 4), (4, 0) # 間隔が大きい順に
+3がくる(inf, 7), (3, 4), (1, 3), (3, 0)
+(元の間隔, Ai + K)、(K, Ai)
+
+Aiの値も変動する
+aは最後の0の位置からいくつめか
+"""
+
+
+N = getN()
+A = getList()
+
+q = [[-(2 * 10 ** 5 + 7), 0]]
+# どこに0が立っているか
+bit = BIT(2 * 10 ** 5 + 7)
+ans = 0
+
+for a in A:
+    # 最後の0の位置を探索 現在のaの値は
+    k = a - bit.lowerbound(bit.get(a + 1))
+    if k == 0:
+        continue
+
+    # countする
+    ans += 1
+    psu = []
+    # aより間隔が広いものを引っ張る
+    while q and -q[0][0] > k:
+        psu.append(heappop(q))
+    for ran, now in psu:
+        # 間隔が詰まる
+        bit.add(now + k, 1)
+        heappush(q, [ran + k, now + k])
+        heappush(q, [-k, now])
 
 print(ans)
