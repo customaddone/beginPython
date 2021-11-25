@@ -52,6 +52,7 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
+# 0-index サイズ気持ち大きめで建てて
 class BIT:
     def __init__(self, N):
         self.N = N
@@ -59,24 +60,25 @@ class BIT:
         self.b = 1 << N.bit_length() - 1
 
     def add(self, a, w):
-        x = a
+        x = a + 1
         while(x <= self.N):
             self.bit[x] += w
             x += x & -x
 
-    # [0, a)の合計
     def get(self, a):
-        ret, x = 0, a - 1
+        ret, x = 0, a
         while(x > 0):
             ret += self.bit[x]
             x -= x & -x
         return ret
 
-    # [l, r)の合計
     def cum(self, l, r):
         return self.get(r) - self.get(l)
 
-    # 最も近くにあるフラグの立っている場所を探す
+    # xより左にあるフラグのうちもっとも右にあるフラグを探す
+    # bit.get(x)そもそも左にフラグがあるか　なければlowerboundは0を示すが0にフラグはない
+    # bit.lowerbound(bit.get(x)) 探す
+    # bit.lowerbound(bit.get(x) + 1) 自身あるいは自身より右位にあるフラグのうち一番左にあるものを探す
     def lowerbound(self,w):
         if w <= 0:
             return 0
@@ -87,7 +89,7 @@ class BIT:
                 w -= self.bit[x + k]
                 x += k
             k //= 2
-        return x + 1
+        return x
 
 # 二分探索木もどき
 # binary search tree
@@ -126,18 +128,6 @@ class BST:
             self.bit[x] += -1
             x += x & -x
 
-    def lowerbound(self, w):
-        if w <= 0:
-            return 0
-        x = 0
-        k = self.b
-        while k > 0:
-            if x + k <= self.N and self.bit[x + k] < w:
-                w -= self.bit[x + k]
-                x += k
-            k //= 2
-        return x + 1
-
     # xより大きい最小の値を返す
     def up_min(self, x):
         # self.get(self.comp[x])でx以上の値のうち最小のもの
@@ -151,7 +141,7 @@ class BST:
         ind = self.lowerbound(x)
         return self.rev[ind]
 
-# 座圧BIT 0-indexで使える
+# 座圧BIT 0-index
 class Comp_BIT:
     def __init__(self, N, array):
         self.N = N
