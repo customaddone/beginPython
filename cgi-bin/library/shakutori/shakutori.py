@@ -220,6 +220,21 @@ for r in range(N):
 
 print(ans)
 
+# 0込み　K以下になるように
+S = [0 if i == "X" else 1 for i in input()]
+N = len(S)
+K = getN()
+
+right, total, ans = 0, 0, 0
+for left in range(N):
+    while right < N and total + S[right] <= K:
+        total += S[right]
+        right += 1
+    ans = max(ans, right - left)
+    total -= S[left]
+
+print(ans)
+
 N = 4
 A = [2, 5, 4, 6]
 

@@ -63,8 +63,8 @@ print(cmb_2(5, 3))
 # nが小さい場合に
 lim = 10 ** 6 + 1
 fact = [1, 1]
-factinv = [1, 1]
-inv = [0, 1]
+factinv = [1, 1] # 1/n!(mod n)
+inv = [0, 1] # 1/n (mod n)
 
 for i in range(2, lim + 1):
     fact.append((fact[-1] * i) % mod)

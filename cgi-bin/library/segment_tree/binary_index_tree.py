@@ -79,7 +79,7 @@ class BIT:
     # bit.get(x)そもそも左にフラグがあるか　なければlowerboundは0を示すが0にフラグはない
     # bit.lowerbound(bit.get(x)) 探す
     # bit.lowerbound(bit.get(x) + 1) 自身あるいは自身より右位にあるフラグのうち一番左にあるものを探す
-    def lowerbound(self,w):
+    def lowerbound(self, w):
         if w <= 0:
             return 0
         x = 0
@@ -130,16 +130,28 @@ class BST:
 
     # xより大きい最小の値を返す
     def up_min(self, x):
-        # self.get(self.comp[x])でx以上の値のうち最小のもの
-        # self.get(self.comp[x] + 1)でxより大きい最小の値を返す
-        now = self.get(self.comp[x])
-        ind = self.lowerbound(now + 1)
+        # self.get(self.comp[x]): 未満 self.get(self.comp[x] + 1): 以上
+        # self.lowerbound(now): x未満/以下の最大の値 self.lowerbound(now + 1): x以上/より大きい最小の値
+        now = self.get(self.comp[x] + 1)
+        ind = self.lowerbound(now)
         return self.rev[ind]
 
     # x番目の値を返す
     def query(self, x):
         ind = self.lowerbound(x)
         return self.rev[ind]
+
+    def lowerbound(self,w):
+        if w <= 0:
+            return 0
+        x = 0
+        k = self.b
+        while k > 0:
+            if x + k <= self.N and self.bit[x + k] < w:
+                w -= self.bit[x + k]
+                x += k
+            k //= 2
+        return x + 1
 
 # 座圧BIT 0-index
 class Comp_BIT:
