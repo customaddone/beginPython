@@ -161,6 +161,23 @@ def dfs(u, par):
 
 dfs(0, -1) # 実行
 
+cnt = 0
+size = [0] * N # 部分木のサイズ
+parents = [-1] * N # 0を根としたときの親
+depth = [0] * N # 深さ
+
+# 親と深さと部分木のサイズを保持しておく
+def dfs(u, p):
+    global cnt, size, parents, depth
+    size[u] -= cnt
+    cnt += 1
+    for v in E[u]:
+        if v != p:
+            depth[v] = depth[u] + 1
+            parents[v] = u
+            dfs(v, u)
+    size[u] += cnt
+
 ans = 0
 # 部分木の色ぬり + 閉路検出
 def search(sta, dist):
