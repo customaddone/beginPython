@@ -81,7 +81,7 @@ class BIT:
     # bit.lowerbound(bit.get(x) + 1) 自身あるいは自身より右位にあるフラグのうち一番左にあるものを探す
     def lowerbound(self, w):
         if w <= 0:
-            return 0
+            return -1
         x = 0
         k = self.b
         while k > 0:

@@ -32,52 +32,89 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-#####segfunc#####
-def segfunc(x, y):
-    if x[0] < y[0]:
-        return x
-    else:
-        return y
-#################
-#####ide_ele#####
-ide_ele = (inf, -1)
-#################
-class SegTree:
-    def __init__(self, init_val, segfunc, ide_ele):
-        n = len(init_val)
-        self.segfunc = segfunc
-        self.ide_ele = ide_ele
-        self.num = 1 << (n - 1).bit_length()
-        self.tree = [ide_ele] * 2 * self.num
-        # 配列の値を葉にセット
-        for i in range(n):
-            self.tree[self.num + i] = init_val[i]
-        # 構築していく
-        for i in range(self.num - 1, 0, -1):
-            self.tree[i] = self.segfunc(self.tree[2 * i], self.tree[2 * i + 1])
-    def update(self, k, x):
-        k += self.num
-        self.tree[k] = x
-        while k > 1:
-            self.tree[k >> 1] = self.segfunc(self.tree[k], self.tree[k ^ 1])
-            k >>= 1
-    def query(self, l, r):
-        res = self.ide_ele
-        l += self.num
-        r += self.num
-        while l < r:
-            if l & 1:
-                res = self.segfunc(res, self.tree[l])
-                l += 1
-            if r & 1:
-                res = self.segfunc(res, self.tree[r - 1])
-            l >>= 1
-            r >>= 1
-        return res
+"""
+F2空間上のrank, 単位行列を作るベクトルの組み合わせを教えてくれる
+rankより向こうのinvはただの残骸
+n = rankのとき
+[1, 0, 0...]: A[P[j0]](j0はinv[0]のうちフラグが立っているindex)
+[0, 1, 0...]: A[P[j1]](j1はinv[1]のうちフラグが立っているindex)
+...
 
-N = 10
-S = SegTree([ide_ele for i in range(N)], segfunc, ide_ele)
-S.update(1, (4, 1))
-print(S.query(0, 8))
-S.update(6, (2, 6))
-print(S.query(0, 8))
+# is_extended 連立方程式を解くなど、最後の行を操作したくないときにFalseにする
+"""
+
+def gauss_jordan_mod2(array, is_extended = False):
+    A = deepcopy(array)
+    H = len(A) # 縦
+    W = len(A[0]) # 横
+    P = [i for i in range(H)] # 今どれがどこ？
+    inv = [[0] * W for i in range(H)] # 逆行列
+    rank = 0
+    # 一つ目のベクトル、二つ目のベクトル...を見ていく
+    for col in range(W):
+        if is_extended and col == W - 1:
+            break
+        pivot = -1
+        # 縦に見ていきcol個目のフラグが立っているベクトルが見つかれば
+        for row in range(rank, H):
+            if A[row][col]:
+                pivot = row
+                break
+        # col列にフラグがなかったら飛ばす
+        if pivot == -1:
+            continue
+
+        # 行を入れ替え
+        A[pivot], A[rank] = A[rank], A[pivot]
+        P[pivot], P[rank] = P[rank], P[pivot]
+        inv[pivot], inv[rank] = inv[rank], inv[pivot]
+        inv[rank][col] = 1 # 逆行列作成のため
+
+        # 掃き出す　縦に動く
+        for row in range(H):
+            # 自分のとこ以外
+            if row == rank:
+                continue
+            if A[row][col]:
+                for col2 in range(W):
+                    A[row][col2] ^= A[rank][col2]
+                    inv[row][col2] ^= inv[rank][col2]
+
+        rank += 1
+
+    return A, rank, P, inv
+
+# N行M列　最大rank Mの行列
+N, M = 13, 6
+A = \
+[[1, 0, 1, 0, 1, 0],
+[1, 0, 0, 1, 1, 0],
+[0, 0, 1, 1, 1, 1],
+[0, 1, 0, 0, 1, 0],
+[1, 1, 1, 0, 1, 0],
+[0, 0, 1, 1, 0, 1],
+[0, 0, 0, 1, 1, 1],
+[1, 1, 1, 1, 1, 1],
+[1, 0, 1, 0, 1, 1],
+[1, 1, 0, 1, 0, 0],
+[1, 0, 0, 0, 1, 1],
+[1, 1, 1, 1, 0, 0],
+[0, 0, 0, 0, 1, 0]]
+
+mat, rank, p, mat_inv = gauss_jordan_mod2(A)
+psuedo = []
+
+# 説明の通りに単位行列を作ってみる
+# 作れるのはrank個だけ
+for i in range(rank):
+    vec = [0] * M
+    use = []
+    for j in range(M):
+        # inv[i][j]にフラグが立っているならA[P[j]]をxorする
+        if mat_inv[i][j]:
+            use.append(p[j])
+            for k in range(M):
+                vec[k] ^= A[p[j]][k]
+
+    print(use)
+    print(vec)
