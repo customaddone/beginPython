@@ -41,8 +41,11 @@ x // 2^k あるbit以下を切り捨て　後ろ4つが 1010
 """
 
 S = '1' * getN()
+if S == '':
+    print(0)
+    exit()
+
 N = len(S)
-print(S)
 # 次にあるべき数字
 jud = [1, 0, 1, 0, inf]
 # dp[i][j][k]: iまで進んで最大値になる可能性がある(0)/ない(1), 状態はk
@@ -65,10 +68,10 @@ for i in range(N):
                 # 進めない
                 else:
                     # 次が0なら状態0, 1なら状態1
-                    dp[i + 1][j | (d_j < d)][(k == 1)] += dp[i][j][k]
-                    dp[i + 1][j | (d_j < d)][(k == 1)] %= mod
+                    dp[i + 1][j | (d_j < d)][(d_j == 1)] += dp[i][j][k]
+                    dp[i + 1][j | (d_j < d)][(d_j == 1)] %= mod
             # 状態5
             dp[i + 1][j | (d_j < d)][4] += dp[i][j][4]
             dp[i + 1][j | (d_j < d)][4] %= mod
-            
-    print(dp[i + 1])
+
+print((dp[i + 1][0][-1] + dp[i + 1][1][-1]) % mod)
