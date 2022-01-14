@@ -329,3 +329,36 @@ for i in range(rank):
 
     print(use)
     print(vec)
+
+# 典型90 Flip Flap（★6）
+# N行M列　最大rank Mの行列
+N, M = getNM()
+A = []
+for i in range(N):
+    _ = getN()
+    a = [0] * M
+    for o in getListGraph():
+        a[o] += 1
+    A.append(a)
+
+S = getList()
+
+# Sを解とした連立方程式を解き、解けるなら解の自由度を求めよう
+# invは今回使わない
+mat, rank, _, _ = gauss_jordan_mod2(A)
+# matもrank個までしか使わない
+# 左から見ていって0を作ろう
+for i in range(N):
+    # mat[i]のフラグの場所を探す
+    for j in range(M):
+        if mat[i][j]:
+            if S[j] == 1:
+                for k in range(M):
+                    S[k] ^= mat[i][k]
+            break
+
+# 解けるなら0しかない行の数
+if S == [0] * M:
+    print(pow(2, N - rank, MOD))
+else:
+    print(0)

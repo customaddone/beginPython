@@ -33,88 +33,44 @@ dx = [1, 0, -1, 0]
 #############
 
 """
-F2空間上のrank, 単位行列を作るベクトルの組み合わせを教えてくれる
-rankより向こうのinvはただの残骸
-n = rankのとき
-[1, 0, 0...]: A[P[j0]](j0はinv[0]のうちフラグが立っているindex)
-[0, 1, 0...]: A[P[j1]](j1はinv[1]のうちフラグが立っているindex)
-...
+N組の百合カップルがあり、それぞれ
+座標A_i<B_iに居ます。
+またM人の男がいて座標C_iに居ます。
+i番目のカップルは間に男がいなければ尊さがP_i加算されますが男がいたら0加算されます。
+K=0...Mについて
+K人の男を◯せる時尊さの和の最大を求めてください
 
-# is_extended 連立方程式を解くなど、最後の行を操作したくないときにFalseにする
+N<=200000
+M<=18
+A_i,B_i,C_iは全て異なる
 """
 
-def gauss_jordan_mod2(array, is_extended = False):
-    A = deepcopy(array)
-    H = len(A) # 縦
-    W = len(A[0]) # 横
-    P = [i for i in range(H)] # 今どれがどこ？
-    inv = [[0] * W for i in range(H)] # 逆行列
-    rank = 0
-    # 一つ目のベクトル、二つ目のベクトル...を見ていく
-    for col in range(W):
-        if is_extended and col == W - 1:
-            break
-        pivot = -1
-        # 縦に見ていきcol個目のフラグが立っているベクトルが見つかれば
-        for row in range(rank, H):
-            if A[row][col]:
-                pivot = row
-                break
-        # col列にフラグがなかったら飛ばす
-        if pivot == -1:
-            continue
+N = 10
+Y = [[1, 5], [7, 18], [3, 9], [4, 32], [40, 79], [13, 21], [8, 10], [19, 35], [11, 43], [15, 28]]
+P = [9, 19, 49, 39, 28, 49, 13, 2, 8, 48]
+M = 8
+Man = [2, 6, 12, 14, 34, 35, 41, 77]
 
-        # 行を入れ替え
-        A[pivot], A[rank] = A[rank], A[pivot]
-        P[pivot], P[rank] = P[rank], P[pivot]
-        inv[pivot], inv[rank] = inv[rank], inv[pivot]
-        inv[rank][col] = 1 # 逆行列作成のため
+Man.sort()
+m = [0] + Man + [inf] # 番兵を足す
+# 「女aはm[i] < a < m[i + 1]におり、女bはm[j] < b < m[j + 1]の位置にいる」　ものを全て同一視すると(M + 1)^2種類しかない
+# dp[i][j]: 女aはm[i] < a < m[i + 1]におり、女bはm[j] < b < m[j + 1]の位置にいる
+dp = [[0] * (M + 1) for i in range(M + 1)]
+for i in range(N):
+    dp[bisect_left(m, Y[i][0]) - 1][bisect_left(m, Y[i][1]) - 1] += P[i]
 
-        # 掃き出す　縦に動く
-        for row in range(H):
-            # 自分のとこ以外
-            if row == rank:
-                continue
-            if A[row][col]:
-                for col2 in range(W):
-                    A[row][col2] ^= A[rank][col2]
-                    inv[row][col2] ^= inv[rank][col2]
+ans = [0] * (M + 1)
+for bit in range(1 << M):
+    ma_bit = [0] + [Man[i] for i in range(M) if bit & (1 << i)] + [inf]
+    # dpを二重ループして数え上げ
+    opt = 0
+    label = [bisect_right(ma_bit, m[i]) for i in range(M + 1)] # m[i]の前にma_bitの要素が何個あるか
+    for i in range(M + 1):
+        for j in range(i, M + 1):
+            # 男が挟まってなかったら
+            if label[i] == label[j]:
+                opt += dp[i][j]
 
-        rank += 1
+    ans[bin(bit).count('1')] = max(ans[bin(bit).count('1')], opt)
 
-    return A, rank, P, inv
-
-# N行M列　最大rank Mの行列
-N, M = 13, 6
-A = \
-[[1, 0, 1, 0, 1, 0],
-[1, 0, 0, 1, 1, 0],
-[0, 0, 1, 1, 1, 1],
-[0, 1, 0, 0, 1, 0],
-[1, 1, 1, 0, 1, 0],
-[0, 0, 1, 1, 0, 1],
-[0, 0, 0, 1, 1, 1],
-[1, 1, 1, 1, 1, 1],
-[1, 0, 1, 0, 1, 1],
-[1, 1, 0, 1, 0, 0],
-[1, 0, 0, 0, 1, 1],
-[1, 1, 1, 1, 0, 0],
-[0, 0, 0, 0, 1, 0]]
-
-mat, rank, p, mat_inv = gauss_jordan_mod2(A)
-psuedo = []
-
-# 説明の通りに単位行列を作ってみる
-# 作れるのはrank個だけ
-for i in range(rank):
-    vec = [0] * M
-    use = []
-    for j in range(M):
-        # inv[i][j]にフラグが立っているならA[P[j]]をxorする
-        if mat_inv[i][j]:
-            use.append(p[j])
-            for k in range(M):
-                vec[k] ^= A[p[j]][k]
-
-    print(use)
-    print(vec)
+print(*ans)
