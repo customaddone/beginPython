@@ -33,44 +33,42 @@ dx = [1, 0, -1, 0]
 #############
 
 """
-N組の百合カップルがあり、それぞれ
-座標A_i<B_iに居ます。
-またM人の男がいて座標C_iに居ます。
-i番目のカップルは間に男がいなければ尊さがP_i加算されますが男がいたら0加算されます。
-K=0...Mについて
-K人の男を◯せる時尊さの和の最大を求めてください
-
-N<=200000
-M<=18
-A_i,B_i,C_iは全て異なる
+Nがくそでか　bitで考える　桁dp?
+x // 2^k あるbit以下を切り捨て　後ろ4つが 1010
+つまり　1010を持つ数がいくつあるか　桁dp
+'', '1', '10', '101', '1010' の5つ
+耳桁dp
 """
 
-N = 10
-Y = [[1, 5], [7, 18], [3, 9], [4, 32], [40, 79], [13, 21], [8, 10], [19, 35], [11, 43], [15, 28]]
-P = [9, 19, 49, 39, 28, 49, 13, 2, 8, 48]
-M = 8
-Man = [2, 6, 12, 14, 34, 35, 41, 77]
+S = '1' * getN()
+N = len(S)
+print(S)
+# 次にあるべき数字
+jud = [1, 0, 1, 0, inf]
+# dp[i][j][k]: iまで進んで最大値になる可能性がある(0)/ない(1), 状態はk
+dp = [[[0] * 5 for _ in range(2)] for i in range(N + 1)]
+dp[0][0][0] = 1
 
-Man.sort()
-m = [0] + Man + [inf] # 番兵を足す
-# 「女aはm[i] < a < m[i + 1]におり、女bはm[j] < b < m[j + 1]の位置にいる」　ものを全て同一視すると(M + 1)^2種類しかない
-# dp[i][j]: 女aはm[i] < a < m[i + 1]におり、女bはm[j] < b < m[j + 1]の位置にいる
-dp = [[0] * (M + 1) for i in range(M + 1)]
 for i in range(N):
-    dp[bisect_left(m, Y[i][0]) - 1][bisect_left(m, Y[i][1]) - 1] += P[i]
-
-ans = [0] * (M + 1)
-for bit in range(1 << M):
-    ma_bit = [0] + [Man[i] for i in range(M) if bit & (1 << i)] + [inf]
-    # dpを二重ループして数え上げ
-    opt = 0
-    label = [bisect_right(ma_bit, m[i]) for i in range(M + 1)] # m[i]の前にma_bitの要素が何個あるか
-    for i in range(M + 1):
-        for j in range(i, M + 1):
-            # 男が挟まってなかったら
-            if label[i] == label[j]:
-                opt += dp[i][j]
-
-    ans[bin(bit).count('1')] = max(ans[bin(bit).count('1')], opt)
-
-print(*ans)
+    d = int(S[i])
+    # Lになる可能性があるかないか
+    # ある→ある
+    for j in range(2):
+        # 次の桁は何にする　あるの場合はd以下　ないの場合は0, 1
+        for d_j in range(2 if j else d + 1):
+            # 状態1~4
+            for k in range(4):
+                # 次に進める
+                if d_j == jud[k]:
+                    dp[i + 1][j | (d_j < d)][k + 1] += dp[i][j][k]
+                    dp[i + 1][j | (d_j < d)][k + 1] %= mod
+                # 進めない
+                else:
+                    # 次が0なら状態0, 1なら状態1
+                    dp[i + 1][j | (d_j < d)][(k == 1)] += dp[i][j][k]
+                    dp[i + 1][j | (d_j < d)][(k == 1)] %= mod
+            # 状態5
+            dp[i + 1][j | (d_j < d)][4] += dp[i][j][4]
+            dp[i + 1][j | (d_j < d)][4] %= mod
+            
+    print(dp[i + 1])
