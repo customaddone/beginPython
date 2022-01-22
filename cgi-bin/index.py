@@ -22,7 +22,7 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-# sys.setrecursionlimit(10000000)
+sys.setrecursionlimit(10000000)
 inf = float('inf')
 eps = 10 ** (-15)
 dy = [0, 1, 0, -1]
@@ -32,46 +32,35 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-"""
-Nがくそでか　bitで考える　桁dp?
-x // 2^k あるbit以下を切り捨て　後ろ4つが 1010
-つまり　1010を持つ数がいくつあるか　桁dp
-'', '1', '10', '101', '1010' の5つ
-耳桁dp
-"""
+class Rational():
+    def __init__(self, nume, deno):
+        # 約分して格納
+        self.n = self.reduction(nume, deno)
 
-S = '1' * getN()
-if S == '':
-    print(0)
-    exit()
+    # 約分
+    def reduction(self, nume, deno):
+        g = math.gcd(nume, deno)
+        if deno < 0:
+            return (-(nume // g), -(deno // g))
+        else:
+            return (nume // g, deno // g)
 
-N = len(S)
-# 次にあるべき数字
-jud = [1, 0, 1, 0, inf]
-# dp[i][j][k]: iまで進んで最大値になる可能性がある(0)/ない(1), 状態はk
-dp = [[[0] * 5 for _ in range(2)] for i in range(N + 1)]
-dp[0][0][0] = 1
+    # たす
+    def __add__(self, other):
+        nume = self.n[0] * other.n[1] + self.n[1] * other.n[0]
+        deno = self.n[1] * other.n[1]
+        return Rational(nume, deno)
 
-for i in range(N):
-    d = int(S[i])
-    # Lになる可能性があるかないか
-    # ある→ある
-    for j in range(2):
-        # 次の桁は何にする　あるの場合はd以下　ないの場合は0, 1
-        for d_j in range(2 if j else d + 1):
-            # 状態1~4
-            for k in range(4):
-                # 次に進める
-                if d_j == jud[k]:
-                    dp[i + 1][j | (d_j < d)][k + 1] += dp[i][j][k]
-                    dp[i + 1][j | (d_j < d)][k + 1] %= mod
-                # 進めない
-                else:
-                    # 次が0なら状態0, 1なら状態1
-                    dp[i + 1][j | (d_j < d)][(d_j == 1)] += dp[i][j][k]
-                    dp[i + 1][j | (d_j < d)][(d_j == 1)] %= mod
-            # 状態5
-            dp[i + 1][j | (d_j < d)][4] += dp[i][j][4]
-            dp[i + 1][j | (d_j < d)][4] %= mod
+    # ひく
+    def __sub__(self, other):
+        nume = self.n[0] * other.n[1] - self.n[1] * other.n[0]
+        deno = self.n[1] * other.n[1]
+        return Rational(nume, deno)
 
-print((dp[i + 1][0][-1] + dp[i + 1][1][-1]) % mod)
+    # かける
+    def __mul__(self, other):
+        return Rational(self.n[0] * other.n[0], self.n[1] * other.n[1])
+
+    # わる 「/」の方
+    def __truediv__(self, other):
+        return Rational(self.n[0] * other.n[1], self.n[1] * other.n[0])
