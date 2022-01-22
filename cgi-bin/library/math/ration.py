@@ -92,6 +92,8 @@ def merge_sort(x):
 
     return retary
 
+# ABC115 C - Christmas Eve
+
 N, K = getNM()
 K -= 1
 A = getArray(N)
