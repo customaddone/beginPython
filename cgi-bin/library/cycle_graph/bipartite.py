@@ -72,7 +72,7 @@ def bipartite(N, M, edges):
         g[a - 1].append(b - 1)
         g[b - 1].append(a - 1)
 
-    color = [0] * (N + 1)
+    color = [0] * N
     dq = deque([(0, 1)])
 
     while dq:

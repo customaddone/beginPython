@@ -71,6 +71,7 @@ class UnionFind():
         if x == y:
             return
 
+        # 謎のREが起こったらrootの設定方法を変えよう
         if self.parents[x] > self.parents[y]:
             x, y = y, x
         # if x > y: # よりrootのインデックスが小さい方が親

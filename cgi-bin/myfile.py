@@ -32,18 +32,10 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N, D = getNM()
-event = []
-for i in range(N):
-    l, r = getNM()
-    event.append([l, i, 0]) # 始まり
-    event.append([r, i, 1]) # 終わり
-event.sort()
-
-now = -inf
-C = [0] * N # まだ残っているかのカウンター
-ran = [] # 現在区間を走っているもの
-for ed, ind, d in event:
-    # start
-    if d == 0:
-        if 
+N = getN()
+F = [[0, 0, 0]]
+for _ in range(N):
+    t, x, v = getNM()
+    F.append([x - t, x + t, v])
+F.sort()
+print(F)

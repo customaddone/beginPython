@@ -76,7 +76,6 @@ def extGcd(a, b):
     return g, x - (b // a) * y, y
 
 # ax + by = cとなる(x, y)の一般項を求めてくれる
-# (x, y) = (-b2 * t + x, -a2 * t + y) tは任意の整数
 def form_ext(a1, b1, c):
     def extGcd(a, b):
         if a == 0:
@@ -93,7 +92,9 @@ def form_ext(a1, b1, c):
     a2 = a1 // g
     b2 = b1 // g
 
-    return 1, [b2, x, -a2, y]
+    # true/false, [p1, q1, p2, q2]が帰る
+    # x = p1 * t + q1, y = p2 * t + q2 でtに色々代入して求められる
+    return 1, [-b2, x, a2, y]
 
 """
 一次不定方程式ax + by = cの整数解を求める
@@ -112,6 +113,14 @@ cがgcd(a, b)で割り切れる
 すると、(x, y) = (3, -11)が111x + 30y = 3を満たす
 これをそれぞれ4倍すればいい
 一つ解を求めたら代入して = 0の形にする　一般項が求められる
+
+さらに1/x mod yの逆元(xとyが互いに素であればいい)を求められる
+form_ext(8, 15, gcd(8, 15) = 1) = [-15, 2, 8, -1]
+t = 0の時 2 * 8 + -1 * 15 = 1 mod 15の場合は
+2 * 8 = 1 (mod 15)
+2 = 1/8 (mod 15)
+
+1/x mod y = (y + form_ext(x, y, 1)[1]) % y
 """
 
 # ABC186 E - Throne

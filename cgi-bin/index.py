@@ -32,73 +32,30 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-class Rational():
-    def __init__(self, nume, deno):
-        # 約分して格納
-        self.n = self.reduction(nume, deno)
+def extGcd(a, b):
+    if a == 0:
+        return b, 0, 1
+    g, y, x = extGcd(b % a, a)
+    return g, x - (b // a) * y, y
 
-    # 約分 denoが0でもいける
-    def reduction(self, nume, deno):
-        g = math.gcd(nume, deno)
-        if g == 0:
-            g = 1
-        if deno < 0:
-            return (-(nume // g), -(deno // g))
-        else:
-            return (nume // g, deno // g)
+# ax + by = cとなる(x, y)の一般項を求めてくれる
+# (x, y) = (-b2 * t + x, -a2 * t + y) tは任意の整数
+def form_ext(a1, b1, c):
+    def extGcd(a, b):
+        if a == 0:
+            return b, 0, 1
+        g, y, x = extGcd(b % a, a)
+        return g, x - (b // a) * y, y
+    g, x, y = extGcd(a1, b1)
+    # 解なし
+    if c % g != 0:
+        return 0, []
 
-    # たす
-    def __add__(self, other):
-        nume = self.n[0] * other.n[1] + self.n[1] * other.n[0]
-        deno = self.n[1] * other.n[1]
-        return Rational(nume, deno)
+    x *= c // g
+    y *= c // g
+    a2 = a1 // g
+    b2 = b1 // g
 
-    # ひく
-    def __sub__(self, other):
-        nume = self.n[0] * other.n[1] - self.n[1] * other.n[0]
-        deno = self.n[1] * other.n[1]
-        return Rational(nume, deno)
+    return 1, [-b2, x, a2, y]
 
-    # かける
-    def __mul__(self, other):
-        return Rational(self.n[0] * other.n[0], self.n[1] * other.n[1])
-
-    # わる 「/」の方
-    def __truediv__(self, other):
-        return Rational(self.n[0] * other.n[1], self.n[1] * other.n[0])
-
-# a >= bかな？
-def a_bigger(a, b):
-    return a[0] * b[1] - a[1] * b[0] >= 0
-
-# マージソート O(NlogN)だけど処理遅そう
-def merge_sort(x):
-    retary = []
-    if len(x) <= 1:
-        retary.extend(x)
-    else:
-        m = len(x) // 2
-        # 逆にする
-        first = merge_sort(x[:m])[::-1]
-        second = merge_sort(x[m:])[::-1]
-        while len(first) > 0 and len(second) > 0:
-            # 小さい方を取り出してappendする
-            if a_bigger(first[-1].n, second[-1].n):
-                retary.append(second.pop())
-            else:
-                retary.append(first.pop())
-        # 元に戻して繋げる
-        retary.extend(first[::-1] if len(first) > 0 else second[::-1])
-
-    return retary
-
-N, K = getNM()
-K -= 1
-A = getArray(N)
-A = [Rational(a, 1) for a in A]
-A = merge_sort(A)
-
-ans = inf
-for i in range(N - K):
-    ans = min(ans, A[i + K].n[0] - A[i].n[0])
-print(ans)
+print(form_ext(24, 49, 1))
