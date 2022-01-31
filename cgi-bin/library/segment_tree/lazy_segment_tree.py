@@ -93,6 +93,7 @@ class LazySegmentTree():
         for i in range(1, self.log + 1):
             self.update(p >> i)
 
+    # 0~p)まで求値
     def get(self, p):
         #assert 0 <= p < self.n
         p += self.size
@@ -100,6 +101,7 @@ class LazySegmentTree():
             self.push(p >> i)
         return self.d[p]
 
+    # [l, r)を求値
     def prod(self, l, r):
         #assert 0 <= l <= r <= self.n
         if l == r: return self.e
@@ -132,6 +134,7 @@ class LazySegmentTree():
         for i in range(1, self.log + 1):
             self.update(p >> i)
 
+    # 区間に足し引きする
     def range_apply(self, l, r, f):
         #assert 0 <= l <= r <= self.n
         if l == r: return
@@ -219,13 +222,7 @@ for i in range(1, N + 1):
 # composition: 各mapping間の遅延評価の関係 つまりmapとmapを合成して一つにする
 # id: mappingの単位元
 
-# 区間最小区間加算の場合は
-# op: min(x, y)
-# e: float('inf')
-# mapping x + f
-# composition: f + g
-# id: 0
-# ぐらいになる
+# (e1, e2): 今の所の総和, 何個足したか 遅延セグ木は個数をまとめることが必要
 
 # これは普通のセグ木と同様
 def op(x, y):
