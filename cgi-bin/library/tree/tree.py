@@ -436,3 +436,42 @@ for _ in range(T):
                 depth[v] = depth[u] + 1
 
     print(sum([(d > K) for d in depth]))
+
+# 非再帰dfs
+def euler_tour(N, E, sta):
+    q = deque([[sta, 1]])
+    dis = [-1] * N
+    dis[sta] = 0
+    par = [-1] * N
+
+    # 例　部分木の大きさを求める
+    size = [1] * N
+
+    while q:
+        u, f = q.pop()
+        if f:
+            #### 行きがけ処理をここに書く ###
+            # do function
+            #############################
+            # 帰りがけ用の記録
+            q.append([u, 0])
+            # 重みつきなら　for v, d in E[u]
+            for v in E[u]:
+                if dis[v] == -1:
+                    # 重みつきならdis[u] + d
+                    dis[v] = dis[u] + 1
+                    par[v] = u
+                    # 次の探索用
+                    q.append([v, 1])
+                    #### 子に操作するときはここに書く
+                    # do function
+                    #############################
+
+        else:
+            #### 帰りがけ処理をここに書く ###
+            # do function
+            if u != 0:
+                size[par[u]] += size[u]
+            #############################
+
+    return size

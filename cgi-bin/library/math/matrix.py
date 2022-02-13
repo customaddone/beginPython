@@ -362,3 +362,37 @@ if S == [0] * M:
     print(pow(2, N - rank, MOD))
 else:
     print(0)
+
+# 数字をそのまま入れるタイプ
+def gauss_jordan_mod2(array, is_extended = False):
+    A = deepcopy(array)
+    H = len(A) # 縦
+    W = 64 # 横 適当なので自由に
+
+    rank = 0
+    # 一つ目のベクトル、二つ目のベクトル...を見ていく
+    for col in range(W - 1, -1, -1):
+        if is_extended and col == W - 1:
+            break
+        pivot = -1
+        # 縦に見ていきcol個目のフラグが立っているベクトルが見つかれば
+        for row in range(rank, H):
+            if A[row] & (1 << col):
+                pivot = row
+                break
+        # col列にフラグがなかったら飛ばす
+        if pivot == -1:
+            continue
+        A[pivot], A[rank] = A[rank], A[pivot]
+
+        # 掃き出す　縦に動く
+        for row in range(H):
+            # 自分のとこ以外
+            if row == rank:
+                continue
+            if A[row] & (1 << col):
+                A[row] ^= A[rank]
+
+        rank += 1
+
+    return A, rank

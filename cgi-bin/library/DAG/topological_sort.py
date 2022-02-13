@@ -115,6 +115,24 @@ def topological(n, dist):
 # queryに閉路ができる道を追加するとバグってlen = 8未満の配列を返す
 print(topological(N, ab))
 
+# degは入次数を記録したもの
+def topological(graph, deg):
+    start = []
+    n = len(deg)
+    for i in range(n):
+        if deg[i] == 0: #入次数がないものがスタート
+            start.append(i)
+    topo = []
+    while start:
+        v = start.pop()
+        topo.append(v)
+        for u in graph[v]:
+            deg[u] -= 1
+            if deg[u] == 0:
+                start.append(u)
+    #トポロジカルソートできない場合は配列がnよりも短くなる。
+    return topo
+
 # トポロジカルソートの種類の数
 N, M = 3, 2
 query = [

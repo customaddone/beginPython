@@ -48,17 +48,6 @@ def cmb_1(n, r):
 # 10
 print(cmb_1(5, 3))
 
-# mod使用ver
-# nが大きい場合に
-def cmb_2(x,y):
-    r = 1
-    for i in range(1, y + 1):
-        r = (r * (x - i + 1) * pow(i, mod - 2, mod)) % mod
-    return r
-
-# 10
-print(cmb_2(5, 3))
-
 # 逆元事前処理ver
 # nが小さい場合に
 lim = 10 ** 6 + 1
@@ -79,6 +68,17 @@ def cmb(n, r):
     return fact[n] * factinv[r] * factinv[n - r] % mod
 # 120
 print(cmb(10, 3))
+
+# mod使用ver
+# nが大きい場合に
+def cmb_2(x, y):
+    r = 1
+    for i in range(1, y + 1):
+        r = (r * (x - i + 1) * inv[i]) % mod
+    return r
+
+# 10
+print(cmb_2(5, 3))
 
 lim = 10 ** 6 + 1
 fact = [1, 1]

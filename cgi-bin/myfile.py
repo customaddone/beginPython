@@ -32,10 +32,31 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N = getN()
-F = [[0, 0, 0]]
-for _ in range(N):
-    t, x, v = getNM()
-    F.append([x - t, x + t, v])
-F.sort()
-print(F)
+N, L = getNM()
+O = [input() + 'o' for i in range(N)]
+S = input() + 's'
+
+ran = []
+for i in range(N):
+    st = -1
+    for j in range(L + 1):
+        # 一致する区間
+        if O[i][j] != S[j]:
+            if j - st > 2:
+                # 開区間
+                ran.append([st + 1, j, i])
+            st = j
+
+ran.sort()
+ans = [[-1, 0, -1]]
+for l, r, i in ran:
+    # もし区間を付け加えられるなら
+    while l <= ans[-1][0] and ans[-1][1] <= r:
+        # 前の奴が区間内に入るなら取り除く
+        ans.pop()
+    # 前のをできる限り長さ2にする
+    if ans[-1][0] <= l and l <= ans[-1][1] <= r and r - ans[-1][0] >= 4:
+        l_new = max(ans[-1][0] + 2, l)
+        ans[-1][1] = l_new
+        ans.append([l_new, r, i])
+    print(ans)

@@ -252,3 +252,39 @@ for i in range(len(S) + 1): # iが右端
     dp[i] %= mod
 
 print(dp[-1] % mod)
+
+# 順番関係あり
+class RollingHash():
+    def __init__(self, s, base, mod):
+        self.mod = mod
+        self.pw = pw = [1] * (len(s) + 1)
+
+        l = len(s)
+        self.h = h = [0] * (l + 1)
+
+        v = 0
+        for i in range(l):
+            h[i + 1] = v = (v * base + ord(s[i])) % mod
+        v = 1
+        for i in range(l):
+            pw[i + 1] = v = v * base % mod
+    def get(self, l, r): #S[l:r]indexでいうl文字目からr-1文字目
+        return (self.h[r] - self.h[l] * self.pw[r-l]) % self.mod
+
+class RollingHash():
+    def __init__(self, s, base, mod):
+        self.mod = mod
+        encode = {}
+        # 適当なアルファベットの順列でエンコード
+        for i, ch in enumerate('qazxcsdwertfgvbnmhjyuioklp', 26):
+            encode[ch] = pow(base, i + 777, mod)
+        # 本体
+        l = len(s)
+        self.h = h = [0] * (l + 1)
+
+        v = 0
+        for i in range(l):
+            h[i + 1] = v = (v + encode[s[i]]) % mod
+
+    def get(self, l, r):
+        return (self.h[r] - self.h[l]) % self.mod
