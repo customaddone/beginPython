@@ -32,6 +32,9 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
+# merge構造体
+# 頂点iに人cを置く、人cを退場させる、頂点iの人を全て頂点vに移動させる、頂点iにいる人は誰か、また人cは何処にいるか
+# を人を置く回数をN, 移動の回数をMとするとO(NlogN + M)で答えてくれる
 class Merge():
     def __init__(self, n):
         self.n = n # グループの個数
@@ -43,6 +46,7 @@ class Merge():
     # 人cがiに加入したい
     def add(self, c, i):
         if c in self.child:
+            # これが呼ばれるとWAになる　バグ検出用
             print('hello')
             return
         # 表面上の名前i→真の名前self.rev_na[i]
@@ -91,6 +95,7 @@ class Merge():
     def who(self, i):
         return self.g[self.rev_na[i]]
 
+# 使い方　ABC212 F - Greedy Takahashi
 N, M, Q = getNM()
 e_d = {}
 E = [] # イベント
