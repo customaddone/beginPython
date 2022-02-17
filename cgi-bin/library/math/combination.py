@@ -164,6 +164,25 @@ def comb_pow(i, array, n, r):
 
 comb_pow(0, [], n, r)
 
+
+# 1~n-1までの分割をくれる　
+def partition(n):
+    l1 = []
+    # iの分割を作る
+    for i in range(1, n):
+        l2 = []
+        # まずi単体を入れる
+        l2.append([i])
+        # 既に作ったこれ以前の分割を見る
+        for j in range (1, i):
+            # j - 1の分割のそれぞれを見る（その合計はk[0])
+            for k in (l1[j - 1]):
+                # i - jをk[0]の前に挟めるなら挟む
+                if k[0] <= i - j:
+                    l2.append([(i - j)] + k)
+        l1.append(l2)
+    return l1
+
 # ARC035 D - 高橋くんとマラソンコース
 # 値が巨大になる組み合わせは対数で持つ
 

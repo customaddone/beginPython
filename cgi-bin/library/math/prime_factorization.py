@@ -64,7 +64,7 @@ max = 12
 limit = int(math.sqrt(max))
 data = [i + 1 for i in range(2, max, 2)]
 
-while limit > data[0]:
+while len(data) and limit > data[0]:
     prime.append(data[0])
     data = [j for j in data if j % data[0] != 0]
 prime = prime + data

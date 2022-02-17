@@ -470,7 +470,7 @@ def euler_tour(N, E, sta):
         else:
             #### 帰りがけ処理をここに書く ###
             # do function
-            if u != 0:
+            if u != sta:
                 size[par[u]] += size[u]
             #############################
 

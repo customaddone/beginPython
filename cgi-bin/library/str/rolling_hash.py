@@ -271,6 +271,7 @@ class RollingHash():
     def get(self, l, r): #S[l:r]indexでいうl文字目からr-1文字目
         return (self.h[r] - self.h[l] * self.pw[r-l]) % self.mod
 
+# 種類&個数
 class RollingHash():
     def __init__(self, s, base, mod):
         self.mod = mod
@@ -288,3 +289,21 @@ class RollingHash():
 
     def get(self, l, r):
         return (self.h[r] - self.h[l]) % self.mod
+
+# 配列ロリハ
+class RollingHash():
+    def __init__(self, ar, base, mod):
+        self.mod = mod
+        self.pw = pw = [1] * (len(ar) + 1)
+
+        l = len(ar)
+        self.h = h = [0] * (l + 1)
+
+        v = 0
+        for i in range(l):
+            h[i + 1] = v = (v * base + (ar[i] + 4649)) % mod
+        v = 1
+        for i in range(l):
+            pw[i + 1] = v = v * base % mod
+    def get(self, l, r): #S[l:r]indexでいうl文字目からr-1文字目
+        return (self.h[r] - self.h[l] * self.pw[r-l]) % self.mod
