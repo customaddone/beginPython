@@ -367,7 +367,7 @@ else:
 def gauss_jordan_mod2(array, is_extended = False):
     A = deepcopy(array)
     H = len(A) # 縦
-    W = 64 # 横 適当なので自由に
+    W = max([a.bit_length() for a in array]) # バグるようなら任意に変える
 
     rank = 0
     # 一つ目のベクトル、二つ目のベクトル...を見ていく

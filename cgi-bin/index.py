@@ -22,7 +22,9 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-sys.setrecursionlimit(10000000)
+# import pypyjit
+# pypyjit.set_param('max_unroll_recursion=-1')
+# sys.setrecursionlimit(10000000)
 inf = float('inf')
 eps = 10 ** (-15)
 dy = [0, 1, 0, -1]
@@ -32,64 +34,62 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-from functools import lru_cache
+def gene(s1, s2):
+    na, nc = len(s1), len(s2)
+    La = [[-1, -1] for i in range(na)]
+    Lc = [[-1, -1] for i in range(nc)]
+    for i in range(na):
+        # Cの右端
+        for j in range(i + 1):
+            if s1[i - j] == s2[-j - 1] or s1[i - j] == '?' or s2[-j - 1] == '?':
+                La[i][1] = i - j
+            else:
+                break
 
-@lru_cache(None)
-def f(A, B):
-    """
-    A < x, y <= B であって、gcd(x,y) == 1 となるものを数える。
-    """
+        # Cの左端
+        for j in range(i + 1):
+            if s1[-i + j - 1] == s2[j] or s1[-i + j - 1] == '?' or s2[j] == '?':
+                La[-i - 1][0] = na - i + j - 1
+            else:
+                break
 
-    res = (B - A)**2
-    """
-    ここから、 d = gcd(x,y) >= 2 となるものを引いていく。
-    これは、 a = A // d, b = B // d として、f(a, b) 通りである。
-    (a, b) が O(sqrt(B)) 通りしかないことから、f(A, B) はより小さな場合の
-    f(a, b) を O(sqrt(B)) 件使って計算できる。
-    """
-    R = B
-    while R > 1:
-        a, b = A // R, B // R
-        L = max(A // (a + 1), B // (b + 1))
-        res -= (R - L) * f(a, b)
-        R = L
-    return res
+    for i in range(nc):
+        # Aの右端
+        for j in range(min(na, i + 1)):
+            if s1[-j - 1] == s2[i - j] or s1[-j - 1] == '?' or s2[i - j] == '?':
+                Lc[i][1] = i - j
+            else:
+                break
+        # 同時にC[-i-1]とAの左端
+        for j in range(min(na, i + 1)):
+            if s1[j] == s2[-i + j - 1] or s1[j] == '?' or s2[-i + j - 1] == '?':
+                Lc[-i - 1][0] = nc - i + j - 1
+            else:
+                break
 
-def g(A, B):
-    """
-    A < x, y <= B であって、x | y となるものを数える。
-    x = d ごとに数える。
-    これは、 a = A // d, b = B // d として、b - a 通りであるから、f と同様に計算できる。
-    """
-    res = 0
-    R = B
-    while R:
-        a, b = A // R, B // R
-        L = max(A // (a + 1), B // (b + 1))
-        cnt = max(0, min(R, B) - max(L, A))
-        res += cnt * (b - a)
-        R = L
-    return res
+    return La, Lc
 
-def main(A, B):
-    """
-    半開区間　(A, B] として持つ。
-    """
-    A -= 1
-    """
-    g == 1, g == x, g == y という 3 条件で包除
-    """
-    ___ = (B - A)**2
-    o__ = f(A, B)
-    _o_ = g(A, B)
-    __o = g(A, B)
-    oo_ = B - A if A == 0 else 0
-    o_o = B - A if A == 0 else 0
-    _oo = B - A
-    ooo = 1 if A == 0 else 0
-    return ___ - o__ - _o_ - __o + oo_ + o_o + _oo - ooo
+"""
+A[i]とCの右端を揃えた時に左に何個目まで一致するか
+その逆
+aba
+abcとは1まで一致
 
-# main(3, 7), main(4,10), main(1, 10**6)
+aba
+  abc 2まで一致
 
-A, B = map(int, input().split())
-print(main(A, B))
+La[i][0]の場合はN-1まで行けば、La[i][1]の場合は0まで行ったら一致
+[[1, -1], [-1, -1], [2, -1]]
+abc
+[[1, 0], [-1, -1], [-1, -1]]
+"""
+
+S = [input() for i in range(3)]
+S = [[len(s), s] for s in S]
+S.sort()
+na, A = S[0][0], S[0][1]
+nb, B = S[1][0], S[1][1]
+nc, C = S[2][0], S[2][1]
+
+print(A, C)
+print(gene(A, C))
