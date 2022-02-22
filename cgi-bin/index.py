@@ -40,6 +40,8 @@ def gene(s1, s2):
     Lc = [[-1, -1] for i in range(nc)]
     for i in range(na):
         # Cの右端
+        #      aaa
+        #  aaaaa
         for j in range(i + 1):
             if s1[i - j] == s2[-j - 1] or s1[i - j] == '?' or s2[-j - 1] == '?':
                 La[i][1] = i - j
@@ -47,6 +49,8 @@ def gene(s1, s2):
                 break
 
         # Cの左端
+        # aaa
+        #   aaaaa
         for j in range(i + 1):
             if s1[-i + j - 1] == s2[j] or s1[-i + j - 1] == '?' or s2[j] == '?':
                 La[-i - 1][0] = na - i + j - 1
@@ -55,12 +59,16 @@ def gene(s1, s2):
 
     for i in range(nc):
         # Aの右端
+        #    aaaaa
+        #  aaa
         for j in range(min(na, i + 1)):
             if s1[-j - 1] == s2[i - j] or s1[-j - 1] == '?' or s2[i - j] == '?':
                 Lc[i][1] = i - j
             else:
                 break
-        # 同時にC[-i-1]とAの左端
+        # Aの左端
+        # aaaaa
+        #     aaa
         for j in range(min(na, i + 1)):
             if s1[j] == s2[-i + j - 1] or s1[j] == '?' or s2[-i + j - 1] == '?':
                 Lc[-i - 1][0] = nc - i + j - 1
@@ -72,13 +80,13 @@ def gene(s1, s2):
 """
 A[i]とCの右端を揃えた時に左に何個目まで一致するか
 その逆
+
+La[i][0]の場合はN-1まで行けば、La[i][1]の場合は0まで行ったら一致
 aba
 abcとは1まで一致
 
 aba
   abc 2まで一致
-
-La[i][0]の場合はN-1まで行けば、La[i][1]の場合は0まで行ったら一致
 [[1, -1], [-1, -1], [2, -1]]
 abc
 [[1, 0], [-1, -1], [-1, -1]]
