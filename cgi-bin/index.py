@@ -22,6 +22,7 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
+sys.setrecursionlimit(10000000)
 # import pypyjit
 # pypyjit.set_param('max_unroll_recursion=-1')
 inf = float('inf')
@@ -34,36 +35,59 @@ dx = [1, 0, -1, 0]
 #############
 
 """
-N個の点には入ってないA[i]にもっとも近い点を探す
-距離1、距離2...とやっていきたいが点が固まっているとやばい
-bfsすればいい
+順列内の連続するK個の最大値
+目指す最大値がiである場合、区間の左の端っこはi-K+1 ~ i
+つまりiを置くとi-K+1 ~ iまでが確定する
+N=7, K=3
+A = [?, ?, ?, ?, ?, ?, ?]
+val = [?, ?, ?, ?, ?, '0', '0'] N-K+1個
+下から順番に上書きしていく
+1, 7, 2, 4, 5, 3, 6の場合
+[1, ?, ?, ?, ?, '0', '0']
+[2, 2, 2, ?, ?, '0', '0']
+[2, 2, 2, 3, 3, 3, '0']
+[2, 4, 4, 4, 3, 3, '0']
+[2, 4, 5, 5, 5, 3, '0']
+[2, 4, 5, 5, 6, 6, 6]
+[7, 7, 5, 5, 6, 6, 6]
+
+上書きされたら消していくのは？　確率は均等
+塗る部分で後から上書きされない条件は？
+jについてj~j+K-1までに自身より大きいやつがない
+v=5であれば     ここ
+[1, 7, 2, 4, 5, 3, 6]
+[7, 7, 5, 5, 6, 6, 6]
+　　　　[      ]
+          [      ]
+             [      ]
+全て既に塗られている　の個数
+[      ]が全て塗られている確率は
+N-KCv-1-(K-1)
+今の時点で全て塗られてるならプラス
+[1, ?, 2, 4, 5, 3, ?] 以下の数字が連続する確率
+前後に何個の数字が連続するか　その期待値
+[1, 7, 2, 4, 5, 3, 6]
+[       ]
+    [      ]
+       [      ]...
+
+それぞれ連続して置かれている確率
+端っこにある場合チャンスは少ないmax(0, i-K+1) ~ min(i, N-K)の間
+i=0 チャンスは1回
+i=2 チャンスは2回...
+1, 2, 3, 3, 3
+3, 3, 3, 2, 1...みたいに
+
+N = 8
+sum = N
+for k in range(1, N):
+    print(sum)
+    sum += max(0, (N - 2 * k))
+K個全てが塗られている確率
 """
 
-N = getN()
-d = {}
-ans = [tuple(getList()) for i in range(N)]
-P = set(ans)
-
-q = deque([])
-# 距離1
-for x, y in P:
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if not (nx, ny) in P:
-            d[(x, y)] = (nx, ny)
-            # 起点
-            q.append((x, y, nx, ny))
-            break
-
-while q:
-    x, y, sx, sy = q.popleft()
-    for i in range(4):
-        nx = x + dx[i]
-        ny = y + dy[i]
-        if (nx, ny) in P and not (nx, ny) in d:
-            d[(nx, ny)] = (sx, sy)
-            q.append((nx, ny, sx, sy))
-
-for x, y in ans:
-    print(*d[(x, y)])
+N = 3
+sum = N
+for k in range(1, N + 1):
+    print(sum)
+    sum += (N - 2 * k)
