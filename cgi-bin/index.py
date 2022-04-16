@@ -93,21 +93,33 @@ def reduction(nume, deno):
 def add(self, other):
     nume = self[0] * other[1] + self[1] * other[0]
     deno = self[1] * other[1]
+    if deno == 0:
+        nume = 1
     return (nume, deno)
 
 # ひく
 def sub(self, other):
     nume = self[0] * other[1] - self[1] * other[0]
     deno = self[1] * other[1]
+    if deno == 0:
+        nume = 1
     return (nume, deno)
 
 # かける
 def mul(self, other):
-    return (self[0] * other[0], self[1] * other[1])
+    nume = self[0] * other[0]
+    deno = self[1] * other[1]
+    if deno == 0:
+        nume = 1
+    return (nume, deno)
 
 # わる 「/」の方
 def truediv(self, other):
-    return (self[0] * other[1], self[1] * other[0])
+    nume = self[0] * other[1]
+    deno = self[1] * other[0]
+    if deno == 0:
+        nume = 1
+    return (nume, deno)
 
 # a >= bかな？
 def a_bigger(a, b):
