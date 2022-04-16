@@ -104,3 +104,77 @@ ans = inf
 for i in range(N - K):
     ans = min(ans, A[i + K].n[0] - A[i].n[0])
 print(ans)
+
+# 個別ver
+# 約分 denoが0でもいける
+def reduction(nume, deno):
+    g = math.gcd(nume, deno)
+    if g == 0:
+        g = 1
+    if deno < 0:
+        return (-(nume // g), -(deno // g))
+    else:
+        return (nume // g, deno // g)
+
+# たす
+def add(self, other):
+    nume = self[0] * other[1] + self[1] * other[0]
+    deno = self[1] * other[1]
+    return (nume, deno)
+
+# ひく
+def sub(self, other):
+    nume = self[0] * other[1] - self[1] * other[0]
+    deno = self[1] * other[1]
+    return (nume, deno)
+
+# かける
+def mul(self, other):
+    return (self[0] * other[0], self[1] * other[1])
+
+# わる 「/」の方
+def truediv(self, other):
+    return (self[0] * other[1], self[1] * other[0])
+
+# a >= bかな？
+def a_bigger(a, b):
+    return a[0] * b[1] - a[1] * b[0] >= 0
+
+# 同じかな？
+def equal(a, b):
+    return a[0] * b[1] - a[1] * b[0] == 0
+
+# 有理数ver
+# 二つの点を通る直線の方程式を求める
+# y = line[0]x + line[1]
+# 傾きmaxならx = line[3]
+def line(Ax, Ay, Bx, By):
+    if Ay == By:
+        return (0, 1), Ay, (None, 1)
+    if Ax == Bx:
+        return (1, 0), (0, 1), Ax
+    a = truediv(sub(Ay, By), sub(Ax, Bx))
+    b = sub(Ay, mul(a, Ax))
+    # ちゃんと約分する
+    return reduction(a[0], a[1]), reduction(b[0], b[1]), (None, 1)
+
+# マージソート O(NlogN)だけど処理遅そう
+def merge_sort(x):
+    retary = []
+    if len(x) <= 1:
+        retary.extend(x)
+    else:
+        m = len(x) // 2
+        # 逆にする
+        first = merge_sort(x[:m])[::-1]
+        second = merge_sort(x[m:])[::-1]
+        while len(first) > 0 and len(second) > 0:
+            # 小さい方を取り出してappendする
+            if a_bigger(first[-1], second[-1]):
+                retary.append(second.pop())
+            else:
+                retary.append(first.pop())
+        # 元に戻して繋げる
+        retary.extend(first[::-1] if len(first) > 0 else second[::-1])
+
+    return retary

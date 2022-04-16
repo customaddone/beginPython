@@ -26,7 +26,7 @@ sys.setrecursionlimit(10000000)
 # import pypyjit
 # pypyjit.set_param('max_unroll_recursion=-1')
 inf = float('inf')
-eps = 10 ** (-15)
+eps = 10 ** (-12)
 dy = [0, 1, 0, -1]
 dx = [1, 0, -1, 0]
 
@@ -35,59 +35,131 @@ dx = [1, 0, -1, 0]
 #############
 
 """
-順列内の連続するK個の最大値
-目指す最大値がiである場合、区間の左の端っこはi-K+1 ~ i
-つまりiを置くとi-K+1 ~ iまでが確定する
-N=7, K=3
-A = [?, ?, ?, ?, ?, ?, ?]
-val = [?, ?, ?, ?, ?, '0', '0'] N-K+1個
-下から順番に上書きしていく
-1, 7, 2, 4, 5, 3, 6の場合
-[1, ?, ?, ?, ?, '0', '0']
-[2, 2, 2, ?, ?, '0', '0']
-[2, 2, 2, 3, 3, 3, '0']
-[2, 4, 4, 4, 3, 3, '0']
-[2, 4, 5, 5, 5, 3, '0']
-[2, 4, 5, 5, 6, 6, 6]
-[7, 7, 5, 5, 6, 6, 6]
+class Rational():
+    def __init__(self, nume, deno):
+        # 約分して格納
+        self.n = self.reduction(nume, deno)
 
-上書きされたら消していくのは？　確率は均等
-塗る部分で後から上書きされない条件は？
-jについてj~j+K-1までに自身より大きいやつがない
-v=5であれば     ここ
-[1, 7, 2, 4, 5, 3, 6]
-[7, 7, 5, 5, 6, 6, 6]
-　　　　[      ]
-          [      ]
-             [      ]
-全て既に塗られている　の個数
-[      ]が全て塗られている確率は
-N-KCv-1-(K-1)
-今の時点で全て塗られてるならプラス
-[1, ?, 2, 4, 5, 3, ?] 以下の数字が連続する確率
-前後に何個の数字が連続するか　その期待値
-[1, 7, 2, 4, 5, 3, 6]
-[       ]
-    [      ]
-       [      ]...
+    # 約分 denoが0でもいける
+    def reduction(self, nume, deno):
+        g = math.gcd(nume, deno)
+        if g == 0:
+            g = 1
+        if deno < 0:
+            return (-(nume // g), -(deno // g))
+        else:
+            return (nume // g, deno // g)
 
-それぞれ連続して置かれている確率
-端っこにある場合チャンスは少ないmax(0, i-K+1) ~ min(i, N-K)の間
-i=0 チャンスは1回
-i=2 チャンスは2回...
-1, 2, 3, 3, 3
-3, 3, 3, 2, 1...みたいに
+    # たす
+    def __add__(self, other):
+        nume = self.n[0] * other.n[1] + self.n[1] * other.n[0]
+        deno = self.n[1] * other.n[1]
+        return Rational(nume, deno)
 
-N = 8
-sum = N
-for k in range(1, N):
-    print(sum)
-    sum += max(0, (N - 2 * k))
-K個全てが塗られている確率
+    # ひく
+    def __sub__(self, other):
+        nume = self.n[0] * other.n[1] - self.n[1] * other.n[0]
+        deno = self.n[1] * other.n[1]
+        return Rational(nume, deno)
+
+    # かける
+    def __mul__(self, other):
+        return Rational(self.n[0] * other.n[0], self.n[1] * other.n[1])
+
+    # わる 「/」の方
+    def __truediv__(self, other):
+        return Rational(self.n[0] * other.n[1], self.n[1] * other.n[0])
+
+# a >= bかな？
+def a_bigger(a, b):
+    return a.n[0] * b.n[1] - a.n[1] * b.n[0] >= 0
+
+# 同じかな？
+def equal(a, b):
+    return a.n[0] * b.n[1] - a.n[1] * b.n[0] == 0
 """
 
-N = 3
-sum = N
-for k in range(1, N + 1):
-    print(sum)
-    sum += (N - 2 * k)
+# 約分 denoが0でもいける
+def reduction(nume, deno):
+    g = math.gcd(nume, deno)
+    if g == 0:
+        g = 1
+    if deno < 0:
+        return (-(nume // g), -(deno // g))
+    else:
+        return (nume // g, deno // g)
+
+# たす
+def add(self, other):
+    nume = self[0] * other[1] + self[1] * other[0]
+    deno = self[1] * other[1]
+    return (nume, deno)
+
+# ひく
+def sub(self, other):
+    nume = self[0] * other[1] - self[1] * other[0]
+    deno = self[1] * other[1]
+    return (nume, deno)
+
+# かける
+def mul(self, other):
+    return (self[0] * other[0], self[1] * other[1])
+
+# わる 「/」の方
+def truediv(self, other):
+    return (self[0] * other[1], self[1] * other[0])
+
+# a >= bかな？
+def a_bigger(a, b):
+    return a[0] * b[1] - a[1] * b[0] >= 0
+
+# 同じかな？
+def equal(a, b):
+    return a[0] * b[1] - a[1] * b[0] == 0
+
+# 二つの点を通る直線の方程式を求める
+# y = line[0]x + line[1]
+# 傾きmaxならx = line[3]
+def line(Ax, Ay, Bx, By):
+    if Ay == By:
+        return (0, 1), Ay, (None, 1)
+    if Ax == Bx:
+        return (1, 0), (0, 1), Ax
+    a = truediv(sub(Ay, By), sub(Ax, Bx))
+    b = sub(Ay, mul(a, Ax))
+    # ちゃんと約分する
+    return reduction(a[0], a[1]), reduction(b[0], b[1]), (None, 1)
+
+"""
+Kが1なら無数に存在
+(1, 0): inf
+(0, 1): 0(零元)
+(1, 1): 1(単位元)
+"""
+
+N, K = getNM()
+P = []
+for i in range(N):
+    x, y = getNM()
+    # 有理数体に
+    P.append([(x, 1), (y, 1)])
+s = set()
+if K == 1:
+    print('Infinity')
+    exit()
+for i in range(N):
+    for j in range(i + 1, N):
+        s.add(line(P[i][0], P[i][1], P[j][0], P[j][1]))
+
+ans = 0
+for a, b, ver in s:
+    cnt = 0
+    for x, y in P:
+        # 垂直
+        if a == (1, 0):
+            cnt += (equal(x, ver))
+        else:
+            cnt += (equal(y, add(mul(a, x), b)))
+    if cnt >= K:
+        ans += 1
+print(ans)
