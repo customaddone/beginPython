@@ -163,6 +163,26 @@ for i in range(N):
     for j in range(i + 1, N):
         s.add(line(P[i][0], P[i][1], P[j][0], P[j][1]))
 
+def merge_sort(x):
+    retary = []
+    if len(x) <= 1:
+        retary.extend(x)
+    else:
+        m = len(x) // 2
+        # 逆にする
+        first = merge_sort(x[:m])[::-1]
+        second = merge_sort(x[m:])[::-1]
+        while len(first) > 0 and len(second) > 0:
+            # 小さい方を取り出してappendする
+            if a_bigger(first[-1], second[-1]):
+                retary.append(second.pop())
+            else:
+                retary.append(first.pop())
+        # 元に戻して繋げる
+        retary.extend(first[::-1] if len(first) > 0 else second[::-1])
+
+    return retary
+
 ans = 0
 for a, b, ver in s:
     cnt = 0
