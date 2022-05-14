@@ -32,31 +32,36 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-N, L = getNM()
-O = [input() + 'o' for i in range(N)]
-S = input() + 's'
+"""
+文字列dp
+ランレングス圧縮
+26^N個あるがそれらは等価
+ぶった切ると2増える　置き換えた分は絶対偶数になる
+他の文字に変えるのは25通り　長さが変わる
+同じ文字は1通り　長さは変わらない
+"""
 
-ran = []
-for i in range(N):
-    st = -1
-    for j in range(L + 1):
-        # 一致する区間
-        if O[i][j] != S[j]:
-            if j - st > 2:
-                # 開区間
-                ran.append([st + 1, j, i])
-            st = j
+N, P = getNM()
+# 長さは2Nまで
+prev = [0] * (N + 1)
+# 長さ1が26個
+prev[1] = 26
+for _ in range(N - 1):
+    next = [0] * (N + 1)
+    for i in range(N, -1, -1):
+        # 変わる
+        if i < N:
+            next[i + 1] += prev[i] * 25
+            next[i + 1] %= P
+        # 変わらない
+        next[i] += prev[i]
+        next[i] %= P
+    print(prev, next)
+    prev = next
 
-ran.sort()
-ans = [[-1, 0, -1]]
-for l, r, i in ran:
-    # もし区間を付け加えられるなら
-    while l <= ans[-1][0] and ans[-1][1] <= r:
-        # 前の奴が区間内に入るなら取り除く
-        ans.pop()
-    # 前のをできる限り長さ2にする
-    if ans[-1][0] <= l and l <= ans[-1][1] <= r and r - ans[-1][0] >= 4:
-        l_new = max(ans[-1][0] + 2, l)
-        ans[-1][1] = l_new
-        ans.append([l_new, r, i])
+ans = 0
+for i in range(N + 1):
+    if i * 2 <= N:
+        ans += prev[i]
+        ans %= P
     print(ans)

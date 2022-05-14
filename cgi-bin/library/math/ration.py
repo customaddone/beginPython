@@ -113,8 +113,11 @@ def reduction(nume, deno):
         g = 1
     if deno < 0:
         return (-(nume // g), -(deno // g))
-    else:
+    elif deno > 0:
         return (nume // g, deno // g)
+    # n / 0 inf
+    else:
+        return (1, 0)
 
 # たす
 def add(self, other):
