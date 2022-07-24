@@ -221,6 +221,8 @@ for i in range(1, N + 1):
 # mapping: 遅延評価演算
 # composition: 各mapping間の遅延評価の関係 つまりmapとmapを合成して一つにする
 # id: mappingの単位元
+# 参考
+# https://betrue12.hateblo.jp/entry/2020/09/23/005940
 
 # (e1, e2): 今の所の総和, 何個足したか 遅延セグ木は個数をまとめることが必要
 

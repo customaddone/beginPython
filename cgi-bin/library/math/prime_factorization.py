@@ -198,7 +198,7 @@ class Osa_k():
     def factorize(self, n):
         prime = defaultdict(int)
         if n == 0 or n == 1:
-            return (n, 1)
+            return [(n, 1)]
         opt = n
         while opt > 1:
             prime[self.sieve[opt]] += 1

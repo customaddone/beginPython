@@ -1,11 +1,15 @@
 from collections import defaultdict, deque, Counter
+import sys
+from decimal import *
 from heapq import heapify, heappop, heappush
 import math
+import random
+import string
 from copy import deepcopy
-from itertools import combinations, permutations, product, combinations_with_replacement
+from itertools import combinations, permutations, product
+from operator import mul, itemgetter
+from functools import reduce, lru_cache
 from bisect import bisect_left, bisect_right
-
-import sys
 
 def input():
     return sys.stdin.readline().rstrip()
@@ -34,56 +38,39 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-def euler_tour(N, E, sta):
-    q = deque([[sta, 1]])
-    dis = [-1] * N
-    dis[sta] = 0
-    par = [-1] * N
+#### a >= bかな？　全順序ならマージソートできる ######
+def a_bigger(a, b):
+    return a >= b
 
-    dp = things
+# 同じかな？
+def equal(a, b):
+    return a[0] * b[1] - a[1] * b[0] == 0
+###############################################
 
-    while q:
-        u, f = q.pop()
-        if f:
-            #### 行きがけ処理をここに書く ###
-            # do function
-            #############################
-            q.append([u, 0])
-            for v in E[u]:
-                if dis[v] == -1:
-                    dis[v] = dis[u] + 1
-                    par[v] = u
-                    q.append([v, 1])
-                    #### 子に操作するときはここに書く
-                    # do function
-                    #############################
+# マージソート + 転倒数
+def merge_sort(x):
+    retary = []
+    res_rev = 0
+    if len(x) <= 1:
+        retary.extend(x)
+    else:
+        m = len(x) // 2
+        # 逆にする
+        f, s = merge_sort(x[:m]), merge_sort(x[m:])
+        first, rev1 = f[0][::-1], f[1]
+        second, rev2 = s[0][::-1], s[1]
+        res_rev += (rev1 + rev2)
+        while len(first) > 0 and len(second) > 0:
+            # 小さい方を取り出してappendする
+            if a_bigger(first[-1], second[-1]):
+                retary.append(second.pop())
+                res_rev += len(first)
+            else:
+                retary.append(first.pop())
+        # 元に戻して繋げる
+        retary.extend(first[::-1] if len(first) > 0 else second[::-1])
 
-        else:
-            #### 帰りがけ処理をここに書く ###
-            # do function
-            if dp[u] and u != sta:
-                dp[par[u]] = 1
-            #############################
+    return retary, res_rev
 
-    return dp, dis
-
-T = getN()
-for _ in range(T):
-    _ = input()
-    N, K = getNM()
-    sta, end = getNM()
-    sta -= 1
-    end -= 1
-    col = getListGraph()
-    E = [[] for i in range(N)]
-    for i in range(N - 1):
-        u, v = getNM()
-        E[u - 1].append(v - 1)
-        E[v - 1].append(u - 1)
-    things = [0] * N
-    things[end] = 1
-    for c in col:
-        things[c] = 1
-
-    tour, dis = euler_tour(N, E, sta)
-    print((sum(tour) - 1) * 2 - dis[end])
+N = getN()
+print(merge_sort(getList())[1])

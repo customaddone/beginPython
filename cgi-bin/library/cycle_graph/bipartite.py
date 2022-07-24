@@ -87,3 +87,23 @@ def bipartite(N, M, edges):
                 return False, color
 
     return True, color
+
+color = [0] * N
+def bipartite(N, sta, edges):
+    # 外部に置く 1, -1: 探索済み 0: 未探索
+    global color
+    dq = deque([(sta, 1)])
+    # 今回塗ったやつ
+    colored = set()
+    while dq:
+        v, c = dq.popleft()
+        color[v] = c
+        colored.add(v)
+        c *= -1
+        for nv in edges[v]:
+            if color[nv] == 0:
+                dq.append((nv, c))
+            if color[nv] == -c:
+                dq = []
+                return (False, set())
+    return (True, colored)

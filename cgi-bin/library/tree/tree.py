@@ -99,6 +99,19 @@ def distance(n, edges, sta):
                 ignore[i[0]] = ignore[u] + i[1]
                 pos.append(i[0])
     return ignore
+
+def distance(n, edges, sta):
+    ignore = [-1] * N # 距離を求めたいときはfloat('inf')にする
+    ignore[sta] = 0
+    pos = deque([sta])
+
+    while len(pos) > 0:
+        u = pos.popleft()
+        for v in edges[u]:
+            if ignore[v] == -1:
+                ignore[v] = ignore[u] + 1
+                pos.append(v)
+    return ignore
 # [0, 2, 4, 1, 3]
 print(distance(N, G2, 0))
 

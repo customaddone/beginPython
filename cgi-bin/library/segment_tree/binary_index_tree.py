@@ -80,6 +80,7 @@ class BIT:
     # bit.get(x)そもそも左にフラグがあるか　なければlowerboundは0を示すが0にフラグはない
     # bit.lowerbound(bit.get(x)) 探す
     # bit.lowerbound(bit.get(x) + 1) 自身あるいは自身より右位にあるフラグのうち一番左にあるものを探す
+    # bit.lowerbound(bit.get(x + 1) + 1) 自身より右位にあるフラグのうち一番左にあるものを探す
     def lowerbound(self, w):
         if w <= 0:
             return -1
