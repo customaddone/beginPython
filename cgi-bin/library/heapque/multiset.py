@@ -146,3 +146,49 @@ for c, d in trans:
     #################
 
     print(purity.get_min())
+
+# set=(p1, p2...pn)について、set内にpi^x<targetになるpiはいくつあるか、
+# またpi^xをソートした時にk番目に来るのは何かを返す
+# 重い　気をつけよう
+class Multiset():
+    # 数字の最大サイズのbit長を入れる
+    def __init__(self, digit):
+        self.d = defaultdict(int)
+        self.digit = digit
+        self.size = 0
+
+    def add(self, a, i):
+        c = 0
+        self.size += i
+        for k in range(self.digit - 1, -2, -1):
+            self.d[(c, k + 1)] += i
+            if k >= 0:
+                c += (a & (1 << k))
+
+    def size_all(self):
+        return self.size
+
+    # xが何個あるか
+    def find(self, x):
+        return self.d[(x, 0)]
+
+    # set中にpi^x < tarなるpiがいくつ含まれるか
+    def xor_count(self, x, tar):
+        c, res = 0, 0
+        for k in range(self.digit - 1, -1, -1):
+            # tarのフラグが1の時のみカウントが進む
+            res += self.d[(c ^ (x & (1 << k)), k)] * (((tar & (1 << k)) > 0))
+            c += ((tar ^ x) & (1 << k))
+        return res
+
+    # pi^xをソートするとlim個目のpi^xは何になるか　^xして元に戻す
+    def xor_bound(self, x, lim):
+        c, tar, res = 0, 0, 0
+        for k in range(self.digit - 1, -1, -1):
+            # フラグを立てるとself.d[(c ^ (x & (1 << k)), k)]だけカウントが進む
+            # resが許容内ならtarにフラグを立てる
+            if res + self.d[(c ^ (x & (1 << k)), k)] < lim:
+                tar += (1 << k)
+                res += self.d[(c ^ (x & (1 << k)), k)]
+            c += ((tar ^ x) & (1 << k))
+        return tar
