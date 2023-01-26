@@ -32,36 +32,17 @@ dy = [0, 1, 0, -1]
 # Main Code #
 #############
 
-"""
-文字列dp
-ランレングス圧縮
-26^N個あるがそれらは等価
-ぶった切ると2増える　置き換えた分は絶対偶数になる
-他の文字に変えるのは25通り　長さが変わる
-同じ文字は1通り　長さは変わらない
-"""
+N, M = getNM()
+A = getList()
 
-N, P = getNM()
-# 長さは2Nまで
-prev = [0] * (N + 1)
-# 長さ1が26個
-prev[1] = 26
-for _ in range(N - 1):
-    next = [0] * (N + 1)
-    for i in range(N, -1, -1):
-        # 変わる
-        if i < N:
-            next[i + 1] += prev[i] * 25
-            next[i + 1] %= P
-        # 変わらない
-        next[i] += prev[i]
-        next[i] %= P
-    print(prev, next)
-    prev = next
-
-ans = 0
-for i in range(N + 1):
-    if i * 2 <= N:
-        ans += prev[i]
-        ans %= P
-    print(ans)
+L = [inf] * (M + 1)
+pre = [inf] * (M + 1)
+L[0] = pre[0] = 0
+for i in range(N):
+    nxt = [inf] * (M + 1)
+    for j in range(M):
+        if j + A[i] <= M:
+            # そのままか、切断が１つ増えるか、前のを引き継ぐか
+            L[j + A[i]] = min(L[j + A[i]], L[j] + (i > 0), pre[j])
+    print(L, pre, nxt)
+    pre = nxt

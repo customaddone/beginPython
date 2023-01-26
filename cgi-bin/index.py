@@ -26,7 +26,7 @@ def getArray(intn):
 
 mod = 10 ** 9 + 7
 MOD = 998244353
-# sys.setrecursionlimit(10000000)
+sys.setrecursionlimit(10000000)
 # import pypyjit
 # pypyjit.set_param('max_unroll_recursion=-1')
 inf = float('inf')
@@ -38,56 +38,78 @@ dx = [1, 0, -1, 0]
 # Main Code #
 #############
 
-class Multiset():
-    # 数字の最大サイズのbit長を入れる
-    def __init__(self, digit):
-        self.d = defaultdict(int)
-        self.digit = digit
-        self.size = 0
+class Bitset:
+    '''
+        N:       bitの長さ
+        add():   xビット目を1にする
+        sub():   xビット目を0にする
+        count(): 1となるビットの数を取得
+        self[x]: xビット目を取得
+        bit演算子 &, | 対応
+    '''
+    def __init__(self, N):
+        self.bit_size = 63
+        self.bits_size = (N + self.bit_size - 1) // self.bit_size
+        self.bits = self.bits_size * [0]
+        self.N = N
 
-    def add(self, a, i):
-        c = 0
-        self.size += i
-        for k in range(self.digit - 1, -2, -1):
-            self.d[(c, k + 1)] += i
-            if k >= 0:
-                c += (a & (1 << k))
+    def add(self, x):
+        self.bits[x // self.bit_size] |= 1 << (x % self.bit_size)
 
-    def size_all(self):
-        return self.size
+    def sub(self, x):
+        self.bits[x // self.bit_size] &= ~(1 << (x % self.bit_size))
 
-    # xが何個あるか
-    def find(self, x):
-        return self.d[(x, 0)]
+    def count(self):
+        cnt = 0
+        for x in self.bits:
+            c = (x & 0x5555555555555555) + ((x >> 1) & 0x5555555555555555)
+            c = (c & 0x3333333333333333) + ((c >> 2) & 0x3333333333333333)
+            c = (c & 0x0f0f0f0f0f0f0f0f) + ((c >> 4) & 0x0f0f0f0f0f0f0f0f)
+            c = (c & 0x00ff00ff00ff00ff) + ((c >> 8) & 0x00ff00ff00ff00ff)
+            c = (c & 0x0000ffff0000ffff) + ((c >> 16) & 0x0000ffff0000ffff)
+            c = (c & 0x00000000ffffffff) + ((c >> 32) & 0x00000000ffffffff)
+            cnt += c
 
-    # set中にpi^x < tarなるpiがいくつ含まれるか
-    def xor_count(self, x, tar):
-        c, res = 0, 0
-        for k in range(self.digit - 1, -1, -1):
-            # tarのフラグが1の時のみカウントが進む
-            res += self.d[(c ^ (x & (1 << k)), k)] * (((tar & (1 << k)) > 0))
-            c += ((tar ^ x) & (1 << k))
-        return res
+        return cnt
 
-    # pi^xをソートするとlim個目のpi^xは何になるか　^xして元に戻す
-    def xor_bound(self, x, lim):
-        c, tar, res = 0, 0, 0
-        for k in range(self.digit - 1, -1, -1):
-            # フラグを立てるとself.d[(c ^ (x & (1 << k)), k)]だけカウントが進む
-            # resが許容内ならtarにフラグを立てる
-            if res + self.d[(c ^ (x & (1 << k)), k)] < lim:
-                tar += (1 << k)
-                res += self.d[(c ^ (x & (1 << k)), k)]
-            c += ((tar ^ x) & (1 << k))
-        return tar
+    def __and__(self, other):
+        _bitset = Bitset(self.N)
+        _bits = _bitset.bits
+        for i in range(self.bits_size):
+            _bits[i] = self.bits[i] & other.bits[i]
 
-V = Multiset(32)
+        return _bitset
+
+    def __or__(self, other):
+        _bitset = Bitset(self.N)
+        _bits = _bitset.bits
+        for i in range(self.bits_size):
+            _bits[i] = self.bits[i] | other.bits[i]
+
+        return _bitset
+
+    def __xor__(self, other):
+        _bitset = Bitset(self.N)
+        _bits = _bitset.bits
+        for i in range(self.bits_size):
+            _bits[i] = self.bits[i] ^ other.bits[i]
+
+        return _bitset
+
+    def __getitem__(self, x):
+        return self.bits[x // self.bit_size] >> (x % self.bit_size) & 1
+
 N = getN()
-for _ in range(N):
-    q = getList()
-    if q[0] == 1:
-        V.add(q[1], 1)
-    elif q[0] == 2:
-        V.add(q[1], -1)
-    else:
-        print(V.xor_count(q[1], q[2]))
+bi = [Bitset(N) for i in range(N)]
+for i in range(N):
+    s = input()
+    for j in range(i + 1, N):
+        if s[j] == '1':
+            bi[i].add(j)
+
+ans = 0
+for i in range(N - 2):
+    for j in range(i + 1, N - 1):
+        if bi[i][j] == 1:
+            ans += (bi[i] & bi[j]).count()
+print(ans)
